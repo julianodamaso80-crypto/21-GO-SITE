@@ -57,8 +57,15 @@ export async function sendText(phone: string, text: string): Promise<SendResult>
   console.log('[WhatsApp] sendText →', phone, '(', text.length, 'chars )')
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: EVOLUTION_API_KEY },
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: EVOLUTION_API_KEY,
+      // Força conexão nova: o Undici keep-alive pool reusava conexões já
+      // fechadas pela Evolution, gerando 500 "Connection Closed".
+      Connection: 'close',
+    },
     body: JSON.stringify({ number: phone, text }),
+    keepalive: false,
   })
   const bodyText = await res.text().catch(() => '')
   console.log('[WhatsApp] sendText resp:', res.status, bodyText.slice(0, 300))
@@ -92,7 +99,11 @@ export async function sendPdfMedia(
   )
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: EVOLUTION_API_KEY },
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: EVOLUTION_API_KEY,
+      Connection: 'close',
+    },
     body: JSON.stringify({
       number: phone,
       mediatype: 'document',
@@ -101,6 +112,7 @@ export async function sendPdfMedia(
       caption,
       fileName: filename,
     }),
+    keepalive: false,
   })
   const bodyText = await res.text().catch(() => '')
   console.log('[WhatsApp] sendPdfMedia resp:', res.status, bodyText.slice(0, 300))
