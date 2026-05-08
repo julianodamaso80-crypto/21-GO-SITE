@@ -539,9 +539,25 @@ async function sendQuotePdfWhatsApp(body: LeadInput, leadId: string) {
     return
   }
 
+  // Estratégia: SEMPRE manda URL pública pra Evolution baixar (em vez de
+  // base64). Payloads em base64 grandes fazem a Evolution retornar HTTP 500
+  // "Connection Closed" — descoberto em 2026-05-07 (31 falhas em 6h, 0%
+  // sucesso). URL pública é leve e a Evolution baixa do nosso próprio
+  // endpoint /api/pdfs/[leadId] que regenera on-demand a partir do Supabase.
+  //
+  // Storage MinIO/R2 fica como fallback se PUBLIC_BASE_URL não tiver — usa
+  // o bucket configurado em isStorageConfigured(). Último recurso é base64.
   let media: string
   let pdfUrl: string | null = null
-  if (isStorageConfigured()) {
+
+  const PUBLIC_BASE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://21go.site').replace(/\/$/, '')
+  const dynamicUrl = `${PUBLIC_BASE}/api/pdfs/${leadId}`
+
+  // Tenta URL pública primeiro (zero infra adicional)
+  if (PUBLIC_BASE) {
+    media = dynamicUrl
+    pdfUrl = dynamicUrl
+  } else if (isStorageConfigured()) {
     try {
       const key = `quotes/${new Date().toISOString().slice(0, 10)}/${leadId}.pdf`
       const { url } = await uploadPdf(key, pdf, filename)
@@ -554,6 +570,7 @@ async function sendQuotePdfWhatsApp(body: LeadInput, leadId: string) {
   } else {
     media = pdf.toString('base64')
   }
+  void pdf // PDF gerado fica pra o endpoint dinâmico regenerar do Supabase
 
   const caption = buildFollowUpMessage({
     nome: body.nome || '',

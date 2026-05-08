@@ -42,6 +42,43 @@ export interface QuotePdfInput {
 const CARRO_APP_EXTRA = 20
 
 /* ─────────────────────────────────────────────────────────────────────────
+ * MATRIZ DE COBERTURAS — formato oficial do PowerCRM 21Go
+ * Cada cell é null (× não incluído) ou string (✓ + detalhe; '' = só ✓).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+interface CoverageRow {
+  label: string
+  /** ordem dos planos = ['basico','do-seu-jeito','vip','premium'] OU plano único */
+  carros?: [string | null, string | null, string | null, string | null]
+  suv?: string | null
+  moto?: string | null
+  especial?: string | null
+}
+
+const COVERAGE_TABLE: CoverageRow[] = [
+  { label: 'Roubo',                                          carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+  { label: 'Furto',                                          carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+  { label: 'Incêndio',                                       carros: ['', 'Proveniente de colisão', 'Proveniente de colisão', 'Proveniente de colisão'],          suv: '', moto: null, especial: 'Proveniente de colisão' },
+  { label: 'Fenômenos da natureza',                          carros: [null, '', '', ''],                                                                        suv: '', moto: '', especial: '' },
+  { label: 'Colisão',                                        carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+  { label: 'Danos a terceiros',                              carros: ['R$ 5.000,00', 'R$ 10.000,00', 'R$ 50.000,00', 'R$ 100.000,00'],                          suv: 'R$ 50.000,00', moto: null, especial: 'R$ 50.000,00' },
+  { label: 'Carro reserva',                                  carros: [null, null, '07 dias (roubo e furto)', '15 dias'],                                        suv: '07 dias (roubo e furto)', moto: null, especial: '07 dias (roubo e furto)' },
+  { label: 'Parabrisa',                                      carros: [null, '', '', ''],                                                                        suv: '', moto: null, especial: '' },
+  { label: 'Carro amigo',                                    carros: [null, '25 km de raio', '25 km de raio', ''],                                              suv: '25 km de raio', moto: null, especial: '25 km de raio' },
+  { label: '01 Reboque Adicional',                           carros: [null, null, null, '200 km (totais)'],                                                     suv: null, moto: null, especial: null },
+  { label: 'Cobertura Todos os Vidros',                      carros: [null, null, null, ''],                                                                    suv: null, moto: null, especial: null },
+  { label: 'Monitoramento 24h',                              carros: ['', '', 'Valor acima de R$ 50.000', ''],                                                  suv: '', moto: 'Acima de R$ 8.000', especial: '' },
+  { label: 'Reboque',                                        carros: ['200 km (totais)', '400 km (totais)', '1.000 km (totais)', '1.200 km (totais)'],          suv: '1.000 km (totais)', moto: '1.000 km (totais)', especial: '1.000 km (totais)' },
+  { label: 'Chaveiro',                                       carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+  { label: 'Substituição de pneu furado',                    carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+  { label: 'Auxílio na falta de combustível',                carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+  { label: 'Hospedagem em hotel',                            carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+  { label: 'Táxi',                                           carros: ['25 km', '50 km', '100 km', '150 km'],                                                    suv: '100 km', moto: null, especial: '100 km' },
+  { label: 'Retorno a domicílio',                            carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+  { label: 'Socorro mecânico / elétrico',                    carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+]
+
+/* ─────────────────────────────────────────────────────────────────────────
  * Logo — embutida em base64 no bundle (sem I/O em runtime)
  * ───────────────────────────────────────────────────────────────────────── */
 
@@ -159,10 +196,9 @@ export function resolvePlans(input: QuotePdfInput): QuotePlanFull[] {
  * (1º pagamento, 2º pagamento com 5%, mensalidade regular, adesivo).
  * Cada plano aplicável vira uma página dessas — não há mais card comparativo simplificado.
  */
-function renderPlanPage(
-  plan: QuotePlanFull,
+function renderComparisonPage(
   input: QuotePdfInput,
-  isSelected: boolean,
+  plans: QuotePlanFull[],
   ctx: {
     logoUrl: string
     hoje: string
@@ -170,39 +206,21 @@ function renderPlanPage(
     dueDate: string
     veiculoTitulo: string
     taxa: number
+    referencePlan?: QuotePlanFull
+    refIsCarro: boolean
+    selectedPlanId: PlanId
+    kind: 'carros' | 'suv' | 'moto' | 'especial'
   },
-  isFirst: boolean,
 ): string {
-  const info = PLAN_INFO[plan.id as keyof typeof PLAN_INFO]
-  const features = info?.features || []
-
-  const incluidos = features.filter((f) => f.included)
-  const naoIncluidos = features.filter((f) => !f.included)
-
-  const incluidosHTML = incluidos
-    .map((f) => `<li><span class="ico ok">✓</span><span class="txt">${f.text}</span></li>`)
-    .join('')
-  const naoIncluidosHTML = naoIncluidos.length
-    ? naoIncluidos
-        .map((f) => `<li><span class="ico no">×</span><span class="txt">${f.text}</span></li>`)
-        .join('')
-    : '<li class="empty">Todas as coberturas deste plano estão incluídas</li>'
-
-  const mensalidade = plan.monthly
-  const taxa = ctx.taxa
-  const descontoEarly = mensalidade * 0.95
-  const stickerPct = 15
-  const comAdesivo = mensalidade * (1 - stickerPct / 100)
-  const adesivoMaisEmDia = comAdesivo * 0.95
-
   // Mercado Pago — gross-up pra receber o valor líquido na hora
   const MP_FEE_AVISTA = 0.0498
   const MP_FEE_12X = 0.11
+  const taxa = ctx.taxa
   const taxaAvista = taxa / (1 - MP_FEE_AVISTA)
   const taxa12xTotal = taxa / (1 - MP_FEE_12X)
   const taxa12xParcela = taxa12xTotal / 12
 
-  const isMotoPlan = plan.id === 'moto-400' || plan.id === 'moto-1000'
+  const firstName = input.nome.split(' ')[0]
 
   // Selo de condições especiais
   const origemLabel =
@@ -232,20 +250,134 @@ function renderPlanPage(
     ? `<div class="condicoes">${condicoesItems.join('')}</div>`
     : ''
 
-  const firstName = input.nome.split(' ')[0]
-  const flagText = isSelected
-    ? 'Plano escolhido'
-    : plan.popular
-      ? 'Mais escolhido'
-      : 'Disponível'
-  const flagCls = isSelected ? 'sel' : plan.popular ? 'pop' : 'avail'
+  // Plano REF (VIP de carros, ou o primeiro disponível pra outros tipos)
+  const ref = ctx.referencePlan
+  const refIsCarro = ctx.refIsCarro
+  const refBlock = ref
+    ? refIsCarro
+      ? `<div class="ref-bar">
+      <div class="ref-bar-header">
+        <div class="ref-bar-title">
+          <span class="ref-bar-eyebrow">Plano de referência</span>
+          <span class="ref-bar-name">${ref.name}</span>
+        </div>
+      </div>
+      <div class="ref-bar-grid">
+        <div class="ref-disc">
+          <span class="ref-disc-label">Mensalidade cheia</span>
+          <span class="ref-disc-tag">sem desconto</span>
+          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly)}</div>
+        </div>
+        <div class="ref-disc">
+          <span class="ref-disc-label">Pagando em dia</span>
+          <span class="ref-disc-tag">−5%</span>
+          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly * 0.95)}</div>
+        </div>
+        <div class="ref-disc">
+          <span class="ref-disc-label">Com adesivo 21Go</span>
+          <span class="ref-disc-tag">−15%</span>
+          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly * 0.85)}</div>
+        </div>
+        <div class="ref-disc highlight">
+          <span class="ref-disc-label">Adesivo + em dia</span>
+          <span class="ref-disc-tag">−20% total</span>
+          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly * 0.80)}</div>
+        </div>
+      </div>
+    </div>`
+      : `<div class="ref-bar">
+      <div class="ref-bar-header">
+        <div class="ref-bar-title">
+          <span class="ref-bar-eyebrow">Plano de referência</span>
+          <span class="ref-bar-name">${ref.name}</span>
+        </div>
+      </div>
+      <div class="ref-bar-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="ref-disc">
+          <span class="ref-disc-label">Mensalidade cheia</span>
+          <span class="ref-disc-tag">sem desconto</span>
+          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly)}</div>
+        </div>
+        <div class="ref-disc highlight">
+          <span class="ref-disc-label">Pagando em dia</span>
+          <span class="ref-disc-tag">−5%</span>
+          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly * 0.95)}</div>
+        </div>
+      </div>
+    </div>`
+    : ''
 
-  const headerTitle = isFirst
-    ? `${firstName}, sua simulação está pronta`
-    : `${firstName}, conheça também o plano ${plan.name}`
+  // ───── COLUNAS DA TABELA ─────
+  // Mapeia cada plano que vai virar uma coluna
+  const carPlanIds: PlanId[] = ['basico', 'do-seu-jeito', 'vip', 'premium']
+  const planById = new Map(plans.map((p) => [p.id, p]))
+  const cols: { plan: QuotePlanFull; matrixIdx: number; kind: 'carros' | 'suv' | 'moto' | 'especial' }[] = []
+  if (ctx.kind === 'carros') {
+    carPlanIds.forEach((id, idx) => {
+      const p = planById.get(id)
+      if (p) cols.push({ plan: p, matrixIdx: idx, kind: 'carros' })
+    })
+  } else if (ctx.kind === 'suv') {
+    const p = planById.get('suv')
+    if (p) cols.push({ plan: p, matrixIdx: 0, kind: 'suv' })
+  } else if (ctx.kind === 'moto') {
+    plans
+      .filter((p) => p.id === 'moto-400' || p.id === 'moto-1000')
+      .forEach((p) => cols.push({ plan: p, matrixIdx: 0, kind: 'moto' }))
+  } else if (ctx.kind === 'especial') {
+    const p = planById.get('especial')
+    if (p) cols.push({ plan: p, matrixIdx: 0, kind: 'especial' })
+  }
+
+  function getCell(row: CoverageRow, col: typeof cols[0]): string | null {
+    if (col.kind === 'carros' && row.carros) return row.carros[col.matrixIdx]
+    if (col.kind === 'suv') return row.suv ?? null
+    if (col.kind === 'moto') return row.moto ?? null
+    if (col.kind === 'especial') return row.especial ?? null
+    return null
+  }
+
+  // Filtra coberturas: só mostra linhas que pelo menos UMA coluna inclui
+  const visibleRows = COVERAGE_TABLE.filter((row) =>
+    cols.some((col) => getCell(row, col) !== null),
+  )
+
+  const colsHTML = cols
+    .map((col) => {
+      const isSelected = col.plan.id === ctx.selectedPlanId
+      const flagHTML = isSelected
+        ? '<span class="plan-flag selected">Selecionado</span>'
+        : col.plan.popular
+          ? '<span class="plan-flag pop">Mais escolhido</span>'
+          : '<span class="plan-flag">Disponível</span>'
+      return `<th class="plan-col ${isSelected ? 'selected' : ''}">
+      ${flagHTML}
+      <div class="plan-name">${col.plan.name}</div>
+      <div class="plan-price">R$ ${formatBRL(col.plan.monthly)}<em> /mês</em></div>
+    </th>`
+    })
+    .join('')
+
+  const rowsHTML = visibleRows
+    .map((row) => {
+      const cellsHTML = cols
+        .map((col) => {
+          const v = getCell(row, col)
+          if (v === null) {
+            return `<td class="cell no"><span class="cell-icon no">×</span></td>`
+          }
+          if (v === '') {
+            return `<td class="cell yes"><span class="cell-icon ok">✓</span></td>`
+          }
+          return `<td class="cell yes"><span class="cell-icon ok">✓</span><span class="cell-detail">${v}</span></td>`
+        })
+        .join('')
+      return `<tr><th class="row-label">${row.label}</th>${cellsHTML}</tr>`
+    })
+    .join('')
 
   return `
-  <div class="page ${isFirst ? '' : 'page-break'}">
+  <div class="page">
 
     <header class="hero">
       <div class="brand">
@@ -255,149 +387,84 @@ function renderPlanPage(
             : `<span class="brand-text">21Go</span>`
         }
       </div>
-      <div class="hero-meta">
-        <span class="hero-meta-line"><b>Simulação personalizada</b></span>
-        <span class="hero-meta-line">Emitida ${ctx.hoje} · válida até ${ctx.validade}</span>
-      </div>
+      <a class="wpp-btn" href="https://wa.me/5521979034169">
+        <span class="wpp-icon">💬</span>
+        <span class="wpp-text"><b>WhatsApp do Consultor</b><br/>(21) 97903-4169</span>
+      </a>
     </header>
 
-    <section class="greet">
-      <span class="greet-eyebrow">Proteção veicular sob medida</span>
-      <h1>${headerTitle}</h1>
-    </section>
+    ${refBlock}
 
-    <section class="vehicle">
-      <div class="vehicle-info">
-        <span class="v-label">Seu veículo</span>
-        <div class="v-name">${ctx.veiculoTitulo}</div>
-        <div class="v-meta">
-          ${input.placa ? `Placa <b>${input.placa}</b>` : 'Placa não informada'}
-          ${input.cor ? ` · ${input.cor}` : ''}
-          ${input.ano ? ` · ${input.ano}` : ''}
-        </div>
-      </div>
-      <div class="vehicle-fipe">
-        <span class="vf-label">Valor FIPE</span>
-        <strong class="vf-amount">R$ ${formatBRL(input.fipe)}</strong>
-      </div>
+    <section class="greet">
+      <h1>Olá, ${firstName}!</h1>
+      <p class="greet-sub">
+        Esta é a simulação personalizada para o seu
+        <b>${input.placa ? `${input.placa} – ` : ''}${ctx.veiculoTitulo}</b>.<br/>
+        Seu veículo está avaliado em <b class="laranja">R$ ${formatBRL(input.fipe)}</b>
+        <span class="greet-fipe-note">(de acordo com a tabela FIPE atual)</span>
+      </p>
     </section>
 
     ${condicoesBlock}
 
-    <section class="plan-hero">
-      <div class="ph-badge ${flagCls}">${flagText}</div>
-      <div class="ph-row">
-        <div class="ph-info">
-          <span class="ph-label">Plano</span>
-          <h2 class="ph-name">${plan.name}</h2>
+    <section class="entrada">
+      <div class="entrada-left">
+        <span class="entrada-label">Taxa de ativação</span>
+        <span class="entrada-sub">Pagamento único · contratação do plano</span>
+      </div>
+      <div class="entrada-vals">
+        <div class="entrada-vals-item">
+          <span class="entrada-vals-tag">À vista</span>
+          <span class="entrada-vals-num">R$ ${formatBRL(taxaAvista)}</span>
         </div>
-        <div class="ph-price">
-          <span class="ph-cur">R$</span>
-          <span class="ph-num">${formatBRL(mensalidade)}</span>
-          <span class="ph-per">/mês</span>
+        <div class="entrada-vals-item">
+          <span class="entrada-vals-tag">12x sem juros</span>
+          <span class="entrada-vals-num">R$ ${formatBRL(taxa12xParcela)}</span>
         </div>
       </div>
     </section>
 
-    <section class="benefits">
-      <div class="bcol bcol-yes">
-        <div class="bcol-head">
-          <span class="bcol-icon ok">✓</span>
-          <span class="bcol-title">Coberturas incluídas</span>
-        </div>
-        <ul class="blist">${incluidosHTML}</ul>
-      </div>
-      <div class="bcol bcol-no">
-        <div class="bcol-head">
-          <span class="bcol-icon no">×</span>
-          <span class="bcol-title">Não incluídas</span>
-        </div>
-        <ul class="blist">${naoIncluidosHTML}</ul>
-        ${
-          naoIncluidos.length
-            ? '<p class="bcol-note">Pode ser adicionado em planos superiores.</p>'
-            : ''
-        }
-      </div>
-    </section>
-
-    <section class="payment">
-      <div class="pay-card pay-laranja">
-        <div class="pc-head">
-          <span class="pc-label">Ativação</span>
-          <span class="pc-tag">Pagamento único</span>
-        </div>
-        <div class="pc-row">
-          <span class="pc-row-label">À vista no cartão</span>
-          <strong class="pc-row-val laranja">R$ ${formatBRL(taxaAvista)}</strong>
-        </div>
-        <div class="pc-row">
-          <span class="pc-row-label">12x sem juros</span>
-          <strong class="pc-row-val verde">R$ ${formatBRL(taxa12xParcela)}</strong>
-        </div>
-      </div>
-
-      <div class="pay-card pay-verde">
-        <div class="pc-head">
-          <span class="pc-label">1ª mensalidade</span>
-          <span class="pc-tag verde">5% off</span>
-        </div>
-        <div class="pc-row pc-discount">
-          <s>R$ ${formatBRL(mensalidade)}</s>
-          <strong class="pc-row-val verde">R$ ${formatBRL(descontoEarly)}</strong>
-        </div>
-        <div class="pc-hint">Pagando até <b>${ctx.dueDate}</b></div>
-      </div>
-
-      <div class="pay-card pay-cinza">
-        <div class="pc-head">
-          <span class="pc-label">Mensalidade regular</span>
-        </div>
-        <div class="pc-row pc-discount">
-          <strong class="pc-row-val">R$ ${formatBRL(mensalidade)}<span class="pc-mes">/mês</span></strong>
-        </div>
-        <div class="pc-hint">Sem qualquer desconto</div>
-      </div>
-    </section>
-
-    ${
-      isMotoPlan
-        ? ''
-        : `<section class="adesivo-section">
-      <div class="ad-head">
-        <span class="ad-icon">🚗</span>
-        <div class="ad-title">
-          <b>Desconto Adesivo 21Go</b>
-          <span>Adesivo discreto no vidro traseiro</span>
-        </div>
-        <span class="ad-pct">−${stickerPct}%</span>
-      </div>
-      <div class="ad-values">
-        <div class="ad-row">
-          <span>Com adesivo</span>
-          <div><s>R$ ${formatBRL(mensalidade)}</s> <b class="laranja">R$ ${formatBRL(comAdesivo)}/mês</b></div>
-        </div>
-        <div class="ad-row">
-          <span>Adesivo + pagando em dia</span>
-          <b class="verde">R$ ${formatBRL(adesivoMaisEmDia)}/mês</b>
-        </div>
-      </div>
-      <div class="ad-foot">Descontos acumuláveis: adesivo (${stickerPct}%) + pontualidade (5%)</div>
-    </section>`
-    }
-
-    <section class="cta-section">
-      <a class="cta-btn" href="https://wa.me/5521979034169?text=${encodeURIComponent(`Olá! Tenho interesse no plano ${plan.name} pra meu ${input.marca} ${input.modelo}. Pode me ajudar?`)}">Quero contratar pelo WhatsApp →</a>
-      <p class="cta-sub">Atendimento em todo o Brasil · 20 anos de experiência</p>
+    <section class="comparison">
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th class="cmp-corner">
+              <span class="cmp-corner-eyebrow">Comparativo</span>
+              <span class="cmp-corner-title">Coberturas e benefícios</span>
+            </th>
+            ${colsHTML}
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHTML}
+        </tbody>
+      </table>
     </section>
 
     <footer class="pdf-footer">
-      <span><b>21Go Proteção Veicular</b> · 21go.site · WhatsApp (21) 97903-4169</span>
-      <span>Simulação válida até <b>${ctx.validade}</b></span>
+      <div class="footer-consultor">
+        <div class="footer-avatar">LT</div>
+        <div class="footer-consultor-info">
+          <span class="footer-eyebrow">Consultor</span>
+          <span class="footer-name">Letycia Thayene Nascimento Lima</span>
+        </div>
+      </div>
+      <a class="wpp-btn small" href="https://wa.me/5521979034169">
+        <span class="wpp-icon">💬</span>
+        <span class="wpp-text">(21) 97903-4169</span>
+      </a>
     </footer>
+
+    <div class="footer-meta">
+      Simulação criada em ${ctx.hoje} · válida até ${ctx.validade} · Atendimento em todo o Brasil
+    </div>
 
   </div>
   `
+}
+
+export function renderQuoteHTML(input: QuotePdfInput): string {
+  return renderHTML(input)
 }
 
 function renderHTML(input: QuotePdfInput): string {
@@ -435,10 +502,43 @@ function renderHTML(input: QuotePdfInput): string {
   // constante TAXA_ATIVACAO no site E aqui pra que ambos batam sempre.
   const taxa = 399
 
-  const ctx = { logoUrl, hoje, validade, dueDate, veiculoTitulo, taxa }
-  const pagesHTML = ordered
-    .map((p, idx) => renderPlanPage(p, input, p.id === planoEscolhidoId, ctx, idx === 0))
-    .join('')
+  // PLANO DE REFERÊNCIA — usado no header de TODAS as páginas como base.
+  // Ordem de preferência: VIP > Premium > Do Seu Jeito > Básico (carros);
+  // moto-1000 > moto-400 (motos); especial pra elétrico/+150k.
+  // Se carro de aplicativo, soma R$ 20 (já está em planosAplicaveis).
+  const referenceOrder: PlanId[] = [
+    'vip', 'premium', 'do-seu-jeito', 'basico',
+    'suv', 'moto-1000', 'moto-400', 'especial',
+  ]
+  const referencePlan =
+    referenceOrder
+      .map((id) => planosAplicaveis.find((p) => p.id === id))
+      .find((p) => !!p) || planosAplicaveis[0]
+  const refIsCarro =
+    referencePlan && !['moto-400', 'moto-1000'].includes(referencePlan.id)
+
+  // Determinar tipo (carros / suv / moto / especial) baseado nos planos
+  let kind: 'carros' | 'suv' | 'moto' | 'especial' = 'carros'
+  const planIdsSet = new Set(planosAplicaveis.map((p) => p.id))
+  if (planIdsSet.has('especial')) kind = 'especial'
+  else if (planIdsSet.has('suv')) kind = 'suv'
+  else if (planIdsSet.has('moto-400') || planIdsSet.has('moto-1000')) kind = 'moto'
+  else kind = 'carros'
+
+  const ctx = {
+    logoUrl,
+    hoje,
+    validade,
+    dueDate,
+    veiculoTitulo,
+    taxa,
+    referencePlan,
+    refIsCarro: !!refIsCarro,
+    selectedPlanId: planoEscolhidoId as PlanId,
+    kind,
+  }
+  void ordered // mantido pra compat — não usado mais (1 página única)
+  const pagesHTML = renderComparisonPage(input, planosAplicaveis, ctx)
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -446,375 +546,323 @@ function renderHTML(input: QuotePdfInput): string {
 <meta charset="utf-8"/>
 <title>Simulação 21Go · ${input.nome}</title>
 <style>
-  /* ============================================================
-   *  21Go — Simulação Proteção Veicular (template moderno)
-   *  Paleta: laranja #F7963D · verde #10B981 · azul #1B4DA1
-   *  Tipografia: Inter / system-ui (fallback)
-   * ============================================================ */
   @page { size: A4; margin: 0; }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
   html, body {
     margin: 0; padding: 0;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     color: #0F172A;
     background: #fff;
     line-height: 1.4;
+    font-feature-settings: 'cv11', 'ss01', 'kern';
+    letter-spacing: -0.01em;
   }
   .page {
     width: 210mm;
-    min-height: 297mm;
-    padding: 14mm 14mm 12mm;
+    height: 297mm;
+    padding: 8mm 10mm;
     background: #fff;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  .page-break { page-break-before: always; }
+  .laranja { color: #F7963D; font-weight: 700; }
+  .verde { color: #25C168; }
 
-  /* ============================ HERO ============================ */
+  /* HEADER compacto */
   .hero {
-    display: flex; align-items: center; justify-content: space-between;
-    padding-bottom: 14px;
-    border-bottom: 2px solid #F1F5F9;
-    margin-bottom: 18px;
-  }
-  .brand { display: flex; align-items: center; gap: 10px; }
-  .brand-logo {
-    height: 56px; width: auto; display: block;
-    object-fit: contain;
-  }
-  .brand-text {
-    font-weight: 900; font-size: 26px; color: #1B4DA1;
-    letter-spacing: -0.5px;
-  }
-  .hero-meta {
-    display: flex; flex-direction: column; align-items: flex-end;
-    gap: 2px;
-  }
-  .hero-meta-line {
-    font-size: 10.5px; color: #64748B;
-  }
-  .hero-meta-line b {
-    color: #0F172A; font-weight: 700; font-size: 11.5px;
-  }
-
-  /* ============================ GREETING ============================ */
-  .greet { margin: 4px 0 16px; }
-  .greet-eyebrow {
-    display: inline-block;
-    font-size: 10px; font-weight: 700;
-    color: #F7963D; text-transform: uppercase;
-    letter-spacing: 1.2px; margin-bottom: 6px;
-  }
-  .greet h1 {
-    font-size: 26px; font-weight: 800;
-    color: #0F172A; margin: 0;
-    letter-spacing: -0.6px; line-height: 1.15;
-  }
-
-  /* ============================ VEHICLE ============================ */
-  .vehicle {
-    background: linear-gradient(135deg, #1B4DA1 0%, #2563EB 100%);
-    color: #fff;
-    border-radius: 16px;
-    padding: 18px 22px;
-    margin-bottom: 14px;
-    display: flex; align-items: center; justify-content: space-between;
-    box-shadow: 0 8px 24px rgba(27,77,161,0.18);
-  }
-  .vehicle-info { flex: 1; }
-  .v-label, .vf-label {
-    font-size: 9.5px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1.2px;
-    opacity: 0.7; display: block; margin-bottom: 4px;
-  }
-  .v-name {
-    font-size: 16px; font-weight: 800;
-    margin-bottom: 3px; letter-spacing: -0.3px;
-  }
-  .v-meta { font-size: 11px; opacity: 0.85; }
-  .v-meta b { font-weight: 700; }
-  .vehicle-fipe {
-    text-align: right;
-    border-left: 1px solid rgba(255,255,255,0.2);
-    padding-left: 18px; margin-left: 18px;
-  }
-  .vf-amount {
-    font-size: 22px; font-weight: 900;
-    letter-spacing: -0.5px; display: block;
-  }
-
-  /* ============================ CONDICOES PILLS ============================ */
-  .condicoes {
-    display: flex; flex-wrap: wrap; gap: 6px;
-    margin-bottom: 14px;
-  }
-  .cond-pill {
-    background: #FFF7ED; border: 1px solid rgba(247,150,61,0.3);
-    color: #B45309; font-size: 10.5px; font-weight: 600;
-    padding: 6px 12px; border-radius: 999px;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .cond-pill b { color: #92400E; font-weight: 800; }
-  .cond-dot { font-size: 12px; }
-
-  /* ============================ PLAN HERO ============================ */
-  .plan-hero {
-    background: #fff;
-    border: 1px solid #E2E8F0;
-    border-radius: 16px;
-    padding: 16px 20px;
-    margin-bottom: 14px;
-    box-shadow: 0 4px 14px rgba(15,23,42,0.04);
-    position: relative;
-  }
-  .ph-badge {
-    position: absolute; top: -10px; left: 20px;
-    font-size: 9.5px; font-weight: 800;
-    padding: 4px 10px; border-radius: 999px;
-    color: #fff; text-transform: uppercase; letter-spacing: 0.8px;
-  }
-  .ph-badge.sel { background: #F7963D; }
-  .ph-badge.pop { background: #10B981; }
-  .ph-badge.avail { background: #94A3B8; }
-
-  .ph-row {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-top: 4px;
-  }
-  .ph-info { flex: 1; }
-  .ph-label {
-    font-size: 10px; font-weight: 700;
-    color: #64748B; text-transform: uppercase;
-    letter-spacing: 1px; display: block;
-  }
-  .ph-name {
-    font-size: 24px; font-weight: 800;
-    color: #1B4DA1; margin: 4px 0 0; letter-spacing: -0.5px;
-  }
-  .ph-price {
-    display: flex; align-items: baseline; gap: 3px;
-    color: #0F172A;
-  }
-  .ph-cur { font-size: 14px; font-weight: 700; color: #64748B; }
-  .ph-num { font-size: 36px; font-weight: 900; letter-spacing: -1.2px; }
-  .ph-per { font-size: 14px; font-weight: 600; color: #64748B; }
-
-  /* ============================ BENEFITS — LADO A LADO ============================ */
-  .benefits {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-  .bcol {
-    background: #fff;
-    border: 1px solid #E2E8F0;
-    border-radius: 14px;
-    padding: 14px 16px;
-    box-shadow: 0 4px 12px rgba(15,23,42,0.03);
-  }
-  .bcol-yes { border-top: 3px solid #10B981; }
-  .bcol-no { border-top: 3px solid #CBD5E1; }
-  .bcol-head {
-    display: flex; align-items: center; gap: 8px;
-    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
     padding-bottom: 8px;
     border-bottom: 1px solid #F1F5F9;
   }
-  .bcol-icon {
-    width: 22px; height: 22px;
+  .brand-logo { height: 38px; width: auto; display: block; object-fit: contain; }
+  .brand-text { font-weight: 800; font-size: 18px; color: #1B4DA1; letter-spacing: -0.5px; }
+
+  .wpp-btn {
+    background: #25C168; color: #fff; text-decoration: none;
+    padding: 6px 12px 6px 8px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10px; line-height: 1.15;
+    box-shadow: 0 1px 4px rgba(37,193,104,0.18);
+  }
+  .wpp-btn .wpp-icon {
+    width: 20px; height: 20px;
+    background: rgba(255,255,255,0.2); border-radius: 50%;
     display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 50%; font-weight: 900; font-size: 12px;
-    flex-shrink: 0;
+    font-size: 10px; flex-shrink: 0;
   }
-  .bcol-icon.ok { background: #10B981; color: #fff; }
-  .bcol-icon.no { background: #CBD5E1; color: #fff; }
-  .bcol-title {
-    font-size: 12px; font-weight: 800;
-    color: #0F172A; letter-spacing: -0.2px;
+  .wpp-btn .wpp-text b { font-weight: 700; font-size: 10px; display: block; }
+
+  /* GREETING compacto */
+  .greet { margin-bottom: 8px; }
+  .greet h1 {
+    font-size: 16px; font-weight: 700;
+    color: #0F172A; margin: 0 0 2px;
+    letter-spacing: -0.02em; line-height: 1.2;
   }
-  ul.blist {
-    list-style: none; margin: 0; padding: 0;
+  .greet-sub {
+    font-size: 10px; color: #475569;
+    margin: 0; line-height: 1.4;
   }
-  ul.blist li {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 10.5px;
-    padding: 4px 0;
-    color: #334155;
-  }
-  ul.blist li.empty {
-    color: #10B981; font-style: italic; font-size: 10.5px;
-    padding: 4px 0;
-  }
-  ul.blist li .ico {
-    width: 14px; height: 14px;
-    display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 50%; font-size: 9px; font-weight: 900;
-    flex-shrink: 0;
-  }
-  ul.blist li .ico.ok { background: rgba(16,185,129,0.15); color: #10B981; }
-  ul.blist li .ico.no { background: rgba(203,213,225,0.4); color: #94A3B8; }
-  ul.blist li .txt { line-height: 1.3; }
-  .bcol-no ul.blist li .txt {
-    color: #94A3B8;
-    text-decoration: line-through;
-    text-decoration-color: rgba(148,163,184,0.4);
-  }
-  .bcol-note {
-    font-size: 9.5px; color: #94A3B8;
-    margin: 8px 0 0; font-style: italic;
-    text-align: center;
+  .greet-sub b { color: #0F172A; font-weight: 600; }
+  .greet-fipe-note {
+    color: #94A3B8; font-size: 9px; font-style: italic;
+    margin-left: 3px;
   }
 
-  /* ============================ PAYMENT ============================ */
-  .payment {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 14px;
+  /* CONDICOES PILLS */
+  .condicoes {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    margin-bottom: 6px;
   }
-  .pay-card {
-    border-radius: 12px;
-    padding: 12px 14px;
-    border: 1px solid;
+  .cond-pill {
+    background: #FFF7ED; border: 1px solid rgba(247,150,61,0.25);
+    color: #B45309; font-size: 9px; font-weight: 500;
+    padding: 3px 9px; border-radius: 999px;
+    display: flex; align-items: center; gap: 4px;
   }
-  .pay-laranja {
-    background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
-    border-color: rgba(247,150,61,0.25);
-  }
-  .pay-verde {
-    background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
-    border-color: rgba(16,185,129,0.25);
-  }
-  .pay-cinza {
-    background: #F8FAFC;
-    border-color: #E2E8F0;
-  }
-  .pc-head {
-    display: flex; justify-content: space-between; align-items: center;
+  .cond-pill b { color: #92400E; font-weight: 700; }
+  .cond-dot { font-size: 9px; }
+
+  /* REF BAR — 4 cenarios em grid 4 colunas */
+  .ref-bar {
+    background: linear-gradient(135deg, #FFF7ED 0%, #FFFAF0 100%);
+    border: 1px solid rgba(247,150,61,0.3);
+    border-radius: 10px;
+    padding: 8px 12px;
     margin-bottom: 8px;
   }
-  .pc-label {
-    font-size: 10px; font-weight: 800;
-    color: #0F172A; text-transform: uppercase;
-    letter-spacing: 0.8px;
+  .ref-bar-header {
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(247,150,61,0.15);
   }
-  .pc-tag {
-    background: #F7963D; color: #fff;
-    font-size: 8px; font-weight: 800;
-    padding: 2px 7px; border-radius: 999px;
+  .ref-bar-title {
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .ref-bar-eyebrow {
+    font-size: 8px; font-weight: 700;
+    color: #B45309; text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+  .ref-bar-name {
+    font-size: 13px; font-weight: 700;
+    color: #0F172A; letter-spacing: -0.02em;
+  }
+  .ref-bar-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 6px;
+  }
+  .ref-disc {
+    background: #fff;
+    border-radius: 8px;
+    padding: 7px 9px;
+    border: 1px solid #F1F5F9;
+    text-align: left;
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .ref-disc.highlight {
+    background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+    border-color: #25C168;
+  }
+  .ref-disc-label {
+    font-size: 9.5px; font-weight: 600; color: #475569;
+    line-height: 1.2;
+  }
+  .ref-disc-tag {
+    font-size: 8.5px; font-weight: 700;
+    color: #94A3B8; letter-spacing: 0.2px;
+  }
+  .ref-disc.highlight .ref-disc-tag { color: #059669; }
+  .ref-disc-val {
+    font-size: 14px; font-weight: 800;
+    color: #0F172A; letter-spacing: -0.03em;
+    margin-top: 2px;
+  }
+  .ref-disc.highlight .ref-disc-val { color: #059669; }
+
+  /* ENTRADA compacta */
+  .entrada {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 7px 12px;
+    margin-bottom: 8px;
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 12px;
+  }
+  .entrada-left { display: flex; flex-direction: column; gap: 1px; }
+  .entrada-label {
+    font-size: 8px; font-weight: 700; color: #94A3B8;
+    text-transform: uppercase; letter-spacing: 1.2px;
+  }
+  .entrada-sub {
+    font-size: 9.5px; color: #475569; font-weight: 500;
+  }
+  .entrada-vals { display: flex; align-items: baseline; gap: 14px; }
+  .entrada-vals-item { display: flex; flex-direction: column; align-items: flex-end; }
+  .entrada-vals-tag {
+    font-size: 8px; color: #94A3B8; font-weight: 600;
     text-transform: uppercase; letter-spacing: 0.6px;
   }
-  .pc-tag.verde { background: #10B981; }
-  .pc-row {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 3px 0;
+  .entrada-vals-num {
+    font-size: 13px; font-weight: 800; color: #F7963D;
+    letter-spacing: -0.03em;
   }
-  .pc-row.pc-discount {
-    margin: 6px 0 4px;
-  }
-  .pc-row-label {
-    font-size: 10.5px; color: #64748B; font-weight: 600;
-  }
-  .pc-row-val {
-    font-size: 17px; font-weight: 900;
-    letter-spacing: -0.5px;
-    color: #0F172A;
-  }
-  .pc-row-val.laranja { color: #F7963D; }
-  .pc-row-val.verde { color: #10B981; }
-  .pc-row s {
-    color: #94A3B8; font-size: 11px; margin-right: 6px;
-  }
-  .pc-mes {
-    font-size: 11px; font-weight: 600; color: #64748B;
-    margin-left: 2px;
-  }
-  .pc-hint {
-    font-size: 9.5px; color: #64748B;
-    margin-top: 4px; line-height: 1.3;
-  }
-  .pc-hint b { color: #0F172A; font-weight: 700; }
 
-  /* ============================ ADESIVO ============================ */
-  .adesivo-section {
+  /* TABELA — comprimida */
+  .comparison {
     background: #fff;
-    border: 1.5px solid #F7963D;
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    box-shadow: 0 4px 14px rgba(247,150,61,0.08);
-  }
-  .ad-head {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 10px;
-  }
-  .ad-icon {
-    width: 32px; height: 32px;
-    background: rgba(247,150,61,0.12);
+    border: 1px solid #E5E7EB;
     border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; flex-shrink: 0;
+    overflow: hidden;
+    flex: 1;
+    margin-bottom: 8px;
   }
-  .ad-title { flex: 1; }
-  .ad-title b {
-    display: block; font-size: 12px;
-    color: #0F172A; font-weight: 800;
+  .cmp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5px;
   }
-  .ad-title span {
-    display: block; font-size: 10px; color: #64748B;
+  .cmp-table thead th {
+    padding: 8px 6px; text-align: center;
+    border-bottom: 1px solid #E5E7EB;
+    vertical-align: top; background: #FAFAFA;
   }
-  .ad-pct {
-    background: #F7963D; color: #fff;
-    font-size: 11px; font-weight: 900;
-    padding: 5px 11px; border-radius: 999px;
+  .cmp-corner {
+    background: #fff !important;
+    text-align: left; width: 26%;
+    padding: 8px 12px !important;
   }
-  .ad-values {
-    background: #FFF7ED; border-radius: 10px;
-    padding: 10px 12px;
+  .cmp-corner-eyebrow {
+    font-size: 8px; font-weight: 700;
+    color: #94A3B8; text-transform: uppercase;
+    letter-spacing: 1.2px; display: block; margin-bottom: 2px;
   }
-  .ad-row {
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: 11px; padding: 4px 0;
+  .cmp-corner-title {
+    font-size: 11px; font-weight: 700;
+    color: #0F172A; letter-spacing: -0.02em;
   }
-  .ad-row span { color: #64748B; font-weight: 500; }
-  .ad-row s { color: #94A3B8; font-size: 10.5px; margin-right: 6px; }
-  .ad-row .laranja { color: #F7963D; font-size: 13px; font-weight: 900; }
-  .ad-row .verde { color: #10B981; font-size: 13px; font-weight: 900; }
-  .ad-foot {
-    font-size: 9.5px; color: #94A3B8;
-    text-align: center; margin-top: 8px;
+  .plan-col {
+    border-left: 1px solid #F1F5F9;
+    position: relative;
   }
-  .laranja { color: #F7963D; }
-  .verde { color: #10B981; }
-
-  /* ============================ CTA ============================ */
-  .cta-section { text-align: center; margin-bottom: 12px; }
-  .cta-btn {
+  .plan-col.selected {
+    background: #FFFBEB !important;
+  }
+  .plan-col.selected::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px; background: #F7963D;
+  }
+  .plan-flag {
     display: inline-block;
-    background: linear-gradient(135deg, #F7963D 0%, #FB923C 100%);
-    color: #fff; text-decoration: none;
-    font-weight: 800; font-size: 14px;
-    padding: 14px 32px; border-radius: 999px;
-    box-shadow: 0 8px 20px rgba(247,150,61,0.28);
-    letter-spacing: -0.2px;
+    background: #0F172A; color: #fff;
+    font-size: 7px; font-weight: 700;
+    padding: 2px 6px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 4px;
   }
-  .cta-sub {
-    font-size: 10.5px; color: #64748B;
-    margin: 8px 0 0; font-weight: 500;
+  .plan-flag.selected { background: #F7963D; }
+  .plan-flag.pop { background: #25C168; }
+  .plan-name {
+    font-size: 11px; font-weight: 700;
+    color: #0F172A; letter-spacing: -0.02em;
+    margin-bottom: 3px;
+  }
+  .plan-price {
+    font-size: 16px; font-weight: 800;
+    color: #0F172A; letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .plan-price em {
+    font-size: 9px; font-style: normal;
+    color: #94A3B8; font-weight: 500;
   }
 
-  /* ============================ FOOTER ============================ */
-  .pdf-footer {
-    margin-top: auto; padding-top: 12px;
-    border-top: 1px solid #F1F5F9;
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: 9px; color: #94A3B8;
+  .cmp-table tbody tr {
+    border-bottom: 1px solid #F1F5F9;
   }
-  .pdf-footer b { color: #475569; font-weight: 700; }
+  .cmp-table tbody tr:last-child { border-bottom: none; }
+  .cmp-table tbody tr:nth-child(even) { background: #FAFAFA; }
+  .row-label {
+    text-align: left;
+    padding: 5px 12px;
+    font-size: 9.5px; font-weight: 500;
+    color: #1F2937;
+  }
+  .cell {
+    padding: 5px 6px;
+    text-align: center;
+    border-left: 1px solid #F1F5F9;
+    vertical-align: middle;
+  }
+  .cell.no { opacity: 0.45; }
+  .cell-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    font-size: 9px; font-weight: 800;
+    flex-shrink: 0; line-height: 1;
+  }
+  .cell-icon.ok { background: #25C168; color: #fff; }
+  .cell-icon.no { background: #E5E7EB; color: #94A3B8; }
+  .cell-detail {
+    display: block;
+    font-size: 8.5px; font-weight: 500;
+    color: #64748B;
+    margin-top: 2px; line-height: 1.2;
+  }
+
+  /* FOOTER compacto */
+  .pdf-footer {
+    background: #0F172A;
+    color: #fff;
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-consultor {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .footer-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F7963D 0%, #FB923C 100%);
+    color: #fff; font-weight: 700; font-size: 11px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .footer-consultor-info {
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .footer-eyebrow {
+    font-size: 7.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    color: #94A3B8;
+  }
+  .footer-name {
+    font-size: 11px; font-weight: 600;
+    color: #fff; letter-spacing: -0.02em;
+  }
+  .footer-meta {
+    text-align: center;
+    font-size: 8px; color: #94A3B8;
+    letter-spacing: 0.01em;
+  }
 </style>
 </head>
 <body>
@@ -858,7 +906,30 @@ async function resolveChromiumPath(): Promise<string | undefined> {
     /* noop */
   }
 
-  // 3. Sistema (Linux)
+  // 3. Cache puppeteer no Windows (~/.cache/puppeteer/chrome/...)
+  if (process.platform === 'win32') {
+    try {
+      const home = process.env.USERPROFILE || process.env.HOME
+      if (home) {
+        const cacheRoot = `${home}\\.cache\\puppeteer\\chrome`
+        const versions = await fs.readdir(cacheRoot).catch(() => [] as string[])
+        for (const v of versions) {
+          tryPaths.push(`${cacheRoot}\\${v}\\chrome-win64\\chrome.exe`)
+          tryPaths.push(`${cacheRoot}\\${v}\\chrome-win\\chrome.exe`)
+        }
+      }
+    } catch {
+      /* noop */
+    }
+    // Chrome instalado no Windows
+    tryPaths.push(
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    )
+  }
+
+  // 4. Sistema (Linux)
   tryPaths.push('/usr/bin/chromium', '/usr/bin/google-chrome')
 
   for (const p of tryPaths) {
