@@ -4,7 +4,22 @@
  *   - sendText: mensagens de texto puro
  *   - sendPdfMedia: PDF como documento (URL ou base64) com caption
  *   - formatPhone: garante prefixo "55"
+ *
+ * Importante: usa Undici Agent dedicado (sem keep-alive) pra evitar reuso
+ * de conexões TCP fechadas pela Evolution. Descoberto em 2026-05-08:
+ * Next.js mantém pool global do Undici, e fetch options não desabilitavam.
  */
+import { Agent, fetch as undiciFetch } from 'undici'
+
+// Agent dedicado: cada request abre conexão nova fresh.
+// Sem isso, o Undici global do Next reusava conexões já fechadas pela
+// Evolution e voltava com HTTP 500 "Connection Closed".
+const evoAgent = new Agent({
+  keepAliveTimeout: 1,
+  keepAliveMaxTimeout: 1,
+  connections: 1,
+  pipelining: 0,
+})
 
 const EVOLUTION_API_URL =
   process.env.EVOLUTION_API_URL || 'https://automacoes-evolution-api.klo3fa.easypanel.host'
@@ -55,17 +70,14 @@ export async function sendText(phone: string, text: string): Promise<SendResult>
   }
   const url = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`
   console.log('[WhatsApp] sendText →', phone, '(', text.length, 'chars )')
-  const res = await fetch(url, {
+  const res = await undiciFetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       apikey: EVOLUTION_API_KEY,
-      // Força conexão nova: o Undici keep-alive pool reusava conexões já
-      // fechadas pela Evolution, gerando 500 "Connection Closed".
-      Connection: 'close',
     },
     body: JSON.stringify({ number: phone, text }),
-    keepalive: false,
+    dispatcher: evoAgent,
   })
   const bodyText = await res.text().catch(() => '')
   console.log('[WhatsApp] sendText resp:', res.status, bodyText.slice(0, 300))
@@ -97,12 +109,11 @@ export async function sendPdfMedia(
     'file=',
     filename,
   )
-  const res = await fetch(url, {
+  const res = await undiciFetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       apikey: EVOLUTION_API_KEY,
-      Connection: 'close',
     },
     body: JSON.stringify({
       number: phone,
@@ -112,7 +123,7 @@ export async function sendPdfMedia(
       caption,
       fileName: filename,
     }),
-    keepalive: false,
+    dispatcher: evoAgent,
   })
   const bodyText = await res.text().catch(() => '')
   console.log('[WhatsApp] sendPdfMedia resp:', res.status, bodyText.slice(0, 300))
