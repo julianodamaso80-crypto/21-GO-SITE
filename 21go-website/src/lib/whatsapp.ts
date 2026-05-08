@@ -9,17 +9,25 @@
  * de conexões TCP fechadas pela Evolution. Descoberto em 2026-05-08:
  * Next.js mantém pool global do Undici, e fetch options não desabilitavam.
  */
-import { Agent, fetch as undiciFetch } from 'undici'
+// Lazy load do undici (evita erro 'File is not defined' no build do Node 18)
+type UndiciFetch = typeof import('undici')['fetch']
+type UndiciAgent = import('undici').Agent
+let _undiciFetch: UndiciFetch | null = null
+let _evoAgent: UndiciAgent | null = null
 
-// Agent dedicado: cada request abre conexão nova fresh.
-// Sem isso, o Undici global do Next reusava conexões já fechadas pela
-// Evolution e voltava com HTTP 500 "Connection Closed".
-const evoAgent = new Agent({
-  keepAliveTimeout: 1,
-  keepAliveMaxTimeout: 1,
-  connections: 1,
-  pipelining: 0,
-})
+async function getEvoFetch(): Promise<{ fetch: UndiciFetch; agent: UndiciAgent }> {
+  if (!_undiciFetch || !_evoAgent) {
+    const undici = await import('undici')
+    _undiciFetch = undici.fetch
+    _evoAgent = new undici.Agent({
+      keepAliveTimeout: 1,
+      keepAliveMaxTimeout: 1,
+      connections: 1,
+      pipelining: 0,
+    })
+  }
+  return { fetch: _undiciFetch, agent: _evoAgent }
+}
 
 const EVOLUTION_API_URL =
   process.env.EVOLUTION_API_URL || 'https://automacoes-evolution-api.klo3fa.easypanel.host'
@@ -70,6 +78,7 @@ export async function sendText(phone: string, text: string): Promise<SendResult>
   }
   const url = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`
   console.log('[WhatsApp] sendText →', phone, '(', text.length, 'chars )')
+  const { fetch: undiciFetch, agent: evoAgent } = await getEvoFetch()
   const res = await undiciFetch(url, {
     method: 'POST',
     headers: {
@@ -109,6 +118,7 @@ export async function sendPdfMedia(
     'file=',
     filename,
   )
+  const { fetch: undiciFetch, agent: evoAgent } = await getEvoFetch()
   const res = await undiciFetch(url, {
     method: 'POST',
     headers: {
