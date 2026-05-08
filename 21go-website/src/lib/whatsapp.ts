@@ -1,14 +1,46 @@
 /**
  * Envio de WhatsApp via Evolution API.
- * Mantém comportamento idêntico ao do CRM (lead-followup.service.ts):
- *   - sendText: mensagens de texto puro
- *   - sendPdfMedia: PDF como documento (URL ou base64) com caption
- *   - formatPhone: garante prefixo "55"
  *
- * Importante: usa Undici Agent dedicado (sem keep-alive) pra evitar reuso
- * de conexões TCP fechadas pela Evolution. Descoberto em 2026-05-08:
- * Next.js mantém pool global do Undici, e fetch options não desabilitavam.
+ * IMPORTANTE: usa curl via child_process. Tentei fetch nativo, fetch global
+ * com cache:no-store, undici Agent dedicado — TODOS retornavam 500
+ * "Connection Closed" da Evolution. Mas curl direto do mesmo container
+ * funciona perfeito. Causa raiz desconhecida (provavelmente algo do
+ * runtime Next.js/Undici interno que conflita com Evolution Baileys),
+ * mas curl é solução pragmática e robusta. Validado 2026-05-08.
  */
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+import { writeFile, unlink } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import crypto from 'node:crypto'
+
+const execFileP = promisify(execFile)
+
+interface CurlResult {
+  status: number
+  body: string
+}
+
+async function curlPost(url: string, headers: Record<string, string>, body: string): Promise<CurlResult> {
+  // Escreve body em arquivo temp pra evitar problema com escape de aspas
+  const tmpFile = join(tmpdir(), `evo-${crypto.randomBytes(6).toString('hex')}.json`)
+  await writeFile(tmpFile, body, 'utf-8')
+  const args: string[] = ['-s', '-X', 'POST', '--max-time', '30', '-w', '\n__HTTP__:%{http_code}']
+  for (const [k, v] of Object.entries(headers)) {
+    args.push('-H', `${k}: ${v}`)
+  }
+  args.push('--data-binary', `@${tmpFile}`, url)
+  try {
+    const { stdout } = await execFileP('curl', args, { maxBuffer: 10 * 1024 * 1024 })
+    const m = stdout.match(/\n__HTTP__:(\d+)$/)
+    const status = m ? Number(m[1]) : 0
+    const responseBody = m ? stdout.slice(0, m.index) : stdout
+    return { status, body: responseBody }
+  } finally {
+    await unlink(tmpFile).catch(() => {})
+  }
+}
 
 const EVOLUTION_API_URL =
   process.env.EVOLUTION_API_URL || 'https://automacoes-evolution-api.klo3fa.easypanel.host'
@@ -59,24 +91,17 @@ export async function sendText(phone: string, text: string): Promise<SendResult>
   }
   const url = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`
   console.log('[WhatsApp] sendText →', phone, '(', text.length, 'chars )')
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: EVOLUTION_API_KEY,
-    },
-    body: JSON.stringify({ number: phone, text }),
-    cache: 'no-store',
-  })
-  const bodyText = await res.text().catch(() => '')
-  console.log('[WhatsApp] sendText resp:', res.status, bodyText.slice(0, 300))
-  if (!res.ok) throw new Error(`sendText falhou ${res.status}: ${bodyText.slice(0, 200)}`)
-  let parsed: unknown = null
-  try {
-    parsed = JSON.parse(bodyText)
-  } catch {
-    parsed = bodyText
+  const { status, body: bodyText } = await curlPost(
+    url,
+    { 'Content-Type': 'application/json', apikey: EVOLUTION_API_KEY },
+    JSON.stringify({ number: phone, text }),
+  )
+  console.log('[WhatsApp] sendText resp:', status, bodyText.slice(0, 300))
+  if (status < 200 || status >= 300) {
+    throw new Error(`sendText falhou ${status}: ${bodyText.slice(0, 200)}`)
   }
+  let parsed: unknown = null
+  try { parsed = JSON.parse(bodyText) } catch { parsed = bodyText }
   return parseEvolutionResponse(parsed)
 }
 
@@ -98,13 +123,10 @@ export async function sendPdfMedia(
     'file=',
     filename,
   )
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: EVOLUTION_API_KEY,
-    },
-    body: JSON.stringify({
+  const { status, body: bodyText } = await curlPost(
+    url,
+    { 'Content-Type': 'application/json', apikey: EVOLUTION_API_KEY },
+    JSON.stringify({
       number: phone,
       mediatype: 'document',
       mimetype: 'application/pdf',
@@ -112,17 +134,13 @@ export async function sendPdfMedia(
       caption,
       fileName: filename,
     }),
-    cache: 'no-store',
-  })
-  const bodyText = await res.text().catch(() => '')
-  console.log('[WhatsApp] sendPdfMedia resp:', res.status, bodyText.slice(0, 300))
-  if (!res.ok) throw new Error(`sendPdfMedia falhou ${res.status}: ${bodyText.slice(0, 200)}`)
-  let parsed: unknown = null
-  try {
-    parsed = JSON.parse(bodyText)
-  } catch {
-    parsed = bodyText
+  )
+  console.log('[WhatsApp] sendPdfMedia resp:', status, bodyText.slice(0, 300))
+  if (status < 200 || status >= 300) {
+    throw new Error(`sendPdfMedia falhou ${status}: ${bodyText.slice(0, 200)}`)
   }
+  let parsed: unknown = null
+  try { parsed = JSON.parse(bodyText) } catch { parsed = bodyText }
   return parseEvolutionResponse(parsed)
 }
 
