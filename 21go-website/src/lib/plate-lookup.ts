@@ -225,8 +225,11 @@ export async function lookupPlate(
   const brandName = pcVehicle.brand
   const codFipe = pcVehicle.codFipe || ''
   const yearStr = pcVehicle.year || ''
-  const yearMatch = yearStr.match(/(\d{4})/)
-  const year = yearMatch ? yearMatch[1] : undefined
+  // PowerCRM retorna year no formato "AAAA/MMMM" (ano fabricação / ano modelo)
+  // OU só "AAAA". Pegamos o ÚLTIMO 4-dígito = ano modelo (que é o que bate
+  // com o cy do cmby do PowerCRM e com a FIPE).
+  const yearMatches = [...yearStr.matchAll(/(\d{4})/g)]
+  const year = yearMatches.length > 0 ? yearMatches[yearMatches.length - 1][1] : undefined
 
   if (!codFipe || !year) {
     return { success: false, error: 'Dados do veículo incompletos' }
@@ -294,22 +297,36 @@ export async function lookupPlate(
       if (cbMatch) break
     }
   }
-  if (!cbMatch) {
-    return { success: false, error: `Marca '${brandName}' não localizada no PowerCRM` }
+  // ─── PowerCRM chain INTERNA (cb→cmby→cmy→ct→plans) ───────
+  // REGRA: se qualquer ponto da chain interna falhar, NÃO retornamos erro.
+  // Pulamos pra API Brasil (que tem o veículo + valor FIPE oficial).
+  // Isso resolve casos como Hyundai Elantra 2012 (codFipe não cadastrado em
+  // cmby pra todos os anos) — a placa é achada, mas a chain não fecha.
+  let mdl: number | undefined
+  let cmbyExactBack: string | null = null
+  let cmbyExactText: string | null = null
+  if (cbMatch) {
+    const cmbyList = await powerGet<PowerCmbyItem[]>(
+      `/api/quotation/cmby?cb=${cbMatch.id}&cy=${year}`,
+    )
+    if (cmbyList && Array.isArray(cmbyList)) {
+      const exact = cmbyList.find((m) => m.back === codFipe)
+      if (exact) {
+        mdl = exact.id
+        cmbyExactBack = exact.back || null
+        cmbyExactText = exact.text || null
+      } else {
+        console.log(
+          `[plate-lookup] cmby sem match codFipe=${codFipe} cb=${cbMatch.id} cy=${year} (vai pra API Brasil)`,
+        )
+      }
+    }
+  } else {
+    console.log(`[plate-lookup] cb sem match brand="${brandName}" (vai pra API Brasil)`)
   }
-
-  // 3) cmby?cb=X&cy=year → procura modelo com codFipe match
-  const cmbyList = await powerGet<PowerCmbyItem[]>(
-    `/api/quotation/cmby?cb=${cbMatch.id}&cy=${year}`,
-  )
-  if (!cmbyList || !Array.isArray(cmbyList)) {
-    return { success: false, error: 'Falha ao consultar modelos no PowerCRM' }
-  }
-  const exact = cmbyList.find((m) => m.back === codFipe)
-  if (!exact) {
-    return { success: false, error: 'Modelo não localizado no PowerCRM (codFipe sem match)' }
-  }
-  const mdl = exact.id
+  // Suprime warning de variáveis usadas só pra resposta — preenchidas mais abaixo
+  void cmbyExactBack
+  void cmbyExactText
 
   // 4) cmy?cm=mdl → ano modelo
   const cmyList = await powerGet<PowerCmyItem[]>(
@@ -367,9 +384,13 @@ export async function lookupPlate(
   let fipeValue = reverseFipeValue(plans) ?? 0
   let fipeSource: 'powercrm-reverse' | 'apibrasil' | 'parallelum' = 'powercrm-reverse'
 
+  // Marca/modelo finais — começam com PowerCRM cb/cmby (se achou) ou
+  // brand cru do /plates/. Podem ser sobrescritos por API Brasil (mais limpo).
+  let resolvedMarca = cbMatch?.text || brandName
+  let resolvedModelo = cmbyExactText || ''
+
   // ─── Cascata de fallbacks (REGRA ABSOLUTA: fipeValue NUNCA pode ser zero) ───
   // Etapa 2: API Brasil — consulta direta pela placa (Denatran + FIPE oficial).
-  // Mais assertiva que Parallelum porque retorna o veículo exato pela placa.
   if (fipeValue <= 0 && isApiBrasilConfigured()) {
     try {
       const ab = await lookupApiBrasilByPlate(normalized)
@@ -379,6 +400,11 @@ export async function lookupPlate(
         )
         fipeValue = ab.fipeValue
         fipeSource = 'apibrasil'
+        // Se PowerCRM não fechou cmby (sem modelo), aproveita marca/modelo da API Brasil
+        if (!resolvedModelo) {
+          resolvedMarca = ab.marca || resolvedMarca
+          resolvedModelo = ab.modelo || ''
+        }
       }
     } catch (err) {
       console.warn(
@@ -392,8 +418,8 @@ export async function lookupPlate(
   if (fipeValue <= 0) {
     try {
       const direct = await lookupFipeDirect({
-        brand: cbMatch.text,
-        model: exact.text,
+        brand: resolvedMarca,
+        model: resolvedModelo || brandName,
         year,
         codFipe,
         categoria: isMoto ? 'MOTOCICLETA' : isCaminhao ? 'CAMINHAO' : 'AUTOMOVEL',
@@ -404,6 +430,10 @@ export async function lookupPlate(
         )
         fipeValue = direct.fipeValue
         fipeSource = 'parallelum'
+        if (!resolvedModelo) {
+          resolvedMarca = direct.matchedBrand || resolvedMarca
+          resolvedModelo = direct.matchedModel || ''
+        }
       }
     } catch (err) {
       console.warn(
@@ -417,7 +447,7 @@ export async function lookupPlate(
   // Cliente vai ver tela de atendimento humano (sem fallback manual).
   if (fipeValue <= 0) {
     console.error(
-      `[plate-lookup] FALHA TOTAL pra placa ${normalized}: PowerCRM reverse + API Brasil + Parallelum não acharam valor. brand="${cbMatch.text}" model="${exact.text}" year="${year}" codFipe="${codFipe}"`,
+      `[plate-lookup] FALHA TOTAL pra placa ${normalized}: PowerCRM reverse + API Brasil + Parallelum não acharam valor. brand="${brandName}" year="${year}" codFipe="${codFipe}"`,
     )
     return {
       success: false,
@@ -431,9 +461,10 @@ export async function lookupPlate(
   const response: PlateResponse = {
     success: true,
     vehicle: {
-      // Usa o nome OFICIAL do PowerCRM (ex: "Mitsubishi", não "MMC")
-      marca: cbMatch.text,
-      modelo: exact.text,
+      // Marca: PowerCRM cb (preferência) > API Brasil > brand cru.
+      marca: resolvedMarca,
+      // Modelo: PowerCRM cmby (preferência) > API Brasil. Se nada veio, usa brand cru.
+      modelo: resolvedModelo || brandName,
       ano: year,
       cor: pcVehicle.color || '',
       fipeValue,
