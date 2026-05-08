@@ -539,38 +539,51 @@ async function sendQuotePdfWhatsApp(body: LeadInput, leadId: string) {
     return
   }
 
-  // Estratégia: SEMPRE manda URL pública pra Evolution baixar (em vez de
-  // base64). Payloads em base64 grandes fazem a Evolution retornar HTTP 500
-  // "Connection Closed" — descoberto em 2026-05-07 (31 falhas em 6h, 0%
-  // sucesso). URL pública é leve e a Evolution baixa do nosso próprio
-  // endpoint /api/pdfs/[leadId] que regenera on-demand a partir do Supabase.
+  // Estratégia: PDF vai pro Supabase Storage (bucket 'quotes', público).
+  // URL Supabase NÃO passa pelo nosso Cloudflare — a Evolution consegue baixar.
+  // Descoberta em 2026-05-08: URL via 21go.site (Cloudflare) era bloqueada
+  // pra Evolution como bot, retornando "Failed to fetch stream".
   //
-  // Storage MinIO/R2 fica como fallback se PUBLIC_BASE_URL não tiver — usa
-  // o bucket configurado em isStorageConfigured(). Último recurso é base64.
+  // Fallbacks: MinIO/R2 → endpoint /api/pdfs/[leadId] → base64.
   let media: string
   let pdfUrl: string | null = null
 
-  const PUBLIC_BASE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://21go.site').replace(/\/$/, '')
-  const dynamicUrl = `${PUBLIC_BASE}/api/pdfs/${leadId}`
-
-  // Tenta URL pública primeiro (zero infra adicional)
-  if (PUBLIC_BASE) {
-    media = dynamicUrl
-    pdfUrl = dynamicUrl
-  } else if (isStorageConfigured()) {
-    try {
-      const key = `quotes/${new Date().toISOString().slice(0, 10)}/${leadId}.pdf`
-      const { url } = await uploadPdf(key, pdf, filename)
-      media = url
-      pdfUrl = url
-    } catch (err) {
-      console.warn('[lead] Storage upload falhou, usando base64:', err instanceof Error ? err.message : err)
-      media = pdf.toString('base64')
+  try {
+    const { supabaseAdmin: getSupa } = await import('@/lib/supabase-admin')
+    const supa = getSupa()
+    const path = `${new Date().toISOString().slice(0, 10)}/${leadId}.pdf`
+    const { error: upErr } = await supa.storage
+      .from('quotes')
+      .upload(path, pdf, {
+        contentType: 'application/pdf',
+        upsert: true,
+        cacheControl: '300',
+      })
+    if (upErr) throw new Error(upErr.message)
+    const { data: pub } = supa.storage.from('quotes').getPublicUrl(path)
+    if (!pub?.publicUrl) throw new Error('publicUrl ausente')
+    media = pub.publicUrl
+    pdfUrl = pub.publicUrl
+  } catch (err) {
+    console.warn(
+      '[lead] Supabase Storage falhou, usando fallback /api/pdfs:',
+      err instanceof Error ? err.message : err,
+    )
+    if (isStorageConfigured()) {
+      try {
+        const key = `quotes/${new Date().toISOString().slice(0, 10)}/${leadId}.pdf`
+        const { url } = await uploadPdf(key, pdf, filename)
+        media = url
+        pdfUrl = url
+      } catch {
+        media = pdf.toString('base64')
+      }
+    } else {
+      const PUBLIC_BASE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://21go.site').replace(/\/$/, '')
+      media = `${PUBLIC_BASE}/api/pdfs/${leadId}`
+      pdfUrl = media
     }
-  } else {
-    media = pdf.toString('base64')
   }
-  void pdf // PDF gerado fica pra o endpoint dinâmico regenerar do Supabase
 
   const caption = buildFollowUpMessage({
     nome: body.nome || '',
