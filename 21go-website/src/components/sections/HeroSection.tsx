@@ -35,11 +35,15 @@ export function HeroSection() {
         />
       </picture>
 
-      {/* Dark overlay — gradient for depth + legibility */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#121A33]/85 via-[#121A33]/75 to-[#121A33]/90" />
+      {/* Mobile: overlay vertical pra legibilidade (em mobile o dono não aparece direito mesmo) */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#121A33]/85 via-[#121A33]/80 to-[#121A33]/95 md:hidden" />
 
-      {/* Subtle vignette edges */}
-      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_40px_rgba(10,30,61,0.7)]" />
+      {/* Desktop: overlay direcional — escuro à esquerda (texto + logo) e mais claro à direita
+          pra dar destaque ao dono da empresa que aparece no lado direito da imagem */}
+      <div className="pointer-events-none absolute inset-0 hidden md:block bg-gradient-to-r from-[#121A33]/90 via-[#121A33]/55 to-[#121A33]/15" />
+
+      {/* Vinheta sutil só nos cantos (reduzida de 0.7 pra 0.35 pra não ofuscar o dono) */}
+      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_30px_rgba(10,30,61,0.35)]" />
 
       {/* Animated gradient orbs — kept for premium glow on top of video */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
