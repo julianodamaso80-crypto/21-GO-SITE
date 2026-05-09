@@ -16,14 +16,16 @@ export function HeroSection() {
       ref={ref}
       className="relative min-h-[95vh] overflow-hidden pt-24 pb-24 bg-[#121A33]"
     >
-      {/* Background image — responsive: mobile WebP 14KB, desktop WebP 42KB,
-          JPG fallback 66KB. Substituiu video de 2.3MB que travava em celular. */}
+      {/* Background image responsivo:
+          - Mobile (≤768px): foto vertical 9:16 do dono (WebP 39KB / JPG 65KB)
+          - Desktop: foto horizontal da garagem (WebP 43KB / JPG 67KB) */}
       <picture className="pointer-events-none absolute inset-0 h-full w-full">
         <source
           media="(max-width: 768px)"
           srcSet="/images/hero-bg-mobile.webp"
           type="image/webp"
         />
+        <source media="(max-width: 768px)" srcSet="/images/hero-bg-mobile.jpg" />
         <source srcSet="/images/hero-bg.webp" type="image/webp" />
         <img
           src="/images/hero-bg.jpg"
@@ -31,12 +33,13 @@ export function HeroSection() {
           aria-hidden="true"
           loading="eager"
           fetchPriority="high"
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover object-center"
         />
       </picture>
 
-      {/* Mobile: overlay vertical pra legibilidade (em mobile o dono não aparece direito mesmo) */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#121A33]/85 via-[#121A33]/80 to-[#121A33]/95 md:hidden" />
+      {/* Mobile: overlay leve no meio (rosto visível) e mais forte nas pontas (texto + CTAs)
+          A imagem mobile vertical já tem fundo escuro próprio, então não precisa abafar o meio */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#121A33]/55 via-[#121A33]/10 to-[#121A33]/75 md:hidden" />
 
       {/* Desktop: overlay direcional — escuro à esquerda (texto + logo) e mais claro à direita
           pra dar destaque ao dono da empresa que aparece no lado direito da imagem */}
