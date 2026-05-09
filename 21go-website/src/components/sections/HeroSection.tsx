@@ -16,17 +16,24 @@ export function HeroSection() {
       ref={ref}
       className="relative min-h-[95vh] overflow-hidden pt-24 pb-24 bg-[#121A33]"
     >
-      {/* Video background */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-      >
-        <source src="/videos/hero-bg.mp4" type="video/mp4" />
-      </video>
+      {/* Background image — responsive: mobile WebP 14KB, desktop WebP 42KB,
+          JPG fallback 66KB. Substituiu video de 2.3MB que travava em celular. */}
+      <picture className="pointer-events-none absolute inset-0 h-full w-full">
+        <source
+          media="(max-width: 768px)"
+          srcSet="/images/hero-bg-mobile.webp"
+          type="image/webp"
+        />
+        <source srcSet="/images/hero-bg.webp" type="image/webp" />
+        <img
+          src="/images/hero-bg.jpg"
+          alt=""
+          aria-hidden="true"
+          loading="eager"
+          fetchPriority="high"
+          className="h-full w-full object-cover"
+        />
+      </picture>
 
       {/* Dark overlay — gradient for depth + legibility */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#121A33]/85 via-[#121A33]/75 to-[#121A33]/90" />
