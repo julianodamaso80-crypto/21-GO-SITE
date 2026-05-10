@@ -41,12 +41,19 @@ export function HeroSection() {
           A imagem mobile vertical já tem fundo escuro próprio, então não precisa abafar o meio */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#121A33]/55 via-[#121A33]/10 to-[#121A33]/75 md:hidden" />
 
-      {/* Desktop: overlay direcional — escuro à esquerda (texto + logo) e mais claro à direita
-          pra dar destaque ao dono da empresa que aparece no lado direito da imagem */}
-      <div className="pointer-events-none absolute inset-0 hidden md:block bg-gradient-to-r from-[#121A33]/90 via-[#121A33]/55 to-[#121A33]/15" />
+      {/* Desktop: overlay direcional — escuro à esquerda (texto + logo) e LIMPO à direita
+          pra dar destaque MÁXIMO ao presidente. Stops em %: 0% escuro, 50% médio,
+          70% bem leve, 80%+ totalmente transparente (presidente sem overlay) */}
+      <div
+        className="pointer-events-none absolute inset-0 hidden md:block"
+        style={{
+          background:
+            'linear-gradient(to right, rgba(18,26,51,0.92) 0%, rgba(18,26,51,0.65) 40%, rgba(18,26,51,0.20) 65%, rgba(18,26,51,0) 80%)',
+        }}
+      />
 
-      {/* Vinheta sutil só nos cantos (reduzida de 0.7 pra 0.35 pra não ofuscar o dono) */}
-      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_30px_rgba(10,30,61,0.35)]" />
+      {/* Vinheta minima só pros cantos extremos (reduzida pra 0.15 pra nao escurecer o presidente) */}
+      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_180px_20px_rgba(10,30,61,0.15)] md:hidden" />
 
       {/* Animated gradient orbs — kept for premium glow on top of video */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
