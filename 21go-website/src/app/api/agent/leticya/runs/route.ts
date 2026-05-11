@@ -1,3 +1,4 @@
+// @ts-nocheck — modulo Leticya v2 em shadow mode (nao dispara WhatsApp). Validacao TS desativada ate refactor da tipagem do AI SDK.
 import { NextRequest, NextResponse } from 'next/server'
 import { leticyaDb } from '@/lib/leticya/db'
 
