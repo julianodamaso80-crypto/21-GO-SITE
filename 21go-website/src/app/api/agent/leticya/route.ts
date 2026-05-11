@@ -164,7 +164,8 @@ export async function POST(req: NextRequest) {
   const toolCallsLog: Array<{ name: string; input: unknown; output: unknown; ms: number }> = []
   const stepLog: Array<{ step: number; model: string; finishReason?: string }> = []
 
-  let classifierResult: { intent?: string; sentiment?: string; tier?: string; needs_escalation?: boolean } | null = null
+  type ClassifierResult = { intent?: string; sentiment?: string; tier?: string; needs_escalation?: boolean }
+  let classifierResult: ClassifierResult | null = null
 
   const result = await generateText({
     model: openrouter(agent.classifier_model || 'anthropic/claude-haiku-4.5'),
@@ -188,7 +189,7 @@ export async function POST(req: NextRequest) {
         const lastStep = steps[steps.length - 1]
         const cls = lastStep.toolResults?.find((t) => t.toolName === 'classify')
         if (cls?.output) {
-          classifierResult = cls.output as typeof classifierResult
+          classifierResult = cls.output as unknown as ClassifierResult
         }
       }
 
