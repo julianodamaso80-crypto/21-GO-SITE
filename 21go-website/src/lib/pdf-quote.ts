@@ -253,6 +253,16 @@ function renderComparisonPage(
   // Plano REF (VIP de carros, ou o primeiro disponível pra outros tipos)
   const ref = ctx.referencePlan
   const refIsCarro = ctx.refIsCarro
+  // Regra oficial 21Go pro desconto adesivo:
+  //   VIP/Premium/SUV/Especial: até 30k FIPE = 10% | acima = 15%
+  //   Do Seu Jeito/Básico:      até 60k FIPE = 10% | acima = 15%
+  const refIsVipOrPremium =
+    !!ref && ['vip', 'premium', 'suv', 'especial'].includes(ref.id)
+  const refStickerThreshold = refIsVipOrPremium ? 30000 : 60000
+  const refStickerPct = input.fipe > refStickerThreshold ? 15 : 10
+  const refStickerMultiplier = 1 - refStickerPct / 100
+  const refStickerPlusEarlyMultiplier = refStickerMultiplier * 0.95
+  const refStickerPlusEarlyPct = Math.round((1 - refStickerPlusEarlyMultiplier) * 100)
   const refBlock = ref
     ? refIsCarro
       ? `<div class="ref-bar">
@@ -275,13 +285,13 @@ function renderComparisonPage(
         </div>
         <div class="ref-disc">
           <span class="ref-disc-label">Com adesivo 21Go</span>
-          <span class="ref-disc-tag">−15%</span>
-          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly * 0.85)}</div>
+          <span class="ref-disc-tag">−${refStickerPct}%</span>
+          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly * refStickerMultiplier)}</div>
         </div>
         <div class="ref-disc highlight">
           <span class="ref-disc-label">Adesivo + em dia</span>
-          <span class="ref-disc-tag">−20% total</span>
-          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly * 0.80)}</div>
+          <span class="ref-disc-tag">−${refStickerPlusEarlyPct}% total</span>
+          <div class="ref-disc-val">R$ ${formatBRL(ref.monthly * refStickerPlusEarlyMultiplier)}</div>
         </div>
       </div>
     </div>`

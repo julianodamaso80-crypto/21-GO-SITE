@@ -630,11 +630,15 @@ export default function CotacaoPage() {
   const discountFormatted = formatPrice(discountPrice)
 
   // Desconto adesivo no vidro traseiro (não se aplica a motos)
+  // Regra oficial 21Go:
+  //   VIP/Premium/SUV/Especial: até 30k FIPE = 10% | acima de 30k = 15%
+  //   Do Seu Jeito/Básico:      até 60k FIPE = 10% | acima de 60k = 15%
   const fipeValue = vehicle?.fipeValue || 0
   const planId = selectedPlan?.id || ''
   const isMoto = planId === 'moto-400' || planId === 'moto-1000'
   const isVipOrPremium = planId === 'vip' || planId === 'premium' || planId === 'suv' || planId === 'especial'
-  const stickerPct = fipeValue > 35000 && isVipOrPremium ? 15 : 10
+  const stickerThreshold = isVipOrPremium ? 30000 : 60000
+  const stickerPct = fipeValue > stickerThreshold ? 15 : 10
   const stickerPrice = Math.round(price * (1 - stickerPct / 100) * 100) / 100
   const stickerPriceFormatted = formatPrice(stickerPrice)
   // Adesivo + pontualidade combinados (não se substituem)

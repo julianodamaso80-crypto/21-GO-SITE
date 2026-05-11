@@ -1,10 +1,9 @@
 'use client'
 
 import { motion, useInView } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { ShieldCheck, Lock, Flame, Truck, Clock, Car } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
-import ElectricBorder from '@/components/ui/ElectricBorder'
 
 const coverages = [
   { icon: ShieldCheck, title: 'Colisão', desc: 'Proteção parcial e total para batidas e acidentes', color: '#375191' },
@@ -16,42 +15,19 @@ const coverages = [
 ]
 
 function CoverageCard({ item, index }: { item: typeof coverages[0]; index: number }) {
-  const [hovered, setHovered] = useState(false)
-
   return (
     <motion.div
       variants={fadeInUp}
       transition={{ delay: index * 0.07 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       className="cursor-default"
     >
-      {hovered ? (
-        <ElectricBorder
-          color={item.color}
-          speed={1.2}
-          chaos={0.18}
-          borderRadius={16}
-        >
-          <div className="bg-white rounded-2xl p-6 h-full">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 scale-110 transition-all duration-300"
-              style={{ backgroundColor: `${item.color}15` }}
-            >
-              <item.icon className="h-6 w-6" style={{ color: item.color }} />
-            </div>
-            <h3 className="font-[var(--font-outfit)] text-lg font-semibold text-[#121A33]">{item.title}</h3>
-            <p className="mt-2 text-sm text-[#64748B] leading-relaxed">{item.desc}</p>
-          </div>
-        </ElectricBorder>
-      ) : (
-        <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm hover:shadow-xl transition-all duration-300 h-full">
-          <div className="w-12 h-12 rounded-xl bg-[#375191]/5 flex items-center justify-center mb-4 transition-all duration-300">
-            <item.icon className="h-6 w-6 text-[#375191]" />
-          </div>
-          <h3 className="font-[var(--font-outfit)] text-lg font-semibold text-[#121A33]">{item.title}</h3>
-          <p className="mt-2 text-sm text-[#64748B] leading-relaxed">{item.desc}</p>
+      <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm hover:shadow-xl transition-all duration-300 h-full">
+        <div className="w-12 h-12 rounded-xl bg-[#375191]/5 flex items-center justify-center mb-4 transition-all duration-300">
+          <item.icon className="h-6 w-6 text-[#375191]" />
         </div>
-      )}
+        <h3 className="font-[var(--font-outfit)] text-lg font-semibold text-[#121A33]">{item.title}</h3>
+        <p className="mt-2 text-sm text-[#64748B] leading-relaxed">{item.desc}</p>
+      </div>
     </motion.div>
   )
 }
