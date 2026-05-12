@@ -29,7 +29,6 @@ import {
   getApplicablePlans,
 } from '@/data/pricing'
 import { shouldBlockQuote } from '@/data/vehicle-exclusions'
-import ElectricBorder from '@/components/ui/ElectricBorder'
 
 /* ─── Types ─── */
 interface FormData {
@@ -1075,21 +1074,12 @@ export default function CotacaoPage() {
                       </div>
                       <p className="text-xs text-[#10B981] font-semibold mt-1.5 text-right">5% de desconto pagando antes do vencimento</p>
                     </div>
-
-                    {/* Mensalidade regular — destaque */}
-                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-[#121A33]">Mensalidade regular</span>
-                        <span className="font-extrabold text-[#121A33] text-2xl">R$ {priceFormatted}<span className="text-sm font-medium text-[#64748B]">/mês</span></span>
-                      </div>
-                    </div>
                   </div>
 
-                  {/* Desconto Adesivo — com ElectricBorder (não aparece para motos) */}
+                  {/* Desconto Adesivo (não aparece para motos) */}
                   {!isMoto && (
                   <div className="mb-6">
-                    <ElectricBorder color="#F7963D" speed={0.6} chaos={0.08} borderRadius={20}>
-                      <div className="bg-white rounded-[20px] p-4 sm:p-5">
+                    <div className="rounded-[20px] border-2 border-[#F7963D] bg-white p-4 sm:p-5">
                         {/* Header com toggle */}
                         <div className="flex items-center gap-3 mb-4">
                           <div className="w-9 h-9 rounded-xl bg-[#F7963D]/10 flex items-center justify-center flex-shrink-0">
@@ -1159,8 +1149,7 @@ export default function CotacaoPage() {
                             </p>
                           </div>
                         )}
-                      </div>
-                    </ElectricBorder>
+                    </div>
                   </div>
                   )}
 
