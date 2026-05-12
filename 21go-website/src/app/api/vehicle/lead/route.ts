@@ -74,6 +74,11 @@ interface LeadInput {
   // PowerCRM + API Brasil + Parallelum nao retornaram FIPE confiavel.
   requires_human_support?: boolean
   human_support_reason?: 'fipe_indisponivel' | 'consulta_falhou' | 'manual'
+  // IDs já mapeados do PowerCRM (vem do fluxo novo "buscar por modelo").
+  // Quando presentes, evitamos a busca/adivinhação cb/cmby/cmy no createLeadPowerCRM.
+  powercrmBrandId?: number | null
+  powercrmModelId?: number | null
+  powercrmYearId?: number | null
 }
 
 export async function POST(req: NextRequest) {
@@ -323,7 +328,12 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
   const yearMatch = yearStr.match(/(\d{4})/)
   const year = yearMatch ? yearMatch[1] : undefined
 
-  if (brandName && codFipe && year) {
+  // Caminho rápido: IDs PowerCRM já vieram mapeados do front (fluxo novo "buscar por modelo").
+  // Pula toda a cascata de adivinhação cb/cmby/cmy.
+  if (body.powercrmModelId) {
+    mdl = Number(body.powercrmModelId)
+    if (body.powercrmYearId) mdlYr = Number(body.powercrmYearId)
+  } else if (brandName && codFipe && year) {
     try {
       const cbRes = await fetch(`${POWERCRM_BASE_URL}/api/quotation/cb?type=${tipoFinal}`, {
         headers: apiHeaders,

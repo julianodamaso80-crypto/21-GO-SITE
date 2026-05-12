@@ -136,8 +136,10 @@ export default function CotacaoPage() {
   const [requiresHumanSupport, setRequiresHumanSupport] = useState(false)
   const [humanSupportReason, setHumanSupportReason] = useState<'fipe_indisponivel' | 'consulta_falhou' | 'manual'>('consulta_falhou')
 
-  // Fluxo "não tenho a placa" — busca FIPE por marca/modelo/ano
-  const [searchMode, setSearchMode] = useState<'placa' | 'modelo'>('placa')
+  // Fluxo principal: integração PowerCRM (tipo → marca → ano → modelo).
+  // Placa permanece como campo OPCIONAL — não bloqueia cotação.
+  // `searchMode` mantém o nome legado pra não quebrar refs, mas hoje só vale 'modelo'.
+  const [searchMode] = useState<'modelo'>('modelo')
   const [fipeKind, setFipeKind] = useState<'carros' | 'motos'>('carros')
   const [fipeMarcas, setFipeMarcas] = useState<FipeItem[]>([])
   const [fipeModelos, setFipeModelos] = useState<FipeItem[]>([])
@@ -148,6 +150,10 @@ export default function CotacaoPage() {
   const [fipeLoadingMarcas, setFipeLoadingMarcas] = useState(false)
   const [fipeLoadingModelos, setFipeLoadingModelos] = useState(false)
   const [fipeLoadingAnos, setFipeLoadingAnos] = useState(false)
+  // Texto exibido das opções selecionadas (precisa pra enviar ao /preco e ao /lead)
+  const [fipeMarcaText, setFipeMarcaText] = useState('')
+  const [fipeModeloText, setFipeModeloText] = useState('')
+  const [fipeModeloCodFipe, setFipeModeloCodFipe] = useState('')
 
   const [form, setForm] = useState<FormData>({
     nome: '',
@@ -193,34 +199,19 @@ export default function CotacaoPage() {
     if (!form.nome.trim()) e.nome = 'Informe seu nome'
     const whatsErr = isValidWhatsApp(form.whatsapp)
     if (whatsErr) e.whatsapp = whatsErr
-    if (searchMode === 'placa') {
-      if (form.placa.length < 7) e.placa = 'Placa incompleta'
-    } else {
-      if (!fipeMarcaCode) e.fipeMarca = 'Escolha a marca'
-      if (!fipeModeloCode) e.fipeModelo = 'Escolha o modelo'
-      if (!fipeAnoCode) e.fipeAno = 'Escolha o ano'
+    // Tipo → Marca → Ano → Modelo são obrigatórios; placa é opcional.
+    if (!fipeMarcaCode) e.fipeMarca = 'Escolha a marca'
+    if (!fipeAnoCode) e.fipeAno = 'Escolha o ano'
+    if (!fipeModeloCode) e.fipeModelo = 'Escolha o modelo'
+    // Placa, se preenchida, precisa ter 7 chars; se vazia, ok.
+    if (form.placa && form.placa.length > 0 && form.placa.length < 7) {
+      e.placa = 'Placa incompleta (deixe em branco se não souber)'
     }
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
-  async function fetchVehicle(placa: string, whatsapp: string): Promise<any> {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 12000)
-    try {
-      const res = await fetch(
-        `${API_BASE}/api/vehicle/plate/${placa}?whatsapp=${encodeURIComponent(whatsapp)}`,
-        { signal: controller.signal },
-      )
-      clearTimeout(timeout)
-      return await res.json()
-    } catch {
-      clearTimeout(timeout)
-      throw new Error('network')
-    }
-  }
-
-  /* ─── FIPE Lookup (sem placa) ─── */
+  /* ─── Fetch genérico das APIs FIPE/PowerCRM ─── */
   async function fetchFipe<T>(path: string): Promise<T> {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 12000)
@@ -234,14 +225,16 @@ export default function CotacaoPage() {
     }
   }
 
-  // Carrega marcas quando entra no modo "modelo" ou troca tipo (carro/moto)
+  // Mapeia o estado fipeKind interno ('carros'|'motos') pro param do PowerCRM ('carro'|'moto')
+  const pcTipo = fipeKind === 'motos' ? 'moto' : 'carro'
+
+  // Carrega marcas do PowerCRM (depende só do tipo carro/moto)
   useEffect(() => {
-    if (searchMode !== 'modelo') return
     let cancelled = false
     setFipeLoadingMarcas(true)
     setApiError('')
     fetchFipe<{ success: boolean; data?: FipeItem[]; error?: string }>(
-      `/api/vehicle/fipe/marcas?tipo=${fipeKind}`,
+      `/api/vehicle/powercrm/marcas?tipo=${pcTipo}`,
     )
       .then(res => {
         if (cancelled) return
@@ -255,32 +248,14 @@ export default function CotacaoPage() {
         if (!cancelled) setFipeLoadingMarcas(false)
       })
     return () => { cancelled = true }
-  }, [searchMode, fipeKind])
+  }, [pcTipo])
 
-  // Carrega modelos quando marca é selecionada
+  // Carrega lista de anos (genérica) assim que entra na página
   useEffect(() => {
-    if (!fipeMarcaCode) { setFipeModelos([]); return }
-    let cancelled = false
-    setFipeLoadingModelos(true)
-    fetchFipe<{ success: boolean; data?: FipeItem[]; error?: string }>(
-      `/api/vehicle/fipe/modelos?tipo=${fipeKind}&marca=${encodeURIComponent(fipeMarcaCode)}`,
-    )
-      .then(res => {
-        if (cancelled) return
-        if (res.success && res.data) setFipeModelos(res.data)
-      })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setFipeLoadingModelos(false) })
-    return () => { cancelled = true }
-  }, [fipeMarcaCode, fipeKind])
-
-  // Carrega anos quando modelo é selecionado
-  useEffect(() => {
-    if (!fipeModeloCode || !fipeMarcaCode) { setFipeAnos([]); return }
     let cancelled = false
     setFipeLoadingAnos(true)
     fetchFipe<{ success: boolean; data?: FipeItem[]; error?: string }>(
-      `/api/vehicle/fipe/anos?tipo=${fipeKind}&marca=${encodeURIComponent(fipeMarcaCode)}&modelo=${encodeURIComponent(fipeModeloCode)}`,
+      `/api/vehicle/powercrm/anos`,
     )
       .then(res => {
         if (cancelled) return
@@ -289,26 +264,26 @@ export default function CotacaoPage() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setFipeLoadingAnos(false) })
     return () => { cancelled = true }
-  }, [fipeModeloCode, fipeMarcaCode, fipeKind])
+  }, [])
 
-  function switchToPlaca() {
-    setSearchMode('placa')
-    setApiError('')
-    setRequiresHumanSupport(false)
-  }
+  // Carrega modelos quando marca + ano são selecionados (PowerCRM exige cb+cy juntos)
+  useEffect(() => {
+    if (!fipeMarcaCode || !fipeAnoCode) { setFipeModelos([]); return }
+    let cancelled = false
+    setFipeLoadingModelos(true)
+    fetchFipe<{ success: boolean; data?: FipeItem[]; error?: string }>(
+      `/api/vehicle/powercrm/modelos?marca=${encodeURIComponent(fipeMarcaCode)}&ano=${encodeURIComponent(fipeAnoCode)}`,
+    )
+      .then(res => {
+        if (cancelled) return
+        if (res.success && res.data) setFipeModelos(res.data)
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setFipeLoadingModelos(false) })
+    return () => { cancelled = true }
+  }, [fipeMarcaCode, fipeAnoCode])
 
-  function switchToModelo() {
-    setSearchMode('modelo')
-    setApiError('')
-    setRequiresHumanSupport(false)
-    setErrors(prev => ({ ...prev, placa: '' }))
-    // Reset encadeamento
-    setFipeMarcaCode('')
-    setFipeModeloCode('')
-    setFipeAnoCode('')
-    setFipeModelos([])
-    setFipeAnos([])
-  }
+  // (switchToPlaca / switchToModelo removidos — fluxo único agora)
 
   /**
    * Quando a cascata PowerCRM → API Brasil → Parallelum falha (ou cliente
@@ -347,16 +322,33 @@ export default function CotacaoPage() {
     }).catch(() => {})
   }
 
-  /** Cotação via FIPE (sem placa) — marca/modelo/ano */
-  async function handleFipeQuote() {
+  /** Cotação via PowerCRM (marca/ano/modelo) — fluxo único atual */
+  async function handlePowerCrmQuote() {
     trackCotacaoInicio()
     setLoading(true)
     setApiError('')
     try {
-      const data = await fetchFipe<any>(
-        `/api/vehicle/fipe/preco?tipo=${fipeKind}&marca=${encodeURIComponent(fipeMarcaCode)}&modelo=${encodeURIComponent(fipeModeloCode)}&ano=${encodeURIComponent(fipeAnoCode)}`,
-      )
-      if (!data.success || !data.vehicle) {
+      // POST /preco com IDs PowerCRM + codFipe pra pegar valor FIPE da Parallelum
+      const precoRes = await fetch(`${API_BASE}/api/vehicle/powercrm/preco`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: pcTipo,
+          brandId: fipeMarcaCode,
+          brandText: fipeMarcaText,
+          modelId: fipeModeloCode,
+          modelText: fipeModeloText,
+          year: fipeAnoCode,
+          codFipe: fipeModeloCodFipe || null,
+        }),
+      })
+      const data = await precoRes.json()
+
+      if (!data.success) {
+        if (data.requires_human_support) {
+          triggerHumanSupport('fipe_indisponivel')
+          return
+        }
         setApiError(data.error || 'Não foi possível consultar a FIPE. Tente novamente.')
         return
       }
@@ -370,7 +362,7 @@ export default function CotacaoPage() {
         return
       }
 
-      // Calcula planos localmente pela tabela real
+      // Calcula planos localmente pela tabela real (defesa em camada — bate com /preco)
       const localPlans = getApplicablePlans(
         v.fipeValue,
         v.categoria,
@@ -406,7 +398,7 @@ export default function CotacaoPage() {
         phone: form.whatsapp || undefined,
       })
 
-      // Salva lead (não bloqueia)
+      // Salva lead (não bloqueia) — passa IDs PowerCRM já mapeados pra não adivinhar no backend
       const tracking = getTrackingData()
       fetch(`${API_BASE}/api/vehicle/lead`, {
         method: 'POST',
@@ -415,7 +407,7 @@ export default function CotacaoPage() {
           nome: form.nome,
           whatsapp: form.whatsapp,
           email: form.email || undefined,
-          placa: '',
+          placa: form.placa || '',
           leilao: form.leilao,
           marca: v.marca,
           modelo: v.modelo,
@@ -428,6 +420,10 @@ export default function CotacaoPage() {
           valorMensal: defaultPlan.monthly,
           carroApp: form.carroApp === 'sim',
           seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
+          // IDs PowerCRM já mapeados — backend usa direto, sem adivinhar
+          powercrmBrandId: data.powercrm?.brandId,
+          powercrmModelId: data.powercrm?.modelId,
+          powercrmYearId: data.powercrm?.yearId,
           ...tracking.utms,
           gclid: tracking.clickIds.gclid,
           fbclid: tracking.clickIds.fbclid,
@@ -438,7 +434,7 @@ export default function CotacaoPage() {
         if (d.leadId) setLeadId(d.leadId)
       }).catch(() => {})
     } catch {
-      setApiError('Falha ao consultar a tabela FIPE. Tente novamente ou use a busca por placa.')
+      setApiError('Falha ao consultar a tabela FIPE. Tente novamente ou fale com nosso consultor.')
     } finally {
       setLoading(false)
     }
@@ -446,145 +442,8 @@ export default function CotacaoPage() {
 
   async function next() {
     if (!validate()) return
-
-    // Modo "sem placa" — vai direto pro FIPE
-    if (searchMode === 'modelo') {
-      await handleFipeQuote()
-      return
-    }
-
-    trackCotacaoInicio()
-    setLoading(true)
-    setApiError('')
-
-    try {
-      const data = await fetchVehicle(form.placa, form.whatsapp)
-
-      if (data.success) {
-        const v = data.vehicle
-
-        // GUARD ABSOLUTO: NUNCA prossegue com fipeValue <= 0.
-        // Cliente vai pra atendimento humano (sem chutar valor manualmente).
-        if (!v.fipeValue || v.fipeValue <= 0) {
-          console.warn('[cotacao] FIPE indisponivel pra placa', form.placa, '— atendimento humano')
-          triggerHumanSupport('fipe_indisponivel')
-          return
-        }
-
-        setVehicle(v)
-
-        // Verifica se o veiculo esta na lista de exclusao
-        if (shouldBlockQuote(v.marca, v.modelo, v.ano)) {
-          setExcluded(true)
-          setStep(2)
-          // Salvar lead como excluido
-          const tracking = getTrackingData()
-          fetch(`${API_BASE}/api/vehicle/lead`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              nome: form.nome,
-              whatsapp: form.whatsapp,
-              email: form.email || undefined,
-              placa: form.placa,
-              leilao: form.leilao,
-              marca: v.marca,
-              modelo: v.modelo,
-              ano: v.ano,
-              valorFipe: v.fipeValue,
-              plano: 'EXCLUIDO',
-              valorMensal: 0,
-              carroApp: form.carroApp === 'sim',
-              seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
-              ...tracking.utms,
-              gclid: tracking.clickIds.gclid,
-              fbclid: tracking.clickIds.fbclid,
-              fbp: tracking.clickIds._fbp,
-              fbc: tracking.clickIds._fbc,
-            }),
-          }).catch(() => {})
-          return
-        }
-
-        // SEMPRE calcula precos localmente pela tabela real
-        const localPlans = getApplicablePlans(
-          v.fipeValue,
-          v.categoria,
-          v.combustivel,
-          v.cilindrada,
-          v.modelo,
-        )
-
-        if (localPlans.length === 0) {
-          setApiError('Não encontramos planos para esse veículo. Fale com um consultor.')
-          return
-        }
-
-        // Leilão ou remarcado: cobra 80% do valor da tabela
-        const isLeilao = form.leilao !== 'nao'
-        const finalPlans = isLeilao
-          ? localPlans.map(p => ({ ...p, monthly: Math.round(p.monthly * 0.8 * 100) / 100 }))
-          : localPlans
-
-        setPlans(finalPlans)
-        const popularIdx = localPlans.findIndex(p => p.popular)
-        setSelectedPlanIdx(popularIdx >= 0 ? popularIdx : 0)
-        setStep(2)
-
-        const defaultPlan = localPlans[popularIdx >= 0 ? popularIdx : 0]
-        trackCotacaoCompleta({
-          marca: v.marca,
-          modelo: v.modelo,
-          ano: v.ano,
-          plano: defaultPlan.name,
-          valorMensal: defaultPlan.monthly,
-          valorFipe: v.fipeValue,
-          email: form.email || undefined,
-          phone: form.whatsapp || undefined,
-        })
-
-        // Salvar lead no banco (não bloqueia a UI)
-        const tracking = getTrackingData()
-        fetch(`${API_BASE}/api/vehicle/lead`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nome: form.nome,
-            whatsapp: form.whatsapp,
-            email: form.email || undefined,
-            placa: form.placa,
-            leilao: form.leilao,
-            marca: v.marca,
-            modelo: v.modelo,
-            ano: v.ano,
-            valorFipe: v.fipeValue,
-            plano: defaultPlan.name,
-            valorMensal: defaultPlan.monthly,
-            carroApp: form.carroApp === 'sim',
-            seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
-            ...tracking.utms,
-            gclid: tracking.clickIds.gclid,
-            fbclid: tracking.clickIds.fbclid,
-            fbp: tracking.clickIds._fbp,
-            fbc: tracking.clickIds._fbc,
-          }),
-        }).then(r => r.json()).then(data => {
-          if (data.leadId) setLeadId(data.leadId)
-        }).catch(() => {})
-      } else {
-        // PowerCRM/API Brasil/Parallelum falharam OU placa nao encontrada.
-        // Cliente nao preenche nada manualmente — vai pra atendimento humano.
-        const reason = data.requires_human_support ? 'fipe_indisponivel' : 'consulta_falhou'
-        triggerHumanSupport(reason)
-        setApiError('')
-      }
-    } catch {
-      // Timeout ou erro de rede — atendimento humano
-      triggerHumanSupport('consulta_falhou')
-      setApiError('')
-    } finally {
-      setLoading(false)
-    }
+    // Fluxo único: PowerCRM (marca/ano/modelo). Placa é opcional, vai junto se preenchida.
+    await handlePowerCrmQuote()
   }
 
   const selectedPlan = plans[selectedPlanIdx] || null
@@ -739,135 +598,119 @@ export default function CotacaoPage() {
                       disabled={loading}
                     />
                   </div>
-                  {searchMode === 'placa' ? (
+                  <div className="space-y-4 rounded-2xl border-2 border-[#D1DFFA] bg-[#F7F8FC]/60 p-4 sm:p-5">
+                    <label className="block text-sm font-semibold text-[#121A33]">Dados do veículo</label>
+
+                    {/* Tipo do veículo — dropdown com setinha */}
+                    <FipeSelect
+                      label="Tipo do veículo"
+                      value={fipeKind}
+                      options={[
+                        { code: 'carros', name: 'Carro / SUV' },
+                        { code: 'motos', name: 'Moto' },
+                      ]}
+                      disabled={loading}
+                      placeholder="Selecione o tipo"
+                      onChange={code => {
+                        setFipeKind(code as 'carros' | 'motos')
+                        // Reset cadeia ao trocar tipo
+                        setFipeMarcaCode('')
+                        setFipeMarcaText('')
+                        setFipeModeloCode('')
+                        setFipeModeloText('')
+                        setFipeModeloCodFipe('')
+                        setFipeAnoCode('')
+                      }}
+                    />
+
+                    {/* Marca do veículo */}
+                    <FipeSelect
+                      label="Marca do veículo"
+                      value={fipeMarcaCode}
+                      options={fipeMarcas}
+                      loading={fipeLoadingMarcas}
+                      disabled={loading || fipeLoadingMarcas}
+                      error={errors.fipeMarca}
+                      placeholder={fipeLoadingMarcas ? 'Carregando marcas...' : 'Selecione a marca'}
+                      onChange={code => {
+                        setFipeMarcaCode(code)
+                        const hit = fipeMarcas.find(m => m.code === code)
+                        setFipeMarcaText(hit?.name || '')
+                        // Reset Ano e Modelo (Modelo depende de Marca+Ano)
+                        setFipeAnoCode('')
+                        setFipeModeloCode('')
+                        setFipeModeloText('')
+                        setFipeModeloCodFipe('')
+                        setErrors(prev => ({ ...prev, fipeMarca: '' }))
+                      }}
+                    />
+
+                    {/* Ano do modelo — vem ANTES de modelo (PowerCRM filtra modelos por ano) */}
+                    <FipeSelect
+                      label="Ano do modelo"
+                      value={fipeAnoCode}
+                      options={fipeAnos}
+                      loading={fipeLoadingAnos}
+                      disabled={loading || !fipeMarcaCode || fipeLoadingAnos}
+                      error={errors.fipeAno}
+                      placeholder={
+                        !fipeMarcaCode
+                          ? 'Escolha a marca primeiro'
+                          : fipeLoadingAnos
+                            ? 'Carregando anos...'
+                            : 'Selecione o ano do modelo'
+                      }
+                      onChange={code => {
+                        setFipeAnoCode(code)
+                        setFipeModeloCode('')
+                        setFipeModeloText('')
+                        setFipeModeloCodFipe('')
+                        setErrors(prev => ({ ...prev, fipeAno: '' }))
+                      }}
+                    />
+
+                    {/* Modelo — depende de Marca + Ano */}
+                    <FipeSelect
+                      label="Modelo"
+                      value={fipeModeloCode}
+                      options={fipeModelos}
+                      loading={fipeLoadingModelos}
+                      disabled={loading || !fipeMarcaCode || !fipeAnoCode || fipeLoadingModelos}
+                      error={errors.fipeModelo}
+                      placeholder={
+                        !fipeMarcaCode || !fipeAnoCode
+                          ? 'Escolha marca e ano primeiro'
+                          : fipeLoadingModelos
+                            ? 'Carregando modelos...'
+                            : 'Selecione o modelo'
+                      }
+                      onChange={code => {
+                        setFipeModeloCode(code)
+                        const hit = fipeModelos.find(m => m.code === code) as FipeItem & { codFipe?: string | null } | undefined
+                        setFipeModeloText(hit?.name || '')
+                        setFipeModeloCodFipe(hit?.codFipe || '')
+                        setErrors(prev => ({ ...prev, fipeModelo: '' }))
+                      }}
+                    />
+
+                    {/* Placa OPCIONAL — não bloqueia cotação */}
                     <div>
                       <PillInput
-                        label="Placa do Veículo"
+                        label="Placa do veículo (opcional)"
                         name="placa"
                         value={form.placa}
                         error={errors.placa}
                         onChange={v => set('placa', maskPlaca(v))}
-                        placeholder="ABC1D23"
+                        placeholder="ABC1D23 — deixe em branco se não souber"
                         mono
                         disabled={loading}
                       />
-                      <button
-                        type="button"
-                        onClick={switchToModelo}
-                        disabled={loading}
-                        className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[#375191]/25 bg-[#375191]/5 px-4 py-2.5 text-sm font-semibold text-[#375191] hover:border-[#375191]/50 hover:bg-[#375191]/10 transition-all disabled:opacity-50"
-                      >
-                        <Search className="w-4 h-4" />
-                        Não tenho a placa, <span className="underline underline-offset-2 decoration-[#375191]/40">buscar por modelo</span>
-                      </button>
                     </div>
-                  ) : (
-                    <div className="space-y-4 rounded-2xl border-2 border-[#D1DFFA] bg-[#F7F8FC]/60 p-4 sm:p-5">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-sm font-semibold text-[#121A33]">Buscar pelo modelo</label>
-                        <button
-                          type="button"
-                          onClick={switchToPlaca}
-                          disabled={loading}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#375191] hover:text-[#3D72DE] transition-colors disabled:opacity-50"
-                        >
-                          <ArrowLeft className="w-3.5 h-3.5" />
-                          Tenho a placa
-                        </button>
-                      </div>
 
-                      {/* Carro / Moto */}
-                      <div>
-                        <label className="block text-xs font-semibold text-[#64748B] mb-2">Tipo</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {([
-                            { value: 'carros', label: 'Carro / SUV' },
-                            { value: 'motos', label: 'Moto' },
-                          ] as const).map(opt => (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              disabled={loading}
-                              onClick={() => {
-                                setFipeKind(opt.value)
-                                setFipeMarcaCode('')
-                                setFipeModeloCode('')
-                                setFipeAnoCode('')
-                              }}
-                              className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-200 disabled:opacity-50 ${
-                                fipeKind === opt.value
-                                  ? 'border-[#375191] bg-[#375191]/10 text-[#375191]'
-                                  : 'border-[#D1DFFA] bg-white text-[#64748B] hover:border-[#375191]/40'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <FipeSelect
-                        label="Marca"
-                        value={fipeMarcaCode}
-                        options={fipeMarcas}
-                        loading={fipeLoadingMarcas}
-                        disabled={loading || fipeLoadingMarcas}
-                        error={errors.fipeMarca}
-                        placeholder={fipeLoadingMarcas ? 'Carregando marcas...' : 'Selecione a marca'}
-                        onChange={code => {
-                          setFipeMarcaCode(code)
-                          setFipeModeloCode('')
-                          setFipeAnoCode('')
-                          setErrors(prev => ({ ...prev, fipeMarca: '' }))
-                        }}
-                      />
-
-                      <FipeSelect
-                        label="Modelo"
-                        value={fipeModeloCode}
-                        options={fipeModelos}
-                        loading={fipeLoadingModelos}
-                        disabled={loading || !fipeMarcaCode || fipeLoadingModelos}
-                        error={errors.fipeModelo}
-                        placeholder={
-                          !fipeMarcaCode
-                            ? 'Escolha a marca primeiro'
-                            : fipeLoadingModelos
-                              ? 'Carregando modelos...'
-                              : 'Selecione o modelo'
-                        }
-                        onChange={code => {
-                          setFipeModeloCode(code)
-                          setFipeAnoCode('')
-                          setErrors(prev => ({ ...prev, fipeModelo: '' }))
-                        }}
-                      />
-
-                      <FipeSelect
-                        label="Ano"
-                        value={fipeAnoCode}
-                        options={fipeAnos}
-                        loading={fipeLoadingAnos}
-                        disabled={loading || !fipeModeloCode || fipeLoadingAnos}
-                        error={errors.fipeAno}
-                        placeholder={
-                          !fipeModeloCode
-                            ? 'Escolha o modelo primeiro'
-                            : fipeLoadingAnos
-                              ? 'Carregando anos...'
-                              : 'Selecione o ano'
-                        }
-                        onChange={code => {
-                          setFipeAnoCode(code)
-                          setErrors(prev => ({ ...prev, fipeAno: '' }))
-                        }}
-                      />
-
-                      <p className="text-[11px] text-[#94A3B8] leading-snug pt-1">
-                        Valor estimado pela tabela FIPE. O consultor confirma o valor final com a placa real.
-                      </p>
-                    </div>
-                  )}
+                    <p className="text-[11px] text-[#94A3B8] leading-snug pt-1">
+                      Valor estimado pela tabela FIPE. O consultor confirma o valor final com a placa real.
+                    </p>
+                  </div>
 
                   {/* Leilão / Remarcado */}
                   <div>
@@ -1354,7 +1197,7 @@ export default function CotacaoPage() {
                   className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#121A33] transition-colors">
                   <ArrowLeft className="w-4 h-4" /> Editar dados
                 </button>
-                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', placa: '', leilao: 'nao', carroApp: 'nao', temSeguro: 'nao', nomeSeguro: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setSearchMode('placa'); setFipeMarcaCode(''); setFipeModeloCode(''); setFipeAnoCode(''); whatsappClicked.current = false }}
+                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', placa: '', leilao: 'nao', carroApp: 'nao', temSeguro: 'nao', nomeSeguro: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setFipeMarcaCode(''); setFipeMarcaText(''); setFipeModeloCode(''); setFipeModeloText(''); setFipeModeloCodFipe(''); setFipeAnoCode(''); whatsappClicked.current = false }}
                   className="text-sm text-[#375191] hover:text-[#3D72DE] transition-colors">
                   Nova simulação
                 </button>
