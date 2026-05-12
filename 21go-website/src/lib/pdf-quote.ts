@@ -222,33 +222,9 @@ function renderComparisonPage(
 
   const firstName = input.nome.split(' ')[0]
 
-  // Selo de condições especiais
-  const origemLabel =
-    input.leilao === 'leilao' ? 'Leilão' : input.leilao === 'remarcado' ? 'Remarcado' : ''
-  const condicoesItems: string[] = []
-  if (origemLabel) {
-    condicoesItems.push(
-      `<div class="cond-pill"><span class="cond-dot">⚠</span>Veículo de <b>${origemLabel}</b> · indenização 80% FIPE</div>`,
-    )
-  }
-  if (input.carroApp) {
-    condicoesItems.push(
-      `<div class="cond-pill"><span class="cond-dot">🚕</span><b>Carro de aplicativo</b> · adicional R$ 20/mês incluso</div>`,
-    )
-  }
-  if (input.seguroAtual && input.seguroAtual.trim()) {
-    const seguroEscaped = input.seguroAtual
-      .trim()
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-    condicoesItems.push(
-      `<div class="cond-pill"><span class="cond-dot">🛡</span>Proteção atual: <b>${seguroEscaped}</b></div>`,
-    )
-  }
-  const condicoesBlock = condicoesItems.length
-    ? `<div class="condicoes">${condicoesItems.join('')}</div>`
-    : ''
+  // Bloco de condições especiais (Leilão / Carro de app / Seguro atual)
+  // REMOVIDO do PDF a pedido — informacao fica registrada no PowerCRM/Supabase
+  // pra atendente ver, mas nao polui o documento do cliente.
 
   // Plano REF (VIP de carros, ou o primeiro disponível pra outros tipos)
   const ref = ctx.referencePlan
@@ -256,13 +232,15 @@ function renderComparisonPage(
   // Regra oficial 21Go pro desconto adesivo:
   //   VIP/Premium/SUV/Especial: até 30k FIPE = 10% | acima = 15%
   //   Do Seu Jeito/Básico:      até 60k FIPE = 10% | acima = 15%
+  // Combinacao "Adesivo + em dia": ADITIVO (5% + adesivo%). Ex: 5+15 = 20%.
+  // Antes era multiplicativo (0.95 * 0.85 = 19%) — corrigido a pedido.
   const refIsVipOrPremium =
     !!ref && ['vip', 'premium', 'suv', 'especial'].includes(ref.id)
   const refStickerThreshold = refIsVipOrPremium ? 30000 : 60000
   const refStickerPct = input.fipe > refStickerThreshold ? 15 : 10
   const refStickerMultiplier = 1 - refStickerPct / 100
-  const refStickerPlusEarlyMultiplier = refStickerMultiplier * 0.95
-  const refStickerPlusEarlyPct = Math.round((1 - refStickerPlusEarlyMultiplier) * 100)
+  const refStickerPlusEarlyPct = refStickerPct + 5
+  const refStickerPlusEarlyMultiplier = 1 - refStickerPlusEarlyPct / 100
   const refBlock = ref
     ? refIsCarro
       ? `<div class="ref-bar">
@@ -415,8 +393,6 @@ function renderComparisonPage(
       </p>
     </section>
 
-    ${condicoesBlock}
-
     <section class="entrada">
       <div class="entrada-left">
         <span class="entrada-label">Taxa de ativação</span>
@@ -449,6 +425,16 @@ function renderComparisonPage(
           ${rowsHTML}
         </tbody>
       </table>
+    </section>
+
+    <section class="reboques">
+      <div class="reboques-title">Regras de Reboque · Assistência 24h</div>
+      <div class="reboques-grid">
+        <div class="reb-item"><b>1 saída</b> com guincho · <span>colisão</span></div>
+        <div class="reb-item"><b>1 saída</b> com guincho · <span>pane mecânica ou elétrica</span></div>
+        <div class="reb-item"><b>3 saídas</b> SOS emergência · <span>pneu furado (borracheiro até 20km) · pane seca (posto até 20km)</span></div>
+      </div>
+      <div class="reboques-note">A cada 30 dias, pode solicitar novamente uma mesma saída.</div>
     </section>
 
     <footer class="pdf-footer">
@@ -628,19 +614,33 @@ function renderHTML(input: QuotePdfInput): string {
     margin-left: 3px;
   }
 
-  /* CONDICOES PILLS */
-  .condicoes {
-    display: flex; flex-wrap: wrap; gap: 4px;
+  /* REBOQUES — bloco compacto com regras oficiais */
+  .reboques {
+    background: #F8FAFC; border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 6px 10px;
     margin-bottom: 6px;
   }
-  .cond-pill {
-    background: #FFF7ED; border: 1px solid rgba(247,150,61,0.25);
-    color: #B45309; font-size: 9px; font-weight: 500;
-    padding: 3px 9px; border-radius: 999px;
-    display: flex; align-items: center; gap: 4px;
+  .reboques-title {
+    font-size: 8.5px; font-weight: 700;
+    color: #0F172A; text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
   }
-  .cond-pill b { color: #92400E; font-weight: 700; }
-  .cond-dot { font-size: 9px; }
+  .reboques-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+  .reb-item {
+    font-size: 8.5px; line-height: 1.35;
+    color: #475569;
+  }
+  .reb-item b { color: #0F172A; font-weight: 700; }
+  .reb-item span { color: #64748B; }
+  .reboques-note {
+    font-size: 8px; color: #94A3B8;
+    margin-top: 4px; font-style: italic;
+  }
 
   /* REF BAR — 4 cenarios em grid 4 colunas */
   .ref-bar {
