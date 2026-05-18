@@ -28,7 +28,7 @@ import {
   formatPrice,
   getApplicablePlans,
 } from '@/data/pricing'
-import { shouldBlockQuote } from '@/data/vehicle-exclusions'
+import { getExclusionReason, type ExclusionReason } from '@/data/vehicle-exclusions'
 
 /* ─── Types ─── */
 interface FormData {
@@ -123,8 +123,11 @@ export default function CotacaoPage() {
   const [vehicle, setVehicle] = useState<VehicleData | null>(null)
   const [plans, setPlans] = useState<QuotePlan[]>([])
 
-  // Excluded vehicle state
+  // Excluded vehicle state — `model` = modelo na lista de exclusao;
+  // `year` = ano-modelo abaixo do corte minimo. Em ambos os casos mostramos
+  // tela de agradecimento e salvamos o contato pra acionar quando aceitarmos.
   const [excluded, setExcluded] = useState(false)
+  const [exclusionReason, setExclusionReason] = useState<Exclude<ExclusionReason, null>>('model')
 
   // Adesivo toggle
   const [stickerAccepted, setStickerAccepted] = useState(true)
@@ -374,9 +377,46 @@ export default function CotacaoPage() {
       const v = data.vehicle
       setVehicle(v)
 
-      if (shouldBlockQuote(v.marca, v.modelo, v.ano)) {
+      const reason = getExclusionReason(v.marca, v.modelo, v.ano)
+      if (reason) {
+        setExclusionReason(reason)
         setExcluded(true)
         setStep(2)
+
+        // Salva lead marcado como EXCLUIDO no Supabase + PowerCRM pra Letycia
+        // ver e nao perder o contato. Backend trata `plano: 'EXCLUIDO'`.
+        const tracking = getTrackingData()
+        fetch(`${API_BASE}/api/vehicle/lead`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nome: form.nome,
+            whatsapp: form.whatsapp,
+            email: form.email || undefined,
+            placa: form.placa || '',
+            leilao: form.leilao,
+            marca: v.marca,
+            modelo: v.modelo,
+            ano: v.ano,
+            valorFipe: v.fipeValue,
+            fipeCode: v.fipeCode,
+            categoria: v.categoria,
+            combustivel: v.combustivel,
+            plano: 'EXCLUIDO',
+            carroApp: form.carroApp === 'sim',
+            seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
+            powercrmBrandId: data.powercrm?.brandId,
+            powercrmModelId: data.powercrm?.modelId,
+            powercrmYearId: data.powercrm?.yearId,
+            ...tracking.utms,
+            gclid: tracking.clickIds.gclid,
+            fbclid: tracking.clickIds.fbclid,
+            fbp: tracking.clickIds._fbp,
+            fbc: tracking.clickIds._fbc,
+          }),
+        }).then(r => r.json()).then(d => {
+          if (d.leadId) setLeadId(d.leadId)
+        }).catch(() => {})
         return
       }
 
@@ -476,7 +516,9 @@ export default function CotacaoPage() {
   const fipeFormatted = vehicle ? vehicle.fipeValue.toLocaleString('pt-BR') : '0'
 
   // Lógica de pagamento: Ativação (cartão) + 1º pagamento (mensalidade com desconto 5%)
-  const taxaAtivacao = 399
+  // Regra oficial 21Go: ativação = mensalidade cheia do plano escolhido + R$ 50.
+  // (mensalidade cheia já inclui +R$ 20 de carro de app, quando aplicável.)
+  const taxaAtivacao = price > 0 ? price + 50 : 0
 
   /* Mercado Pago — gross-up pra receber o valor liquido na hora.
    * Taxas estimadas conservadoras (recebimento imediato no cartao):
@@ -921,7 +963,7 @@ export default function CotacaoPage() {
             </div>
           )}
 
-          {/* ── STEP 2: Veículo Excluído ── */}
+          {/* ── STEP 2: Veículo Excluído (modelo fora da lista OU ano antigo) ── */}
           {step === 2 && excluded && vehicle && (
             <div className="max-w-lg mx-auto pt-28">
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-6 sm:p-10 text-center">
@@ -930,45 +972,27 @@ export default function CotacaoPage() {
                 </div>
 
                 <h2 className="font-[var(--font-display)] text-xl md:text-2xl font-bold text-[#121A33] mb-3">
-                  Cotação sob consulta
+                  Obrigado pelo seu interesse, {form.nome.split(' ')[0]}!
                 </h2>
 
                 <p className="text-[#64748B] text-sm mb-2">
                   Identificamos seu veículo:
                 </p>
-                <p className="font-semibold text-[#121A33] text-base mb-4">
+                <p className="font-semibold text-[#121A33] text-base mb-5">
                   {vehicle.marca} {vehicle.modelo} {vehicle.ano}
                 </p>
 
+                <p className="text-[#64748B] text-sm mb-3 leading-relaxed">
+                  Infelizmente, no momento, <span className="font-semibold text-[#121A33]">não estamos aceitando esse veículo</span> para proteção.
+                </p>
                 <p className="text-[#64748B] text-sm mb-8 leading-relaxed">
-                  Para esse modelo, não conseguimos calcular o valor automaticamente.
-                  <br />
-                  Fale com nosso consultor para receber uma cotação personalizada!
+                  Mas <span className="font-semibold text-[#10B981]">guardamos o seu contato com cuidado</span>. Assim que voltarmos a aceitar esse {exclusionReason === 'year' ? 'ano' : 'modelo'}, nós entraremos em contato com você para apresentar a melhor proposta.
                 </p>
 
-                <a
-                  href={`https://wa.me/5521980214882?text=${encodeURIComponent(`Olá! Fiz uma simulação no site mas meu veículo precisa de cotação especial.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}\nPlaca: ${form.placa}\nVeículo: ${vehicle.marca} ${vehicle.modelo} ${vehicle.ano}\nFIPE: R$ ${vehicle.fipeValue.toLocaleString('pt-BR')}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nPode me ajudar?`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => {
-                    trackWhatsAppClick('cotacao_excluido')
-                    if (typeof window !== 'undefined' && (window as any).dataLayer) {
-                      (window as any).dataLayer.push({
-                        event: 'whatsapp_click',
-                        tipo: 'veiculo_excluido',
-                        veiculo: `${vehicle.marca} ${vehicle.modelo} ${vehicle.ano}`,
-                      })
-                    }
-                  }}
-                  className="inline-flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-[#25D366] to-[#20BD5A] text-white font-bold text-base rounded-full shadow-lg shadow-[#25D366]/20 hover:shadow-xl hover:shadow-[#25D366]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 mb-4"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  Falar com Consultor no WhatsApp
-                </a>
-
-                <div className="flex items-center justify-center gap-2 text-xs text-[#94A3B8] mb-6">
-                  <Lock className="w-3.5 h-3.5" />
-                  Atendimento rápido e sem compromisso
+                <div className="bg-[#F0FDF4] border border-[#10B981]/20 rounded-2xl p-4 mb-6 text-left">
+                  <p className="text-xs text-[#10B981] font-bold uppercase tracking-wider mb-1">Contato salvo</p>
+                  <p className="text-sm text-[#121A33] font-medium">{form.nome}</p>
+                  <p className="text-xs text-[#64748B]">{form.whatsapp}{form.email ? ` · ${form.email}` : ''}</p>
                 </div>
 
                 <button
@@ -981,7 +1005,7 @@ export default function CotacaoPage() {
                   }}
                   className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#121A33] transition-colors"
                 >
-                  <ArrowLeft className="w-4 h-4" /> Nova simulação
+                  <ArrowLeft className="w-4 h-4" /> Simular outro veículo
                 </button>
               </div>
             </div>

@@ -222,9 +222,23 @@ function renderComparisonPage(
 
   const firstName = input.nome.split(' ')[0]
 
-  // Bloco de condições especiais (Leilão / Carro de app / Seguro atual)
-  // REMOVIDO do PDF a pedido — informacao fica registrada no PowerCRM/Supabase
-  // pra atendente ver, mas nao polui o documento do cliente.
+  // Bloco de informacoes do cliente: Uber/99, leilao/remarcado, seguro atual.
+  // So texto (sem valor) — ajuda a consultora a confirmar dados quando ler o PDF.
+  const infoChips: string[] = []
+  if (input.carroApp) infoChips.push('Carro de aplicativo (Uber, 99, etc.)')
+  if (input.leilao === 'leilao') infoChips.push('Veiculo de leilao')
+  if (input.leilao === 'remarcado') infoChips.push('Veiculo remarcado')
+  if (input.seguroAtual && input.seguroAtual.trim()) {
+    infoChips.push(`Ja possui protecao: ${input.seguroAtual.trim()}`)
+  }
+  const infoBlock = infoChips.length > 0
+    ? `<section class="cust-info">
+      <span class="cust-info-label">Informacoes do cliente</span>
+      <div class="cust-info-chips">
+        ${infoChips.map((c) => `<span class="cust-info-chip">${c}</span>`).join('')}
+      </div>
+    </section>`
+    : ''
 
   // Plano REF (VIP de carros, ou o primeiro disponível pra outros tipos)
   const ref = ctx.referencePlan
@@ -410,6 +424,8 @@ function renderComparisonPage(
       </div>
     </section>
 
+    ${infoBlock}
+
     <section class="comparison">
       <table class="cmp-table">
         <thead>
@@ -425,16 +441,6 @@ function renderComparisonPage(
           ${rowsHTML}
         </tbody>
       </table>
-    </section>
-
-    <section class="reboques">
-      <div class="reboques-title">Regras de Reboque · Assistência 24h</div>
-      <div class="reboques-grid">
-        <div class="reb-item"><b>1 saída</b> com guincho · <span>colisão</span></div>
-        <div class="reb-item"><b>1 saída</b> com guincho · <span>pane mecânica ou elétrica</span></div>
-        <div class="reb-item"><b>3 saídas</b> SOS emergência · <span>pneu furado (borracheiro até 20km) · pane seca (posto até 20km)</span></div>
-      </div>
-      <div class="reboques-note">A cada 30 dias, pode solicitar novamente uma mesma saída.</div>
     </section>
 
     <footer class="pdf-footer">
@@ -493,10 +499,10 @@ function renderHTML(input: QuotePdfInput): string {
     return 0
   })
 
-  // Taxa de ativacao FIXA (alinhada com o valor exibido no site /cotacao).
-  // Quando o operador quiser mudar (ex: passar pra R$ 500), atualiza a
-  // constante TAXA_ATIVACAO no site E aqui pra que ambos batam sempre.
-  const taxa = 399
+  // Regra oficial 21Go: ativacao = mensalidade cheia do plano escolhido + R$ 50.
+  // input.mensalidade ja chega com o extra de carroApp (+R$ 20) quando aplicavel,
+  // entao basta somar os R$ 50 fixos da ativacao.
+  const taxa = input.mensalidade + 50
 
   // PLANO DE REFERÊNCIA — usado no header de TODAS as páginas como base.
   // Ordem de preferência: VIP > Premium > Do Seu Jeito > Básico (carros);
@@ -614,34 +620,6 @@ function renderHTML(input: QuotePdfInput): string {
     margin-left: 3px;
   }
 
-  /* REBOQUES — bloco compacto com regras oficiais */
-  .reboques {
-    background: #F8FAFC; border: 1px solid #E2E8F0;
-    border-radius: 8px;
-    padding: 6px 10px;
-    margin-bottom: 6px;
-  }
-  .reboques-title {
-    font-size: 8.5px; font-weight: 700;
-    color: #0F172A; text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 4px;
-  }
-  .reboques-grid {
-    display: grid; grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
-  }
-  .reb-item {
-    font-size: 8.5px; line-height: 1.35;
-    color: #475569;
-  }
-  .reb-item b { color: #0F172A; font-weight: 700; }
-  .reb-item span { color: #64748B; }
-  .reboques-note {
-    font-size: 8px; color: #94A3B8;
-    margin-top: 4px; font-style: italic;
-  }
-
   /* REF BAR — 4 cenarios em grid 4 colunas */
   .ref-bar {
     background: linear-gradient(135deg, #FFF7ED 0%, #FFFAF0 100%);
@@ -727,6 +705,34 @@ function renderHTML(input: QuotePdfInput): string {
   .entrada-vals-num {
     font-size: 13px; font-weight: 800; color: #F7963D;
     letter-spacing: -0.03em;
+  }
+
+  /* CUST INFO — chips com Uber / Leilao / Remarcado / Seguro */
+  .cust-info {
+    background: #FFFBEB;
+    border: 1px solid #FCD34D;
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .cust-info-label {
+    font-size: 8px; font-weight: 700;
+    color: #92400E; text-transform: uppercase;
+    letter-spacing: 1.2px;
+    flex-shrink: 0;
+  }
+  .cust-info-chips {
+    display: flex; flex-wrap: wrap; gap: 5px;
+  }
+  .cust-info-chip {
+    display: inline-block;
+    background: #fff;
+    border: 1px solid #FCD34D;
+    color: #92400E;
+    font-size: 9px; font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
   }
 
   /* TABELA — comprimida */

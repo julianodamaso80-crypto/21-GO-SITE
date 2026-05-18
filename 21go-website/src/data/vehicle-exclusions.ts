@@ -167,3 +167,53 @@ export function shouldBlockQuote(marca: string, modelo: string, ano?: string): b
   // Depois checa a lista de exclusao
   return isVehicleExcluded(marca, modelo)
 }
+
+/**
+ * Ano minimo aceito pra cotacao automatica. Regra oficial 21Go:
+ *   - 2006 e mais novo: AceitO (faz protecao)
+ *   - 2005 e mais antigo: NAO faz (cliente cai na tela "Nao fazemos
+ *     esse veiculo no momento" e contato fica salvo pra acionarmos depois)
+ *
+ * Configuravel — basta atualizar a constante quando a regra mudar.
+ */
+export const MIN_VEHICLE_YEAR = 2006
+
+/**
+ * Extrai o ano-modelo de uma string (a API as vezes devolve "2018", outras
+ * "2018-1", outras "2018 Gasolina"). Retorna 0 se nao conseguir parsear.
+ */
+function parseYear(ano?: string | number): number {
+  if (!ano) return 0
+  const match = String(ano).match(/\b(\d{4})\b/)
+  if (!match) return 0
+  const n = parseInt(match[1], 10)
+  if (!Number.isFinite(n) || n < 1900 || n > 2100) return 0
+  return n
+}
+
+/**
+ * Retorna true se o veiculo eh muito antigo pra aceitarmos.
+ * Usa MIN_VEHICLE_YEAR como corte oficial.
+ */
+export function isYearTooOld(ano?: string | number): boolean {
+  const year = parseYear(ano)
+  if (year === 0) return false // sem ano, deixa passar — outras camadas decidem
+  return year < MIN_VEHICLE_YEAR
+}
+
+/** Motivos por que uma cotacao automatica nao pode ser concluida */
+export type ExclusionReason = 'model' | 'year' | null
+
+/**
+ * Decide se o veiculo deve cair na tela "Nao fazemos agora" e por que motivo.
+ * Retorna null se a cotacao pode prosseguir normalmente.
+ */
+export function getExclusionReason(
+  marca: string,
+  modelo: string,
+  ano?: string | number,
+): ExclusionReason {
+  if (isYearTooOld(ano)) return 'year'
+  if (shouldBlockQuote(marca, modelo, ano ? String(ano) : undefined)) return 'model'
+  return null
+}
