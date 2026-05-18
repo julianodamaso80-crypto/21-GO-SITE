@@ -186,6 +186,39 @@ export function trackPhoneClick() {
   pushEvent('phone_click')
 }
 
+/* ─── Event 6: Pedido de Orcamento (Purchase) ───
+ * Dispara quando o cliente clica em "Quero contratar" apos preencher tudo
+ * e ver o plano selecionado. Mapeia pra Purchase no Meta pra otimizacao
+ * de campanhas de Vendas/Conversoes. Dispara nos 2 pixels inicializados.
+ */
+export function trackPedidoOrcamento(data: {
+  plano: string
+  valor: number
+  marca?: string
+  modelo?: string
+  ano?: string
+}) {
+  const eventId = pushEvent('pedido_orcamento', {
+    plan_name: data.plano,
+    plan_value: data.valor,
+    vehicle_marca: data.marca,
+    vehicle_modelo: data.modelo,
+    vehicle_ano: data.ano,
+    currency: 'BRL',
+  })
+
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('track', 'Purchase', {
+      content_name: data.marca && data.modelo ? `${data.marca} ${data.modelo} ${data.ano ?? ''}`.trim() : data.plano,
+      content_category: data.plano,
+      value: data.valor,
+      currency: 'BRL',
+    }, { eventID: eventId })
+  }
+
+  return eventId
+}
+
 /* ─── Utility: Get all tracking data for form submission ─── */
 export function getTrackingData(): {
   clickIds: ClickIds

@@ -7,6 +7,7 @@ import { trackPageView } from '@/lib/tracking'
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
+const META_PIXEL_ID_2 = process.env.NEXT_PUBLIC_META_PIXEL_ID_2
 
 export function GTMProvider() {
   useEffect(() => {
@@ -50,8 +51,8 @@ export function GTMProvider() {
         </>
       )}
 
-      {/* Meta Pixel */}
-      {META_PIXEL_ID && (
+      {/* Meta Pixel — suporta multiplos pixels (todos os fbq('track',...) disparam pra ambos) */}
+      {(META_PIXEL_ID || META_PIXEL_ID_2) && (
         <Script
           id="meta-pixel"
           strategy="afterInteractive"
@@ -65,7 +66,8 @@ export function GTMProvider() {
               t.src=v;s=b.getElementsByTagName(e)[0];
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '${META_PIXEL_ID}');
+              ${META_PIXEL_ID ? `fbq('init', '${META_PIXEL_ID}');` : ''}
+              ${META_PIXEL_ID_2 ? `fbq('init', '${META_PIXEL_ID_2}');` : ''}
             `,
           }}
         />

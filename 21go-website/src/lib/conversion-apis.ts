@@ -232,62 +232,25 @@ function formatGoogleAdsDateTime(unixSeconds: number): string {
 /* ─── Meta Conversions API ─── */
 /**
  * Doc: https://developers.facebook.com/docs/marketing-api/conversions-api
+ *
+ * Suporta envio simultaneo pra ate 2 pixels (cada um com seu proprio access token).
+ * Configurar via env: META_PIXEL_ID/META_CAPI_ACCESS_TOKEN (principal) e
+ * META_PIXEL_ID_2/META_CAPI_ACCESS_TOKEN_2 (secundario, opcional).
  */
-export async function sendMetaCapi(data: ConversionLeadData): Promise<ConversionResult> {
-  const pixelId = process.env.META_PIXEL_ID
-  const accessToken = process.env.META_CAPI_ACCESS_TOKEN
-  const testEventCode = process.env.META_TEST_EVENT_CODE
-
-  if (!pixelId || !accessToken) {
-    return { ok: false, skipped: true, error: 'meta_capi_env_missing' }
-  }
+async function sendMetaCapiSingle(
+  pixelId: string,
+  accessToken: string,
+  testEventCode: string | undefined,
+  eventPayload: Record<string, unknown>,
+  data: ConversionLeadData,
+): Promise<{ ok: boolean; status: number; body: unknown }> {
+  const url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${encodeURIComponent(
+    accessToken,
+  )}`
+  const body: Record<string, unknown> = { data: [eventPayload] }
+  if (testEventCode) body.test_event_code = testEventCode
 
   try {
-    const eventTime = data.event_time ?? Math.floor(Date.now() / 1000)
-    const userData: Record<string, unknown> = {}
-    const emailHash = hashOrNull(data.email)
-    const phoneHash = hashOrNull(data.phone_e164)
-    const fnHash = hashOrNull(data.first_name)
-    const lnHash = hashOrNull(data.last_name)
-    const ctHash = hashOrNull(data.cidade)
-    const stHash = hashOrNull(data.estado)
-    const externalIdHash = hashOrNull(data.external_id)
-    if (emailHash) userData.em = [emailHash]
-    if (phoneHash) userData.ph = [phoneHash]
-    if (fnHash) userData.fn = [fnHash]
-    if (lnHash) userData.ln = [lnHash]
-    if (ctHash) userData.ct = [ctHash]
-    if (stHash) userData.st = [stHash]
-    if (externalIdHash) userData.external_id = [externalIdHash]
-    if (data.fbp) userData.fbp = data.fbp
-    if (data.fbc) userData.fbc = data.fbc
-    else if (data.fbclid) {
-      // monta fbc no formato fb.1.<unix>.<fbclid>
-      userData.fbc = `fb.1.${eventTime}.${data.fbclid}`
-    }
-    if (data.ip) userData.client_ip_address = data.ip
-    if (data.user_agent) userData.client_user_agent = data.user_agent
-
-    const eventPayload: Record<string, unknown> = {
-      event_name: data.event_name,
-      event_time: eventTime,
-      action_source: 'website',
-      user_data: userData,
-    }
-    if (data.event_id) eventPayload.event_id = data.event_id
-    if (typeof data.value_brl === 'number') {
-      eventPayload.custom_data = {
-        value: data.value_brl,
-        currency: data.currency || 'BRL',
-      }
-    }
-
-    const url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${encodeURIComponent(
-      accessToken,
-    )}`
-    const body: Record<string, unknown> = { data: [eventPayload] }
-    if (testEventCode) body.test_event_code = testEventCode
-
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -301,13 +264,13 @@ export async function sendMetaCapi(data: ConversionLeadData): Promise<Conversion
       destino: 'meta_capi',
       event_name: data.event_name,
       event_id: data.event_id ?? null,
-      payload: eventPayload,
+      payload: { pixel_id: pixelId, ...eventPayload },
       response_status: res.status,
       response_body: respBody,
       success,
       error_message: success ? null : 'see_response_body',
     })
-    return { ok: success, skipped: false, status: res.status, body: respBody }
+    return { ok: success, status: res.status, body: respBody }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     await logConversionEvent({
@@ -315,10 +278,74 @@ export async function sendMetaCapi(data: ConversionLeadData): Promise<Conversion
       destino: 'meta_capi',
       event_name: data.event_name,
       event_id: data.event_id ?? null,
+      payload: { pixel_id: pixelId },
       success: false,
       error_message: msg,
     })
-    return { ok: false, skipped: false, error: msg }
+    return { ok: false, status: 0, body: { error: msg } }
+  }
+}
+
+export async function sendMetaCapi(data: ConversionLeadData): Promise<ConversionResult> {
+  const pixels = [
+    { id: process.env.META_PIXEL_ID, token: process.env.META_CAPI_ACCESS_TOKEN },
+    { id: process.env.META_PIXEL_ID_2, token: process.env.META_CAPI_ACCESS_TOKEN_2 },
+  ].filter((p): p is { id: string; token: string } => Boolean(p.id && p.token))
+
+  const testEventCode = process.env.META_TEST_EVENT_CODE
+
+  if (pixels.length === 0) {
+    return { ok: false, skipped: true, error: 'meta_capi_env_missing' }
+  }
+
+  const eventTime = data.event_time ?? Math.floor(Date.now() / 1000)
+  const userData: Record<string, unknown> = {}
+  const emailHash = hashOrNull(data.email)
+  const phoneHash = hashOrNull(data.phone_e164)
+  const fnHash = hashOrNull(data.first_name)
+  const lnHash = hashOrNull(data.last_name)
+  const ctHash = hashOrNull(data.cidade)
+  const stHash = hashOrNull(data.estado)
+  const externalIdHash = hashOrNull(data.external_id)
+  if (emailHash) userData.em = [emailHash]
+  if (phoneHash) userData.ph = [phoneHash]
+  if (fnHash) userData.fn = [fnHash]
+  if (lnHash) userData.ln = [lnHash]
+  if (ctHash) userData.ct = [ctHash]
+  if (stHash) userData.st = [stHash]
+  if (externalIdHash) userData.external_id = [externalIdHash]
+  if (data.fbp) userData.fbp = data.fbp
+  if (data.fbc) userData.fbc = data.fbc
+  else if (data.fbclid) {
+    userData.fbc = `fb.1.${eventTime}.${data.fbclid}`
+  }
+  if (data.ip) userData.client_ip_address = data.ip
+  if (data.user_agent) userData.client_user_agent = data.user_agent
+
+  const eventPayload: Record<string, unknown> = {
+    event_name: data.event_name,
+    event_time: eventTime,
+    action_source: 'website',
+    user_data: userData,
+  }
+  if (data.event_id) eventPayload.event_id = data.event_id
+  if (typeof data.value_brl === 'number') {
+    eventPayload.custom_data = {
+      value: data.value_brl,
+      currency: data.currency || 'BRL',
+    }
+  }
+
+  const results = await Promise.all(
+    pixels.map((p) => sendMetaCapiSingle(p.id, p.token, testEventCode, eventPayload, data)),
+  )
+
+  const allOk = results.every((r) => r.ok)
+  return {
+    ok: allOk,
+    skipped: false,
+    status: results[0].status,
+    body: results.map((r, i) => ({ pixel_id: pixels[i].id, status: r.status, body: r.body })),
   }
 }
 

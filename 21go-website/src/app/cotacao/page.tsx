@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { trackCotacaoInicio, trackCotacaoCompleta, trackWhatsAppClick, getTrackingData } from '@/lib/tracking'
+import { trackCotacaoInicio, trackCotacaoCompleta, trackWhatsAppClick, trackPedidoOrcamento, trackPageView, getTrackingData } from '@/lib/tracking'
 import {
   ArrowRight,
   ArrowLeft,
@@ -226,6 +226,25 @@ export default function CotacaoPage() {
 
   // Mapeia o estado fipeKind interno ('carros'|'motos') pro param do PowerCRM ('carro'|'moto')
   const pcTipo = fipeKind === 'motos' ? 'moto' : 'carro'
+
+  // URL distinta por etapa pra Meta criar audiencias por funil:
+  //   step 1 (form)        -> /cotacao
+  //   step 2 (resultado)   -> /cotacao?etapa=resultado
+  // history.replaceState evita reload; dispara PageView novo pro pixel.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    if (step === 2) {
+      if (url.searchParams.get('etapa') !== 'resultado') {
+        url.searchParams.set('etapa', 'resultado')
+        window.history.replaceState({}, '', url.toString())
+        trackPageView()
+      }
+    } else if (url.searchParams.has('etapa')) {
+      url.searchParams.delete('etapa')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [step])
 
   // Carrega marcas do PowerCRM (depende só do tipo carro/moto)
   useEffect(() => {
@@ -1157,6 +1176,13 @@ export default function CotacaoPage() {
                     target="_blank" rel="noopener noreferrer"
                     onClick={() => {
                       trackWhatsAppClick('cotacao_resultado', { plano: selectedPlan.name, valor: price })
+                      trackPedidoOrcamento({
+                        plano: selectedPlan.name,
+                        valor: price,
+                        marca: vehicle?.marca,
+                        modelo: vehicle?.modelo,
+                        ano: vehicle?.ano,
+                      })
                       notifyWhatsAppClick()
                       // GTM event
                       if (typeof window !== 'undefined' && (window as any).dataLayer) {
