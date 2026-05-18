@@ -1,31 +1,28 @@
 /**
  * Server Component que injeta o Meta Pixel direto no HTML SSR.
  *
- * Le `process.env.META_PIXEL_ID` e `META_PIXEL_ID_2` (sem NEXT_PUBLIC_ prefix)
- * em runtime do servidor — funciona com qualquer env runtime do Easypanel sem
- * precisar passar build args.
+ * Pixel IDs sao HARDCODED de proposito: o ID e publico (sai no HTML cliente)
+ * e usar env aqui criava bug — paginas estaticas prerenderizadas em build
+ * time pegavam env vazia (Easypanel injeta env so em runtime, sem build-args).
+ * Pra trocar de pixel, edita esse arquivo direto e commita.
  *
- * Suporta ate 2 pixels: todos os `fbq('track',...)` do client disparam pra ambos.
+ * Token CAPI (secret) continua em env runtime pelo lado server (conversion-apis.ts).
  */
+
+// Pixel 1 — "21go" (BM 2783265268660874 / dono Marcos Alves)
+const PIXEL_1 = '2777380499304351'
+// Pixel 2 — "PIXEL 21" (BM 215936062346243 / dono Juliano Damaso)
+const PIXEL_2 = '999953532385177'
+
 export function MetaPixelScripts() {
-  const pixel1 = process.env.META_PIXEL_ID
-  const pixel2 = process.env.META_PIXEL_ID_2
-
-  if (!pixel1 && !pixel2) return null
-
-  const initLines = [
-    pixel1 ? `fbq('init', '${pixel1}');` : '',
-    pixel2 ? `fbq('init', '${pixel2}');` : '',
-  ].filter(Boolean).join('\n')
-
   const script = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-${initLines}
+fbq('init', '${PIXEL_1}');
+fbq('init', '${PIXEL_2}');
 fbq('track', 'PageView');`
 
-  const noscriptImgs = [
-    pixel1 ? `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixel1}&ev=PageView&noscript=1"/>` : '',
-    pixel2 ? `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixel2}&ev=PageView&noscript=1"/>` : '',
-  ].filter(Boolean).join('')
+  const noscriptImgs =
+    `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${PIXEL_1}&ev=PageView&noscript=1"/>` +
+    `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${PIXEL_2}&ev=PageView&noscript=1"/>`
 
   return (
     <>
