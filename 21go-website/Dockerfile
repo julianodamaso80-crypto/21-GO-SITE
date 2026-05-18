@@ -15,9 +15,24 @@ RUN --mount=type=cache,target=/root/.npm \
 # ====== Stage 2: build ======
 FROM node:20-slim AS builder
 WORKDIR /app
+
+# Build args expostos como ENV pra Next inlinar NEXT_PUBLIC_* no bundle estatico.
+# Sem isso, qualquer process.env.NEXT_PUBLIC_* sai como undefined no JS gerado.
+ARG NEXT_PUBLIC_META_PIXEL_ID
+ARG NEXT_PUBLIC_META_PIXEL_ID_2
+ARG NEXT_PUBLIC_GTM_ID
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 ENV NODE_ENV=production \
     PUPPETEER_SKIP_DOWNLOAD=true \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_META_PIXEL_ID=$NEXT_PUBLIC_META_PIXEL_ID \
+    NEXT_PUBLIC_META_PIXEL_ID_2=$NEXT_PUBLIC_META_PIXEL_ID_2 \
+    NEXT_PUBLIC_GTM_ID=$NEXT_PUBLIC_GTM_ID \
+    NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
