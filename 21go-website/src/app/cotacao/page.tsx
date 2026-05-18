@@ -515,22 +515,15 @@ export default function CotacaoPage() {
     : ''
   const fipeFormatted = vehicle ? vehicle.fipeValue.toLocaleString('pt-BR') : '0'
 
-  // Lógica de pagamento: Ativação (cartão) + 1º pagamento (mensalidade com desconto 5%)
-  // Regra oficial 21Go: ativação = mensalidade cheia do plano escolhido + R$ 50.
-  // (mensalidade cheia já inclui +R$ 20 de carro de app, quando aplicável.)
-  const taxaAtivacao = price > 0 ? price + 50 : 0
-
-  /* Mercado Pago — gross-up pra receber o valor liquido na hora.
-   * Taxas estimadas conservadoras (recebimento imediato no cartao):
-   *   - 1x a vista: 4,98%
-   *   - 12x parcelado: 11% (margem segura sobre a faixa tipica 8,99%-13%)
-   * Atualizar quando tivermos os numeros reais do painel da conta.
-   */
-  const MP_FEE_AVISTA = 0.0498
-  const MP_FEE_12X = 0.11
-  const ativacaoAvista = taxaAtivacao / (1 - MP_FEE_AVISTA)
-  const ativacaoTotal12x = taxaAtivacao / (1 - MP_FEE_12X)
-  const ativacaoParcela12x = ativacaoTotal12x / 12
+  // REGRA OFICIAL 21Go: ativacao = mensalidade do plano VIP + R$ 50.
+  // SEMPRE VIP de referencia (nao depende do plano que o cliente selecionou).
+  // Ordem de fallback quando nao ha VIP "puro" (moto/suv/especial usam o "VIP" deles).
+  const vipOrder: PlanId[] = ['vip', 'suv', 'moto-1000', 'moto-400', 'especial', 'premium', 'do-seu-jeito', 'basico']
+  const vipPlan = vipOrder.map((id) => plans.find((p) => p.id === id)).find((p) => !!p) || null
+  const vipMonthly = (vipPlan?.monthly || 0) + carroAppExtra
+  const taxaAtivacao = vipMonthly > 0 ? vipMonthly + 50 : 0
+  const ativacaoAvista = taxaAtivacao
+  const ativacaoParcela12x = taxaAtivacao / 12
   const today = new Date()
   const dayOfMonth = today.getDate()
   const currentMonth = today.getMonth()

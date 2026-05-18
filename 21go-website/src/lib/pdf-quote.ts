@@ -212,13 +212,11 @@ function renderComparisonPage(
     kind: 'carros' | 'suv' | 'moto' | 'especial'
   },
 ): string {
-  // Mercado Pago — gross-up pra receber o valor líquido na hora
-  const MP_FEE_AVISTA = 0.0498
-  const MP_FEE_12X = 0.11
+  // REGRA OFICIAL 21Go: ativacao = mensalidade cheia + R$ 50. Sem gross-up.
+  // Mesmo valor a vista e parcelado em 12x sem juros.
   const taxa = ctx.taxa
-  const taxaAvista = taxa / (1 - MP_FEE_AVISTA)
-  const taxa12xTotal = taxa / (1 - MP_FEE_12X)
-  const taxa12xParcela = taxa12xTotal / 12
+  const taxaAvista = taxa
+  const taxa12xParcela = taxa / 12
 
   const firstName = input.nome.split(' ')[0]
 
@@ -499,18 +497,13 @@ function renderHTML(input: QuotePdfInput): string {
     return 0
   })
 
-  // Regra oficial 21Go: ativacao = mensalidade cheia do plano escolhido + R$ 50.
-  // input.mensalidade ja chega com o extra de carroApp (+R$ 20) quando aplicavel,
-  // entao basta somar os R$ 50 fixos da ativacao.
-  const taxa = input.mensalidade + 50
-
-  // PLANO DE REFERÊNCIA — usado no header de TODAS as páginas como base.
-  // Ordem de preferência: VIP > Premium > Do Seu Jeito > Básico (carros);
-  // moto-1000 > moto-400 (motos); especial pra elétrico/+150k.
-  // Se carro de aplicativo, soma R$ 20 (já está em planosAplicaveis).
+  // PLANO DE REFERÊNCIA — usado no header de TODAS as páginas como base
+  // E TAMBEM no calculo da ativacao.
+  // Ordem: VIP (carros) > SUV > moto-1000 > moto-400 > especial > Premium > Do Seu Jeito > Basico
+  // (carroApp +R$ 20 ja esta em planosAplicaveis quando aplicavel.)
   const referenceOrder: PlanId[] = [
-    'vip', 'premium', 'do-seu-jeito', 'basico',
-    'suv', 'moto-1000', 'moto-400', 'especial',
+    'vip', 'suv', 'moto-1000', 'moto-400', 'especial',
+    'premium', 'do-seu-jeito', 'basico',
   ]
   const referencePlan =
     referenceOrder
@@ -518,6 +511,10 @@ function renderHTML(input: QuotePdfInput): string {
       .find((p) => !!p) || planosAplicaveis[0]
   const refIsCarro =
     referencePlan && !['moto-400', 'moto-1000'].includes(referencePlan.id)
+
+  // REGRA OFICIAL 21Go: ativacao = mensalidade do plano VIP de referencia + R$ 50.
+  // SEM gross-up, SEM gracinha. Mesmo valor a vista e parcelado em 12x sem juros.
+  const taxa = (referencePlan?.monthly || input.mensalidade) + 50
 
   // Determinar tipo (carros / suv / moto / especial) baseado nos planos
   let kind: 'carros' | 'suv' | 'moto' | 'especial' = 'carros'
