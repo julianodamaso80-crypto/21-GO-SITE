@@ -25,6 +25,7 @@ import {
   Mail,
   User,
 } from 'lucide-react'
+import { trackWhatsAppClick } from '@/lib/tracking'
 
 function maskPhone(v: string) {
   let d = v.replace(/\D/g, '')
@@ -352,6 +353,12 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
     const waText = `Olá! Acabei de me cadastrar como consultor 21Go.\nNome: ${form.nome}\nE-mail: ${form.email}\nWhatsApp: ${form.contato}\nLocal: ${form.cidade} - ${form.estado}${expLine}`
     const waUrl = `https://wa.me/5521969454824?text=${encodeURIComponent(waText)}`
 
+    // Tracking ANTES de abrir a janela — caso o popup blocker mate o gesto
+    // ou o usuario navegue, o evento ja foi pra dataLayer + /api/track.
+    trackWhatsAppClick('seja_consultor_form_submit', {
+      buttonText: 'Quero me cadastrar como consultor',
+    })
+
     // Abre o WhatsApp imediatamente (precisa rodar dentro do gesto do clique
     // pra não ser bloqueado por popup blocker)
     const waWindow = window.open(waUrl, '_blank')
@@ -566,6 +573,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackWhatsAppClick('seja_consultor_fallback', { buttonText: 'Abrir WhatsApp (fallback)' })}
               className="inline-flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-[#25D366] to-[#20BD5A] text-white font-bold rounded-full shadow-lg shadow-[#25D366]/20 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all mb-3"
             >
               <MessageCircle className="w-5 h-5" />
