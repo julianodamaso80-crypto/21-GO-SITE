@@ -81,6 +81,40 @@ function prefixKeys(obj: Record<string, unknown>, prefix: string): Record<string
   return result
 }
 
+/* ─── Server-side dispatch ───
+ * Encaminha o evento pro /api/track, que fala com Meta CAPI + GA4 MP.
+ * O mesmo event_id usado no fbq client vai aqui — Meta deduplica por
+ * (event_id, event_name) em janela de 7 dias.
+ *
+ * Hashes de PII (email_hash/phone_hash) só são aceitos pelo endpoint
+ * quando já vierem SHA-256 (64 hex). Nunca enviar dado em texto puro.
+ *
+ * keepalive: true garante envio mesmo se o usuário navegar logo após
+ * o clique (caso clássico do botão WhatsApp que abre nova aba).
+ */
+function sendServerSide(
+  eventName: 'page_view' | 'whatsapp_click' | 'cotacao_inicio' | 'cotacao_completa',
+  eventId: string | undefined,
+  params: Record<string, unknown> = {},
+) {
+  if (typeof window === 'undefined' || !eventId) return
+  try {
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({
+        event_name: eventName,
+        event_id: eventId,
+        event_time: Math.floor(Date.now() / 1000),
+        page_path: window.location.pathname,
+        page_url: window.location.href,
+        ...params,
+      }),
+    }).catch(() => {})
+  } catch {}
+}
+
 /* ─── Event 1: Page View ─── */
 export function trackPageView() {
   const eventId = pushEvent('page_view', {
@@ -91,11 +125,18 @@ export function trackPageView() {
   if (typeof window !== 'undefined' && window.fbq) {
     window.fbq('track', 'PageView', {}, { eventID: eventId })
   }
+
+  sendServerSide('page_view', eventId, {
+    referrer: typeof document !== 'undefined' ? document.referrer : '',
+  })
 }
 
 /* ─── Event 2: Cotação Início ─── */
-export function trackCotacaoInicio() {
-  const eventId = pushEvent('cotacao_inicio')
+export function trackCotacaoInicio(opts?: { form_name?: string }) {
+  const eventId = pushEvent('cotacao_inicio', {
+    form_name: opts?.form_name,
+    content_category: 'protecao_veicular',
+  })
 
   // Meta Pixel: InitiateCheckout
   if (typeof window !== 'undefined' && window.fbq) {
@@ -103,6 +144,11 @@ export function trackCotacaoInicio() {
       content_category: 'protecao_veicular',
     }, { eventID: eventId })
   }
+
+  sendServerSide('cotacao_inicio', eventId, {
+    form_name: opts?.form_name,
+    content_category: 'protecao_veicular',
+  })
 }
 
 /* ─── Event 3: Cotação Completa ─── */
@@ -115,14 +161,17 @@ export function trackCotacaoCompleta(data: {
   valorFipe: number
   email?: string
   phone?: string
+  form_name?: string
 }) {
   const eventId = pushEvent('cotacao_completa', {
+    form_name: data.form_name,
     vehicle_marca: data.marca,
     vehicle_modelo: data.modelo,
     vehicle_ano: data.ano,
     plan_name: data.plano,
     plan_value: data.valorMensal,
     fipe_value: data.valorFipe,
+    value: data.valorMensal,
     currency: 'BRL',
   })
 
@@ -136,7 +185,10 @@ export function trackCotacaoCompleta(data: {
     }, { eventID: eventId })
   }
 
-  // Hash and push user data for server-side (async, non-blocking)
+  // Hashes assíncronos pra dataLayer (user_data_update) E pro server-side.
+  // E-mail/telefone em texto puro NUNCA são enviados pelo navegador — só os
+  // SHA-256 saem. O server-side fire só dispara depois dos hashes prontos
+  // pra Meta CAPI conseguir bater Advanced Matching.
   if (data.email || data.phone) {
     Promise.all([
       data.email ? hashSHA256(data.email) : Promise.resolve(''),
@@ -152,6 +204,29 @@ export function trackCotacaoCompleta(data: {
           },
         })
       }
+      sendServerSide('cotacao_completa', eventId, {
+        form_name: data.form_name,
+        vehicle_marca: data.marca,
+        vehicle_modelo: data.modelo,
+        vehicle_ano: data.ano,
+        plan_name: data.plano,
+        plan_value: data.valorMensal,
+        value: data.valorMensal,
+        currency: 'BRL',
+        email_hash: emailHash || undefined,
+        phone_hash: phoneHash || undefined,
+      })
+    })
+  } else {
+    sendServerSide('cotacao_completa', eventId, {
+      form_name: data.form_name,
+      vehicle_marca: data.marca,
+      vehicle_modelo: data.modelo,
+      vehicle_ano: data.ano,
+      plan_name: data.plano,
+      plan_value: data.valorMensal,
+      value: data.valorMensal,
+      currency: 'BRL',
     })
   }
 
@@ -179,6 +254,15 @@ export function trackWhatsAppClick(origem: string, data?: {
       currency: 'BRL',
     }, { eventID: eventId })
   }
+
+  sendServerSide('whatsapp_click', eventId, {
+    click_origin: origem,
+    button_text: data?.buttonText,
+    plan_name: data?.plano,
+    plan_value: data?.valor,
+    value: data?.valor,
+    currency: data?.valor ? 'BRL' : undefined,
+  })
 
   return eventId
 }
