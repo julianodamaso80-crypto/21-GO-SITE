@@ -55,7 +55,7 @@ function pushEvent(eventName: string, params: Record<string, unknown> = {}) {
   const utms = getUtms()
   const eventId = generateEventId()
 
-  window.dataLayer.push({
+  const payload = {
     event: eventName,
     event_id: eventId,
     timestamp: new Date().toISOString(),
@@ -68,7 +68,16 @@ function pushEvent(eventName: string, params: Record<string, unknown> = {}) {
     ...prefixKeys(utms as Record<string, unknown>, ''),
     // Custom params
     ...params,
-  })
+  }
+
+  window.dataLayer.push(payload)
+
+  // Visibilidade no DevTools (nivel debug — nao polui console; filtre por
+  // "21go-track" na aba Console pra inspecionar). Ajuda a confirmar
+  // ponta-a-ponta que o handler foi chamado, antes de olhar pro GTM.
+  if (typeof console !== 'undefined' && console.debug) {
+    console.debug('[21go-track] push', eventName, eventId, params)
+  }
 
   return eventId
 }
@@ -121,7 +130,13 @@ function sendServerSide(
         page_url: window.location.href,
         ...params,
       }),
-    }).catch(() => {})
+    })
+      .then((r) => {
+        if (typeof console !== 'undefined' && console.debug) {
+          console.debug('[21go-track] server', eventName, eventId, 'status', r.status)
+        }
+      })
+      .catch(() => {})
   } catch {}
 }
 
