@@ -1,9 +1,9 @@
 # Dockerfile do 21go-website (Next.js 15)
 # - Inclui Chromium pra Puppeteer (gera PDF da simulacao)
-# - Multi-stage pra reduzir tamanho da imagem final
-# - Cache de npm pra acelerar rebuilds
+# - Multi-stage: deps (todas) -> builder -> prod-deps -> runner
+# - Imagem final só com prod deps (sem @xenova/transformers, xlsx, puppeteer full, etc)
 
-# ====== Stage 1: deps ======
+# ====== Stage 1: deps (todas pra buildar) ======
 FROM node:20-slim AS deps
 WORKDIR /app
 ENV PUPPETEER_SKIP_DOWNLOAD=true \
@@ -12,7 +12,7 @@ COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
     npm install --legacy-peer-deps --include=dev
 
-# ====== Stage 2: build ======
+# ====== Stage 2: builder (next build) ======
 FROM node:20-slim AS builder
 WORKDIR /app
 
@@ -37,11 +37,20 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-# ====== Stage 3: runner ======
+# ====== Stage 3: prod-deps (só dependencies, sem devDependencies) ======
+FROM node:20-slim AS prod-deps
+WORKDIR /app
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    NEXT_TELEMETRY_DISABLED=1
+COPY package.json package-lock.json* ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps --omit=dev
+
+# ====== Stage 4: runner ======
 FROM node:20-slim AS runner
 WORKDIR /app
 
-# Instala Chromium + libs necessárias (~250MB extra)
+# Instala Chromium + libs necessarias (~250MB extra)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     fonts-liberation \
@@ -71,7 +80,9 @@ ENV NODE_ENV=production \
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/next-sitemap.config.js ./next-sitemap.config.js
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 EXPOSE 3000
 CMD ["npx", "next", "start", "-H", "0.0.0.0", "-p", "3000"]

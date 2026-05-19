@@ -1,0 +1,50 @@
+# Dependencies (rebuildadas dentro do container)
+node_modules
+.npm
+.pnpm-store
+
+# Build outputs (next build roda no builder)
+.next
+out
+dist
+
+# TypeScript incremental
+*.tsbuildinfo
+
+# Env (Easypanel injeta em runtime)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+
+# Git
+.git
+.gitignore
+
+# Vercel (não usado)
+.vercel
+
+# Coisas que não precisam ir pro Docker daemon do Easypanel
+scripts
+supabase
+tmp_test_*.json
+*.mp4
+*.pdf
+README.md
+
+# Drafts SEO (esteira move pra content/blog após aprovação)
+content/blog/_drafts
+
+# Docker (não precisa do próprio Dockerfile dentro do context)
+.dockerignore
+Dockerfile
