@@ -1,9 +1,9 @@
 # Dockerfile do 21go-website (Next.js 15)
-# - Inclui Chromium pra Puppeteer (gera PDF da simulacao)
-# - Multi-stage: deps (todas) -> builder -> prod-deps -> runner
-# - Imagem final só com prod deps (sem @xenova/transformers, xlsx, puppeteer full, etc)
+# - Usa output: 'standalone' do Next: imagem final ~10x menor (sem node_modules cheio)
+# - Cache do apt-get pra Chromium nao reinstalar do zero a cada build
+# - Multi-stage minimalista
 
-# ====== Stage 1: deps (todas pra buildar) ======
+# ====== Stage 1: deps ======
 FROM node:20-slim AS deps
 WORKDIR /app
 ENV PUPPETEER_SKIP_DOWNLOAD=true \
@@ -12,12 +12,10 @@ COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
     npm install --legacy-peer-deps --include=dev
 
-# ====== Stage 2: builder (next build) ======
+# ====== Stage 2: builder ======
 FROM node:20-slim AS builder
 WORKDIR /app
 
-# Build args expostos como ENV pra Next inlinar NEXT_PUBLIC_* no bundle estatico.
-# Sem isso, qualquer process.env.NEXT_PUBLIC_* sai como undefined no JS gerado.
 ARG NEXT_PUBLIC_META_PIXEL_ID
 ARG NEXT_PUBLIC_META_PIXEL_ID_2
 ARG NEXT_PUBLIC_GTM_ID
@@ -37,21 +35,16 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-# ====== Stage 3: prod-deps (só dependencies, sem devDependencies) ======
-FROM node:20-slim AS prod-deps
-WORKDIR /app
-ENV PUPPETEER_SKIP_DOWNLOAD=true \
-    NEXT_TELEMETRY_DISABLED=1
-COPY package.json package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --legacy-peer-deps --omit=dev
-
-# ====== Stage 4: runner ======
+# ====== Stage 3: runner ======
 FROM node:20-slim AS runner
 WORKDIR /app
 
-# Instala Chromium + libs necessarias (~250MB extra)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Chromium pra puppeteer-core (gera PDF da simulacao).
+# Cache mount do apt: na primeira build baixa 206MB; nas seguintes reusa.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     fonts-liberation \
     fonts-noto-color-emoji \
@@ -68,8 +61,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgbm1 \
     libpango-1.0-0 \
     libcairo2 \
-    libasound2 \
-    && rm -rf /var/lib/apt/lists/*
+    libasound2
 
 ENV NODE_ENV=production \
     PORT=3000 \
@@ -78,11 +70,10 @@ ENV NODE_ENV=production \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
     PUPPETEER_SKIP_DOWNLOAD=true
 
+# Standalone do Next: ~50MB em vez de ~1.1GB de node_modules
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/next.config.ts ./next.config.ts
-COPY --from=builder /app/next-sitemap.config.js ./next-sitemap.config.js
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
 EXPOSE 3000
-CMD ["npx", "next", "start", "-H", "0.0.0.0", "-p", "3000"]
+CMD ["node", "server.js"]
