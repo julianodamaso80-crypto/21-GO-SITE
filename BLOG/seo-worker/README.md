@@ -32,7 +32,7 @@ Serviço dedicado (Node 20 + TypeScript + Fastify + BullMQ + node-cron + Pino) q
 ## Como rodar local
 
 ```bash
-cd seo-worker
+cd BLOG/seo-worker
 cp .env.example .env
 # edite .env com suas chaves
 npm install
@@ -102,8 +102,8 @@ Projeto: `social-21go`. Criar serviço novo:
 | Tipo | App |
 | Nome | `seo-worker` |
 | Source | GitHub (`julianodamaso80-crypto/21-GO-SITE`, branch `seo-ops` → depois `master`) |
-| Build path | `seo-worker/` |
-| Build | Dockerfile (`seo-worker/Dockerfile`) |
+| Build path | `BLOG/seo-worker/` |
+| Build | Dockerfile (`BLOG/seo-worker/Dockerfile`) |
 | Porta | 8080 |
 | Domínio | sem domínio público (acessível só na rede interna do projeto) |
 | Healthcheck | `GET /healthz` |
@@ -116,7 +116,7 @@ Para restart: aba do serviço → **Reiniciar**.
 ## Estrutura
 
 ```
-seo-worker/
+BLOG/seo-worker/
 ├── Dockerfile                # multi-stage, ~150MB
 ├── package.json
 ├── tsconfig.json
