@@ -137,13 +137,15 @@ Quando você publica artigos, eles vão também pra `21go-website/content/blog/`
 | 1 — Migration 230 + script dry-run | ✅ | `3959bbf` |
 | 2 — Esqueleto worker | ✅ | `7953b63` |
 | 3 — Integrações base | ✅ | `19dbb2c` |
-| 4 — Agentes 01-04 (pesquisa) | 🚧 | — |
-| 5 — Agentes 05-08 (produção) | 🚧 | — |
-| 6 — Teste E2E (1 rascunho) | 🚧 | — |
-| 7 — Ganchos no site | 🚧 | — |
-| 8 — Agentes 09-12 (publicação) | 🚧 | — |
-| 9 — Agentes 13-15 (análise) | 🚧 | — |
-| 10 — Deploy EasyPanel | 🚧 | — |
+| 3.5 — Reorganização BLOG/ | ✅ | `3560c2b` |
+| 4-5 — Agentes 01-08 (pesquisa + produção) | ✅ | `f5d1598` |
+| 6 — Teste E2E (stub mode) | ✅ | `23c5970` |
+| 7 — Ganchos no site | ✅ | `7d5001a` |
+| 8 — Agentes 09-12 (publicação) | ✅ | `07b1f86` |
+| 9 — Agentes 13-15 (análise) | ✅ | `7f071b4` |
+| 10 — Doc EasyPanel | ✅ | ver [DEPLOY.md](DEPLOY.md) |
+
+**Implementação 100% completa em código.** Próximos passos são de configuração: aplicar migration + setar envs no EasyPanel. Ver [DEPLOY.md](DEPLOY.md) pra guia passo-a-passo.
 
 ## Regras absolutas
 
