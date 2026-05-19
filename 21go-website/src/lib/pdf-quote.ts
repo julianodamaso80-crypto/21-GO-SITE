@@ -387,9 +387,9 @@ function renderComparisonPage(
             : `<span class="brand-text">21Go</span>`
         }
       </div>
-      <a class="wpp-btn" href="https://wa.me/5521979034169">
+      <a class="wpp-btn" href="https://wa.me/5521969454824">
         <span class="wpp-icon">💬</span>
-        <span class="wpp-text"><b>WhatsApp do Consultor</b><br/>(21) 97903-4169</span>
+        <span class="wpp-text"><b>WhatsApp do Consultor</b><br/>(21) 96945-4824</span>
       </a>
     </header>
 
@@ -449,9 +449,9 @@ function renderComparisonPage(
           <span class="footer-name">Letycia Thayene Nascimento Lima</span>
         </div>
       </div>
-      <a class="wpp-btn small" href="https://wa.me/5521979034169">
+      <a class="wpp-btn small" href="https://wa.me/5521969454824">
         <span class="wpp-icon">💬</span>
-        <span class="wpp-text">(21) 97903-4169</span>
+        <span class="wpp-text">(21) 96945-4824</span>
       </a>
     </footer>
 

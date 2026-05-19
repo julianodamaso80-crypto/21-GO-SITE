@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || ''
 const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || '21go'
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
-const NOTIFY_NUMBER = process.env.NOTIFY_NUMBER || '5521980214882'
+const NOTIFY_NUMBER = process.env.NOTIFY_NUMBER || '5521969454824'
 const COMPANY_ID = process.env.DEFAULT_COMPANY_ID || 'company-21go'
 
 function isValidWhatsApp(v: string): boolean {

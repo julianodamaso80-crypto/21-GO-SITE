@@ -350,7 +350,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
       ? `\nJá trabalhei com proteção veicular: ${form.experiencia.trim()}`
       : ''
     const waText = `Olá! Acabei de me cadastrar como consultor 21Go.\nNome: ${form.nome}\nE-mail: ${form.email}\nWhatsApp: ${form.contato}\nLocal: ${form.cidade} - ${form.estado}${expLine}`
-    const waUrl = `https://wa.me/5521980214882?text=${encodeURIComponent(waText)}`
+    const waUrl = `https://wa.me/5521969454824?text=${encodeURIComponent(waText)}`
 
     // Abre o WhatsApp imediatamente (precisa rodar dentro do gesto do clique
     // pra não ser bloqueado por popup blocker)
@@ -409,7 +409,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
   if (!open) return null
 
   const waFallbackText = `Olá! Acabei de me cadastrar como consultor 21Go.\nNome: ${form.nome}\nE-mail: ${form.email}\nWhatsApp: ${form.contato}\nLocal: ${form.cidade} - ${form.estado}${form.experiencia.trim() ? `\nJá trabalhei com proteção veicular: ${form.experiencia.trim()}` : ''}`
-  const waLink = `https://wa.me/5521980214882?text=${encodeURIComponent(waFallbackText)}`
+  const waLink = `https://wa.me/5521969454824?text=${encodeURIComponent(waFallbackText)}`
 
   return (
     <div
