@@ -92,8 +92,18 @@ function prefixKeys(obj: Record<string, unknown>, prefix: string): Record<string
  * keepalive: true garante envio mesmo se o usuário navegar logo após
  * o clique (caso clássico do botão WhatsApp que abre nova aba).
  */
+type ServerSideEventName =
+  | 'page_view'
+  | 'whatsapp_click'
+  | 'cotacao_inicio'
+  | 'cotacao_completa'
+  | 'blog_article_view'
+  | 'blog_scroll_depth'
+  | 'blog_cta_click'
+  | 'blog_internal_link_click'
+
 function sendServerSide(
-  eventName: 'page_view' | 'whatsapp_click' | 'cotacao_inicio' | 'cotacao_completa',
+  eventName: ServerSideEventName,
   eventId: string | undefined,
   params: Record<string, unknown> = {},
 ) {
@@ -301,6 +311,115 @@ export function trackPedidoOrcamento(data: {
       currency: 'BRL',
     }, { eventID: eventId })
   }
+
+  return eventId
+}
+
+/* ─── Blog events ─────────────────────────────────────────────────────
+ * Eventos de engajamento no conteúdo. NÃO enviam PII e NÃO são tratados
+ * como conversão forte (Meta pula esses no /api/track; GA4 recebe pra
+ * relatórios de engajamento e funil SEO).
+ *
+ * Os 4 eventos:
+ *   blog_article_view       — uma vez no mount da página do artigo
+ *   blog_scroll_depth       — uma vez por threshold (25/50/75/90)
+ *   blog_cta_click          — clique em CTA do artigo (cotação/WhatsApp)
+ *   blog_internal_link_click — clique em link interno do site dentro do artigo
+ */
+
+export interface BlogArticleContext {
+  article_slug: string
+  article_title: string
+  article_category?: string | null
+  main_keyword?: string | null
+}
+
+export function trackBlogArticleView(ctx: BlogArticleContext) {
+  const eventId = pushEvent('blog_article_view', {
+    article_slug: ctx.article_slug,
+    article_title: ctx.article_title,
+    article_category: ctx.article_category ?? undefined,
+    main_keyword: ctx.main_keyword ?? undefined,
+    content_category: 'blog',
+  })
+
+  sendServerSide('blog_article_view', eventId, {
+    article_slug: ctx.article_slug,
+    article_title: ctx.article_title,
+    article_category: ctx.article_category ?? undefined,
+    main_keyword: ctx.main_keyword ?? undefined,
+  })
+
+  return eventId
+}
+
+export function trackBlogScrollDepth(
+  ctx: BlogArticleContext & { scroll_percent: 25 | 50 | 75 | 90 },
+) {
+  const eventId = pushEvent('blog_scroll_depth', {
+    article_slug: ctx.article_slug,
+    article_title: ctx.article_title,
+    article_category: ctx.article_category ?? undefined,
+    scroll_percent: ctx.scroll_percent,
+    content_category: 'blog',
+  })
+
+  sendServerSide('blog_scroll_depth', eventId, {
+    article_slug: ctx.article_slug,
+    article_title: ctx.article_title,
+    article_category: ctx.article_category ?? undefined,
+    scroll_percent: ctx.scroll_percent,
+  })
+
+  return eventId
+}
+
+export function trackBlogCtaClick(
+  ctx: BlogArticleContext & {
+    cta_text: string
+    cta_href: string
+    cta_type: 'whatsapp' | 'cotacao' | 'other'
+  },
+) {
+  const eventId = pushEvent('blog_cta_click', {
+    article_slug: ctx.article_slug,
+    article_title: ctx.article_title,
+    article_category: ctx.article_category ?? undefined,
+    cta_text: ctx.cta_text,
+    cta_href: ctx.cta_href,
+    cta_type: ctx.cta_type,
+    content_category: 'blog',
+  })
+
+  sendServerSide('blog_cta_click', eventId, {
+    article_slug: ctx.article_slug,
+    article_title: ctx.article_title,
+    article_category: ctx.article_category ?? undefined,
+    cta_text: ctx.cta_text,
+    cta_href: ctx.cta_href,
+    cta_type: ctx.cta_type,
+  })
+
+  return eventId
+}
+
+export function trackBlogInternalLinkClick(args: {
+  article_slug: string
+  link_href: string
+  link_text: string
+}) {
+  const eventId = pushEvent('blog_internal_link_click', {
+    article_slug: args.article_slug,
+    link_href: args.link_href,
+    link_text: args.link_text,
+    content_category: 'blog',
+  })
+
+  sendServerSide('blog_internal_link_click', eventId, {
+    article_slug: args.article_slug,
+    link_href: args.link_href,
+    link_text: args.link_text,
+  })
 
   return eventId
 }

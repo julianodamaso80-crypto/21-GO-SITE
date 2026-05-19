@@ -3,6 +3,7 @@ import { Calendar, User, Clock, ArrowLeft, ArrowRight, ShieldCheck } from 'lucid
 import Link from 'next/link'
 import { getPostBySlug, getPostSlugs, getAllPosts } from '@/lib/blog'
 import { notFound } from 'next/navigation'
+import { BlogTracking } from '@/components/tracking/BlogTracking'
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>
@@ -56,6 +57,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <BlogTracking
+        articleSlug={slug}
+        articleTitle={post.title}
+        articleCategory={post.category || null}
+        mainKeyword={post.keywords?.[0] ?? null}
       />
       {/* Article header */}
       <section className="pt-32 pb-16 bg-gradient-to-b from-[#121A33] via-[#1B284A] to-[#375191]">
