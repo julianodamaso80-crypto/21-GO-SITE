@@ -5,7 +5,11 @@ import Script from 'next/script'
 import { captureClickIds, captureUtms } from '@/lib/cookies'
 import { trackPageView } from '@/lib/tracking'
 
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID
+// GTM ID é público (vai pro HTML em texto claro) — fallback hardcoded é seguro.
+// NEXT_PUBLIC_* é inlinada em build time pelo Next; se o EasyPanel não passar
+// como build arg do Dockerfile, o bundle sai sem GTM. Fallback garante que o
+// contêiner oficial (21Go - Web - 2) sempre carregue.
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || 'GTM-WQ9L62XN'
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
 const META_PIXEL_ID_2 = process.env.NEXT_PUBLIC_META_PIXEL_ID_2
 
