@@ -20,21 +20,28 @@ CAMADA 3 — OFFLINE (CRM)
 
 ## 1. Variáveis de Ambiente
 
-No Railway (serviço 21go-website), adicionar:
+No EasyPanel (projeto `social-21go`, serviço do site), adicionar como
+**Build Args / Env** (NEXT_PUBLIC_* são inlinadas em build time, exigem rebuild):
 
 ```
-NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX
+NEXT_PUBLIC_GTM_ID=GTM-WQ9L62XN
 NEXT_PUBLIC_META_PIXEL_ID=123456789
 ```
 
+> **GTM oficial em produção:** `GTM-WQ9L62XN` (contêiner "21Go - Web - 2").
+> Existe também `GTM-TL4CGJKJ` ("21Go - Web") na mesma conta, mas **não é
+> usado** — as tags GA4/Google Ads/Meta Pixel estão no WQ9L62XN.
+
 ---
 
-## 2. Criar Conta GTM Web
+## 2. Conta GTM Web (já criada)
 
-1. Acesse https://tagmanager.google.com
-2. Crie uma conta "21Go" → Container "21go.site" → Tipo: Web
-3. Copie o GTM ID (ex: GTM-ABC123)
-4. Cole na variável `NEXT_PUBLIC_GTM_ID` no Railway
+- Conta: **21Go**
+- Contêiner em uso: **21Go - Web - 2** → `GTM-WQ9L62XN`
+- Contêiner alternativo (não usar): 21Go - Web → `GTM-TL4CGJKJ`
+
+Para trocar de contêiner no futuro, basta atualizar `NEXT_PUBLIC_GTM_ID`
+no EasyPanel e rebuildar o serviço do site.
 
 ---
 
