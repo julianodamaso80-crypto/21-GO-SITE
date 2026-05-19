@@ -31,8 +31,32 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const allPosts = getAllPosts()
   const related = allPosts.filter((p) => p.slug !== slug).slice(0, 3)
 
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.description,
+    image: post.image?.startsWith('http') ? post.image : `https://21go.site${post.image || '/blog/default.jpg'}`,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: { '@type': 'Organization', name: post.author || '21Go', url: 'https://21go.site' },
+    publisher: {
+      '@type': 'Organization',
+      name: '21Go',
+      logo: { '@type': 'ImageObject', url: 'https://21go.site/logo.png' },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `https://21go.site/blog/${slug}` },
+    keywords: (post.keywords ?? []).join(', '),
+    articleSection: post.category,
+    inLanguage: 'pt-BR',
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
       {/* Article header */}
       <section className="pt-32 pb-16 bg-gradient-to-b from-[#121A33] via-[#1B284A] to-[#375191]">
         <div className="max-w-4xl mx-auto px-6">
