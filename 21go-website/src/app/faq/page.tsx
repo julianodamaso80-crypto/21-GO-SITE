@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { MessageCircle, ShieldCheck, ArrowRight, ChevronDown } from 'lucide-react'
+import { WhatsAppLink } from '@/components/ui/WhatsAppLink'
 
 export const metadata: Metadata = {
   title: 'Dúvidas? A Gente Explica Tudo | 21Go',
@@ -161,15 +162,15 @@ export default function FAQPage() {
                 <p className="text-sm text-white/60 mb-6">
                   Fale com nosso time pelo WhatsApp. Estamos prontos para ajudar.
                 </p>
-                <a
+                <WhatsAppLink
                   href="https://wa.me/5521969454824?text=Ol%C3%A1!%20Tenho%20uma%20d%C3%BAvida%20sobre%20prote%C3%A7%C3%A3o%20veicular."
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  origin="faq_sidebar"
+                  buttonText="Falar no WhatsApp"
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#10B981] text-white font-semibold text-sm hover:bg-[#059669] transition-colors mb-4"
                 >
                   <MessageCircle className="w-4 h-4" />
                   Falar no WhatsApp
-                </a>
+                </WhatsAppLink>
                 <div className="w-full h-px bg-white/10 my-5" />
                 <h3 className="font-[var(--font-display)] text-base font-semibold mb-2">Pronto para simular?</h3>
                 <p className="text-sm text-white/50 mb-4">Descubra quanto custa proteger seu veículo.</p>

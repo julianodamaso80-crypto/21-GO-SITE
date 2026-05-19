@@ -162,11 +162,13 @@ export function trackCotacaoCompleta(data: {
 export function trackWhatsAppClick(origem: string, data?: {
   plano?: string
   valor?: number
+  buttonText?: string
 }) {
   const eventId = pushEvent('whatsapp_click', {
     click_origin: origem,
     plan_name: data?.plano,
     plan_value: data?.valor,
+    button_text: data?.buttonText,
   })
 
   // Meta Pixel: Contact
