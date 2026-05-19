@@ -1,6 +1,7 @@
 'use client';
 
 import { WHATSAPP_NUMBER } from '@/lib/constants'
+import { trackWhatsAppClick } from '@/lib/tracking'
 
 export function WhatsAppButton() {
   return (
@@ -9,6 +10,7 @@ export function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Fale conosco pelo WhatsApp"
+      onClick={() => trackWhatsAppClick('floating_button', { buttonText: 'WhatsApp (flutuante)' })}
       className="fixed bottom-24 md:bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:scale-110"
     >
       {/* Pulse ring */}

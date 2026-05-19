@@ -870,7 +870,13 @@ export default function CotacaoPage() {
                       <p className="font-medium">{apiError}</p>
                       <p className="text-[#DC2626]/70 mt-1">
                         Verifique a placa ou{' '}
-                        <a href="https://wa.me/5521969454824?text=Olá! Preciso de ajuda com uma simulação." target="_blank" rel="noopener noreferrer" className="underline font-medium">
+                        <a
+                          href="https://wa.me/5521969454824?text=Olá! Preciso de ajuda com uma simulação."
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => trackWhatsAppClick('cotacao_erro_placa', { buttonText: 'fale no WhatsApp' })}
+                          className="underline font-medium"
+                        >
                           fale no WhatsApp
                         </a>.
                       </p>
@@ -901,6 +907,7 @@ export default function CotacaoPage() {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => trackWhatsAppClick('cotacao_fallback_humano', { buttonText: 'Falar com consultor agora' })}
                       className="flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-[#10B981] to-[#059669] text-white font-bold text-base rounded-full shadow-lg shadow-[#10B981]/20 hover:shadow-xl hover:shadow-[#10B981]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                     >
                       <MessageCircle className="w-5 h-5" />
@@ -1192,7 +1199,11 @@ export default function CotacaoPage() {
                   <a href={`https://wa.me/5521969454824?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
                     target="_blank" rel="noopener noreferrer"
                     onClick={() => {
-                      trackWhatsAppClick('cotacao_resultado', { plano: selectedPlan.name, valor: price })
+                      trackWhatsAppClick('cotacao_resultado', {
+                        plano: selectedPlan.name,
+                        valor: price,
+                        buttonText: 'Contratar pelo WhatsApp',
+                      })
                       trackPedidoOrcamento({
                         plano: selectedPlan.name,
                         valor: price,
@@ -1201,15 +1212,6 @@ export default function CotacaoPage() {
                         ano: vehicle?.ano,
                       })
                       notifyWhatsAppClick()
-                      // GTM event
-                      if (typeof window !== 'undefined' && (window as any).dataLayer) {
-                        (window as any).dataLayer.push({
-                          event: 'whatsapp_click',
-                          plano: selectedPlan.name,
-                          valor: price,
-                          veiculo: vehicleLabel,
-                        })
-                      }
                     }}
                     className="flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-bold text-base rounded-full shadow-lg shadow-[#F7963D]/20 hover:shadow-xl hover:shadow-[#F7963D]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 mb-4">
                     <MessageCircle className="w-5 h-5" />
