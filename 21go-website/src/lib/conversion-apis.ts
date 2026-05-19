@@ -51,6 +51,12 @@ export interface ConversionLeadData {
   ip?: string | null
   user_agent?: string | null
 
+  // hashes prontos (SHA-256 hex). Quando presentes, têm prioridade sobre os
+  // campos crus acima — usados pelo endpoint /api/track, que nunca recebe PII
+  // em texto puro do client.
+  email_hash?: string | null
+  phone_hash?: string | null
+
   // tracking
   gclid?: string | null
   gbraid?: string | null
@@ -162,10 +168,11 @@ export async function sendGoogleAdsConversion(
     if (data.wbraid) conversion.wbraid = data.wbraid
     if (data.event_id) conversion.orderId = data.event_id
 
-    // Enhanced Conversions: identificadores hashados
+    // Enhanced Conversions: identificadores hashados.
+    // Hashes prontos têm prioridade (caminho /api/track sem PII em texto puro).
     const userIdentifiers: Array<Record<string, unknown>> = []
-    const emailHash = hashOrNull(data.email)
-    const phoneHash = hashOrNull(data.phone_e164 ? `+${data.phone_e164}` : null)
+    const emailHash = data.email_hash || hashOrNull(data.email)
+    const phoneHash = data.phone_hash || hashOrNull(data.phone_e164 ? `+${data.phone_e164}` : null)
     if (emailHash) userIdentifiers.push({ hashedEmail: emailHash })
     if (phoneHash) userIdentifiers.push({ hashedPhoneNumber: phoneHash })
     if (userIdentifiers.length > 0) conversion.userIdentifiers = userIdentifiers
@@ -300,8 +307,10 @@ export async function sendMetaCapi(data: ConversionLeadData): Promise<Conversion
 
   const eventTime = data.event_time ?? Math.floor(Date.now() / 1000)
   const userData: Record<string, unknown> = {}
-  const emailHash = hashOrNull(data.email)
-  const phoneHash = hashOrNull(data.phone_e164)
+  // email_hash/phone_hash já vêm hasheados (caminho /api/track); o cru
+  // (email/phone_e164) só chega pelos webhooks server-to-server.
+  const emailHash = data.email_hash || hashOrNull(data.email)
+  const phoneHash = data.phone_hash || hashOrNull(data.phone_e164)
   const fnHash = hashOrNull(data.first_name)
   const lnHash = hashOrNull(data.last_name)
   const ctHash = hashOrNull(data.cidade)
