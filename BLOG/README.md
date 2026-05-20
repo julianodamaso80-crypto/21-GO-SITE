@@ -145,7 +145,23 @@ Quando você publica artigos, eles vão também pra `21go-website/content/blog/`
 | 9 — Agentes 13-15 (análise) | ✅ | `7f071b4` |
 | 10 — Doc EasyPanel | ✅ | ver [DEPLOY.md](DEPLOY.md) |
 
-**Implementação 100% completa em código.** Próximos passos são de configuração: aplicar migration + setar envs no EasyPanel. Ver [DEPLOY.md](DEPLOY.md) pra guia passo-a-passo.
+**Implementação 100% completa em código.** Próximos passos são de configuração: aplicar migration + setar envs no EasyPanel. Ver [DEPLOY.md](DEPLOY.md) pra guia técnico e **[ACTIVATION.md](ACTIVATION.md) pro runbook conservador de ativação** (1 briefing → 1 rascunho → validar humano → publisher → indexação).
+
+## Correções aplicadas após review (2026-05-20)
+
+Após primeira passada, ajustes obrigatórios:
+
+| Mudança | Estado |
+|---|---|
+| LLM via OpenRouter (não Anthropic SDK direto) — mesmo padrão do agente Leticya | ✅ |
+| Modelos lidos de `AI_MODEL_GENERATOR` + `AI_MODEL_CLASSIFIER` (convenção já existente no `.env`) com fallbacks documentados | ✅ |
+| Google: OAuth-only (Service Account removido). Script `npm run google:auth` pra gerar refresh token | ✅ |
+| Publisher: branch + Pull Request, **sem auto-merge na master**. Status `awaiting_pr_merge` adicionado | ✅ |
+| Cron de 15min agora detecta merge humano + dispara indexação automaticamente | ✅ |
+| Article JSON-LD via `<script type="application/ld+json">` (não em `generateMetadata`) | ✅ |
+| Migration dry-run obrigatório com pré-checks (extensions, schema, FK, seed) | ✅ |
+| IndexNow: chave UUID gerada + servida em `21go-website/public/{KEY}.txt` | ✅ |
+| Custo LLM `null` (OpenRouter cobra com markup — não inventar valor local) | ✅ |
 
 ## Regras absolutas
 

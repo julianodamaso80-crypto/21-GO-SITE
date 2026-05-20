@@ -84,12 +84,15 @@ Ver `.env.example`. Resumo do que é obrigatório/opcional:
 |---|---|---|
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | ✅ | nada funciona |
 | `REDIS_URL` | ✅ | filas e cron não rodam |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL_MAIN` | ✅ | agentes LLM falham |
+| `OPENROUTER_API_KEY` | ✅ | agentes LLM falham |
+| `AI_MODEL_GENERATOR`, `AI_MODEL_CLASSIFIER` | opcional | usa fallback com `log.warn` |
 | `TRIGGER_SECRET` | ✅ | rotas `/runs/*` retornam 401 |
-| `GITHUB_TOKEN`, `GITHUB_REPO` | só pra publicar | Publisher fica em pending |
-| `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD` | opcional | Agente 01 cai pra GSC/manual |
-| `GOOGLE_*`, `GA4_*` | opcional | Sem GSC/GA4 analyst e reporting |
-| `BING_API_KEY`, `INDEXNOW_KEY` | opcional | Sem submissão Bing/IndexNow |
+| `GITHUB_TOKEN` | só pra publicar | Publisher 09 retorna "pendente" |
+| `GITHUB_REPO` | tem default | `julianodamaso80-crypto/21-GO-SITE` no config |
+| `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD` | opcional | Agente 01 cai pra GSC+manual |
+| `GOOGLE_CLIENT_ID/SECRET/REFRESH_TOKEN` | opcional | Sem GSC Analyst/Reporting (gera com `npm run google:auth`) |
+| `GA4_PROPERTY_ID` | opcional | Agente 15 não busca GA4 |
+| `BING_API_KEY`, `INDEXNOW_KEY` | opcional | Agente 12 pula esses canais |
 
 **Nunca commitar `.env`.** Em produção, configurar no painel do EasyPanel.
 

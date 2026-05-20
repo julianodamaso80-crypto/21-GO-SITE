@@ -8,12 +8,12 @@
 |---|---|
 | Acesso ao EasyPanel | http://167.71.31.77:3000/projects/social-21go |
 | GitHub PAT fine-grained | github.com/settings/personal-access-tokens — escopo `Contents: write` + `Pull requests: write` em `julianodamaso80-crypto/21-GO-SITE` |
-| Service Account Google (recomendado) ou OAuth refresh token | console.cloud.google.com → IAM & Admin → Service Accounts |
-| GSC propriedade verificada | `https://21go.site/` no GSC + Service Account com permissão "Full" |
-| GA4 propriedade ID | console.cloud.google.com → Analytics → Admin → Property Details |
+| OAuth Google (GSC + GA4) | Gerar refresh token com `cd BLOG/seo-worker && npm run google:auth` |
+| GSC propriedade verificada | `https://21go.site/` no GSC com conta que tem permissão "Owner" ou "Full user" |
+| GA4 propriedade ID | analytics.google.com → Admin → Property Details (campo "Property ID" — numérico, diferente do Measurement ID `G-XXX`) |
 | Conta DataForSEO | dataforseo.com (USD 1-5 inicial pra teste) |
 | Bing Webmaster API key | bing.com/webmasters → Settings → API Access |
-| Anthropic API key | console.anthropic.com |
+| OpenRouter API key | openrouter.ai/keys |
 | UUID v4 pra IndexNow | `node -e "console.log(crypto.randomUUID())"` |
 
 ## Passo a passo
@@ -85,26 +85,24 @@ SUPABASE_SERVICE_ROLE_KEY=<service_role JWT>
 # Redis interno (mesma rede do projeto)
 REDIS_URL=redis://redis-social:6379
 
-# Anthropic
-ANTHROPIC_API_KEY=<sk-ant-...>
-ANTHROPIC_MODEL_MAIN=claude-sonnet-4-6
-ANTHROPIC_MODEL_LIGHT=claude-haiku-4-5-20251001
+# LLM via OpenRouter (mesmo provider do agente Leticya)
+OPENROUTER_API_KEY=<sk-or-v1-...>
+AI_MODEL_GENERATOR=anthropic/claude-sonnet-4.6   # tier MAIN
+AI_MODEL_CLASSIFIER=anthropic/claude-haiku-4.5    # tier LIGHT
 
 # DataForSEO (opcional — sem isso Agente 01 cai pra GSC+manual)
 DATAFORSEO_LOGIN=<login>
 DATAFORSEO_PASSWORD=<senha>
 DATAFORSEO_DAILY_BUDGET_USD=2
 
-# Google (escolher 1 dos 2 modos)
-# Modo A: OAuth refresh token (mais simples)
+# Google OAuth (GSC + GA4) — modo oficial
+# Pra gerar GOOGLE_REFRESH_TOKEN: cd BLOG/seo-worker && npm run google:auth
 GOOGLE_CLIENT_ID=<client_id>
 GOOGLE_CLIENT_SECRET=<client_secret>
 GOOGLE_REFRESH_TOKEN=<refresh_token>
-# Modo B: Service Account (recomendado)
-# GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account",...}
 
 GSC_SITE_URL=https://21go.site/
-GA4_PROPERTY_ID=<numero>
+GA4_PROPERTY_ID=<numero — ex 123456789, diferente do GA4_MEASUREMENT_ID>
 
 # Bing + IndexNow
 BING_API_KEY=<key>
@@ -191,7 +189,7 @@ curl -X POST https://21go.site/api/seo/trigger \
 #       cat /repo/21go-website/content/blog/_drafts/{slug}.mdx
 ```
 
-### 8. Publicar manualmente (após revisar)
+### 8. Publicar manualmente (após revisar) — abre PR, NÃO mergea
 
 ```bash
 # Pega article_id no Supabase Studio
@@ -201,9 +199,18 @@ curl -X POST https://21go.site/api/seo/trigger \
 ```
 
 O Publisher (Agente 09) vai:
-1. Fazer commit do MDX em `21go-website/content/blog/{slug}.mdx` via Octokit
-2. EasyPanel detecta push e rebuilda o serviço `site`
-3. Após ~2-5min, Agentes 10-12 disparam (sitemap + GSC + Bing + IndexNow)
+1. Criar branch `seo/publish-{slug}-{timestamp}` no repo via Octokit
+2. Commitar MDX nessa branch (NÃO na master)
+3. Abrir Pull Request da branch → master com body explicativo
+4. Atualizar `seo.articles.status='awaiting_pr_merge'` + `pr_url` + `pr_branch`
+
+**Você** revisa o PR no GitHub UI e mergea quando aprovar. Sem merge automático.
+
+Após o merge:
+1. EasyPanel detecta push na master e rebuilda o serviço `site`
+2. Cron de 15 em 15 minutos no worker detecta que a URL retorna 200
+3. Article vira `status='published'` automaticamente
+4. Agentes 10-12 disparam (sitemap + GSC + Bing + IndexNow), tudo logado em `seo.indexing_log`
 
 ## Operação contínua
 
@@ -234,13 +241,16 @@ EasyPanel → serviço `seo-worker` → aba **Logs**. JSON estruturado, busca po
 
 | Item | Aprox/mês |
 |---|---|
-| Anthropic (1 artigo/dia + análises) | USD 30-60 |
-| DataForSEO (budget 2/dia) | USD 30-60 |
+| OpenRouter (1 artigo/dia + análises) | USD 30-60 (com markup OpenRouter sobre Anthropic) |
+| DataForSEO (budget USD 2/dia) | USD 30-60 |
 | EasyPanel (worker container) | já incluído no plano atual |
 | Supabase | já incluído |
 | Bing / GSC / IndexNow / GA4 | gratuitos |
 
-Tudo é logado em `seo.agent_runs.llm_cost_usd` + `seo.dataforseo_calls.cost_usd` — view `seo.v_article_performance` agrega.
+`seo.agent_runs` registra `llm_input_tokens` + `llm_output_tokens` por chamada.
+`llm_cost_usd` fica **NULL** — OpenRouter cobra com markup variável, não calculo localmente pra não inventar valor. Pra obter custo real, consultar `https://openrouter.ai/api/v1/generation/{id}` em job batch (não implementado nesta fase).
+
+`seo.dataforseo_calls.cost_usd` registra custo real reportado pela API. Budget guard hard-stop em `DATAFORSEO_DAILY_BUDGET_USD`.
 
 ## Rollback
 
