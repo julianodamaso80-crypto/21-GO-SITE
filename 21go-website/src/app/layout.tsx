@@ -39,6 +39,16 @@ export const metadata: Metadata = {
     icon: '/favicon.ico',
     apple: '/logo21go.png',
   },
+  // Meta Domain Verification — as 2 tags ficam no <head> de ambos os hosts.
+  // Meta lê só a que corresponde ao domínio sendo verificado; ignora a outra.
+  // Os 2 dominios compartilham o mesmo deploy/serviço Easypanel, por isso
+  // servimos ambas globalmente.
+  other: {
+    'facebook-domain-verification': [
+      'zdgnwdkba9lxmtuqd1j5mhwki7r57y', // 21go.site
+      'qsj4tw4i1nzd8x8aajoqp77x6dl6b0', // 21goconsultoraleticya.site
+    ],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
