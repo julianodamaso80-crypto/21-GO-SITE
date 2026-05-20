@@ -19,14 +19,14 @@ export function FinalCTA() {
         className="mx-auto max-w-3xl px-6 text-center"
       >
         <motion.div variants={fadeInUp}>
-          <div className="mx-auto mb-6 w-16 h-16 rounded-2xl bg-[#375191]/5 flex items-center justify-center">
-            <ShieldCheck className="h-8 w-8 text-[#375191]" />
+          <div className="mx-auto mb-6 w-16 h-16 rounded-2xl bg-[#293C82]/5 flex items-center justify-center">
+            <ShieldCheck className="h-8 w-8 text-[#293C82]" />
           </div>
         </motion.div>
 
         <motion.h2
           variants={fadeInUp}
-          className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#121A33]"
+          className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#1A2754]"
         >
           Proteja seu veículo agora
         </motion.h2>
@@ -38,7 +38,7 @@ export function FinalCTA() {
         <motion.div data-cta-section="final_cta" variants={fadeInUp} className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/cotacao"
-            className="shimmer-btn inline-flex items-center px-9 py-4 rounded-xl bg-[#F7963D] text-white text-base font-semibold hover:bg-[#D87E2F] transition-all duration-300 animate-glow-pulse hover:-translate-y-0.5"
+            className="shimmer-btn inline-flex items-center px-9 py-4 rounded-xl bg-[#F2911D] text-white text-base font-semibold hover:bg-[#D67A0F] transition-all duration-300 animate-glow-pulse hover:-translate-y-0.5"
           >
             Fazer Simulação Grátis
           </Link>

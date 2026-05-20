@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Barlow } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -12,11 +12,12 @@ import { SchemaOrg } from '@/components/seo/SchemaOrg'
 import SmoothScrollProvider from '@/components/SmoothScrollProvider'
 import MobileCTA from '@/components/MobileCTA'
 
-/* Barlow = equivalente web da fonte DIN (família oficial da 21Go) */
-const barlow = Barlow({
+/* Inter = fallback oficial (Google Fonts) do manual de marca 21Go v1.0 abr/2026 */
+/* Pesos cobrindo: Light(300), Regular(400), Medium(500), Bold(700), Heavy/ExtraBold(800) */
+const inter = Inter({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-barlow',
+  variable: '--font-inter',
   display: 'swap',
 })
 
@@ -58,7 +59,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={barlow.variable}>
+    <html lang="pt-BR" className={inter.variable}>
       <body>
         <MetaPixelScripts />
         <GTMProvider />

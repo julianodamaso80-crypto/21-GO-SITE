@@ -16,7 +16,7 @@ export default function CriativosPage() {
           {tabs.map((t, i) => (
             <button key={t} onClick={() => setActive(i)}
               className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                active === i ? 'bg-[#F7963D] text-white' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                active === i ? 'bg-[#F2911D] text-white' : 'bg-white/10 text-white/60 hover:bg-white/20'
               }`}>{t}</button>
           ))}
         </div>
@@ -37,10 +37,10 @@ export default function CriativosPage() {
    ═══════════════════════════════════════════ */
 function CriativoLeilao() {
   return (
-    <div id="criativo-leilao" className="relative aspect-square w-full overflow-hidden" style={{ background: 'linear-gradient(160deg, #121A33 0%, #1B284A 50%, #375191 100%)' }}>
+    <div id="criativo-leilao" className="relative aspect-square w-full overflow-hidden" style={{ background: 'linear-gradient(160deg, #1A2754 0%, #1F3068 50%, #293C82 100%)' }}>
       {/* Arcos laranja decorativos (igual referência) */}
-      <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full border-[40px] border-[#F7963D] opacity-60" />
-      <div className="absolute -bottom-32 -left-32 w-[350px] h-[350px] rounded-full border-[40px] border-[#F7963D] opacity-40" />
+      <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full border-[40px] border-[#F2911D] opacity-60" />
+      <div className="absolute -bottom-32 -left-32 w-[350px] h-[350px] rounded-full border-[40px] border-[#F2911D] opacity-40" />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col h-full p-[8%] justify-between">
@@ -49,13 +49,13 @@ function CriativoLeilao() {
 
         {/* Hook principal */}
         <div>
-          <p className="text-[#F7963D] text-[0.8em] font-bold uppercase tracking-widest mb-2">
+          <p className="text-[#F2911D] text-[0.8em] font-bold uppercase tracking-widest mb-2">
             Carro de leilão
           </p>
           <p className="text-white text-[2.2em] font-black leading-[1.05] mb-3" style={{ fontFamily: 'var(--font-outfit)' }}>
             Comprou por R$35 mil.<br />
             Se roubarem, recebe<br />
-            <span className="text-[#F7963D]">R$48 mil.</span>
+            <span className="text-[#F2911D]">R$48 mil.</span>
           </p>
           <p className="text-white/50 text-[0.85em] leading-snug mb-5">
             A seguradora te daria <span className="text-[#EF4444] font-bold">ZERO</span>. Porque ela<br />
@@ -66,7 +66,7 @@ function CriativoLeilao() {
         {/* Número destaque */}
         <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 mb-5">
           <div className="flex items-center gap-4">
-            <span className="text-[3em] font-black text-[#F7963D] leading-none" style={{ fontFamily: 'var(--font-outfit)' }}>80%</span>
+            <span className="text-[3em] font-black text-[#F2911D] leading-none" style={{ fontFamily: 'var(--font-outfit)' }}>80%</span>
             <div>
               <p className="text-white font-bold text-[0.95em]">da tabela FIPE</p>
               <p className="text-white/50 text-[0.75em]">é o que você recebe em evento de perda total</p>
@@ -75,7 +75,7 @@ function CriativoLeilao() {
         </div>
 
         {/* CTA */}
-        <div className="bg-[#F7963D] text-white text-center py-4 rounded-2xl font-bold text-[1.1em] shadow-lg shadow-[#F7963D]/30">
+        <div className="bg-[#F2911D] text-white text-center py-4 rounded-2xl font-bold text-[1.1em] shadow-lg shadow-[#F2911D]/30">
           Faça sua simulação grátis →
         </div>
       </div>
@@ -89,23 +89,23 @@ function CriativoLeilao() {
    ═══════════════════════════════════════════ */
 function CriativoApp() {
   return (
-    <div id="criativo-app" className="relative aspect-square w-full overflow-hidden" style={{ background: 'linear-gradient(160deg, #121A33 0%, #1B284A 50%, #375191 100%)' }}>
+    <div id="criativo-app" className="relative aspect-square w-full overflow-hidden" style={{ background: 'linear-gradient(160deg, #1A2754 0%, #1F3068 50%, #293C82 100%)' }}>
       {/* Arcos */}
-      <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full border-[40px] border-[#F7963D] opacity-60" />
-      <div className="absolute -bottom-32 -left-32 w-[350px] h-[350px] rounded-full border-[40px] border-[#F7963D] opacity-40" />
+      <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full border-[40px] border-[#F2911D] opacity-60" />
+      <div className="absolute -bottom-32 -left-32 w-[350px] h-[350px] rounded-full border-[40px] border-[#F2911D] opacity-40" />
 
       <div className="relative z-10 flex flex-col h-full p-[8%] justify-between">
         <img src="/logo21go.png" alt="21Go" className="h-12 w-auto self-start" />
 
         <div>
-          <p className="text-[#F7963D] text-[0.8em] font-bold uppercase tracking-widest mb-2">
+          <p className="text-[#F2911D] text-[0.8em] font-bold uppercase tracking-widest mb-2">
             Motorista de Uber / 99
           </p>
           <p className="text-white text-[2em] font-black leading-[1.05] mb-4" style={{ fontFamily: 'var(--font-outfit)' }}>
             A seguradora te cobra<br />
             <span className="text-[#EF4444]">+40% ou te recusa.</span><br />
             A 21Go te cobra<br />
-            <span className="text-[#F7963D]">6% de cota. Só.</span>
+            <span className="text-[#F2911D]">6% de cota. Só.</span>
           </p>
         </div>
 
@@ -127,7 +127,7 @@ function CriativoApp() {
           Economia de <span className="text-white font-bold">R$2.652/ano</span>. E você não fica sem proteção.
         </p>
 
-        <div className="bg-[#F7963D] text-white text-center py-4 rounded-2xl font-bold text-[1.1em] shadow-lg shadow-[#F7963D]/30">
+        <div className="bg-[#F2911D] text-white text-center py-4 rounded-2xl font-bold text-[1.1em] shadow-lg shadow-[#F2911D]/30">
           Faça sua simulação grátis →
         </div>
       </div>
@@ -141,16 +141,16 @@ function CriativoApp() {
    ═══════════════════════════════════════════ */
 function CriativoSusep() {
   return (
-    <div id="criativo-susep" className="relative aspect-square w-full overflow-hidden" style={{ background: 'linear-gradient(160deg, #121A33 0%, #1B284A 50%, #375191 100%)' }}>
+    <div id="criativo-susep" className="relative aspect-square w-full overflow-hidden" style={{ background: 'linear-gradient(160deg, #1A2754 0%, #1F3068 50%, #293C82 100%)' }}>
       {/* Arcos */}
-      <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full border-[40px] border-[#F7963D] opacity-60" />
-      <div className="absolute -bottom-32 -left-32 w-[350px] h-[350px] rounded-full border-[40px] border-[#F7963D] opacity-40" />
+      <div className="absolute -top-20 -right-20 w-[300px] h-[300px] rounded-full border-[40px] border-[#F2911D] opacity-60" />
+      <div className="absolute -bottom-32 -left-32 w-[350px] h-[350px] rounded-full border-[40px] border-[#F2911D] opacity-40" />
 
       <div className="relative z-10 flex flex-col h-full p-[8%] justify-between">
         <img src="/logo21go.png" alt="21Go" className="h-12 w-auto self-start" />
 
         <div>
-          <p className="text-[#F7963D] text-[0.8em] font-bold uppercase tracking-widest mb-2">
+          <p className="text-[#F2911D] text-[0.8em] font-bold uppercase tracking-widest mb-2">
             Antes de contratar, pergunte isso
           </p>
           <p className="text-white text-[2em] font-black leading-[1.05] mb-4" style={{ fontFamily: 'var(--font-outfit)' }}>
@@ -178,11 +178,11 @@ function CriativoSusep() {
           </div>
         </div>
 
-        <p className="text-[#F7963D] font-bold text-[0.85em] text-center mb-4">
+        <p className="text-[#F2911D] font-bold text-[0.85em] text-center mb-4">
           ⚠️ Pergunte se é SUSEP. Se não for, saia correndo.
         </p>
 
-        <div className="bg-[#F7963D] text-white text-center py-4 rounded-2xl font-bold text-[1.1em] shadow-lg shadow-[#F7963D]/30">
+        <div className="bg-[#F2911D] text-white text-center py-4 rounded-2xl font-bold text-[1.1em] shadow-lg shadow-[#F2911D]/30">
           Faça sua simulação grátis →
         </div>
       </div>

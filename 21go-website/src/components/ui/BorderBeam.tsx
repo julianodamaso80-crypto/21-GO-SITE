@@ -12,11 +12,11 @@ export function BorderBeam({ children, className }: Props) {
       <div
         className="absolute inset-0 rounded-full"
         style={{
-          background: 'conic-gradient(from var(--angle), transparent 70%, #C9A84C 85%, transparent 100%)',
+          background: 'conic-gradient(from var(--angle), transparent 70%, #C7D301 85%, transparent 100%)',
           animation: 'rotateBorder 3s linear infinite',
         }}
       />
-      <div className="relative z-10 rounded-full bg-[#0F0F18] px-4 py-1.5 text-sm font-medium text-[#C9A84C]">
+      <div className="relative z-10 rounded-full bg-[#0F0F18] px-4 py-1.5 text-sm font-medium text-[#C7D301]">
         {children}
       </div>
     </div>

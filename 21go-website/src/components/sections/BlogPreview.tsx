@@ -25,7 +25,7 @@ export function BlogPreview() {
         className="mx-auto max-w-7xl px-6"
       >
         <motion.div variants={fadeInUp} className="text-center mb-14">
-          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#121A33]">
+          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#1A2754]">
             Blog 21Go
           </h2>
           <p className="mt-4 text-lg text-[#64748B]">Conteúdo para você fazer escolhas mais inteligentes</p>
@@ -36,12 +36,12 @@ export function BlogPreview() {
             <motion.div key={post.slug} variants={fadeInUp} transition={{ delay: i * 0.1 }}>
               <Link
                 href={`/blog/${post.slug}`}
-                className="block group bg-[#F0F4FA] rounded-2xl p-6 border border-[#E2E8F0] hover:shadow-lg hover:-translate-y-1.5 hover:border-[#375191]/20 transition-all duration-300"
+                className="block group bg-[#F0F4FA] rounded-2xl p-6 border border-[#E2E8F0] hover:shadow-lg hover:-translate-y-1.5 hover:border-[#293C82]/20 transition-all duration-300"
               >
-                <span className="inline-block bg-[#375191]/5 text-[#375191] text-xs font-semibold px-3 py-1 rounded-full mb-4">
+                <span className="inline-block bg-[#293C82]/5 text-[#293C82] text-xs font-semibold px-3 py-1 rounded-full mb-4">
                   {post.tag}
                 </span>
-                <h3 className="font-[var(--font-outfit)] text-lg font-semibold text-[#121A33] group-hover:text-[#375191] transition-colors">
+                <h3 className="font-[var(--font-outfit)] text-lg font-semibold text-[#1A2754] group-hover:text-[#293C82] transition-colors">
                   {post.title}
                 </h3>
                 <p className="mt-2 text-sm text-[#64748B] leading-relaxed">{post.excerpt}</p>
@@ -51,7 +51,7 @@ export function BlogPreview() {
         </div>
 
         <div className="mt-8 text-center">
-          <Link href="/blog" className="inline-flex items-center gap-1 text-sm font-semibold text-[#375191] hover:text-[#2D4379] transition-colors">
+          <Link href="/blog" className="inline-flex items-center gap-1 text-sm font-semibold text-[#293C82] hover:text-[#2D4379] transition-colors">
             Ver todos os posts <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

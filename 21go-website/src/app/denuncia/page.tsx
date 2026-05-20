@@ -46,7 +46,7 @@ export default function DenunciaPage() {
   }
 
   return (
-    <section className="min-h-screen bg-gradient-to-b from-[#121A33] via-[#1B284A] to-[#375191] pt-28 pb-20">
+    <section className="min-h-screen bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82] pt-28 pb-20">
       <motion.div
         variants={staggerContainer}
         initial="hidden"
@@ -56,7 +56,7 @@ export default function DenunciaPage() {
         {/* Header */}
         <motion.div variants={fadeInUp} className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 mb-6">
-            <ShieldAlert className="h-8 w-8 text-[#F7963D]" />
+            <ShieldAlert className="h-8 w-8 text-[#F2911D]" />
           </div>
           <h1 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-white">
             Denúncia Anônima
@@ -74,7 +74,7 @@ export default function DenunciaPage() {
             { icon: Shield, title: 'Direto à diretoria', desc: 'Lido apenas pela alta gestão' },
           ].map((item) => (
             <div key={item.title} className="flex flex-col items-center text-center p-4 rounded-xl bg-white/[0.05] border border-white/10 backdrop-blur-sm">
-              <item.icon className="h-5 w-5 text-[#F7963D] mb-2" />
+              <item.icon className="h-5 w-5 text-[#F2911D] mb-2" />
               <p className="text-xs font-semibold text-white/90 leading-tight">{item.title}</p>
               <p className="text-[10px] text-white/40 mt-1">{item.desc}</p>
             </div>
@@ -100,7 +100,7 @@ export default function DenunciaPage() {
               'Qualquer situação que comprometa a integridade da empresa',
             ].map((item) => (
               <div key={item} className="flex items-start gap-2.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#F7963D] mt-1.5 flex-shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[#F2911D] mt-1.5 flex-shrink-0" />
                 <span className="text-sm text-white/50">{item}</span>
               </div>
             ))}
@@ -110,7 +110,7 @@ export default function DenunciaPage() {
         {success ? (
           <motion.div variants={fadeInUp} className="bg-white rounded-2xl p-10 text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="font-[var(--font-outfit)] text-2xl font-bold text-[#121A33] mb-2">
+            <h2 className="font-[var(--font-outfit)] text-2xl font-bold text-[#1A2754] mb-2">
               Denúncia registrada com segurança
             </h2>
             <p className="text-[#64748B] mb-2">
@@ -121,7 +121,7 @@ export default function DenunciaPage() {
             </p>
             <button
               onClick={() => setSuccess(false)}
-              className="px-6 py-3 rounded-lg bg-[#121A33] text-white font-semibold hover:bg-[#081632] transition-colors"
+              className="px-6 py-3 rounded-lg bg-[#1A2754] text-white font-semibold hover:bg-[#081632] transition-colors"
             >
               Fazer outra denúncia
             </button>
@@ -130,29 +130,29 @@ export default function DenunciaPage() {
           <motion.div variants={fadeInUp}>
             <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-[#121A33] mb-1.5">Assunto *</label>
+                <label className="block text-sm font-medium text-[#1A2754] mb-1.5">Assunto *</label>
                 <input
                   type="text"
                   value={assunto}
                   onChange={(e) => setAssunto(e.target.value)}
                   placeholder="Sobre o que é a denúncia?"
-                  className="w-full px-4 py-3 rounded-lg border border-[#E2E8F0] text-[#121A33] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#375191]/20 focus:border-[#375191] transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-[#E2E8F0] text-[#1A2754] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#293C82]/20 focus:border-[#293C82] transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#121A33] mb-1.5">Descreva a situação *</label>
+                <label className="block text-sm font-medium text-[#1A2754] mb-1.5">Descreva a situação *</label>
                 <textarea
                   value={comentario}
                   onChange={(e) => setComentario(e.target.value)}
                   rows={7}
                   placeholder="Descreva com detalhes o que aconteceu, quando, onde e quem estava envolvido. Quanto mais informação, melhor conseguiremos investigar..."
-                  className="w-full px-4 py-3 rounded-lg border border-[#E2E8F0] text-[#121A33] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#375191]/20 focus:border-[#375191] transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-lg border border-[#E2E8F0] text-[#1A2754] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#293C82]/20 focus:border-[#293C82] transition-all resize-none"
                 />
               </div>
 
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#F0F4FA] text-xs text-[#64748B]">
-                <Lock className="h-3.5 w-3.5 text-[#375191] flex-shrink-0" />
+                <Lock className="h-3.5 w-3.5 text-[#293C82] flex-shrink-0" />
                 Este formulário é 100% anônimo. Nenhum dado pessoal, IP ou cookie é coletado.
               </div>
 
@@ -161,7 +161,7 @@ export default function DenunciaPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-lg bg-[#121A33] text-white font-semibold hover:bg-[#081632] disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-lg"
+                className="w-full py-3.5 rounded-lg bg-[#1A2754] text-white font-semibold hover:bg-[#081632] disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-lg"
               >
                 {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</> : (
                   <>

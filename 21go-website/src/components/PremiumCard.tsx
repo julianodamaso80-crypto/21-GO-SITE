@@ -7,7 +7,7 @@ interface PremiumCardProps {
   glowColor?: string;
 }
 
-export default function PremiumCard({ children, className = '', glowColor = '#375191' }: PremiumCardProps) {
+export default function PremiumCard({ children, className = '', glowColor = '#293C82' }: PremiumCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent) => {

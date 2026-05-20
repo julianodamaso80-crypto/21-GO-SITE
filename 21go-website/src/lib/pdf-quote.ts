@@ -570,7 +570,7 @@ function renderHTML(input: QuotePdfInput): string {
     flex-direction: column;
     overflow: hidden;
   }
-  .laranja { color: #F7963D; font-weight: 700; }
+  .laranja { color: #F2911D; font-weight: 700; }
   .verde { color: #25C168; }
 
   /* HEADER compacto */
@@ -620,7 +620,7 @@ function renderHTML(input: QuotePdfInput): string {
   /* REF BAR — 4 cenarios em grid 4 colunas */
   .ref-bar {
     background: linear-gradient(135deg, #FFF7ED 0%, #FFFAF0 100%);
-    border: 1px solid rgba(247,150,61,0.3);
+    border: 1px solid rgba(242, 145, 29,0.3);
     border-radius: 10px;
     padding: 8px 12px;
     margin-bottom: 8px;
@@ -628,7 +628,7 @@ function renderHTML(input: QuotePdfInput): string {
   .ref-bar-header {
     margin-bottom: 6px;
     padding-bottom: 6px;
-    border-bottom: 1px solid rgba(247,150,61,0.15);
+    border-bottom: 1px solid rgba(242, 145, 29,0.15);
   }
   .ref-bar-title {
     display: flex; align-items: baseline; gap: 8px;
@@ -700,7 +700,7 @@ function renderHTML(input: QuotePdfInput): string {
     text-transform: uppercase; letter-spacing: 0.6px;
   }
   .entrada-vals-num {
-    font-size: 13px; font-weight: 800; color: #F7963D;
+    font-size: 13px; font-weight: 800; color: #F2911D;
     letter-spacing: -0.03em;
   }
 
@@ -776,7 +776,7 @@ function renderHTML(input: QuotePdfInput): string {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 2px; background: #F7963D;
+    height: 2px; background: #F2911D;
   }
   .plan-flag {
     display: inline-block;
@@ -786,7 +786,7 @@ function renderHTML(input: QuotePdfInput): string {
     text-transform: uppercase; letter-spacing: 0.5px;
     margin-bottom: 4px;
   }
-  .plan-flag.selected { background: #F7963D; }
+  .plan-flag.selected { background: #F2911D; }
   .plan-flag.pop { background: #25C168; }
   .plan-name {
     font-size: 11px; font-weight: 700;
@@ -854,7 +854,7 @@ function renderHTML(input: QuotePdfInput): string {
   .footer-avatar {
     width: 30px; height: 30px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #F7963D 0%, #FB923C 100%);
+    background: linear-gradient(135deg, #F2911D 0%, #FB923C 100%);
     color: #fff; font-weight: 700; font-size: 11px;
     display: inline-flex; align-items: center; justify-content: center;
     flex-shrink: 0;

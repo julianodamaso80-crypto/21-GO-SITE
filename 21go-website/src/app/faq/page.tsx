@@ -101,15 +101,15 @@ export default function FAQPage() {
   return (
     <>
       {/* Hero */}
-      <section className="pt-32 pb-16 bg-gradient-to-b from-[#121A33] via-[#1B284A] to-[#375191] relative overflow-hidden">
+      <section className="pt-32 pb-16 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82] relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-[#375191]/20 blur-[120px]" />
-          <div className="absolute bottom-0 -left-32 w-[400px] h-[400px] rounded-full bg-[#F7963D]/10 blur-[100px]" />
+          <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-[#293C82]/20 blur-[120px]" />
+          <div className="absolute bottom-0 -left-32 w-[400px] h-[400px] rounded-full bg-[#F2911D]/10 blur-[100px]" />
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-repeat opacity-[0.04]" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#F7963D]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F2911D]" />
             Tire suas dúvidas
           </span>
           <h1 className="font-[var(--font-display)] text-4xl md:text-5xl font-bold text-white mb-4">
@@ -129,14 +129,14 @@ export default function FAQPage() {
             <div className="space-y-10">
               {categories.map((category) => (
                 <div key={category.title}>
-                  <h2 className="font-[var(--font-display)] text-xl font-bold text-[#121A33] mb-4 flex items-center gap-3">
-                    <div className="w-1 h-6 rounded-full bg-[#F7963D]" />
+                  <h2 className="font-[var(--font-display)] text-xl font-bold text-[#1A2754] mb-4 flex items-center gap-3">
+                    <div className="w-1 h-6 rounded-full bg-[#F2911D]" />
                     {category.title}
                   </h2>
                   <div className="space-y-3">
                     {category.items.map((item) => (
                       <details key={item.q} className="group bg-white rounded-xl border border-[#E8ECF4] overflow-hidden shadow-sm">
-                        <summary className="flex items-center justify-between px-4 sm:px-6 py-4 cursor-pointer list-none text-[#121A33] font-medium text-sm sm:text-[15px] hover:bg-[#F7F8FC] transition-colors">
+                        <summary className="flex items-center justify-between px-4 sm:px-6 py-4 cursor-pointer list-none text-[#1A2754] font-medium text-sm sm:text-[15px] hover:bg-[#F7F8FC] transition-colors">
                           {item.q}
                           <ChevronDown className="w-5 h-5 text-[#94A3B8] group-open:rotate-180 transition-transform flex-shrink-0 ml-4" />
                         </summary>
@@ -152,9 +152,9 @@ export default function FAQPage() {
 
             {/* Sidebar CTA */}
             <div className="lg:sticky lg:top-28 h-fit space-y-6">
-              <div className="bg-gradient-to-br from-[#121A33] to-[#375191] rounded-2xl p-8 text-white">
+              <div className="bg-gradient-to-br from-[#1A2754] to-[#293C82] rounded-2xl p-8 text-white">
                 <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-6 h-6 text-[#F7963D]" />
+                  <ShieldCheck className="w-6 h-6 text-[#F2911D]" />
                 </div>
                 <h3 className="font-[var(--font-display)] text-lg font-bold mb-2">
                   Não encontrou sua resposta?
@@ -176,7 +176,7 @@ export default function FAQPage() {
                 <p className="text-sm text-white/50 mb-4">Descubra quanto custa proteger seu veículo.</p>
                 <Link
                   href="/cotacao"
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-semibold text-sm hover:shadow-lg hover:shadow-[#F7963D]/20 transition-all"
+                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-semibold text-sm hover:shadow-lg hover:shadow-[#F2911D]/20 transition-all"
                 >
                   Fazer Simulação <ArrowRight className="w-4 h-4" />
                 </Link>

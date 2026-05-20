@@ -27,7 +27,7 @@ export function TrustBar() {
   ))
 
   return (
-    <section className="bg-[#F7963D] overflow-hidden py-3.5">
+    <section className="bg-[#F2911D] overflow-hidden py-3.5">
       <div className="relative flex">
         <div className="animate-marquee flex items-center text-white">
           {items}
