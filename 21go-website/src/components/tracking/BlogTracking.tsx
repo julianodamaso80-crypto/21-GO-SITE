@@ -7,7 +7,35 @@ import {
   trackBlogCtaClick,
   trackBlogInternalLinkClick,
   trackWhatsAppClick,
+  type BlogLinkTargetType,
 } from '@/lib/tracking'
+
+// Rotas estratégicas do site (não-blog) que entram como "pagina_pilar"
+// no relatório de SEO interno. Manter sincronizada com a navegação.
+const PILLAR_ROUTES = ['/protecao-veicular', '/cotacao', '/faq', '/sobre']
+
+function resolveTargetUrl(href: string): string {
+  try {
+    return new URL(href, window.location.origin).href
+  } catch {
+    return href
+  }
+}
+
+function classifyTargetType(href: string): BlogLinkTargetType {
+  if (/wa\.me\/|api\.whatsapp\.com|whatsapp:/i.test(href)) return 'whatsapp'
+  let pathname = href
+  try {
+    pathname = new URL(href, window.location.origin).pathname
+  } catch {
+    /* href esquisito — cai no fallback abaixo */
+  }
+  if (pathname.startsWith('/blog/')) return 'artigo_blog'
+  if (PILLAR_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {
+    return 'pagina_pilar'
+  }
+  return 'outro'
+}
 
 type Props = {
   articleSlug: string
@@ -128,6 +156,8 @@ export function BlogTracking({ articleSlug, articleTitle, articleCategory, mainK
           article_slug: articleSlug,
           link_href: href,
           link_text: linkText,
+          target_url: resolveTargetUrl(href),
+          target_type: classifyTargetType(href),
         })
       }
       // externo: ignorado — fora do escopo de SEO interno do blog.
