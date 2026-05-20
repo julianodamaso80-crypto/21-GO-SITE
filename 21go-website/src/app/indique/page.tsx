@@ -3,7 +3,6 @@
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import Link from 'next/link'
-import { trackWhatsAppClick } from '@/lib/tracking'
 import {
   Share2,
   ShieldCheck,
@@ -89,7 +88,8 @@ export default function IndiquePage() {
               href="https://wa.me/5521969454824?text=Ol%C3%A1!%20Quero%20meu%20link%20de%20indica%C3%A7%C3%A3o%20do%20programa%20Member%20Get%20Member.%20Meu%20nome%3A%20"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackWhatsAppClick('indique_topo', { buttonText: 'Quero meu link (topo)' })}
+              data-track-origin="indique_topo"
+              data-track-button-text="Quero meu link (topo)"
               className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-bold rounded-full shadow-lg shadow-[#F7963D]/20 hover:shadow-xl hover:shadow-[#F7963D]/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <MessageCircle className="w-5 h-5" />
@@ -213,7 +213,8 @@ export default function IndiquePage() {
             href="https://wa.me/5521969454824?text=Ol%C3%A1!%20Quero%20meu%20link%20de%20indica%C3%A7%C3%A3o.%20Meu%20nome%3A%20"
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => trackWhatsAppClick('indique_fim', { buttonText: 'Quero meu link (CTA final)' })}
+            data-track-origin="indique_fim"
+            data-track-button-text="Quero meu link (CTA final)"
             className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-bold rounded-full shadow-lg shadow-[#F7963D]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <MessageCircle className="w-5 h-5" />

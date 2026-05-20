@@ -1,8 +1,8 @@
-'use client';
-
 import { WHATSAPP_NUMBER } from '@/lib/constants'
-import { trackWhatsAppClick } from '@/lib/tracking'
 
+// O tracking deste botão (e de qualquer link wa.me no site) vem do
+// WhatsAppTracker global montado no layout — captura via event delegation.
+// aria-label="Fale conosco pelo WhatsApp" identifica a origem floating_button.
 export function WhatsAppButton() {
   return (
     <a
@@ -10,7 +10,6 @@ export function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Fale conosco pelo WhatsApp"
-      onClick={() => trackWhatsAppClick('floating_button', { buttonText: 'WhatsApp (flutuante)' })}
       className="fixed bottom-24 md:bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:scale-110"
     >
       {/* Pulse ring */}

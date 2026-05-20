@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { trackCotacaoInicio, trackCotacaoCompleta, trackWhatsAppClick, trackPedidoOrcamento, trackPageView, getTrackingData } from '@/lib/tracking'
+import { trackCotacaoInicio, trackCotacaoCompleta, trackPedidoOrcamento, trackPageView, getTrackingData } from '@/lib/tracking'
 import {
   ArrowRight,
   ArrowLeft,
@@ -874,7 +874,8 @@ export default function CotacaoPage() {
                           href="https://wa.me/5521969454824?text=Olá! Preciso de ajuda com uma simulação."
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() => trackWhatsAppClick('cotacao_erro_placa', { buttonText: 'fale no WhatsApp' })}
+                          data-track-origin="cotacao_erro_placa"
+                          data-track-button-text="fale no WhatsApp"
                           className="underline font-medium"
                         >
                           fale no WhatsApp
@@ -907,7 +908,8 @@ export default function CotacaoPage() {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={() => trackWhatsAppClick('cotacao_fallback_humano', { buttonText: 'Falar com consultor agora' })}
+                      data-track-origin="cotacao_fallback_humano"
+                      data-track-button-text="Falar com consultor agora"
                       className="flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-[#10B981] to-[#059669] text-white font-bold text-base rounded-full shadow-lg shadow-[#10B981]/20 hover:shadow-xl hover:shadow-[#10B981]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                     >
                       <MessageCircle className="w-5 h-5" />
@@ -1198,12 +1200,11 @@ export default function CotacaoPage() {
 
                   <a href={`https://wa.me/5521969454824?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
                     target="_blank" rel="noopener noreferrer"
+                    data-track-origin="cotacao_resultado"
+                    data-track-button-text="Contratar pelo WhatsApp"
                     onClick={() => {
-                      trackWhatsAppClick('cotacao_resultado', {
-                        plano: selectedPlan.name,
-                        valor: price,
-                        buttonText: 'Contratar pelo WhatsApp',
-                      })
+                      // whatsapp_click vem do WhatsAppTracker global (event delegation).
+                      // Aqui mantemos só lógicas extras do botão de contratação.
                       trackPedidoOrcamento({
                         plano: selectedPlan.name,
                         valor: price,
