@@ -35,7 +35,7 @@ export async function runsRoutes(app: FastifyInstance): Promise<void> {
       { triggered_by: 'manual', limit: body.data.limit ?? config.WEEKLY_KEYWORD_LIMIT, dry_run: body.data.dry_run ?? false },
     );
     log.info({ jobId: job.id }, 'manual weekly disparado');
-    return reply.code(202).send({ enqueued: 'seo:research', jobId: job.id });
+    return reply.code(202).send({ enqueued: 'seo-research', jobId: job.id });
   });
 
   app.post('/runs/daily', async (req, reply) => {
@@ -49,7 +49,7 @@ export async function runsRoutes(app: FastifyInstance): Promise<void> {
       { triggered_by: 'manual', limit: body.data.limit ?? config.DAILY_ARTICLE_LIMIT, dry_run: body.data.dry_run ?? false },
     );
     log.info({ jobId: job.id }, 'manual daily disparado');
-    return reply.code(202).send({ enqueued: 'seo:write', jobId: job.id });
+    return reply.code(202).send({ enqueued: 'seo-write', jobId: job.id });
   });
 
   app.post('/runs/analyze', async (req, reply) => {
@@ -57,7 +57,7 @@ export async function runsRoutes(app: FastifyInstance): Promise<void> {
     if (!auth.ok) return reply.code(401).send({ error: auth.reason });
     const job = await queueAnalyze.add('manual-analyze', { triggered_by: 'manual' });
     log.info({ jobId: job.id }, 'manual analyze disparado');
-    return reply.code(202).send({ enqueued: 'seo:analyze', jobId: job.id });
+    return reply.code(202).send({ enqueued: 'seo-analyze', jobId: job.id });
   });
 
   app.post('/runs/reporting', async (req, reply) => {
@@ -65,7 +65,7 @@ export async function runsRoutes(app: FastifyInstance): Promise<void> {
     if (!auth.ok) return reply.code(401).send({ error: auth.reason });
     const job = await queueReporting.add('manual-reporting', { triggered_by: 'manual' });
     log.info({ jobId: job.id }, 'manual reporting disparado');
-    return reply.code(202).send({ enqueued: 'seo:reporting', jobId: job.id });
+    return reply.code(202).send({ enqueued: 'seo-reporting', jobId: job.id });
   });
 
   /** Publica/indexa um artigo especifico (manual). */
@@ -85,6 +85,6 @@ export async function runsRoutes(app: FastifyInstance): Promise<void> {
     }
     const job = await queuePublish.add('manual-publish', { ...body.data, triggered_by: 'manual' });
     log.info({ jobId: job.id, articleId: body.data.article_id }, 'manual publish disparado');
-    return reply.code(202).send({ enqueued: 'seo:publish', jobId: job.id });
+    return reply.code(202).send({ enqueued: 'seo-publish', jobId: job.id });
   });
 }

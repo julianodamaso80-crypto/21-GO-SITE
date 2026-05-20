@@ -1,5 +1,5 @@
 /**
- * Worker: seo:write
+ * Worker: seo-write
  * Pega briefings ainda nao usados, encadeia 05 (Writer) -> 06 (Reviewer) -> 07 (OnPage) -> 08 (Repurpose).
  *
  * Articles sempre saem com status='in_review' (apos Reviewer).

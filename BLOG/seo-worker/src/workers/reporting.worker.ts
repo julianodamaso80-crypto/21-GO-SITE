@@ -1,5 +1,5 @@
 /**
- * Worker: seo:reporting
+ * Worker: seo-reporting
  * Agente 15 — snapshot diario GSC + GA4.
  */
 import type { Job } from 'bullmq';

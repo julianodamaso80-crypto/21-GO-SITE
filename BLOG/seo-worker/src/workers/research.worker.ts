@@ -1,5 +1,5 @@
 /**
- * Worker: seo:research
+ * Worker: seo-research
  * Encadeia: Agente 01 (KeywordResearch) -> Agente 02 (Strategist + Anti-Repetition embutido) -> Agente 04 (Briefing).
  *
  * Cada execucao roda dentro de withRun() pra registrar em seo.agent_runs com custo/tokens.

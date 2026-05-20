@@ -1,5 +1,5 @@
 /**
- * Worker: seo:analyze
+ * Worker: seo-analyze
  * 13 (GSCAnalyst) -> 14 (ContentUpdater)
  */
 import type { Job } from 'bullmq';

@@ -23,11 +23,11 @@ const baseOpts = {
 
 export function startAllWorkers(): void {
   workers.push(
-    new Worker('seo:research', handleResearchJob, baseOpts),
-    new Worker('seo:write', handleWriteJob, baseOpts),
-    new Worker('seo:publish', handlePublishJob, baseOpts),
-    new Worker('seo:analyze', handleAnalyzeJob, baseOpts),
-    new Worker('seo:reporting', handleReportingJob, baseOpts),
+    new Worker('seo-research', handleResearchJob, baseOpts),
+    new Worker('seo-write', handleWriteJob, baseOpts),
+    new Worker('seo-publish', handlePublishJob, baseOpts),
+    new Worker('seo-analyze', handleAnalyzeJob, baseOpts),
+    new Worker('seo-reporting', handleReportingJob, baseOpts),
   );
 
   for (const w of workers) {

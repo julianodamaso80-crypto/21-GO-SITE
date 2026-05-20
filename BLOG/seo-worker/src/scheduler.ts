@@ -3,11 +3,11 @@
  * Timezone vem de config.TZ (default America/Sao_Paulo).
  *
  * Crons:
- *   seg 06:00  -> seo:research  (semanal de planejamento)
- *   ter 07:00  -> seo:analyze   (analise GSC + recomendacoes)
- *   diario 09:00 -> seo:write   (produzir rascunhos)
- *   diario 03:00 -> seo:reporting (snapshot metricas)
- *   a cada 15 min -> seo:publish (varre indexacao pendente)
+ *   seg 06:00  -> seo-research  (semanal de planejamento)
+ *   ter 07:00  -> seo-analyze   (analise GSC + recomendacoes)
+ *   diario 09:00 -> seo-write   (produzir rascunhos)
+ *   diario 03:00 -> seo-reporting (snapshot metricas)
+ *   a cada 15 min -> seo-publish (varre indexacao pendente)
  */
 import cron from 'node-cron';
 import { config } from './config.js';

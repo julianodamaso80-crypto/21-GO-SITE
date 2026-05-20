@@ -18,11 +18,11 @@ const baseOpts = {
   },
 };
 
-export const queueResearch = new Queue('seo:research', baseOpts);     // Agente 01-04
-export const queueWrite = new Queue('seo:write', baseOpts);           // Agente 05-08
-export const queuePublish = new Queue('seo:publish', baseOpts);       // Agente 09-12
-export const queueAnalyze = new Queue('seo:analyze', baseOpts);       // Agente 13-14
-export const queueReporting = new Queue('seo:reporting', baseOpts);   // Agente 15
+export const queueResearch = new Queue('seo-research', baseOpts);     // Agente 01-04
+export const queueWrite = new Queue('seo-write', baseOpts);           // Agente 05-08
+export const queuePublish = new Queue('seo-publish', baseOpts);       // Agente 09-12
+export const queueAnalyze = new Queue('seo-analyze', baseOpts);       // Agente 13-14
+export const queueReporting = new Queue('seo-reporting', baseOpts);   // Agente 15
 
 export const QUEUES = [queueResearch, queueWrite, queuePublish, queueAnalyze, queueReporting];
 

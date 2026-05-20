@@ -1,5 +1,5 @@
 /**
- * Worker: seo:publish
+ * Worker: seo-publish
  *
  * 3 modos de invocacao:
  *   1) name='manual-publish' { article_id, skip_human_review? }
