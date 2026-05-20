@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Barlow } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -12,11 +12,12 @@ import { SchemaOrg } from '@/components/seo/SchemaOrg'
 import SmoothScrollProvider from '@/components/SmoothScrollProvider'
 import MobileCTA from '@/components/MobileCTA'
 
-/* Barlow = equivalente web da fonte DIN (família oficial da 21Go) */
-const barlow = Barlow({
+/* Inter = fallback oficial (Google Fonts) do manual de marca 21Go v1.0 abr/2026 */
+/* Pesos cobrindo: Light(300), Regular(400), Medium(500), Bold(700), Heavy/ExtraBold(800) */
+const inter = Inter({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-barlow',
+  variable: '--font-inter',
   display: 'swap',
 })
 
@@ -39,21 +40,26 @@ export const metadata: Metadata = {
     icon: '/favicon.ico',
     apple: '/logo21go.png',
   },
-  // Meta Domain Verification — as 2 tags ficam no <head> de ambos os hosts.
-  // Meta lê só a que corresponde ao domínio sendo verificado; ignora a outra.
-  // Os 2 dominios compartilham o mesmo deploy/serviço Easypanel, por isso
-  // servimos ambas globalmente.
+  // Meta Domain Verification — 4 tags, 2 BMs proprietarios × 2 dominios.
+  // Os 2 BMs sao donos de pixels diferentes:
+  //   - Marcos Alves da Renata (2783265268660874) → Pixel "21go" (2777380499304351)
+  //   - Juliano Damaso         (215936062346243)  → Pixel "PIXEL 21" (999953532385177)
+  // Meta le so a tag que bate com o BM verificando; ignora as outras.
   other: {
     'facebook-domain-verification': [
+      // BM Marcos Alves da Renata
       'zdgnwdkba9lxmtuqd1j5mhwki7r57y', // 21go.site
       'qsj4tw4i1nzd8x8aajoqp77x6dl6b0', // 21goconsultoraleticya.site
+      // BM Juliano Damaso
+      '0ruuwkhj1e6bnadcippr9exl3jqncs', // 21go.site
+      '7ov5n8z6gtw4zo8qh9q3kue5bzhp9b', // 21goconsultoraleticya.site
     ],
   },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={barlow.variable}>
+    <html lang="pt-BR" className={inter.variable}>
       <body>
         <MetaPixelScripts />
         <GTMProvider />

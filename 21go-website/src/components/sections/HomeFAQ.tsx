@@ -19,13 +19,13 @@ const faqs = [
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className={`border rounded-xl overflow-hidden transition-all duration-200 ${open ? 'border-[#375191]/30 shadow-sm' : 'border-[#E2E8F0]'}`}>
+    <div className={`border rounded-xl overflow-hidden transition-all duration-200 ${open ? 'border-[#293C82]/30 shadow-sm' : 'border-[#E2E8F0]'}`}>
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between p-5 text-left hover:bg-[#FAFBFC] transition-colors"
       >
-        <span className="text-sm font-semibold text-[#121A33] pr-4">{q}</span>
-        <ChevronDown className={`h-5 w-5 text-[#64748B] flex-shrink-0 transition-transform duration-300 ${open ? 'rotate-180 text-[#375191]' : ''}`} />
+        <span className="text-sm font-semibold text-[#1A2754] pr-4">{q}</span>
+        <ChevronDown className={`h-5 w-5 text-[#64748B] flex-shrink-0 transition-transform duration-300 ${open ? 'rotate-180 text-[#293C82]' : ''}`} />
       </button>
       <AnimatePresence>
         {open && (
@@ -56,7 +56,7 @@ export function HomeFAQ() {
         className="mx-auto max-w-3xl px-6"
       >
         <motion.div variants={fadeInUp} className="text-center mb-14">
-          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#375191]">
+          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#293C82]">
             Perguntas frequentes
           </h2>
           <p className="mt-4 text-lg text-[#64748B]">Tire suas dúvidas sobre proteção veicular</p>

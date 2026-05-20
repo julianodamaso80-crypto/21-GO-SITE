@@ -23,13 +23,13 @@ export function InlineCTA({ text, buttonText = 'Fazer Simulação Grátis', bg =
         animate={isInView ? 'visible' : 'hidden'}
         className="mx-auto max-w-3xl px-6 py-10"
       >
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-[#F7963D]/15 bg-[#F7963D]/[0.03] px-6 py-5 sm:px-8">
-          <p className="text-sm sm:text-base font-medium text-[#121A33] text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-[#F2911D]/15 bg-[#F2911D]/[0.03] px-6 py-5 sm:px-8">
+          <p className="text-sm sm:text-base font-medium text-[#1A2754] text-center sm:text-left">
             {text}
           </p>
           <Link
             href="/cotacao"
-            className="flex-shrink-0 inline-flex items-center px-6 py-3 rounded-xl bg-[#F7963D] text-white text-sm font-semibold hover:bg-[#D87E2F] transition-all duration-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
+            className="flex-shrink-0 inline-flex items-center px-6 py-3 rounded-xl bg-[#F2911D] text-white text-sm font-semibold hover:bg-[#D67A0F] transition-all duration-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
           >
             {buttonText}
           </Link>

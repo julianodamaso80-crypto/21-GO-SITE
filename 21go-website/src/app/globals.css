@@ -1,29 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  /* Primary — Azul 21Go (oficial: RGB 55,81,145) */
-  --color-blue-500: #375191;
-  --color-blue-600: #2D4379;
-  --color-blue-700: #243562;
-  --color-blue-800: #1B284A;
-  --color-blue-900: #121A33;
+  /* Tokens da marca — Manual oficial 21Go v1.0 (Abril 2026) */
+  /* Azul Institucional — RGB 41,60,130 — proporção 60% */
+  --color-brand-azul: #293C82;
+  /* Laranja 21Go — RGB 242,145,29 — proporção 25% */
+  --color-brand-laranja: #F2911D;
+  /* Verde Localização — RGB 199,211,1 — proporção 15% */
+  --color-brand-verde: #C7D301;
 
-  /* Secondary — Laranja 21Go (oficial: RGB 247,150,61) */
-  --color-orange-500: #F7963D;
-  --color-orange-600: #D87E2F;
-  --color-orange-400: #F9A95E;
+  /* Primary — Azul 21Go (oficial: #293C82) + escalas derivadas */
+  --color-blue-500: #293C82;
+  --color-blue-600: #1F3068;
+  --color-blue-700: #1A2754;
+  --color-blue-800: #142042;
+  --color-blue-900: #0D182F;
 
-  /* Accent — Verde 21Go (oficial: RGB 191,215,65) */
-  --color-green-21go: #BFD741;
-  --color-gold: #C9A84C;
+  /* Secondary — Laranja 21Go (oficial: #F2911D) + escalas derivadas */
+  --color-orange-500: #F2911D;
+  --color-orange-600: #D67A0F;
+  --color-orange-400: #F5A845;
+
+  /* Accent — Verde Localização (oficial: #C7D301) */
+  --color-green-21go: #C7D301;
 
   /* Backgrounds */
   --color-bg-white: #FAFBFC;
   --color-bg-gray: #F0F4FA;
-  --color-bg-hero: #121A33;
+  --color-bg-hero: #1A2754;
 
   /* Text */
-  --color-txt-primary: #121A33;
+  --color-txt-primary: #1A2754;
   --color-txt-secondary: #64748B;
   --color-txt-light: #FAFBFC;
 
@@ -32,9 +39,9 @@
   --color-error: #EF4444;
   --color-warning: #FBBF24;
 
-  /* Fonts — DIN (família) via Barlow (web equivalent) */
-  --font-display: var(--font-barlow), 'Barlow', system-ui, sans-serif;
-  --font-body: var(--font-barlow), 'Barlow', system-ui, sans-serif;
+  /* Fonts — DIN Next LT Pro (oficial) via Inter (fallback oficial — manual marca abr/2026) */
+  --font-display: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-body: var(--font-inter), 'Inter', system-ui, sans-serif;
 }
 
 /* ── Keyframes ──────────────────────────────────────────── */
@@ -73,8 +80,8 @@
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px 4px rgba(247, 150, 61, 0.35); }
-  50%       { box-shadow: 0 0 32px 10px rgba(247, 150, 61, 0.55); }
+  0%, 100% { box-shadow: 0 0 20px 4px rgba(242, 145, 29, 0.35); }
+  50%       { box-shadow: 0 0 32px 10px rgba(242, 145, 29, 0.55); }
 }
 
 @keyframes check-pop {
@@ -179,7 +186,7 @@
   }
 
   ::selection {
-    background: rgba(55, 81, 145, 0.2);
+    background: rgba(41, 60, 130, 0.2);
     color: var(--color-txt-primary);
   }
 }
@@ -209,7 +216,7 @@
 /* ── Gradient text ─────────────────────────────────────── */
 
 .text-gradient-orange {
-  background: linear-gradient(135deg, #F7963D 0%, #C9A84C 50%, #F7963D 100%);
+  background: linear-gradient(135deg, #F2911D 0%, #C7D301 50%, #F2911D 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

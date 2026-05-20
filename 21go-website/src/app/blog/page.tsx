@@ -10,11 +10,11 @@ export const metadata: Metadata = {
 
 const categoryColors: Record<string, string> = {
   Seguranca: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20',
-  Dicas: 'bg-[#375191]/10 text-[#375191] border-[#375191]/20',
-  Guia: 'bg-[#375191]/10 text-[#375191] border-[#375191]/20',
+  Dicas: 'bg-[#293C82]/10 text-[#293C82] border-[#293C82]/20',
+  Guia: 'bg-[#293C82]/10 text-[#293C82] border-[#293C82]/20',
   Economia: 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20',
   Tecnologia: 'bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20',
-  Comparativo: 'bg-[#F7963D]/10 text-[#F7963D] border-[#F7963D]/20',
+  Comparativo: 'bg-[#F2911D]/10 text-[#F2911D] border-[#F2911D]/20',
   Geral: 'bg-[#64748B]/10 text-[#64748B] border-[#64748B]/20',
 }
 
@@ -24,14 +24,14 @@ export default function BlogPage() {
   return (
     <>
       {/* Hero */}
-      <section className="pt-32 pb-16 bg-gradient-to-b from-[#121A33] via-[#1B284A] to-[#375191] relative overflow-hidden">
+      <section className="pt-32 pb-16 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82] relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-[#F7963D]/10 blur-[120px]" />
-          <div className="absolute bottom-0 -left-32 w-[400px] h-[400px] rounded-full bg-[#375191]/20 blur-[100px]" />
+          <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-[#F2911D]/10 blur-[120px]" />
+          <div className="absolute bottom-0 -left-32 w-[400px] h-[400px] rounded-full bg-[#293C82]/20 blur-[100px]" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#F7963D]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F2911D]" />
             Conteúdo exclusivo
           </span>
           <h1 className="font-[var(--font-display)] text-4xl md:text-5xl font-bold text-white mb-4">
@@ -56,7 +56,7 @@ export default function BlogPage() {
                 }`}
               >
                 {/* Cover gradient */}
-                <div className={`${i === 0 ? 'h-56' : 'h-44'} bg-gradient-to-br from-[#121A33] to-[#375191] relative overflow-hidden flex items-end p-6`}>
+                <div className={`${i === 0 ? 'h-56' : 'h-44'} bg-gradient-to-br from-[#1A2754] to-[#293C82] relative overflow-hidden flex items-end p-6`}>
                   <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.06]" />
                   <span className={`relative z-10 text-xs font-bold px-3 py-1 rounded-full border ${categoryColors[post.category] || categoryColors.Geral}`}>
                     {post.category}
@@ -75,7 +75,7 @@ export default function BlogPage() {
                     </div>
                   </div>
 
-                  <h2 className={`font-[var(--font-display)] font-semibold text-[#121A33] mb-2.5 leading-tight group-hover:text-[#375191] transition-colors ${
+                  <h2 className={`font-[var(--font-display)] font-semibold text-[#1A2754] mb-2.5 leading-tight group-hover:text-[#293C82] transition-colors ${
                     i === 0 ? 'text-xl' : 'text-base'
                   }`}>
                     {post.title}
@@ -85,7 +85,7 @@ export default function BlogPage() {
                     {post.description}
                   </p>
 
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#375191] group-hover:gap-2.5 transition-all">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#293C82] group-hover:gap-2.5 transition-all">
                     Ler artigo <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>

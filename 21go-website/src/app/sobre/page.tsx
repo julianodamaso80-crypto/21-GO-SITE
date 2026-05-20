@@ -45,10 +45,10 @@ export default function SobrePage() {
   return (
     <>
       {/* Hero */}
-      <section className="pt-32 pb-20 bg-gradient-to-b from-[#121A33] via-[#1B284A] to-[#375191] relative overflow-hidden">
+      <section className="pt-32 pb-20 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82] relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-[#375191]/20 blur-[150px]" />
-          <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-[#F7963D]/10 blur-[120px]" />
+          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-[#293C82]/20 blur-[150px]" />
+          <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-[#F2911D]/10 blur-[120px]" />
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-repeat opacity-[0.04]" />
         </div>
         <motion.div
@@ -60,7 +60,7 @@ export default function SobrePage() {
         >
           <motion.div variants={fadeInUp}>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/60 mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F7963D]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#F2911D]" />
               Quem somos
             </span>
           </motion.div>
@@ -80,7 +80,7 @@ export default function SobrePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center">
             {stats.map((stat) => (
               <div key={stat.label}>
-                <p className="font-[var(--font-display)] text-3xl md:text-4xl font-bold text-[#121A33]">{stat.value}</p>
+                <p className="font-[var(--font-display)] text-3xl md:text-4xl font-bold text-[#1A2754]">{stat.value}</p>
                 <p className="text-xs text-[#94A3B8] mt-1">{stat.label}</p>
               </div>
             ))}
@@ -92,19 +92,19 @@ export default function SobrePage() {
       <section className="py-20 bg-[#F7F8FC]">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">História</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33] mb-3">Nossa trajetória</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">História</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754] mb-3">Nossa trajetória</h2>
             <p className="text-[#64748B]">Duas décadas de compromisso com a proteção dos cariocas.</p>
           </div>
 
           <div className="space-y-6">
             {milestones.map((item) => (
               <div key={item.year} className="flex items-start gap-3 sm:gap-5 bg-white rounded-2xl border border-[#E8ECF4] p-4 sm:p-6 hover:shadow-md transition-all">
-                <div className="w-16 h-12 rounded-xl bg-[#375191] text-white font-[var(--font-display)] text-sm font-bold flex items-center justify-center flex-shrink-0">
+                <div className="w-16 h-12 rounded-xl bg-[#293C82] text-white font-[var(--font-display)] text-sm font-bold flex items-center justify-center flex-shrink-0">
                   {item.year}
                 </div>
                 <div>
-                  <h3 className="font-[var(--font-display)] text-lg font-semibold text-[#121A33] mb-1">{item.title}</h3>
+                  <h3 className="font-[var(--font-display)] text-lg font-semibold text-[#1A2754] mb-1">{item.title}</h3>
                   <p className="text-sm text-[#64748B]">{item.description}</p>
                 </div>
               </div>
@@ -117,25 +117,25 @@ export default function SobrePage() {
       <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Valores</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33]">No que acreditamos</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Valores</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754]">No que acreditamos</h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-[#375191]/5 border border-[#375191]/15 rounded-2xl p-8">
-              <div className="w-12 h-12 rounded-xl bg-[#375191]/10 flex items-center justify-center mb-4">
-                <Target className="w-6 h-6 text-[#375191]" />
+            <div className="bg-[#293C82]/5 border border-[#293C82]/15 rounded-2xl p-8">
+              <div className="w-12 h-12 rounded-xl bg-[#293C82]/10 flex items-center justify-center mb-4">
+                <Target className="w-6 h-6 text-[#293C82]" />
               </div>
-              <h3 className="font-[var(--font-display)] text-xl font-bold text-[#121A33] mb-2">Missão</h3>
+              <h3 className="font-[var(--font-display)] text-xl font-bold text-[#1A2754] mb-2">Missão</h3>
               <p className="text-sm text-[#64748B] leading-relaxed">
                 Democratizar a proteção veicular no Rio de Janeiro, oferecendo proteção acessível e atendimento humanizado a todos os motoristas, independente de perfil ou histórico.
               </p>
             </div>
-            <div className="bg-[#F7963D]/5 border border-[#F7963D]/15 rounded-2xl p-8">
-              <div className="w-12 h-12 rounded-xl bg-[#F7963D]/10 flex items-center justify-center mb-4">
-                <Eye className="w-6 h-6 text-[#F7963D]" />
+            <div className="bg-[#F2911D]/5 border border-[#F2911D]/15 rounded-2xl p-8">
+              <div className="w-12 h-12 rounded-xl bg-[#F2911D]/10 flex items-center justify-center mb-4">
+                <Eye className="w-6 h-6 text-[#F2911D]" />
               </div>
-              <h3 className="font-[var(--font-display)] text-xl font-bold text-[#121A33] mb-2">Visão</h3>
+              <h3 className="font-[var(--font-display)] text-xl font-bold text-[#1A2754] mb-2">Visão</h3>
               <p className="text-sm text-[#64748B] leading-relaxed">
                 Ser a maior e mais confiável associação de proteção veicular do Rio de Janeiro, referência em tecnologia e satisfação do associado.
               </p>
@@ -146,9 +146,9 @@ export default function SobrePage() {
             {values.map((v) => (
               <div key={v.title} className="bg-[#F7F8FC] rounded-2xl border border-[#E8ECF4] p-6 text-center hover:shadow-md hover:-translate-y-1 transition-all">
                 <div className="w-11 h-11 rounded-xl bg-white border border-[#E8ECF4] flex items-center justify-center mx-auto mb-4">
-                  <v.icon className="w-5 h-5 text-[#375191]" />
+                  <v.icon className="w-5 h-5 text-[#293C82]" />
                 </div>
-                <h4 className="font-[var(--font-display)] text-sm font-semibold text-[#121A33] mb-1">{v.title}</h4>
+                <h4 className="font-[var(--font-display)] text-sm font-semibold text-[#1A2754] mb-1">{v.title}</h4>
                 <p className="text-xs text-[#94A3B8]">{v.description}</p>
               </div>
             ))}
@@ -160,8 +160,8 @@ export default function SobrePage() {
       <section className="py-20 bg-[#F7F8FC]">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Equipe</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33]">Quem faz a 21Go acontecer</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Equipe</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754]">Quem faz a 21Go acontecer</h2>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
@@ -172,10 +172,10 @@ export default function SobrePage() {
               { name: 'Equipe Tech', role: 'Tecnologia e IA' },
             ].map((member) => (
               <div key={member.name} className="bg-white rounded-2xl border border-[#E8ECF4] p-6 text-center hover:shadow-md transition-all">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#375191]/10 to-[#3D72DE]/5 border border-[#375191]/15 flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-7 h-7 text-[#375191]" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#293C82]/10 to-[#3D72DE]/5 border border-[#293C82]/15 flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-7 h-7 text-[#293C82]" />
                 </div>
-                <h4 className="font-[var(--font-display)] text-sm font-semibold text-[#121A33]">{member.name}</h4>
+                <h4 className="font-[var(--font-display)] text-sm font-semibold text-[#1A2754]">{member.name}</h4>
                 <p className="text-xs text-[#94A3B8] mt-1">{member.role}</p>
               </div>
             ))}
@@ -184,9 +184,9 @@ export default function SobrePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-b from-[#121A33] to-[#375191] relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-b from-[#1A2754] to-[#293C82] relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#F7963D]/10 blur-[100px]" />
+          <div className="absolute top-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#F2911D]/10 blur-[100px]" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
           <h2 className="font-[var(--font-display)] text-3xl md:text-4xl font-bold text-white mb-4">
@@ -195,7 +195,7 @@ export default function SobrePage() {
           <p className="text-lg text-white/50 mb-8">
             Junte-se a milhares de cariocas que confiam na 21Go para proteger seus veículos.
           </p>
-          <Link href="/cotacao" className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-bold rounded-full shadow-lg shadow-[#F7963D]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+          <Link href="/cotacao" className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold rounded-full shadow-lg shadow-[#F2911D]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
             Fazer Simulação Grátis <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

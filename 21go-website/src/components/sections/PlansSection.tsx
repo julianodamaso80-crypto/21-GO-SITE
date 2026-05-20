@@ -183,10 +183,10 @@ export function PlansSection() {
         className="mx-auto max-w-7xl px-6"
       >
         <motion.div variants={fadeInUp} className="text-center mb-10">
-          <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">
+          <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">
             Planos
           </span>
-          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#121A33]">
+          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#1A2754]">
             Proteção sob medida para seu veículo
           </h2>
           <p className="mt-4 text-lg text-[#64748B] max-w-2xl mx-auto">
@@ -202,7 +202,7 @@ export function PlansSection() {
               onClick={() => setActiveCategory(cat.id)}
               className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${
                 activeCategory === cat.id
-                  ? 'bg-[#375191] text-white shadow-md'
+                  ? 'bg-[#293C82] text-white shadow-md'
                   : 'bg-[#F0F4FA] text-[#64748B] hover:bg-[#E2E8F0]'
               }`}
             >
@@ -224,30 +224,30 @@ export function PlansSection() {
               transition={{ delay: plan.delay }}
               className={`relative rounded-2xl p-7 border transition-all duration-300 ${
                 plan.popular
-                  ? 'border-[#F7963D]/50 shadow-xl md:scale-[1.03] bg-white md:-mt-4'
+                  ? 'border-[#F2911D]/50 shadow-xl md:scale-[1.03] bg-white md:-mt-4'
                   : 'border-[#E8ECF4] bg-white hover:shadow-lg hover:-translate-y-1'
               }`}
             >
               {plan.popular && (
                 <div className="absolute inset-0 rounded-2xl -z-10 animate-glow-pulse opacity-60"
-                  style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(247,150,61,0.15) 0%, transparent 70%)' }}
+                  style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(242, 145, 29,0.15) 0%, transparent 70%)' }}
                 />
               )}
 
               {plan.popular && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#F7963D] to-[#C9A84C] text-white text-xs font-bold px-5 py-1.5 rounded-full shadow-lg whitespace-nowrap">
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#F2911D] to-[#C7D301] text-white text-xs font-bold px-5 py-1.5 rounded-full shadow-lg whitespace-nowrap">
                   Mais escolhido
                 </span>
               )}
 
               <div className="flex items-start justify-between mb-5">
                 <div>
-                  <h3 className="font-[var(--font-outfit)] text-xl font-bold text-[#121A33]">{plan.name}</h3>
+                  <h3 className="font-[var(--font-outfit)] text-xl font-bold text-[#1A2754]">{plan.name}</h3>
                   <p className="mt-1 text-sm text-[#64748B]">{plan.desc}</p>
                 </div>
                 {plan.popular && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#F7963D]/10 flex items-center justify-center">
-                    <Star className="w-4 h-4 text-[#F7963D] fill-[#F7963D]" />
+                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#F2911D]/10 flex items-center justify-center">
+                    <Star className="w-4 h-4 text-[#F2911D] fill-[#F2911D]" />
                   </div>
                 )}
               </div>
@@ -264,7 +264,7 @@ export function PlansSection() {
                         <X className="h-3 w-3 text-[#CBD5E1]" />
                       </span>
                     )}
-                    <span className={`text-sm leading-snug ${f.included ? 'text-[#121A33]' : 'text-[#CBD5E1]'}`}>
+                    <span className={`text-sm leading-snug ${f.included ? 'text-[#1A2754]' : 'text-[#CBD5E1]'}`}>
                       {f.text}
                     </span>
                   </li>
@@ -275,8 +275,8 @@ export function PlansSection() {
                 href="/cotacao"
                 className={`block w-full text-center py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 ${
                   plan.popular
-                    ? 'bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white shadow-md hover:shadow-[0_4px_16px_rgba(247,150,61,0.4)]'
-                    : 'bg-[#F0F4FA] text-[#375191] hover:bg-[#E2E8F0]'
+                    ? 'bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white shadow-md hover:shadow-[0_4px_16px_rgba(242, 145, 29,0.4)]'
+                    : 'bg-[#F0F4FA] text-[#293C82] hover:bg-[#E2E8F0]'
                 }`}
               >
                 <span className="inline-flex items-center gap-2">
@@ -291,7 +291,7 @@ export function PlansSection() {
         <motion.div variants={fadeInUp} className="text-center mt-12">
           <p className="text-[#64748B] text-sm">
             O valor da mensalidade depende do modelo e ano do seu veículo.{' '}
-            <Link href="/cotacao" className="text-[#375191] font-semibold hover:underline">
+            <Link href="/cotacao" className="text-[#293C82] font-semibold hover:underline">
               Faça sua simulação grátis em 30 segundos
             </Link>.
           </p>

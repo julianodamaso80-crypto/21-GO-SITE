@@ -14,7 +14,7 @@ export function ShimmerButton({ children, href, onClick, className, size = 'md' 
   const sizes = { sm: 'px-5 py-2 text-sm', md: 'px-7 py-3 text-base', lg: 'px-9 py-4 text-lg' }
   const base = cn(
     'relative inline-flex items-center justify-center gap-2 font-semibold rounded-full',
-    'bg-gradient-to-r from-[#C9A84C] to-[#E0C060] text-[#0A0A0F]',
+    'bg-gradient-to-r from-[#C7D301] to-[#E0C060] text-[#0A0A0F]',
     'overflow-hidden transition-all duration-300',
     'hover:shadow-[0_0_30px_rgba(201,168,76,0.3)] hover:scale-[1.02]',
     'active:scale-[0.98]',

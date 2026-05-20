@@ -7,7 +7,7 @@ interface Props {
   borderColor?: string
 }
 
-export function MovingBorder({ children, className, borderColor = '#C9A84C' }: Props) {
+export function MovingBorder({ children, className, borderColor = '#C7D301' }: Props) {
   return (
     <div className={cn('relative rounded-2xl p-[1px]', className)}>
       <div

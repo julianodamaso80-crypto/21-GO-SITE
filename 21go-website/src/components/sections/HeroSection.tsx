@@ -14,7 +14,7 @@ export function HeroSection() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[95vh] overflow-hidden pt-24 pb-24 bg-[#121A33]"
+      className="relative min-h-[95vh] overflow-hidden pt-24 pb-24 bg-[#1A2754]"
     >
       {/* Background image responsivo:
           - Mobile (≤768px): foto vertical 9:16 do dono (WebP 39KB / JPG 65KB)
@@ -39,7 +39,7 @@ export function HeroSection() {
 
       {/* Mobile: overlay leve no meio (rosto visível) e mais forte nas pontas (texto + CTAs)
           A imagem mobile vertical já tem fundo escuro próprio, então não precisa abafar o meio */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#121A33]/55 via-[#121A33]/10 to-[#121A33]/75 md:hidden" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#1A2754]/55 via-[#1A2754]/10 to-[#1A2754]/75 md:hidden" />
 
       {/* Desktop: overlay direcional — escuro à esquerda (texto + logo) e LIMPO à direita
           pra dar destaque MÁXIMO ao presidente. Stops em %: 0% escuro, 50% médio,
@@ -48,7 +48,7 @@ export function HeroSection() {
         className="pointer-events-none absolute inset-0 hidden md:block"
         style={{
           background:
-            'linear-gradient(to right, rgba(18,26,51,0.92) 0%, rgba(18,26,51,0.65) 40%, rgba(18,26,51,0.20) 65%, rgba(18,26,51,0) 80%)',
+            'linear-gradient(to right, rgba(26, 39, 84,0.92) 0%, rgba(26, 39, 84,0.65) 40%, rgba(26, 39, 84,0.20) 65%, rgba(26, 39, 84,0) 80%)',
         }}
       />
 
@@ -57,8 +57,8 @@ export function HeroSection() {
 
       {/* Animated gradient orbs — kept for premium glow on top of video */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-float-slow absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-[#F7963D]/10 blur-[120px]" />
-        <div className="animate-float-slower absolute bottom-0 -left-32 w-[700px] h-[700px] rounded-full bg-[#375191]/15 blur-[150px]" />
+        <div className="animate-float-slow absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-[#F2911D]/10 blur-[120px]" />
+        <div className="animate-float-slower absolute bottom-0 -left-32 w-[700px] h-[700px] rounded-full bg-[#293C82]/15 blur-[150px]" />
       </div>
 
       <motion.div
@@ -74,7 +74,7 @@ export function HeroSection() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#10B981] opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10B981]" />
             </span>
-            <ShieldCheck className="h-4 w-4 text-[#C9A84C]" />
+            <ShieldCheck className="h-4 w-4 text-[#C7D301]" />
             20+ anos protegendo cariocas
           </span>
         </motion.div>
@@ -123,7 +123,7 @@ export function HeroSection() {
         <motion.div data-cta-section="hero" variants={fadeInUp} className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/cotacao"
-            className="shimmer-btn relative inline-flex items-center px-9 py-4 rounded-xl bg-[#F7963D] text-white text-base font-semibold transition-all duration-300 animate-glow-pulse hover:bg-[#D87E2F] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(247,150,61,0.5)]"
+            className="shimmer-btn relative inline-flex items-center px-9 py-4 rounded-xl bg-[#F2911D] text-white text-base font-semibold transition-all duration-300 animate-glow-pulse hover:bg-[#D67A0F] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(242, 145, 29,0.5)]"
           >
             Fazer Simulação Grátis
           </Link>
@@ -147,7 +147,7 @@ export function HeroSection() {
             { target: 24, suffix: '/7', label: 'Assistência', icon: Clock },
           ].map((stat, i) => (
             <div key={stat.label} className="flex flex-col items-center">
-              <stat.icon className="mb-2 h-5 w-5 text-[#C9A84C]" />
+              <stat.icon className="mb-2 h-5 w-5 text-[#C7D301]" />
               <NumberTicker
                 target={stat.target}
                 suffix={stat.suffix}

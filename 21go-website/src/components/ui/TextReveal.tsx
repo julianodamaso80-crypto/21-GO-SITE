@@ -9,7 +9,7 @@ interface Props {
   highlightClass?: string
 }
 
-export function TextReveal({ text, className, highlightWord, highlightClass = 'text-[#C9A84C]' }: Props) {
+export function TextReveal({ text, className, highlightWord, highlightClass = 'text-[#C7D301]' }: Props) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-80px' })
   const words = text.split(' ')

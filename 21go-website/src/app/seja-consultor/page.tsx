@@ -108,11 +108,11 @@ export default function SejaConsultorPage() {
   return (
     <>
       {/* Hero */}
-      <section className="pt-32 pb-20 bg-gradient-to-b from-[#121A33] via-[#1B284A] to-[#375191] relative overflow-hidden">
+      <section className="pt-32 pb-20 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82] relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-[#F7963D]/15 blur-[120px]" />
-          <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full bg-[#375191]/30 blur-[150px]" />
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-[#C9A84C]/10 blur-[100px]" />
+          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-[#F2911D]/15 blur-[120px]" />
+          <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full bg-[#293C82]/30 blur-[150px]" />
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-[#C7D301]/10 blur-[100px]" />
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-repeat opacity-[0.04]" />
         </div>
 
@@ -124,7 +124,7 @@ export default function SejaConsultorPage() {
           className="relative z-10 max-w-4xl mx-auto px-6 text-center"
         >
           <motion.div variants={fadeInUp}>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#C9A84C]/20 bg-[#C9A84C]/10 px-5 py-2.5 text-sm font-semibold text-[#C9A84C] mb-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#C7D301]/20 bg-[#C7D301]/10 px-5 py-2.5 text-sm font-semibold text-[#C7D301] mb-6">
               <Briefcase className="w-4 h-4" />
               Oportunidade
             </span>
@@ -132,7 +132,7 @@ export default function SejaConsultorPage() {
 
           <motion.h1 variants={fadeInUp} className="font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
             Seja Consultor{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7963D] to-[#F9A95E]">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F2911D] to-[#F5A845]">
               21Go
             </span>
           </motion.h1>
@@ -141,7 +141,7 @@ export default function SejaConsultorPage() {
             Venda nossos planos de proteção veicular e construa uma renda sólida. Comissão na adesão, recorrente mensal e prêmios por meta batida.
           </motion.p>
 
-          <motion.p variants={fadeInUp} className="text-base text-[#C9A84C] font-semibold mb-10">
+          <motion.p variants={fadeInUp} className="text-base text-[#C7D301] font-semibold mb-10">
             Sem limite de ganho. Quanto mais vender, mais ganha.
           </motion.p>
 
@@ -149,7 +149,7 @@ export default function SejaConsultorPage() {
             <button
               type="button"
               onClick={openModal}
-              className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-bold rounded-full shadow-lg shadow-[#F7963D]/20 hover:shadow-xl hover:shadow-[#F7963D]/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold rounded-full shadow-lg shadow-[#F2911D]/20 hover:shadow-xl hover:shadow-[#F2911D]/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <MessageCircle className="w-5 h-5" />
               Quero Ser Consultor
@@ -172,7 +172,7 @@ export default function SejaConsultorPage() {
               { value: '100%', label: 'Suporte ao consultor' },
             ].map((stat) => (
               <div key={stat.label}>
-                <p className="font-[var(--font-display)] text-2xl md:text-3xl font-bold text-[#121A33]">{stat.value}</p>
+                <p className="font-[var(--font-display)] text-2xl md:text-3xl font-bold text-[#1A2754]">{stat.value}</p>
                 <p className="text-xs text-[#94A3B8] mt-1">{stat.label}</p>
               </div>
             ))}
@@ -184,18 +184,18 @@ export default function SejaConsultorPage() {
       <section className="py-20 bg-[#F7F8FC]">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Vantagens</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33] mb-3">Por que ser consultor 21Go?</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Vantagens</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754] mb-3">Por que ser consultor 21Go?</h2>
             <p className="text-[#64748B] max-w-xl mx-auto">Um modelo de negócio que remunera bem, cresce com você e tem produto que o cliente precisa.</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {benefits.map((b) => (
               <div key={b.title} className="bg-white rounded-2xl border border-[#E8ECF4] p-7 hover:shadow-lg hover:shadow-black/[0.03] hover:-translate-y-1 transition-all duration-300">
-                <div className="w-12 h-12 rounded-xl bg-[#375191]/5 flex items-center justify-center mb-5">
-                  <b.icon className="w-6 h-6 text-[#375191]" />
+                <div className="w-12 h-12 rounded-xl bg-[#293C82]/5 flex items-center justify-center mb-5">
+                  <b.icon className="w-6 h-6 text-[#293C82]" />
                 </div>
-                <h3 className="font-[var(--font-display)] text-lg font-semibold text-[#121A33] mb-2">{b.title}</h3>
+                <h3 className="font-[var(--font-display)] text-lg font-semibold text-[#1A2754] mb-2">{b.title}</h3>
                 <p className="text-sm text-[#64748B] leading-relaxed">{b.description}</p>
               </div>
             ))}
@@ -207,19 +207,19 @@ export default function SejaConsultorPage() {
       <section id="como-funciona" className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Processo</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33] mb-3">Como funciona</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Processo</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754] mb-3">Como funciona</h2>
             <p className="text-[#64748B]">Do cadastro à primeira comissão em 4 passos.</p>
           </div>
 
           <div className="space-y-6">
             {howItWorks.map((item, i) => (
               <div key={item.step} className="flex items-start gap-5 bg-[#F7F8FC] rounded-2xl border border-[#E8ECF4] p-6 hover:bg-white hover:shadow-md transition-all">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#375191] to-[#3D72DE] text-white font-[var(--font-display)] text-sm font-bold flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#293C82] to-[#3D72DE] text-white font-[var(--font-display)] text-sm font-bold flex items-center justify-center flex-shrink-0">
                   {item.step}
                 </div>
                 <div>
-                  <h3 className="font-[var(--font-display)] text-lg font-semibold text-[#121A33] mb-1">{item.title}</h3>
+                  <h3 className="font-[var(--font-display)] text-lg font-semibold text-[#1A2754] mb-1">{item.title}</h3>
                   <p className="text-sm text-[#64748B]">{item.description}</p>
                 </div>
               </div>
@@ -234,8 +234,8 @@ export default function SejaConsultorPage() {
       <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Depoimentos</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33]">Quem já é consultor</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Depoimentos</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754]">Quem já é consultor</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -248,7 +248,7 @@ export default function SejaConsultorPage() {
                 </div>
                 <p className="text-sm text-[#475569] leading-relaxed mb-5 italic">&ldquo;{t.text}&rdquo;</p>
                 <div>
-                  <p className="font-semibold text-[#121A33] text-sm">{t.name}</p>
+                  <p className="font-semibold text-[#1A2754] text-sm">{t.name}</p>
                   <p className="text-xs text-[#94A3B8]">{t.role}</p>
                 </div>
               </div>
@@ -261,8 +261,8 @@ export default function SejaConsultorPage() {
       <section className="py-20 bg-[#F7F8FC]">
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Suporte</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33]">O que você recebe</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Suporte</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754]">O que você recebe</h2>
           </div>
 
           <div className="bg-white rounded-2xl border border-[#E8ECF4] p-8 space-y-4">
@@ -287,9 +287,9 @@ export default function SejaConsultorPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-b from-[#121A33] to-[#375191] relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-b from-[#1A2754] to-[#293C82] relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#F7963D]/10 blur-[100px]" />
+          <div className="absolute top-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#F2911D]/10 blur-[100px]" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
           <h2 className="font-[var(--font-display)] text-3xl md:text-4xl font-bold text-white mb-4">
@@ -301,7 +301,7 @@ export default function SejaConsultorPage() {
           <button
             type="button"
             onClick={openModal}
-            className="inline-flex items-center gap-2.5 px-10 py-4 bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-bold text-lg rounded-full shadow-lg shadow-[#F7963D]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-2.5 px-10 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold text-lg rounded-full shadow-lg shadow-[#F2911D]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <MessageCircle className="w-5 h-5" />
             Quero Ser Consultor
@@ -423,7 +423,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
       role="dialog"
       aria-modal="true"
       aria-labelledby="consultor-modal-title"
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-[#121A33]/70 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-[#1A2754]/70 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200"
       onClick={handleClose}
     >
       <div
@@ -433,7 +433,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
         <button
           onClick={handleClose}
           aria-label="Fechar"
-          className="absolute right-4 top-4 w-9 h-9 rounded-full bg-[#F7F8FC] text-[#64748B] hover:bg-[#E8ECF4] hover:text-[#121A33] flex items-center justify-center transition-colors z-10"
+          className="absolute right-4 top-4 w-9 h-9 rounded-full bg-[#F7F8FC] text-[#64748B] hover:bg-[#E8ECF4] hover:text-[#1A2754] flex items-center justify-center transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
@@ -441,11 +441,11 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
         {!submitted ? (
           <form onSubmit={handleSubmit} className="p-6 sm:p-8">
             <div className="mb-6">
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#F7963D]/10 px-3 py-1 text-xs font-bold text-[#F7963D] uppercase tracking-wider mb-3">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#F2911D]/10 px-3 py-1 text-xs font-bold text-[#F2911D] uppercase tracking-wider mb-3">
                 <Briefcase className="w-3.5 h-3.5" />
                 Cadastro
               </span>
-              <h2 id="consultor-modal-title" className="font-[var(--font-display)] text-2xl font-bold text-[#121A33] mb-2">
+              <h2 id="consultor-modal-title" className="font-[var(--font-display)] text-2xl font-bold text-[#1A2754] mb-2">
                 Quero ser Consultor 21Go
               </h2>
               <p className="text-sm text-[#64748B]">
@@ -512,7 +512,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
               </div>
 
               <div>
-                <label htmlFor="experiencia" className="block text-sm font-semibold text-[#121A33] mb-2">
+                <label htmlFor="experiencia" className="block text-sm font-semibold text-[#1A2754] mb-2">
                   Você já trabalhou com proteção veicular antes?
                   <span className="text-[#94A3B8] font-normal"> (opcional)</span>
                 </label>
@@ -523,7 +523,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
                   placeholder="Ex: trabalhei 2 anos em outra associação de proteção veicular, ou nunca trabalhei mas tenho interesse..."
                   rows={4}
                   disabled={loading}
-                  className="w-full px-5 py-3.5 rounded-2xl border-2 border-[#D1DFFA] hover:border-[#375191]/40 text-[#121A33] text-[15px] placeholder:text-[#94A3B8] bg-[#F7F8FC] focus:outline-none focus:border-[#375191] focus:bg-white focus:shadow-[0_0_0_3px_rgba(55,81,145,0.1)] transition-all duration-200 disabled:opacity-50 resize-none"
+                  className="w-full px-5 py-3.5 rounded-2xl border-2 border-[#D1DFFA] hover:border-[#293C82]/40 text-[#1A2754] text-[15px] placeholder:text-[#94A3B8] bg-[#F7F8FC] focus:outline-none focus:border-[#293C82] focus:bg-white focus:shadow-[0_0_0_3px_rgba(41, 60, 130,0.1)] transition-all duration-200 disabled:opacity-50 resize-none"
                 />
               </div>
             </div>
@@ -538,7 +538,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
             <button
               type="submit"
               disabled={loading}
-              className="mt-6 w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-bold rounded-full shadow-lg shadow-[#F7963D]/20 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="mt-6 w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold rounded-full shadow-lg shadow-[#F2911D]/20 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {loading ? (
                 <>
@@ -562,7 +562,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#10B981]/10 mb-5">
               <Check className="w-8 h-8 text-[#10B981]" />
             </div>
-            <h2 className="font-[var(--font-display)] text-2xl font-bold text-[#121A33] mb-3">
+            <h2 className="font-[var(--font-display)] text-2xl font-bold text-[#1A2754] mb-3">
               Obrigado, {form.nome.split(' ')[0]}!
             </h2>
             <p className="text-[#64748B] mb-6 leading-relaxed">
@@ -581,7 +581,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
             </a>
             <button
               onClick={handleClose}
-              className="text-sm text-[#64748B] hover:text-[#121A33] transition-colors"
+              className="text-sm text-[#64748B] hover:text-[#1A2754] transition-colors"
             >
               Fechar
             </button>
@@ -608,7 +608,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="block text-sm font-semibold text-[#121A33] mb-2">{label}</label>
+      <label htmlFor={name} className="block text-sm font-semibold text-[#1A2754] mb-2">{label}</label>
       <div className="relative">
         {icon && <div className="absolute left-5 top-1/2 -translate-y-1/2">{icon}</div>}
         <input
@@ -618,8 +618,8 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full ${icon ? 'pl-12' : 'px-5'} pr-5 py-3.5 rounded-2xl border-2 text-[#121A33] text-[15px] font-medium placeholder:text-[#94A3B8] bg-[#F7F8FC] focus:outline-none focus:border-[#375191] focus:bg-white focus:shadow-[0_0_0_3px_rgba(55,81,145,0.1)] transition-all duration-200 disabled:opacity-50 ${
-            error ? 'border-[#EF4444] bg-[#FEF2F2]' : 'border-[#D1DFFA] hover:border-[#375191]/40'
+          className={`w-full ${icon ? 'pl-12' : 'px-5'} pr-5 py-3.5 rounded-2xl border-2 text-[#1A2754] text-[15px] font-medium placeholder:text-[#94A3B8] bg-[#F7F8FC] focus:outline-none focus:border-[#293C82] focus:bg-white focus:shadow-[0_0_0_3px_rgba(41, 60, 130,0.1)] transition-all duration-200 disabled:opacity-50 ${
+            error ? 'border-[#EF4444] bg-[#FEF2F2]' : 'border-[#D1DFFA] hover:border-[#293C82]/40'
           }`}
         />
       </div>

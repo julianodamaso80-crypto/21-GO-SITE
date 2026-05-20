@@ -28,7 +28,7 @@ function CellValue({ value, positive }: { value: string | boolean; positive: boo
       </span>
     )
   }
-  return <span className={`text-[11px] sm:text-sm font-medium ${positive ? 'text-[#121A33]' : 'text-[#64748B]'}`}>{value}</span>
+  return <span className={`text-[11px] sm:text-sm font-medium ${positive ? 'text-[#1A2754]' : 'text-[#64748B]'}`}>{value}</span>
 }
 
 export function ComparisonSection() {
@@ -44,7 +44,7 @@ export function ComparisonSection() {
         className="mx-auto max-w-4xl px-6"
       >
         <motion.div variants={fadeInUp} className="text-center mb-14">
-          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#375191]">
+          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#293C82]">
             Proteção Veicular vs Seguro Tradicional
           </h2>
           <p className="mt-4 text-lg text-[#64748B]">
@@ -56,7 +56,7 @@ export function ComparisonSection() {
           {/* Header */}
           <div className="grid grid-cols-3 bg-[#F0F4FA]">
             <div className="p-2.5 sm:p-4 text-xs sm:text-sm font-semibold text-[#64748B]">Característica</div>
-            <div className="p-2.5 sm:p-4 text-center text-xs sm:text-sm font-semibold text-[#375191]">21Go</div>
+            <div className="p-2.5 sm:p-4 text-center text-xs sm:text-sm font-semibold text-[#293C82]">21Go</div>
             <div className="p-2.5 sm:p-4 text-center text-xs sm:text-sm font-semibold text-[#64748B]">Seguradora</div>
           </div>
 
@@ -69,7 +69,7 @@ export function ComparisonSection() {
               transition={{ delay: 0.3 + i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className={`grid grid-cols-3 ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFBFC]'} border-t border-[#F0F4FA]`}
             >
-              <div className="p-2.5 sm:p-4 text-xs sm:text-sm text-[#121A33] font-medium">{row.feature}</div>
+              <div className="p-2.5 sm:p-4 text-xs sm:text-sm text-[#1A2754] font-medium">{row.feature}</div>
               <div className="p-2.5 sm:p-4 flex items-center justify-center">
                 <CellValue value={row.veicular} positive={true} />
               </div>

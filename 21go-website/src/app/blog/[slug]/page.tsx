@@ -65,7 +65,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         mainKeyword={post.keywords?.[0] ?? null}
       />
       {/* Article header */}
-      <section className="pt-32 pb-16 bg-gradient-to-b from-[#121A33] via-[#1B284A] to-[#375191]">
+      <section className="pt-32 pb-16 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82]">
         <div className="max-w-4xl mx-auto px-6">
           <Link
             href="/blog"
@@ -75,7 +75,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             Voltar ao Blog
           </Link>
 
-          <span className="inline-block bg-[#F7963D]/15 text-[#F9A95E] text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
+          <span className="inline-block bg-[#F2911D]/15 text-[#F5A845] text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
             {post.category}
           </span>
 
@@ -111,20 +111,20 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <article
                 className="
                   max-w-none
-                  [&_h2]:font-[var(--font-display)] [&_h2]:text-[1.5rem] [&_h2]:font-bold [&_h2]:text-[#121A33] [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:pb-3 [&_h2]:border-b [&_h2]:border-[#E8ECF4]
-                  [&_h3]:font-[var(--font-display)] [&_h3]:text-[1.2rem] [&_h3]:font-semibold [&_h3]:text-[#121A33] [&_h3]:mt-8 [&_h3]:mb-3
+                  [&_h2]:font-[var(--font-display)] [&_h2]:text-[1.5rem] [&_h2]:font-bold [&_h2]:text-[#1A2754] [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:pb-3 [&_h2]:border-b [&_h2]:border-[#E8ECF4]
+                  [&_h3]:font-[var(--font-display)] [&_h3]:text-[1.2rem] [&_h3]:font-semibold [&_h3]:text-[#1A2754] [&_h3]:mt-8 [&_h3]:mb-3
                   [&_p]:text-[#475569] [&_p]:text-[15px] [&_p]:leading-[1.8] [&_p]:mb-5
                   [&_ul]:my-4 [&_ul]:pl-0 [&_ul]:space-y-2
                   [&_ol]:my-4 [&_ol]:pl-0 [&_ol]:space-y-2 [&_ol]:list-none [&_ol]:counter-reset-[item]
                   [&_li]:text-[#475569] [&_li]:text-[15px] [&_li]:leading-[1.7] [&_li]:pl-6 [&_li]:relative
-                  [&_ul_li]:before:content-[''] [&_ul_li]:before:absolute [&_ul_li]:before:left-0 [&_ul_li]:before:top-[10px] [&_ul_li]:before:w-1.5 [&_ul_li]:before:h-1.5 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-[#F7963D]
-                  [&_strong]:text-[#121A33] [&_strong]:font-semibold
-                  [&_a]:text-[#375191] [&_a]:font-medium [&_a]:underline [&_a]:decoration-[#375191]/30 hover:[&_a]:decoration-[#375191]
+                  [&_ul_li]:before:content-[''] [&_ul_li]:before:absolute [&_ul_li]:before:left-0 [&_ul_li]:before:top-[10px] [&_ul_li]:before:w-1.5 [&_ul_li]:before:h-1.5 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-[#F2911D]
+                  [&_strong]:text-[#1A2754] [&_strong]:font-semibold
+                  [&_a]:text-[#293C82] [&_a]:font-medium [&_a]:underline [&_a]:decoration-[#293C82]/30 hover:[&_a]:decoration-[#293C82]
                   [&_table]:w-full [&_table]:my-6 [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_table]:text-sm
-                  [&_thead]:bg-[#121A33] [&_th]:text-white [&_th]:font-semibold [&_th]:text-left [&_th]:px-4 [&_th]:py-3
+                  [&_thead]:bg-[#1A2754] [&_th]:text-white [&_th]:font-semibold [&_th]:text-left [&_th]:px-4 [&_th]:py-3
                   [&_td]:px-4 [&_td]:py-3 [&_td]:text-[#475569] [&_td]:border-b [&_td]:border-[#E8ECF4]
                   [&_tr:nth-child(even)]:bg-[#F7F8FC]
-                  [&_blockquote]:border-l-4 [&_blockquote]:border-[#F7963D] [&_blockquote]:bg-[#F7963D]/5 [&_blockquote]:px-6 [&_blockquote]:py-4 [&_blockquote]:my-6 [&_blockquote]:rounded-r-xl
+                  [&_blockquote]:border-l-4 [&_blockquote]:border-[#F2911D] [&_blockquote]:bg-[#F2911D]/5 [&_blockquote]:px-6 [&_blockquote]:py-4 [&_blockquote]:my-6 [&_blockquote]:rounded-r-xl
                   [&_hr]:my-8 [&_hr]:border-[#E8ECF4]
                 "
                 dangerouslySetInnerHTML={{ __html: markdownToHtml(post.content) }}
@@ -134,9 +134,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             {/* Sidebar */}
             <aside className="space-y-6 lg:sticky lg:top-28 h-fit">
               {/* CTA Card */}
-              <div className="bg-gradient-to-br from-[#121A33] to-[#375191] rounded-2xl p-8 text-white">
+              <div className="bg-gradient-to-br from-[#1A2754] to-[#293C82] rounded-2xl p-8 text-white">
                 <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-6 h-6 text-[#F7963D]" />
+                  <ShieldCheck className="w-6 h-6 text-[#F2911D]" />
                 </div>
                 <h3 className="font-[var(--font-display)] text-lg font-bold mb-2">
                   Proteja seu veículo
@@ -146,7 +146,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 </p>
                 <Link
                   href="/cotacao"
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-semibold text-sm hover:shadow-lg hover:shadow-[#F7963D]/20 transition-all"
+                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-semibold text-sm hover:shadow-lg hover:shadow-[#F2911D]/20 transition-all"
                 >
                   Fazer Simulação <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -161,10 +161,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   <div className="space-y-4">
                     {related.map((r) => (
                       <Link key={r.slug} href={`/blog/${r.slug}`} className="block group">
-                        <span className="text-[10px] font-bold text-[#375191] bg-[#375191]/5 px-2 py-0.5 rounded-full uppercase">
+                        <span className="text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase">
                           {r.category}
                         </span>
-                        <p className="mt-1.5 text-sm font-medium text-[#121A33] group-hover:text-[#375191] transition-colors leading-snug">
+                        <p className="mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug">
                           {r.title}
                         </p>
                       </Link>

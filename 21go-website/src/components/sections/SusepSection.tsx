@@ -28,14 +28,14 @@ export function SusepSection() {
         <div className="max-w-3xl mx-auto text-center">
           {/* Icon */}
           <motion.div variants={fadeInUp} className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-2xl bg-[#375191]/10 flex items-center justify-center">
-              <ShieldCheck className="w-10 h-10 text-[#375191]" />
+            <div className="w-20 h-20 rounded-2xl bg-[#293C82]/10 flex items-center justify-center">
+              <ShieldCheck className="w-10 h-10 text-[#293C82]" />
             </div>
           </motion.div>
 
           <motion.h2
             variants={fadeInUp}
-            className="font-[var(--font-outfit)] text-2xl md:text-3xl lg:text-4xl font-bold text-[#121A33]"
+            className="font-[var(--font-outfit)] text-2xl md:text-3xl lg:text-4xl font-bold text-[#1A2754]"
           >
             Cadastrada na SUSEP. Sua Segurança Garantida pelo Governo
           </motion.h2>
@@ -60,7 +60,7 @@ export function SusepSection() {
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#10B981]/10 flex items-center justify-center">
                   <Check className="w-3.5 h-3.5 text-[#10B981]" />
                 </span>
-                <span className="text-[#121A33] font-medium text-sm md:text-base">{item}</span>
+                <span className="text-[#1A2754] font-medium text-sm md:text-base">{item}</span>
               </motion.li>
             ))}
           </motion.ul>
@@ -72,10 +72,10 @@ export function SusepSection() {
           {/* Warning box */}
           <motion.div
             variants={fadeInUp}
-            className="mt-8 rounded-xl border border-[#F7963D]/20 bg-[#F7963D]/5 p-5 flex gap-4 text-left max-w-xl mx-auto"
+            className="mt-8 rounded-xl border border-[#F2911D]/20 bg-[#F2911D]/5 p-5 flex gap-4 text-left max-w-xl mx-auto"
           >
-            <AlertTriangle className="w-5 h-5 text-[#F7963D] flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-[#121A33]">
+            <AlertTriangle className="w-5 h-5 text-[#F2911D] flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-[#1A2754]">
               <strong>Antes de contratar qualquer proteção, pergunte:</strong> &ldquo;Você é cadastrada na SUSEP?&rdquo; Se a resposta for não, saia correndo.
             </p>
           </motion.div>
@@ -84,7 +84,7 @@ export function SusepSection() {
           <motion.div variants={fadeInUp} className="mt-8">
             <Link
               href="/cotacao"
-              className="inline-flex items-center px-7 py-3.5 rounded-xl bg-[#F7963D] text-white font-semibold text-sm hover:bg-[#D87E2F] transition-all duration-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
+              className="inline-flex items-center px-7 py-3.5 rounded-xl bg-[#F2911D] text-white font-semibold text-sm hover:bg-[#D67A0F] transition-all duration-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5"
             >
               Confie em quem é regulamentado. Faça sua simulação
             </Link>

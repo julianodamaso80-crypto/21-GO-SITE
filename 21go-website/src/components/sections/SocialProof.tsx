@@ -25,14 +25,14 @@ export function SocialProof() {
         className="mx-auto max-w-7xl px-6"
       >
         <motion.div variants={fadeInUp} className="text-center mb-14">
-          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#375191]">
+          <h2 className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-[#293C82]">
             O que nossos associados dizem
           </h2>
           <div className="mt-4 inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 border border-[#E2E8F0] shadow-sm">
             <div className="flex">
-              {[1,2,3,4,5].map(s => <Star key={s} className="h-4 w-4 fill-[#C9A84C] text-[#C9A84C]" />)}
+              {[1,2,3,4,5].map(s => <Star key={s} className="h-4 w-4 fill-[#C7D301] text-[#C7D301]" />)}
             </div>
-            <span className="text-sm font-semibold text-[#121A33]">4.8</span>
+            <span className="text-sm font-semibold text-[#1A2754]">4.8</span>
             <span className="text-sm text-[#64748B]">no Google</span>
           </div>
         </motion.div>
@@ -47,12 +47,12 @@ export function SocialProof() {
             >
               <div className="flex mb-3">
                 {Array.from({ length: t.stars }).map((_, j) => (
-                  <Star key={j} className="h-4 w-4 fill-[#C9A84C] text-[#C9A84C]" />
+                  <Star key={j} className="h-4 w-4 fill-[#C7D301] text-[#C7D301]" />
                 ))}
               </div>
-              <p className="text-[#121A33] text-sm leading-relaxed mb-4">&ldquo;{t.text}&rdquo;</p>
+              <p className="text-[#1A2754] text-sm leading-relaxed mb-4">&ldquo;{t.text}&rdquo;</p>
               <div>
-                <p className="text-sm font-semibold text-[#121A33]">{t.name}</p>
+                <p className="text-sm font-semibold text-[#1A2754]">{t.name}</p>
                 <p className="text-xs text-[#64748B]">{t.bairro} &middot; {t.carro}</p>
               </div>
             </motion.div>

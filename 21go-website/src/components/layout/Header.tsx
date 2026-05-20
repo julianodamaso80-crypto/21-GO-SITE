@@ -52,7 +52,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2.5">
           <Image src="/logo21go.png" alt="21Go Proteção Veicular" width={36} height={36} className="rounded-lg" />
           <span className={`font-[var(--font-outfit)] text-xl font-bold tracking-tight transition-colors duration-300 ${
-            scrolled ? 'text-[#375191]' : 'text-white'
+            scrolled ? 'text-[#293C82]' : 'text-white'
           }`}>21Go</span>
         </Link>
 
@@ -63,7 +63,7 @@ export function Header() {
               href={link.href}
               className={`text-sm font-medium transition-colors duration-300 ${
                 scrolled
-                  ? 'text-[#64748B] hover:text-[#375191]'
+                  ? 'text-[#64748B] hover:text-[#293C82]'
                   : 'text-white/80 hover:text-white'
               }`}
             >
@@ -77,7 +77,7 @@ export function Header() {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className={`flex items-center gap-1 text-sm font-medium transition-colors duration-300 ${
                 scrolled
-                  ? 'text-[#64748B] hover:text-[#375191]'
+                  ? 'text-[#64748B] hover:text-[#293C82]'
                   : 'text-white/80 hover:text-white'
               }`}
             >
@@ -95,11 +95,11 @@ export function Header() {
                       onClick={() => setDropdownOpen(false)}
                       className="flex items-start gap-3 px-4 py-3 rounded-lg hover:bg-[#F0F4FA] transition-colors group"
                     >
-                      <div className="w-9 h-9 rounded-lg bg-[#375191]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[#375191]/10 transition-colors">
-                        <item.icon className="h-4.5 w-4.5 text-[#375191]" />
+                      <div className="w-9 h-9 rounded-lg bg-[#293C82]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[#293C82]/10 transition-colors">
+                        <item.icon className="h-4.5 w-4.5 text-[#293C82]" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-[#121A33] group-hover:text-[#375191] transition-colors">{item.label}</p>
+                        <p className="text-sm font-semibold text-[#1A2754] group-hover:text-[#293C82] transition-colors">{item.label}</p>
                         <p className="text-xs text-[#94A3B8] mt-0.5">{item.desc}</p>
                       </div>
                     </Link>
@@ -113,7 +113,7 @@ export function Header() {
         <div className="hidden lg:block">
           <Link
             href="/cotacao"
-            className="inline-flex items-center px-6 py-2.5 rounded-lg bg-[#F7963D] text-white text-sm font-semibold hover:bg-[#D87E2F] transition-all duration-200 shadow-sm hover:shadow-[0_4px_12px_rgba(247,150,61,0.35)] hover:-translate-y-px"
+            className="inline-flex items-center px-6 py-2.5 rounded-lg bg-[#F2911D] text-white text-sm font-semibold hover:bg-[#D67A0F] transition-all duration-200 shadow-sm hover:shadow-[0_4px_12px_rgba(242, 145, 29,0.35)] hover:-translate-y-px"
           >
             Cotar Agora
           </Link>
@@ -121,7 +121,7 @@ export function Header() {
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`lg:hidden transition-colors duration-300 ${scrolled ? 'text-[#121A33]' : 'text-white'}`}
+          className={`lg:hidden transition-colors duration-300 ${scrolled ? 'text-[#1A2754]' : 'text-white'}`}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -135,7 +135,7 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
-                className="text-base font-medium text-[#64748B] hover:text-[#375191] py-2"
+                className="text-base font-medium text-[#64748B] hover:text-[#293C82] py-2"
               >
                 {link.label}
               </Link>
@@ -149,7 +149,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 py-2.5 text-base font-medium text-[#64748B] hover:text-[#375191]"
+                  className="flex items-center gap-3 py-2.5 text-base font-medium text-[#64748B] hover:text-[#293C82]"
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
@@ -160,7 +160,7 @@ export function Header() {
             <Link
               href="/cotacao"
               onClick={() => setIsOpen(false)}
-              className="mt-2 w-full text-center inline-flex items-center justify-center px-6 py-3 rounded-lg bg-[#F7963D] text-white font-semibold hover:bg-[#D87E2F] transition-colors"
+              className="mt-2 w-full text-center inline-flex items-center justify-center px-6 py-3 rounded-lg bg-[#F2911D] text-white font-semibold hover:bg-[#D67A0F] transition-colors"
             >
               Simular Agora
             </Link>

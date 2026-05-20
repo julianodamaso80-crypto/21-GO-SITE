@@ -51,10 +51,10 @@ export default function IndiquePage() {
   return (
     <>
       {/* Hero */}
-      <section className="pt-32 pb-20 bg-gradient-to-b from-[#121A33] via-[#1B284A] to-[#375191] relative overflow-hidden">
+      <section className="pt-32 pb-20 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82] relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-[#F7963D]/15 blur-[120px]" />
-          <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-[#375191]/30 blur-[150px]" />
+          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-[#F2911D]/15 blur-[120px]" />
+          <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-[#293C82]/30 blur-[150px]" />
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-repeat opacity-[0.04]" />
         </div>
 
@@ -66,7 +66,7 @@ export default function IndiquePage() {
           className="relative z-10 max-w-4xl mx-auto px-6 text-center"
         >
           <motion.div variants={fadeInUp}>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#F7963D]/20 bg-[#F7963D]/10 px-5 py-2.5 text-sm font-semibold text-[#F9A95E] mb-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#F2911D]/20 bg-[#F2911D]/10 px-5 py-2.5 text-sm font-semibold text-[#F5A845] mb-6">
               <Rocket className="w-4 h-4" />
               Member Get Member
             </span>
@@ -74,13 +74,13 @@ export default function IndiquePage() {
 
           <motion.h1 variants={fadeInUp} className="font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
             Indique Amigos e Ganhe até{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F7963D] to-[#F9A95E]">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F2911D] to-[#F5A845]">
               100% de Desconto
             </span>
           </motion.h1>
 
           <motion.p variants={fadeInUp} className="text-lg text-white/50 max-w-2xl mx-auto mb-10">
-            A cada amigo que fechar a proteção e pagar a primeira mensalidade, você ganha <strong className="text-[#F7963D] font-semibold">10% de desconto</strong> na sua. Acumula. 10 amigos = proteção <strong className="text-[#10B981] font-semibold">GRÁTIS</strong>.
+            A cada amigo que fechar a proteção e pagar a primeira mensalidade, você ganha <strong className="text-[#F2911D] font-semibold">10% de desconto</strong> na sua. Acumula. 10 amigos = proteção <strong className="text-[#10B981] font-semibold">GRÁTIS</strong>.
           </motion.p>
 
           <motion.div variants={fadeInUp}>
@@ -90,7 +90,7 @@ export default function IndiquePage() {
               rel="noopener noreferrer"
               data-track-origin="indique_topo"
               data-track-button-text="Quero meu link (topo)"
-              className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-bold rounded-full shadow-lg shadow-[#F7963D]/20 hover:shadow-xl hover:shadow-[#F7963D]/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold rounded-full shadow-lg shadow-[#F2911D]/20 hover:shadow-xl hover:shadow-[#F2911D]/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <MessageCircle className="w-5 h-5" />
               Quero Meu Link de Indicação
@@ -103,29 +103,29 @@ export default function IndiquePage() {
       <section className="py-20 bg-[#F7F8FC]">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Simples</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33] mb-3">Como funciona</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Simples</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754] mb-3">Como funciona</h2>
             <p className="text-[#64748B]">Três passos para começar a economizar.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             {steps.map((step, i) => (
               <div key={step.title} className="relative bg-white rounded-2xl border border-[#E8ECF4] p-8 text-center hover:shadow-lg hover:shadow-black/[0.03] transition-all">
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-[#F7963D] text-white text-xs font-bold flex items-center justify-center">{i + 1}</div>
-                <div className="w-14 h-14 rounded-2xl bg-[#F7963D]/5 flex items-center justify-center mx-auto mb-5">
-                  <step.icon className="w-7 h-7 text-[#F7963D]" />
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-[#F2911D] text-white text-xs font-bold flex items-center justify-center">{i + 1}</div>
+                <div className="w-14 h-14 rounded-2xl bg-[#F2911D]/5 flex items-center justify-center mx-auto mb-5">
+                  <step.icon className="w-7 h-7 text-[#F2911D]" />
                 </div>
-                <h3 className="font-[var(--font-display)] text-lg font-semibold text-[#121A33] mb-2">{step.title}</h3>
+                <h3 className="font-[var(--font-display)] text-lg font-semibold text-[#1A2754] mb-2">{step.title}</h3>
                 <p className="text-sm text-[#64748B] leading-relaxed">{step.description}</p>
               </div>
             ))}
           </div>
 
           {/* Important note */}
-          <div className="mt-8 bg-[#F7963D]/5 border border-[#F7963D]/15 rounded-xl p-5 flex items-start gap-3 max-w-2xl mx-auto">
-            <Check className="w-5 h-5 text-[#F7963D] mt-0.5 flex-shrink-0" />
+          <div className="mt-8 bg-[#F2911D]/5 border border-[#F2911D]/15 rounded-xl p-5 flex items-start gap-3 max-w-2xl mx-auto">
+            <Check className="w-5 h-5 text-[#F2911D] mt-0.5 flex-shrink-0" />
             <p className="text-sm text-[#64748B]">
-              <strong className="text-[#121A33]">Importante:</strong> o desconto é ativado quando o indicado paga a primeira mensalidade. O desconto é aplicado na sua próxima fatura.
+              <strong className="text-[#1A2754]">Importante:</strong> o desconto é ativado quando o indicado paga a primeira mensalidade. O desconto é aplicado na sua próxima fatura.
             </p>
           </div>
         </div>
@@ -135,8 +135,8 @@ export default function IndiquePage() {
       <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Níveis</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33] mb-3">Quanto mais indica, mais ganha</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Níveis</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754] mb-3">Quanto mais indica, mais ganha</h2>
             <p className="text-[#64748B]">Suba de nível e veja seu desconto crescer.</p>
           </div>
 
@@ -162,15 +162,15 @@ export default function IndiquePage() {
       <section className="py-20 bg-[#F7F8FC]">
         <div className="max-w-2xl mx-auto px-6">
           <div className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-[#F7963D] bg-[#F7963D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Simulação</span>
-            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#121A33] mb-3">Veja quanto você economiza</h2>
+            <span className="inline-block text-xs font-bold text-[#F2911D] bg-[#F2911D]/10 px-3 py-1 rounded-full uppercase tracking-wider mb-4">Simulação</span>
+            <h2 className="font-[var(--font-display)] text-3xl font-bold text-[#1A2754] mb-3">Veja quanto você economiza</h2>
             <p className="text-[#64748B]">Exemplo com plano VIP (R$227/mês)</p>
           </div>
 
           <div className="rounded-2xl border border-[#E8ECF4] overflow-hidden shadow-sm bg-white">
             <table className="w-full">
               <thead>
-                <tr className="bg-[#121A33]">
+                <tr className="bg-[#1A2754]">
                   <th className="text-left text-sm font-semibold text-white/70 px-6 py-4">Amigos</th>
                   <th className="text-center text-sm font-semibold text-white/70 px-6 py-4">Desconto</th>
                   <th className="text-right text-sm font-semibold text-white/70 px-6 py-4">Você Paga</th>
@@ -185,8 +185,8 @@ export default function IndiquePage() {
                         {row.friends} {row.friends === 1 ? 'amigo' : 'amigos'}
                       </span>
                     </td>
-                    <td className="text-sm text-[#F7963D] text-center px-6 py-3.5 font-bold">{row.discount}</td>
-                    <td className={`text-sm text-right px-6 py-3.5 font-bold ${row.monthly === 'GRÁTIS' ? 'text-[#10B981] text-base' : 'text-[#121A33]'}`}>
+                    <td className="text-sm text-[#F2911D] text-center px-6 py-3.5 font-bold">{row.discount}</td>
+                    <td className={`text-sm text-right px-6 py-3.5 font-bold ${row.monthly === 'GRÁTIS' ? 'text-[#10B981] text-base' : 'text-[#1A2754]'}`}>
                       {row.monthly}
                     </td>
                   </tr>
@@ -198,9 +198,9 @@ export default function IndiquePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-b from-[#121A33] to-[#375191] relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-b from-[#1A2754] to-[#293C82] relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#F7963D]/10 blur-[100px]" />
+          <div className="absolute top-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#F2911D]/10 blur-[100px]" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
           <h2 className="font-[var(--font-display)] text-3xl md:text-4xl font-bold text-white mb-4">
@@ -215,7 +215,7 @@ export default function IndiquePage() {
             rel="noopener noreferrer"
             data-track-origin="indique_fim"
             data-track-button-text="Quero meu link (CTA final)"
-            className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F7963D] to-[#F9A95E] text-white font-bold rounded-full shadow-lg shadow-[#F7963D]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold rounded-full shadow-lg shadow-[#F2911D]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <MessageCircle className="w-5 h-5" />
             Quero Meu Link
