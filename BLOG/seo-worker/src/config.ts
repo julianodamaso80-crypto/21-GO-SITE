@@ -8,6 +8,15 @@
 import { z } from 'zod';
 
 /**
+ * Helper: string opcional que aceita vazio como undefined.
+ * (Zod 4 com .optional() ainda valida "" e quebra .min(1). Esse preprocess limpa.)
+ */
+const optStr = () => z.preprocess(
+  (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+  z.string().min(1).optional(),
+);
+
+/**
  * Fallbacks documentados pra modelos LLM. Usados APENAS se AI_MODEL_GENERATOR
  * ou AI_MODEL_CLASSIFIER nao vierem do ambiente. Log.warn explicito no boot
  * avisa que esta usando fallback.
@@ -27,8 +36,8 @@ const Schema = z.object({
   TZ: z.string().default('America/Sao_Paulo'),
 
   // Supabase (obrigatorio)
-  SUPABASE_URL: z.string().url().optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  SUPABASE_URL: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().url().optional()),
+  SUPABASE_SERVICE_ROLE_KEY: optStr(),
 
   // Redis (obrigatorio para filas/cron)
   REDIS_URL: z.string().min(1).default('redis://redis-social:6379'),
@@ -38,38 +47,38 @@ const Schema = z.object({
   //   AI_MODEL_GENERATOR  -> tier=main  (Writer/Reviewer/Strategist/Briefing/Updater)
   //   AI_MODEL_CLASSIFIER -> tier=light (Repurpose, judge, classificacoes)
   // Sem env -> usa LLM_FALLBACK_MAIN / LLM_FALLBACK_LIGHT acima (com log.warn).
-  OPENROUTER_API_KEY: z.string().min(1).optional(),
-  OPENROUTER_BASE_URL: z.string().url().optional(),
-  AI_MODEL_GENERATOR: z.string().min(1).optional(),
-  AI_MODEL_CLASSIFIER: z.string().min(1).optional(),
+  OPENROUTER_API_KEY: optStr(),
+  OPENROUTER_BASE_URL: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().url().optional()),
+  AI_MODEL_GENERATOR: optStr(),
+  AI_MODEL_CLASSIFIER: optStr(),
 
   // DataForSEO (opcional — sem isso Agente 01 vira somente GSC/manual)
-  DATAFORSEO_LOGIN: z.string().min(1).optional(),
-  DATAFORSEO_PASSWORD: z.string().min(1).optional(),
+  DATAFORSEO_LOGIN: optStr(),
+  DATAFORSEO_PASSWORD: optStr(),
   DATAFORSEO_DAILY_BUDGET_USD: z.coerce.number().nonnegative().default(2),
 
   // Google (GSC + GA4) — OAuth refresh token (modo oficial)
-  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
-  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
-  GOOGLE_REFRESH_TOKEN: z.string().min(1).optional(),
+  GOOGLE_CLIENT_ID: optStr(),
+  GOOGLE_CLIENT_SECRET: optStr(),
+  GOOGLE_REFRESH_TOKEN: optStr(),
   GSC_SITE_URL: z.string().url().default('https://21go.site/'),
-  GA4_PROPERTY_ID: z.string().min(1).optional(),
+  GA4_PROPERTY_ID: optStr(),
 
   // Bing + IndexNow
-  BING_API_KEY: z.string().min(1).optional(),
+  BING_API_KEY: optStr(),
   BING_SITE_URL: z.string().url().default('https://21go.site/'),
-  INDEXNOW_KEY: z.string().min(1).optional(),
-  INDEXNOW_KEY_LOCATION: z.string().url().optional(),
+  INDEXNOW_KEY: optStr(),
+  INDEXNOW_KEY_LOCATION: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().url().optional()),
 
   // GitHub (Publisher — branch + PR, sem auto-merge)
-  GITHUB_TOKEN: z.string().min(1).optional(),
+  GITHUB_TOKEN: optStr(),
   GITHUB_REPO: z.string().min(1).default('julianodamaso80-crypto/21-GO-SITE'),
   GITHUB_BRANCH_BASE: z.string().default('master'),
   GITHUB_AUTHOR_NAME: z.string().default('21Go SEO Bot'),
   GITHUB_AUTHOR_EMAIL: z.string().email().default('seo-bot@21go.site'),
 
   // Webhooks
-  TRIGGER_SECRET: z.string().min(16).optional(),
+  TRIGGER_SECRET: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().min(16).optional()),
 
   // Comportamento
   AUTO_PUBLISH_ENABLED: z.preprocess(v => v === 'true' || v === true, z.boolean()).default(false),
