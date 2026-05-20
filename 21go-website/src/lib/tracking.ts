@@ -106,6 +106,7 @@ type ServerSideEventName =
   | 'whatsapp_click'
   | 'cotacao_inicio'
   | 'cotacao_completa'
+  | 'pedido_orcamento'
   | 'blog_article_view'
   | 'blog_scroll_depth'
   | 'blog_cta_click'
@@ -352,6 +353,18 @@ export function trackPedidoOrcamento(data: {
       currency: 'BRL',
     }, { eventID: eventId })
   }
+
+  // Server-side dedup (Meta CAPI Purchase + GA4 MP purchase). Mesmo event_id
+  // do fbq client garante dedup correta no Meta. Crítico pra adblocker/iOS ITP.
+  sendServerSide('pedido_orcamento', eventId, {
+    plan_name: data.plano,
+    plan_value: data.valor,
+    value: data.valor,
+    currency: 'BRL',
+    vehicle_marca: data.marca,
+    vehicle_modelo: data.modelo,
+    vehicle_ano: data.ano,
+  })
 
   return eventId
 }
