@@ -120,7 +120,7 @@ export function HeroSection() {
         </motion.div>
 
         {/* CTAs */}
-        <motion.div variants={fadeInUp} className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <motion.div data-cta-section="hero" variants={fadeInUp} className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/cotacao"
             className="shimmer-btn relative inline-flex items-center px-9 py-4 rounded-xl bg-[#F7963D] text-white text-base font-semibold transition-all duration-300 animate-glow-pulse hover:bg-[#D87E2F] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(247,150,61,0.5)]"

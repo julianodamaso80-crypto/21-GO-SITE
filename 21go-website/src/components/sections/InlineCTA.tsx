@@ -16,7 +16,7 @@ export function InlineCTA({ text, buttonText = 'Fazer Simulação Grátis', bg =
   const isInView = useInView(ref, { once: true, margin: '-50px' })
 
   return (
-    <section ref={ref} className={bg === 'gray' ? 'bg-[#F0F4FA]' : 'bg-white'}>
+    <section data-cta-section="inline_cta" ref={ref} className={bg === 'gray' ? 'bg-[#F0F4FA]' : 'bg-white'}>
       <motion.div
         variants={fadeInUp}
         initial="hidden"

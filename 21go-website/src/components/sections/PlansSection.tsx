@@ -175,7 +175,7 @@ export function PlansSection() {
   const plans = plansByCategory[activeCategory]
 
   return (
-    <section ref={ref} id="planos" className="bg-white py-20 lg:py-28">
+    <section data-cta-section="plans" ref={ref} id="planos" className="bg-white py-20 lg:py-28">
       <motion.div
         variants={staggerContainer}
         initial="hidden"
