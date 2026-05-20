@@ -321,18 +321,17 @@ SELECT
   a.published_at,
   a.word_count,
   a.read_time_min,
-  COALESCE(SUM(m.impressions) FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days'), 0)::int AS impressions_30d,
-  COALESCE(SUM(m.clicks)      FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days'), 0)::int AS clicks_30d,
-  CASE WHEN COALESCE(SUM(m.impressions) FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days'), 0) > 0
-       THEN ROUND(
-         COALESCE(SUM(m.clicks)::numeric FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days'), 0)
-         / NULLIF(COALESCE(SUM(m.impressions) FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days'), 0), 0)
-       , 4)
-       ELSE NULL END AS ctr_30d,
-  AVG(m.avg_position) FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days') AS avg_position_30d,
-  COALESCE(SUM(m.ga4_sessions)    FILTER (WHERE m.source='ga4' AND m.date >= current_date - interval '30 days'), 0)::int AS sessions_30d,
-  COALESCE(SUM(m.ga4_conversions) FILTER (WHERE m.source='ga4' AND m.date >= current_date - interval '30 days'), 0)::int AS conversions_30d,
-  COALESCE(SUM(m.whatsapp_clicks) FILTER (WHERE m.date >= current_date - interval '30 days'), 0)::int AS whatsapp_clicks_30d
+  COALESCE((SUM(m.impressions) FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days')), 0)::int AS impressions_30d,
+  COALESCE((SUM(m.clicks)      FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days')), 0)::int AS clicks_30d,
+  -- ctr_30d = clicks / impressions (NULL se impressions=0). cast :: vem APOS o FILTER (precedencia do parser).
+  ROUND(
+    COALESCE((SUM(m.clicks)      FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days')), 0)::numeric
+    / NULLIF(COALESCE((SUM(m.impressions) FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days')), 0), 0)
+  , 4) AS ctr_30d,
+  (AVG(m.avg_position) FILTER (WHERE m.source='gsc' AND m.date >= current_date - interval '30 days')) AS avg_position_30d,
+  COALESCE((SUM(m.ga4_sessions)    FILTER (WHERE m.source='ga4' AND m.date >= current_date - interval '30 days')), 0)::int AS sessions_30d,
+  COALESCE((SUM(m.ga4_conversions) FILTER (WHERE m.source='ga4' AND m.date >= current_date - interval '30 days')), 0)::int AS conversions_30d,
+  COALESCE((SUM(m.whatsapp_clicks) FILTER (WHERE m.date >= current_date - interval '30 days')), 0)::int AS whatsapp_clicks_30d
 FROM seo.articles a
 LEFT JOIN seo.metrics_daily m ON m.article_id = a.id
 GROUP BY a.id;
