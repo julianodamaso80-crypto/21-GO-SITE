@@ -271,13 +271,17 @@ export function trackWhatsAppClick(origem: string, data?: {
     button_text: data?.buttonText,
   })
 
-  // Meta Pixel: Contact
+  // Meta Pixel: Contact — value/currency só quando há valor numérico válido.
+  // Mandar value:undefined dispara "Invalid parameter format" no Meta Pixel.
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', 'Contact', {
+    const fbqParams: Record<string, unknown> = {
       content_category: data?.plano || 'geral',
-      value: data?.valor,
-      currency: 'BRL',
-    }, { eventID: eventId })
+    }
+    if (typeof data?.valor === 'number' && Number.isFinite(data.valor)) {
+      fbqParams.value = data.valor
+      fbqParams.currency = 'BRL'
+    }
+    window.fbq('track', 'Contact', fbqParams, { eventID: eventId })
   }
 
   sendServerSide('whatsapp_click', eventId, {
