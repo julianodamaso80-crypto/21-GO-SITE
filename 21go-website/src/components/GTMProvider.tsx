@@ -9,9 +9,8 @@ import { trackPageView } from '@/lib/tracking'
 // NEXT_PUBLIC_* é inlinada em build time pelo Next; se o EasyPanel não passar
 // como build arg do Dockerfile, o bundle sai sem GTM. Fallback garante que o
 // contêiner oficial (21Go - Web - 2) sempre carregue.
+// Meta Pixel init agora vive 100% em MetaPixelScripts (SSR). Aqui só GTM.
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || 'GTM-WQ9L62XN'
-const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
-const META_PIXEL_ID_2 = process.env.NEXT_PUBLIC_META_PIXEL_ID_2
 
 export function GTMProvider() {
   useEffect(() => {
@@ -53,28 +52,6 @@ export function GTMProvider() {
             />
           </noscript>
         </>
-      )}
-
-      {/* Meta Pixel — suporta multiplos pixels (todos os fbq('track',...) disparam pra ambos) */}
-      {(META_PIXEL_ID || META_PIXEL_ID_2) && (
-        <Script
-          id="meta-pixel"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              ${META_PIXEL_ID ? `fbq('init', '${META_PIXEL_ID}');` : ''}
-              ${META_PIXEL_ID_2 ? `fbq('init', '${META_PIXEL_ID_2}');` : ''}
-            `,
-          }}
-        />
       )}
 
       {/* DataLayer init (always, even without GTM — for future use) */}
