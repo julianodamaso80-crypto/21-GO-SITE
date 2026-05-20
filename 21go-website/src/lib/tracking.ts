@@ -418,15 +418,21 @@ export function trackBlogCtaClick(
   return eventId
 }
 
+export type BlogLinkTargetType = 'artigo_blog' | 'pagina_pilar' | 'whatsapp' | 'outro'
+
 export function trackBlogInternalLinkClick(args: {
   article_slug: string
   link_href: string
   link_text: string
+  target_url?: string
+  target_type?: BlogLinkTargetType
 }) {
   const eventId = pushEvent('blog_internal_link_click', {
     article_slug: args.article_slug,
     link_href: args.link_href,
     link_text: args.link_text,
+    target_url: args.target_url,
+    target_type: args.target_type,
     content_category: 'blog',
   })
 
@@ -434,6 +440,8 @@ export function trackBlogInternalLinkClick(args: {
     article_slug: args.article_slug,
     link_href: args.link_href,
     link_text: args.link_text,
+    target_url: args.target_url,
+    target_type: args.target_type,
   })
 
   return eventId
