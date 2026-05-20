@@ -26,7 +26,7 @@ import path from 'path';
 import type { Agent } from './_types.js';
 import type { ArticleRow } from '../db/repositories/articles.js';
 import { updateArticle, saveVersion } from '../db/repositories/articles.js';
-import { commitFile, getBranchSha, createBranch, createPullRequest } from '../integrations/github.js';
+import { commitFile } from '../integrations/github.js';
 import { config } from '../config.js';
 import { child } from '../lib/logger.js';
 
@@ -86,90 +86,86 @@ export const agent09: Agent<Input, Output> = {
     }
 
     if (ctx.dry_run) {
-      log.info({ articleId: a.id }, 'DRY-RUN — nao abre PR');
+      log.info({ articleId: a.id }, 'DRY-RUN — nao commita');
       return { output: { pr_opened: false, reason: 'dry_run' } };
     }
 
-    // ===== Branch + commit + PR =====
-    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const branchName = `seo/publish-${a.slug}-${ts}`;
+    // ===== Commit DIRETO na master (decisao user 2026-05-20: sem PR/revisao humana) =====
     const targetPath = `${TARGET_DIR}/${a.slug}.mdx`;
 
     try {
-      // 1. Sha do base
-      const baseSha = await getBranchSha(config.GITHUB_BRANCH_BASE);
-      log.info({ base: config.GITHUB_BRANCH_BASE, sha: baseSha.slice(0, 7) }, 'sha do base');
-
-      // 2. Cria branch nova
-      await createBranch(branchName, baseSha);
-
-      // 3. Commita MDX na branch nova
+      // Commita direto no branch base (master) — sem branch separada, sem PR.
       const commitResult = await commitFile({
         path: targetPath,
         content: mdx,
-        message: `feat(blog): publica "${a.title}"\n\nGerado pela esteira SEO (Agente 09 Publisher).\nArticle: ${a.id}\nSlug: ${a.slug}`,
-        branch: branchName,
+        message: `feat(blog): ${a.title}\n\nGerado pela esteira SEO automatica.\nArticle: ${a.id}\nSlug: ${a.slug}\nCategoria: ${a.category ?? '?'}\nPalavras: ${a.word_count ?? '?'}`,
+        branch: config.GITHUB_BRANCH_BASE,
       });
 
-      // 4. Abre PR
-      const pr = await createPullRequest({
-        head: branchName,
-        base: config.GITHUB_BRANCH_BASE,
-        title: `[blog] ${a.title}`,
-        body: [
-          `## Novo artigo do blog gerado pela esteira SEO`,
-          ``,
-          `- **Slug:** \`${a.slug}\``,
-          `- **Categoria:** ${a.category ?? '(nao informada)'}`,
-          `- **Palavra-chave principal:** ${a.main_keyword ?? '(nao informada)'}`,
-          `- **Word count:** ${a.word_count ?? '?'} (~${a.read_time_min ?? '?'} min leitura)`,
-          `- **Review status:** ${a.review_status ?? '(sem review)'}`,
-          ``,
-          `**URL futura:** ${a.url}`,
-          ``,
-          `**Article ID:** \`${a.id}\` (super-banco \`seo.articles\`)`,
-          ``,
-          `### Como aprovar`,
-          `1. Revise o MDX neste PR`,
-          `2. Se OK, mergeia (Squash recomendado)`,
-          `3. EasyPanel rebuilda o site automaticamente`,
-          `4. Apos rebuild, o cron de 15 em 15 minutos do seo-worker detecta a URL live, marca status='published' e dispara Agentes 10-12 (sitemap + Google + Bing + IndexNow)`,
-          ``,
-          `### Como rejeitar`,
-          `Fecha o PR sem merge. O article fica em \`awaiting_pr_merge\` indefinidamente — pode ser arquivado depois via SQL.`,
-        ].join('\n'),
-      });
-
-      // 5. Salva versao + atualiza article
-      await saveVersion(a.id, 1, mdx, 'agent:09-publisher', `PR #${pr.number} aberto`);
+      // Salva versao + atualiza article direto pra 'published'
+      // (cron de 15min vai verificar URL live e disparar Agentes 10-12 de indexacao)
+      await saveVersion(a.id, 1, mdx, 'agent:09-publisher', `commit direto na master ${commitResult.commit_sha.slice(0, 7)}`);
       await updateArticle(a.id, {
-        status: 'awaiting_pr_merge',
+        status: 'awaiting_pr_merge', // mantem awaiting_pr_merge pra cron detectar URL live e disparar indexacao
         mdx_path: targetPath,
         mdx_sha: commitResult.blob_sha,
-        pr_url: pr.html_url,
-        pr_branch: branchName,
+        pr_url: commitResult.html_url, // url do arquivo no GitHub
+        pr_branch: config.GITHUB_BRANCH_BASE,
       });
 
       log.info({
-        articleId: a.id, pr: pr.number, url: pr.html_url, branch: branchName,
-      }, 'PR aberto — aguardando merge humano');
+        articleId: a.id, commit_sha: commitResult.commit_sha.slice(0, 7), branch: config.GITHUB_BRANCH_BASE,
+      }, 'commit DIRETO na master — sem PR (modo auto-publish)');
+
+      // Dispara rebuild EasyPanel via SSH (best-effort — se SSH falha, ignora; cron de recheck pega depois)
+      void triggerEasyPanelRebuild().catch((e) => {
+        log.warn({ err: (e as Error).message }, 'rebuild EasyPanel via SSH falhou (nao bloqueante)');
+      });
 
       return {
         output: {
-          pr_opened: true,
-          pr_number: pr.number,
-          pr_url: pr.html_url,
-          pr_branch: branchName,
+          pr_opened: true, // mantem nome do campo por compat; significa "publicacao iniciada"
+          pr_url: commitResult.html_url,
+          pr_branch: config.GITHUB_BRANCH_BASE,
           commit_sha: commitResult.commit_sha,
         },
       };
     } catch (e) {
       const msg = (e as Error).message;
-      log.error({ err: msg, articleId: a.id }, 'falha ao abrir PR');
+      log.error({ err: msg, articleId: a.id }, 'falha ao commitar na master');
       return { output: { pr_opened: false, reason: `github falhou: ${msg}` } };
     }
   },
 };
+
+/**
+ * Dispara rebuild do site no EasyPanel via SSH + docker.
+ * Best-effort: se falhar, cron de 15 em 15 minutos retenta detectar URL live e disparar 10-12.
+ *
+ * Requer chave SSH em ~/.ssh/claude_21go autorizada em root@167.71.31.77.
+ * Executa: 1) git pull no /etc/easypanel/projects/social-21go/site/code
+ *          2) docker buildx build (multi-stage)
+ *          3) docker service update --force --image easypanel/social-21go/site:latest social-21go_site
+ */
+async function triggerEasyPanelRebuild(): Promise<void> {
+  const { spawn } = await import('child_process');
+  const sshKey = process.env.EASYPANEL_SSH_KEY ?? 'C:/Users/damas/.ssh/claude_21go';
+  const sshHost = process.env.EASYPANEL_HOST ?? 'root@167.71.31.77';
+  const remoteCmd = `cd /etc/easypanel/projects/social-21go/site/code && git pull origin master && cd 21go-website && docker buildx build -t easypanel/social-21go/site:latest --load . && docker service update --force --image easypanel/social-21go/site:latest social-21go_site`;
+
+  log.info({ host: sshHost }, 'disparando rebuild EasyPanel via SSH (background)');
+
+  // Dispara sem aguardar (fire-and-forget — vai demorar 5-10min)
+  const child = spawn('ssh', [
+    '-i', sshKey,
+    '-o', 'StrictHostKeyChecking=no',
+    '-o', 'ConnectTimeout=10',
+    sshHost,
+    remoteCmd,
+  ], { detached: true, stdio: 'ignore' });
+  child.unref();
+  log.info({ pid: child.pid }, 'SSH rebuild disparado em background');
+}
 
 async function findRepoRoot(): Promise<string> {
   let dir = process.cwd();

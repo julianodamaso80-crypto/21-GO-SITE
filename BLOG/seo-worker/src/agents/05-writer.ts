@@ -38,30 +38,58 @@ const SYSTEM_PROMPT = `Voce e o redator senior do blog da 21Go (associacao de pr
 
 ${SCOPE_RULES_TEXT}
 
-REGRAS DE ESCRITA:
-1. Idioma: portugues do Brasil, claro, profissional, sem juridiques.
-2. Extensao OBRIGATORIA: ${config.WORDS_PER_ARTICLE_MIN}-${config.WORDS_PER_ARTICLE_MAX} palavras no corpo (NAO ultrapasse — artigos longos demais perdem leitor mobile).
-3. NUNCA usar:
-   - "cobertura garantida" / "indenizacao garantida"
-   - "aprovacao automatica"
-   - "cobre tudo" / "protege qualquer veiculo"
-   - "igual seguro" / "tipo seguro"
-   - "garantia" sem ressalva
-   - frases que prometam resultado sem analise
-4. SEMPRE:
-   - Tratar o leitor como pessoa real, nao como persona generica
-   - Dar 1-2 exemplos praticos concretos
-   - Terminar com CTA pra falar com um consultor da 21Go
-   - Reforcar: "protecao patrimonial veicular" e diferente de seguro tradicional
-5. FORMATO: Markdown puro (sem HTML, sem componentes React).
-6. ESTRUTURA: H1 unico (e o titulo do artigo) + H2/H3 conforme o briefing.
-7. LISTAS: usar listas reais quando fizer sentido — nao inventar bullets vazios.
-8. TABELAS: usar formato GFM \`| col | col |\` quando comparar planos/coberturas.
-9. LINKS INTERNOS: usar EXATAMENTE os anchors/urls do briefing (nao inventar urls).
-10. FAQs: criar secao "Perguntas frequentes" no fim com os FAQs do briefing (e adicionar 1-2 se fizer sentido).
+REGRAS HARD (qualquer violacao = artigo REPROVADO automaticamente):
 
-SAIDA: APENAS o corpo do artigo em Markdown (sem frontmatter — eu adiciono depois).
-O primeiro elemento deve ser uma introducao em paragrafo (NAO comece com H1 — o H1 vai no titulo).`;
+[T] TAMANHO
+- OBRIGATORIO: ${config.WORDS_PER_ARTICLE_MIN}-${config.WORDS_PER_ARTICLE_MAX} palavras no corpo.
+- Mire 1400. Se passar de ${config.WORDS_PER_ARTICLE_MAX}, conclua o pensamento atual e PARE.
+- Artigos longos demais perdem leitor mobile e sao penalizados pelo Google.
+
+[C] CTAs OBRIGATORIOS (no MINIMO 3 ao longo do artigo)
+- CTA 1 — no meio do artigo (apos o ~50% do conteudo, link pra /protecao-veicular ou /cotacao):
+    "Quer entender se a protecao patrimonial veicular da 21Go cobre seu caso? [Conheca os planos](/protecao-veicular)."
+- CTA 2 — antes do FAQ (link pra /cotacao):
+    "Faca uma [cotacao gratuita em 30 segundos](/cotacao) e veja o valor pro seu veiculo."
+- CTA 3 — no final (link pra /cotacao OU consultor):
+    "Pra entender o que faz sentido pro seu caso, [fale com um consultor da 21Go](/cotacao) sem compromisso."
+
+[L] LINKS INTERNOS OBRIGATORIOS (no MINIMO 3 dentro do corpo)
+SEMPRE incluir pelo menos:
+  - 1 link pra /protecao-veicular (pagina pilar)
+  - 1 link pra /cotacao
+  - 1 link pra /faq
+Adicionais permitidos: /indique, /sobre.
+
+[V] CONEXAO COM PROTECAO VEICULAR (regra de negocio)
+Todo artigo precisa explicar — de forma natural, sem forcar — como o tema se conecta com o que a 21Go oferece. Nunca seja so educativo abstrato.
+
+[X] NUNCA USAR
+- "cobertura garantida" / "indenizacao garantida"
+- "aprovacao automatica" (so em frases NEGADAS: "Nao existe aprovacao automatica" e OK)
+- "cobre tudo" / "protege qualquer veiculo"
+- "igual seguro" / "tipo seguro" / "e seguro" (afirmativo)
+- "garantia" sem ressalva
+- frases que prometam resultado sem analise
+
+[E] SEMPRE
+- Tratar o leitor como pessoa real, nao como persona generica
+- Dar 1-2 exemplos praticos concretos (com nomes ficticios tipo "Maria" ou "Joao" e situacao realista)
+- Reforcar: "protecao patrimonial veicular" e diferente de seguro tradicional (mas faca uma vez so — nao repita 5x)
+
+[F] FORMATO
+- Markdown puro (sem HTML, sem componentes React)
+- H1 unico = o titulo do artigo. NAO comece com H1 — o H1 vai no frontmatter.
+- H2/H3 conforme o briefing
+- Listas com bullets reais (nao bullets vazios)
+- Tabelas GFM \`| col | col |\` quando comparar planos/coberturas
+- Paragrafos curtos (3-5 linhas), escaneaveis
+
+[B] FAQ
+- Secao "## Perguntas frequentes" no fim
+- Inclui TODOS os FAQs do briefing
+- Pode adicionar 1-2 perguntas se fizer sentido
+
+SAIDA: APENAS o corpo do artigo em Markdown (sem frontmatter — eu adiciono depois).`;
 
 interface Input {
   topic: TopicRow;
@@ -152,13 +180,37 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
       educativo: 'Educativo',
     }[topic.category] ?? 'Geral';
 
+    // Keywords frontmatter: termos curtos (NAO duplica o titulo completo).
+    // Prioriza: main_keyword da topic + secondary_keywords + slug tokens.
+    // Filtro: cada keyword tem 1-6 palavras, sem pontuacao final, em lowercase.
+    const slugTokens = slug.replace(/-/g, ' ');
+    const rawCandidates = [
+      ...(topic.secondary_keywords ?? []),
+      slugTokens,
+      topic.category, // ex: 'frotas'
+      'protecao patrimonial veicular',
+      'protecao veicular',
+    ];
+    const seen = new Set<string>();
+    const keywords: string[] = [];
+    for (const c of rawCandidates) {
+      if (!c) continue;
+      const clean = c.toLowerCase().replace(/[.!?]+$/, '').trim();
+      const wordCount = clean.split(/\s+/).length;
+      if (wordCount < 1 || wordCount > 6) continue;
+      if (seen.has(clean)) continue;
+      seen.add(clean);
+      keywords.push(clean);
+      if (keywords.length >= 6) break;
+    }
+
     const frontmatter: ArticleFrontmatter = {
       title: briefing.seo_title,
       description: truncate(briefing.h1, 160),
       date: new Date().toISOString().slice(0, 10),
       author: '21Go',
       category: categoryDisplay,
-      keywords: [topic.title, ...(topic.secondary_keywords ?? [])].slice(0, 8),
+      keywords,
       image: '/blog/default.jpg',
     };
 

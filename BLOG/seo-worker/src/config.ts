@@ -84,9 +84,13 @@ const Schema = z.object({
   TRIGGER_SECRET: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().min(16).optional()),
 
   // Comportamento
-  AUTO_PUBLISH_ENABLED: z.preprocess(v => v === 'true' || v === true, z.boolean()).default(false),
-  DAILY_ARTICLE_LIMIT: z.coerce.number().int().positive().default(1),
-  WEEKLY_KEYWORD_LIMIT: z.coerce.number().int().positive().default(20),
+  AUTO_PUBLISH_ENABLED: z.preprocess(v => v === 'true' || v === true, z.boolean()).default(true),
+  // Slots diários obrigatórios: 1 carros + 1 motos + 1 frotas (mínimo 3).
+  // Extras viram bônus se houver briefing disponível.
+  DAILY_ARTICLE_LIMIT: z.coerce.number().int().positive().default(3),
+  DAILY_ARTICLE_BONUS: z.coerce.number().int().nonnegative().default(1),
+  // Pesquisa semanal pesada (1x/semana). 80 keywords cobrem ~2 semanas de briefings.
+  WEEKLY_KEYWORD_LIMIT: z.coerce.number().int().positive().default(80),
   // Faixa OBRIGATÓRIA: 1.300-1.500 palavras (decisão user 2026-05-20).
   WORDS_PER_ARTICLE_MIN: z.coerce.number().int().positive().default(1300),
   WORDS_PER_ARTICLE_MAX: z.coerce.number().int().positive().default(1500),

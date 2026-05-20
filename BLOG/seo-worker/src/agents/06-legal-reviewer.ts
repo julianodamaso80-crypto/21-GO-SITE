@@ -90,7 +90,7 @@ export const agent06: Agent<Input, Output> = {
       throw new Error(`nao consegui ler ${filePath}: ${(e as Error).message}`);
     }
 
-    // ===== 1) Hard-block regex =====
+    // ===== 1) Hard-block regex (frases proibidas + escopo) =====
     const hardMatches: Array<{ pattern: string; reason: string }> = [];
     for (const f of FORBIDDEN_PHRASES) {
       if (f.pattern.test(mdx)) hardMatches.push({ pattern: f.pattern.source, reason: f.reason });
@@ -100,9 +100,70 @@ export const agent06: Agent<Input, Output> = {
     const scope = checkScope(mdx);
     if (scope) hardMatches.push({ pattern: scope.matched, reason: scope.reason });
 
+    // ===== 2) Guards deterministicos de qualidade (decisao user 2026-05-20) =====
+    // Separa body (sem frontmatter) pra contar so o conteudo
+    const bodyOnly = mdx.replace(/^---[\s\S]+?---\n+/m, '');
+    const wordCount = bodyOnly.split(/\s+/).filter(Boolean).length;
+
+    // 2.1 — Tamanho: rejeita se fora da janela 1200-1700 (target 1300-1500 com margem)
+    const HARD_MIN = 1200;
+    const HARD_MAX = 1700;
+    if (wordCount < HARD_MIN) {
+      hardMatches.push({ pattern: `wordCount=${wordCount}<${HARD_MIN}`, reason: 'artigo curto demais (target 1300-1500)' });
+    }
+    if (wordCount > HARD_MAX) {
+      hardMatches.push({ pattern: `wordCount=${wordCount}>${HARD_MAX}`, reason: 'artigo longo demais (target 1300-1500)' });
+    }
+
+    // 2.2 — 3+ CTAs: conta links pra /cotacao OU /protecao-veicular OU frase "fale com um consultor"
+    const ctaLinks = (bodyOnly.match(/\]\((\/cotacao|\/protecao-veicular)\b/gi) ?? []).length;
+    const ctaPhrases = (bodyOnly.match(/\b(fale com um consultor|faca uma cotacao|fa[çc]a uma cota[çc][ãa]o|conhe[çc]a os planos)\b/gi) ?? []).length;
+    const totalCTAs = ctaLinks + Math.min(ctaPhrases, 2); // limita peso de frases pra nao dar match em qualquer menção
+    if (totalCTAs < 3) {
+      hardMatches.push({ pattern: `CTAs=${totalCTAs}`, reason: `artigo precisa de pelo menos 3 CTAs (achei ${totalCTAs})` });
+    }
+
+    // 2.3 — 3+ links internos (qualquer URL relativa do site)
+    const internalLinks = Array.from(bodyOnly.matchAll(/\]\((\/[^)]+)\)/g)).map((m) => m[1]!);
+    const hasProtecao = internalLinks.some((u) => u.startsWith('/protecao-veicular'));
+    const hasCotacao = internalLinks.some((u) => u.startsWith('/cotacao'));
+    const hasFaq = internalLinks.some((u) => u.startsWith('/faq'));
+    if (internalLinks.length < 3) {
+      hardMatches.push({ pattern: `internalLinks=${internalLinks.length}`, reason: `precisa de 3+ links internos (achei ${internalLinks.length})` });
+    }
+    if (!hasProtecao) {
+      hardMatches.push({ pattern: 'missing-link-/protecao-veicular', reason: 'link obrigatorio pra /protecao-veicular ausente' });
+    }
+    if (!hasCotacao) {
+      hardMatches.push({ pattern: 'missing-link-/cotacao', reason: 'link obrigatorio pra /cotacao ausente' });
+    }
+    // /faq e obrigatorio mas as vezes pode ficar fora (warn, nao block)
+    if (!hasFaq) {
+      log.warn({ articleId: a.id }, 'aviso: link pra /faq ausente (recomendado)');
+    }
+
+    // 2.4 — Keywords frontmatter NAO duplica o title
+    const fmMatch = /^---\n([\s\S]+?)\n---/.exec(mdx);
+    if (fmMatch) {
+      const fm = fmMatch[1] ?? '';
+      const titleMatch = /title:\s*['"]?(.+?)['"]?\s*$/m.exec(fm);
+      const kwSection = /keywords:\s*([\s\S]+?)(?:\n[a-z]+:|$)/i.exec(fm);
+      if (titleMatch && kwSection) {
+        const title = titleMatch[1]!.trim().toLowerCase();
+        const kwYaml = kwSection[1]!.toLowerCase();
+        // Se as keywords contêm o título inteiro como item, fail
+        if (kwYaml.includes(title.replace(/['"]/g, ''))) {
+          hardMatches.push({
+            pattern: 'keywords-equals-title',
+            reason: 'campo keywords do frontmatter nao pode duplicar o title — use termos curtos separados',
+          });
+        }
+      }
+    }
+
     if (hardMatches.length > 0) {
-      const notes = 'REPROVADO no hard-block: ' + hardMatches.map((m) => `${m.reason} (${m.pattern})`).join('; ');
-      log.warn({ articleId: a.id, matches: hardMatches }, 'hard-block disparou');
+      const notes = 'REPROVADO no hard-block + guards: ' + hardMatches.map((m) => `${m.reason} (${m.pattern})`).join('; ');
+      log.warn({ articleId: a.id, matches: hardMatches, wordCount, totalCTAs, internalLinks: internalLinks.length }, 'hard-block disparou');
       if (!ctx.dry_run) {
         await updateArticle(a.id, { review_status: 'REPROVADO', review_notes: notes, status: 'in_review' });
       }

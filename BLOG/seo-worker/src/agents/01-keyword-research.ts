@@ -125,11 +125,35 @@ export const agent01: Agent<Input, Output> = {
       log.warn('Pendente de credencial: GSC desabilitado — usando so seeds + dataforseo se ok');
     }
 
-    // 3) DataForSEO — expande cada seed em sugestoes + relacionadas
+    // 3) DataForSEO — expande TODAS as seeds em sugestoes (regra 1x/semana, roda pesado).
+    // Cache 7d: se mesma seed ja rodou nos ultimos 7d em seo.dataforseo_calls, pula.
     if (useDfs) {
       try {
-        const seedSubset = SEEDS.slice(0, Math.min(SEEDS.length, 6)); // limite pra controlar custo
-        for (const s of seedSubset) {
+        // Pre-fetch das chamadas dos ultimos 7 dias pra cache local
+        const { query } = await import('../db/pg.js');
+        const recentCalls = await query<{ endpoint: string; request_body: { keyword?: string }; called_at: string }>(
+          `SELECT endpoint, request_body, called_at FROM seo.dataforseo_calls
+           WHERE called_at >= now() - interval '7 days'
+             AND endpoint LIKE '%keyword_suggestions%'`,
+        );
+        const cachedSeeds = new Set<string>();
+        for (const row of recentCalls) {
+          const body = row.request_body as Array<{ keyword?: string }> | undefined;
+          const seed = body?.[0]?.keyword?.toLowerCase().trim();
+          if (seed) cachedSeeds.add(seed);
+        }
+        log.info({ cached_seeds_7d: cachedSeeds.size, total_seeds: SEEDS.length }, 'cache DataForSEO check');
+
+        let cacheHits = 0;
+        let cacheMisses = 0;
+        for (const s of SEEDS) {
+          const seedLower = s.seed.toLowerCase().trim();
+          if (cachedSeeds.has(seedLower)) {
+            cacheHits++;
+            log.debug({ seed: s.seed }, 'cache hit — pulando');
+            continue;
+          }
+          cacheMisses++;
           try {
             const sug = await dfs.keywordSuggestions(s.seed, 20);
             for (const k of sug) {
@@ -146,10 +170,16 @@ export const agent01: Agent<Input, Output> = {
               sources.dataforseo++;
             }
           } catch (e) {
-            errors.push(`dfs seed "${s.seed}": ${(e as Error).message}`);
+            const msg = (e as Error).message;
+            errors.push(`dfs seed "${s.seed}": ${msg}`);
+            // Budget guard pode disparar — se mensagem indica, para tudo
+            if (/budget esgotado/i.test(msg)) {
+              log.warn({ seed: s.seed }, 'budget guard disparou — parando pesquisa DataForSEO');
+              break;
+            }
           }
         }
-        log.info({ dataforseo_kws: sources.dataforseo }, 'DataForSEO carregado');
+        log.info({ dataforseo_kws: sources.dataforseo, cache_hits: cacheHits, cache_misses: cacheMisses }, 'DataForSEO carregado');
       } catch (e) {
         errors.push(`dataforseo: ${(e as Error).message}`);
       }

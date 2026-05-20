@@ -41,53 +41,94 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
 
   log.info({ jobId: job.id, triggered_by, dry_run, limit }, 'iniciando job');
 
-  // REGRA OBRIGATORIA: 1 artigo de frota POR DIA (decisao user 2026-05-20).
-  // Verifica se ja tem frota gerada hoje (timezone America/Sao_Paulo).
-  const frotaHojeRow = await queryOne<{ count: number }>(
-    `SELECT count(*)::int AS count FROM seo.articles
-     WHERE category='frotas'
-       AND created_at >= (CURRENT_DATE AT TIME ZONE 'America/Sao_Paulo')`,
-  );
-  const temFrotaHoje = (frotaHojeRow?.count ?? 0) > 0;
-  log.info({ frota_hoje: temFrotaHoje }, 'check frota diaria');
+  // ============================================================
+  // SISTEMA DE SLOTS DIÁRIOS (decisao user 2026-05-20)
+  // - 3 slots obrigatorios: 1 carros + 1 motos + 1 frotas
+  // - Verifica artigos JA gerados hoje (TZ Sao Paulo)
+  // - Pra cada slot vazio, pega briefing dessa categoria
+  // - Apos 3 slots, processa bonus ate `limit` total
+  // ============================================================
+  type Slot = 'carros' | 'motos' | 'frotas';
+  const SLOTS_OBRIGATORIOS: Slot[] = ['carros', 'motos', 'frotas'];
 
-  // Pega briefings ordenados, priorizando FROTA se ainda nao tem hoje.
-  // JOIN com seo.topics pra trazer o topic completo + categoria.
+  // Conta artigos por categoria criados hoje
+  const todayRows = await query<{ category: string; count: number }>(
+    `SELECT category, count(*)::int AS count
+     FROM seo.articles
+     WHERE company_id='company-21go'
+       AND created_at >= (CURRENT_DATE AT TIME ZONE 'America/Sao_Paulo')
+     GROUP BY category`,
+  );
+  const articlesHoje: Record<string, number> = {};
+  for (const r of todayRows) articlesHoje[r.category] = r.count;
+  log.info({ articles_hoje: articlesHoje }, 'check slots diarios');
+
+  // Slots que ainda precisam ser preenchidos
+  const slotsFaltando = SLOTS_OBRIGATORIOS.filter((s) => (articlesHoje[s] ?? 0) === 0);
+  log.info({ slots_faltando: slotsFaltando }, 'slots obrigatorios pendentes');
+
+  // Busca briefings disponiveis (sem artigo ainda) por categoria
   const briefs = await query<BriefingRow & { topic_json: TopicRow; topic_category: string }>(
     `SELECT b.*, row_to_json(t.*) AS topic_json, t.category AS topic_category
      FROM seo.briefings b
      JOIN seo.topics t ON t.id = b.topic_id
-     ORDER BY
-       CASE WHEN t.category='frotas' AND $1::boolean = false THEN 0 ELSE 1 END,
-       b.created_at ASC
-     LIMIT 50`,
-    [temFrotaHoje],
+     LEFT JOIN seo.articles a ON a.briefing_id = b.id
+     WHERE a.id IS NULL
+     ORDER BY b.created_at ASC
+     LIMIT 100`,
   );
 
-  const briefingsToProcess: Array<{ briefing: BriefingRow; topic: TopicRow }> = [];
+  // Indexa por categoria
+  const briefsByCategory: Record<string, Array<{ briefing: BriefingRow; topic: TopicRow }>> = {};
   for (const b of briefs) {
-    const existing = await queryOne<{ id: string }>(
-      `SELECT id FROM seo.articles WHERE briefing_id=$1 LIMIT 1`,
-      [b.id],
-    );
-    if (existing) continue;
-    briefingsToProcess.push({ briefing: b, topic: b.topic_json });
-    if (briefingsToProcess.length >= limit) break;
+    const cat = b.topic_category;
+    if (!briefsByCategory[cat]) briefsByCategory[cat] = [];
+    briefsByCategory[cat]!.push({ briefing: b, topic: b.topic_json });
+  }
+  log.info(
+    {
+      briefings_por_cat: Object.fromEntries(
+        Object.entries(briefsByCategory).map(([k, v]) => [k, v.length]),
+      ),
+    },
+    'briefings disponiveis',
+  );
+
+  const briefingsToProcess: Array<{ briefing: BriefingRow; topic: TopicRow; slot: string }> = [];
+
+  // 1. Preenche slots obrigatorios primeiro
+  for (const slot of slotsFaltando) {
+    const candidatos = briefsByCategory[slot];
+    if (candidatos && candidatos.length > 0) {
+      briefingsToProcess.push({ ...candidatos.shift()!, slot });
+    } else {
+      log.warn({ slot }, `ATENCAO: slot obrigatorio '${slot}' sem briefing disponivel — rodar /runs/weekly pra gerar`);
+    }
   }
 
-  // ALERTA: se nao tem frota hoje e nenhum briefing de frota disponivel
-  if (!temFrotaHoje && !briefingsToProcess.some((p) => p.topic.category === 'frotas')) {
-    log.warn(
-      { briefings_disponiveis: briefingsToProcess.length },
-      'ATENCAO: regra frota diaria nao podera ser cumprida — nenhum briefing de frota disponivel. Rodar /runs/weekly antes pra gerar.',
+  // 2. Preenche bonus ate atingir `limit` total
+  const remaining = Math.max(0, limit - briefingsToProcess.length);
+  if (remaining > 0) {
+    // Junta todos os briefings restantes (qualquer categoria) em FIFO
+    const remainingBriefs: Array<{ briefing: BriefingRow; topic: TopicRow }> = [];
+    for (const cat of Object.keys(briefsByCategory)) {
+      remainingBriefs.push(...(briefsByCategory[cat] ?? []));
+    }
+    remainingBriefs.sort((a, b) =>
+      new Date(a.briefing.created_at).getTime() - new Date(b.briefing.created_at).getTime(),
     );
+    for (const r of remainingBriefs.slice(0, remaining)) {
+      briefingsToProcess.push({ ...r, slot: 'bonus' });
+    }
   }
-  log.info({
-    found: briefingsToProcess.length,
-    limit,
-    first_category: briefingsToProcess[0]?.topic.category,
-    frota_hoje: temFrotaHoje,
-  }, 'briefings pra processar');
+
+  log.info(
+    {
+      total_to_process: briefingsToProcess.length,
+      slots: briefingsToProcess.map((p) => `${p.slot}:${p.topic.category}`),
+    },
+    'plano de execucao',
+  );
 
   const errors: string[] = [];
   let total_cost = 0;
