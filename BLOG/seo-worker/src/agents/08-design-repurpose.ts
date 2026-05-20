@@ -8,7 +8,7 @@
  */
 import type { Agent } from './_types.js';
 import type { ArticleRow } from '../db/repositories/articles.js';
-import { complete } from '../integrations/anthropic.js';
+import { complete } from '../integrations/llm.js';
 import { child } from '../lib/logger.js';
 
 const log = child('agent:08-design-repurpose');

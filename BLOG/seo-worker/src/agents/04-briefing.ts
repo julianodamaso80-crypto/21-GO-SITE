@@ -16,7 +16,7 @@
 import type { Agent } from './_types.js';
 import type { TopicRow } from '../db/repositories/topics.js';
 import { insertBriefing, type BriefingRow } from '../db/repositories/articles.js';
-import { complete } from '../integrations/anthropic.js';
+import { complete } from '../integrations/llm.js';
 import { SCOPE_RULES_TEXT } from '../lib/scope-guard.js';
 import { child } from '../lib/logger.js';
 

@@ -17,7 +17,7 @@ import type { Agent } from './_types.js';
 import { supabase } from '../db/supabase.js';
 import { updateArticle, saveVersion } from '../db/repositories/articles.js';
 import { parseMdx, buildMdx, type ArticleFrontmatter } from '../lib/mdx.js';
-import { complete } from '../integrations/anthropic.js';
+import { complete } from '../integrations/llm.js';
 import { SCOPE_RULES_TEXT } from '../lib/scope-guard.js';
 import { config } from '../config.js';
 import { child } from '../lib/logger.js';

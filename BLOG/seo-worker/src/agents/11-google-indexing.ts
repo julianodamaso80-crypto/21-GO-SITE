@@ -37,7 +37,7 @@ export const agent11: Agent<Input, Output> = {
     const a = input.article;
     const errors: string[] = [];
 
-    const credentialsOk = !!(config.GOOGLE_REFRESH_TOKEN || config.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    const credentialsOk = !!config.GOOGLE_REFRESH_TOKEN;
     if (!credentialsOk) {
       log.warn('Pendente de credencial: Google OAuth ou Service Account');
       return { output: { sitemap_submitted: false, url_inspected: false, errors: ['Pendente de credencial Google'] } };

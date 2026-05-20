@@ -39,7 +39,7 @@ export const agent15: Agent<Input, Output> = {
     const start = new Date(Date.now() - days * 86_400_000);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
-    const credsGoogle = !!(config.GOOGLE_REFRESH_TOKEN || config.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    const credsGoogle = !!config.GOOGLE_REFRESH_TOKEN;
     const errors: string[] = [];
     const rows: MetricsDailyInsert[] = [];
 

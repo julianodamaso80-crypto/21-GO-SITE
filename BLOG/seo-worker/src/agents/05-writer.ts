@@ -22,7 +22,7 @@ import type { Agent } from './_types.js';
 import type { TopicRow } from '../db/repositories/topics.js';
 import type { BriefingRow, ArticleRow } from '../db/repositories/articles.js';
 import { insertArticle, updateArticle } from '../db/repositories/articles.js';
-import { complete } from '../integrations/anthropic.js';
+import { complete } from '../integrations/llm.js';
 import { buildMdx, slugify, type ArticleFrontmatter } from '../lib/mdx.js';
 import { embedPassage } from '../lib/similarity.js';
 import { SCOPE_RULES_TEXT } from '../lib/scope-guard.js';

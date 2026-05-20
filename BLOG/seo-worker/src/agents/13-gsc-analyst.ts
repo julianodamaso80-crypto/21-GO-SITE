@@ -38,7 +38,7 @@ export const agent13: Agent<Input, Output> = {
   id: '13-gsc-analyst',
   description: 'Analisa Search Console e gera recomendacoes acionaveis',
   async run(input, ctx) {
-    const credentialsOk = !!(config.GOOGLE_REFRESH_TOKEN || config.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    const credentialsOk = !!config.GOOGLE_REFRESH_TOKEN;
     if (!credentialsOk) {
       log.warn('Pendente de credencial Google — pulando');
       return { output: { recommendations_created: 0, by_type: {}, pages_analyzed: 0, errors: ['Pendente de credencial Google'] } };

@@ -15,7 +15,7 @@ import type { KeywordRow } from '../db/repositories/keywords.js';
 import { insertTopic, type TopicDecision } from '../db/repositories/topics.js';
 import { setStatus } from '../db/repositories/keywords.js';
 import { agent03 } from './03-anti-repetition.js';
-import { complete } from '../integrations/anthropic.js';
+import { complete } from '../integrations/llm.js';
 import { checkScope, SCOPE_RULES_TEXT } from '../lib/scope-guard.js';
 import { child } from '../lib/logger.js';
 

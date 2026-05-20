@@ -71,7 +71,7 @@ export const agent01: Agent<Input, Output> = {
   async run(input, ctx) {
     const limit = input.limit ?? config.WEEKLY_KEYWORD_LIMIT;
     const useDfs = input.use_dataforseo !== false && !!(config.DATAFORSEO_LOGIN && config.DATAFORSEO_PASSWORD);
-    const useGsc = input.use_gsc !== false && (!!config.GOOGLE_REFRESH_TOKEN || !!config.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    const useGsc = input.use_gsc !== false && !!config.GOOGLE_REFRESH_TOKEN;
 
     log.info({ limit, useDfs, useGsc, dryRun: ctx.dry_run }, 'iniciando keyword research');
 
