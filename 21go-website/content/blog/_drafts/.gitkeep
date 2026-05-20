@@ -1,0 +1,6 @@
+# Esta pasta guarda rascunhos gerados pelo seo-worker (BLOG/seo-worker/).
+# Arquivos .mdx aqui sao IGNORADOS pelo git e NAO entram no build do Next.js
+# (porque src/lib/blog.ts faz readdirSync nao-recursivo no diretorio pai).
+#
+# Quando o Publisher (Agente 09) aprova um rascunho, ele move pra ../{slug}.mdx
+# (subindo um nivel pra content/blog/) e commita.
