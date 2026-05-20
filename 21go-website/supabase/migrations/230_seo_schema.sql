@@ -150,8 +150,11 @@ CREATE TABLE seo.articles (
   secondary_keywords   text[],
   mdx_path             text,                          -- 'content/blog/{slug}.mdx' ou 'content/blog/_drafts/{slug}.mdx'
   mdx_sha              text,                          -- sha do blob no git (drift detection)
+  pr_url               text,                          -- URL do Pull Request no GitHub (status=awaiting_pr_merge)
+  pr_branch            text,                          -- nome da branch do PR (ex: seo/publish-{slug}-{ts})
   status               text NOT NULL DEFAULT 'draft'
-                       CHECK (status IN ('draft','in_review','approved','published','archived','updating')),
+                       CHECK (status IN ('draft','in_review','approved','awaiting_pr_merge','published','archived','updating')),
+  -- awaiting_pr_merge: PR aberto no GitHub esperando merge humano (sem auto-merge na master)
   review_status        text CHECK (review_status IN ('APROVADO','APROVADO_COM_AJUSTES','REPROVADO')),
   review_notes         text,
   embedding            extensions.vector(384),        -- multilingual-e5-small (Xenova) - 384-dim
