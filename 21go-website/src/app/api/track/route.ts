@@ -10,6 +10,7 @@ const ALLOWED_EVENTS = [
   'whatsapp_click',
   'cotacao_inicio',
   'cotacao_completa',
+  'pedido_orcamento',
   // Blog/SEO — vão SÓ pra GA4 MP. Meta é pulado intencionalmente:
   // engajamento de blog não é sinal de conversão pra otimização de ads
   // e enviar isso pra Meta poluiria audiências e o algoritmo. WhatsApp
@@ -30,6 +31,7 @@ const META_EVENT_NAME: Record<AllowedEvent, string | null> = {
   whatsapp_click: 'Contact',
   cotacao_inicio: 'InitiateCheckout',
   cotacao_completa: 'Lead',
+  pedido_orcamento: 'Purchase',
   blog_article_view: null,
   blog_scroll_depth: null,
   blog_cta_click: null,
@@ -44,6 +46,7 @@ const GA4_EVENT_NAME: Record<AllowedEvent, string> = {
   whatsapp_click: 'whatsapp_click',
   cotacao_inicio: 'begin_checkout',
   cotacao_completa: 'generate_lead',
+  pedido_orcamento: 'purchase',
   blog_article_view: 'blog_article_view',
   blog_scroll_depth: 'blog_scroll_depth',
   blog_cta_click: 'blog_cta_click',
