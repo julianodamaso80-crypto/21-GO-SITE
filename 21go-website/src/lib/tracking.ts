@@ -301,6 +301,28 @@ export function trackPhoneClick() {
   pushEvent('phone_click')
 }
 
+/* ─── Event: CTA Click ──────────────────────────────────────────────────
+ * Cliques em CTAs internos pra rotas de conversão (/cotacao, /planos etc).
+ *
+ * NÃO vai pro Meta CAPI nem dispara fbq — esses sinais já estão cobertos
+ * pelo funil InitiateCheckout → Lead → Contact e adicionar CTA click pro
+ * Meta polui o algoritmo de otimização (clica em CTA não é compra).
+ *
+ * Serve pra GA4 puro: medir taxa de clique nos CTAs + criar audiência
+ * de remarketing "clicou em CTA mas não completou simulação".
+ */
+export function trackCtaClick(data: {
+  origin: string          // ex: 'header', 'hero', 'mobile_cta', 'footer'
+  destination: string     // pathname destino, ex: '/cotacao'
+  text?: string           // texto visível do botão (max 80 chars)
+}) {
+  pushEvent('cta_click', {
+    cta_origin: data.origin,
+    cta_destination: data.destination,
+    cta_text: data.text,
+  })
+}
+
 /* ─── Event 6: Pedido de Orcamento (Purchase) ───
  * Dispara quando o cliente clica em "Quero contratar" apos preencher tudo
  * e ver o plano selecionado. Mapeia pra Purchase no Meta pra otimizacao

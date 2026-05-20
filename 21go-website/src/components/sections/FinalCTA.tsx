@@ -35,7 +35,7 @@ export function FinalCTA() {
           Simulação em 30 segundos, sem compromisso. Comece a proteger seu patrimônio hoje.
         </motion.p>
 
-        <motion.div variants={fadeInUp} className="mt-8 flex flex-wrap items-center justify-center gap-4">
+        <motion.div data-cta-section="final_cta" variants={fadeInUp} className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/cotacao"
             className="shimmer-btn inline-flex items-center px-9 py-4 rounded-xl bg-[#F7963D] text-white text-base font-semibold hover:bg-[#D87E2F] transition-all duration-300 animate-glow-pulse hover:-translate-y-0.5"
