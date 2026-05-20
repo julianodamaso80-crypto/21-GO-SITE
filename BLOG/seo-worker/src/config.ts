@@ -87,8 +87,9 @@ const Schema = z.object({
   AUTO_PUBLISH_ENABLED: z.preprocess(v => v === 'true' || v === true, z.boolean()).default(false),
   DAILY_ARTICLE_LIMIT: z.coerce.number().int().positive().default(1),
   WEEKLY_KEYWORD_LIMIT: z.coerce.number().int().positive().default(20),
-  WORDS_PER_ARTICLE_MIN: z.coerce.number().int().positive().default(900),
-  WORDS_PER_ARTICLE_MAX: z.coerce.number().int().positive().default(2200),
+  // Faixa OBRIGATÓRIA: 1.300-1.500 palavras (decisão user 2026-05-20).
+  WORDS_PER_ARTICLE_MIN: z.coerce.number().int().positive().default(1300),
+  WORDS_PER_ARTICLE_MAX: z.coerce.number().int().positive().default(1500),
 });
 
 const parsed = Schema.safeParse(process.env);

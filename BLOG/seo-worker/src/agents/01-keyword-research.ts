@@ -34,9 +34,17 @@ const SEEDS: Array<{ seed: string; category: KeywordCategory }> = [
   { seed: 'protecao veicular para moto', category: 'motos' },
   { seed: 'protecao moto entregador', category: 'motos' },
   { seed: 'protecao moto financiada', category: 'motos' },
-  // frotas (carros e/ou motos — NUNCA caminhao)
+  // frotas (carros e/ou motos — NUNCA caminhao). MIN 8 seeds — regra 1 frota/dia obrigatoria.
   { seed: 'protecao frota delivery', category: 'frotas' },
+  { seed: 'protecao frota motoboy ifood', category: 'frotas' },
   { seed: 'protecao frota empresa pequena', category: 'frotas' },
+  { seed: 'protecao frota uber 99 multiplos motoristas', category: 'frotas' },
+  { seed: 'protecao frota prestador servico externo', category: 'frotas' },
+  { seed: 'protecao frota equipe comercial vendedor', category: 'frotas' },
+  { seed: 'protecao frota carros empresa pequena 3 5 veiculos', category: 'frotas' },
+  { seed: 'protecao frota motos delivery rappi loggi', category: 'frotas' },
+  { seed: 'protecao frota mista carros motos', category: 'frotas' },
+  { seed: 'protecao frota assistencia tecnica visitas', category: 'frotas' },
   // educativo
   { seed: 'diferenca seguro e protecao veicular', category: 'educativo' },
   { seed: 'como funciona protecao veicular', category: 'educativo' },

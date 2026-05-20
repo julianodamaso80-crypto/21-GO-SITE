@@ -40,7 +40,7 @@ ${SCOPE_RULES_TEXT}
 
 REGRAS DE ESCRITA:
 1. Idioma: portugues do Brasil, claro, profissional, sem juridiques.
-2. Extensao: ${config.WORDS_PER_ARTICLE_MIN}-${config.WORDS_PER_ARTICLE_MAX} palavras no corpo.
+2. Extensao OBRIGATORIA: ${config.WORDS_PER_ARTICLE_MIN}-${config.WORDS_PER_ARTICLE_MAX} palavras no corpo (NAO ultrapasse — artigos longos demais perdem leitor mobile).
 3. NUNCA usar:
    - "cobertura garantida" / "indenizacao garantida"
    - "aprovacao automatica"
@@ -135,7 +135,7 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
       tier: 'main',
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMsg }],
-      max_tokens: 4000,
+      max_tokens: 2800,
       temperature: 0.6,
       timeout_ms: 180_000,
     });

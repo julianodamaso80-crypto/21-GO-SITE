@@ -41,13 +41,27 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
 
   log.info({ jobId: job.id, triggered_by, dry_run, limit }, 'iniciando job');
 
-  // Pega briefings ordenados (FIFO). Filtra os que ja tem artigo correspondente.
-  // JOIN com seo.topics pra trazer o topic completo de uma vez.
-  const briefs = await query<BriefingRow & { topic_json: TopicRow }>(
-    `SELECT b.*, row_to_json(t.*) AS topic_json
+  // REGRA OBRIGATORIA: 1 artigo de frota POR DIA (decisao user 2026-05-20).
+  // Verifica se ja tem frota gerada hoje (timezone America/Sao_Paulo).
+  const frotaHojeRow = await queryOne<{ count: number }>(
+    `SELECT count(*)::int AS count FROM seo.articles
+     WHERE category='frotas'
+       AND created_at >= (CURRENT_DATE AT TIME ZONE 'America/Sao_Paulo')`,
+  );
+  const temFrotaHoje = (frotaHojeRow?.count ?? 0) > 0;
+  log.info({ frota_hoje: temFrotaHoje }, 'check frota diaria');
+
+  // Pega briefings ordenados, priorizando FROTA se ainda nao tem hoje.
+  // JOIN com seo.topics pra trazer o topic completo + categoria.
+  const briefs = await query<BriefingRow & { topic_json: TopicRow; topic_category: string }>(
+    `SELECT b.*, row_to_json(t.*) AS topic_json, t.category AS topic_category
      FROM seo.briefings b
      JOIN seo.topics t ON t.id = b.topic_id
-     ORDER BY b.created_at ASC LIMIT 50`,
+     ORDER BY
+       CASE WHEN t.category='frotas' AND $1::boolean = false THEN 0 ELSE 1 END,
+       b.created_at ASC
+     LIMIT 50`,
+    [temFrotaHoje],
   );
 
   const briefingsToProcess: Array<{ briefing: BriefingRow; topic: TopicRow }> = [];
@@ -60,7 +74,20 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
     briefingsToProcess.push({ briefing: b, topic: b.topic_json });
     if (briefingsToProcess.length >= limit) break;
   }
-  log.info({ found: briefingsToProcess.length, limit }, 'briefings pra processar');
+
+  // ALERTA: se nao tem frota hoje e nenhum briefing de frota disponivel
+  if (!temFrotaHoje && !briefingsToProcess.some((p) => p.topic.category === 'frotas')) {
+    log.warn(
+      { briefings_disponiveis: briefingsToProcess.length },
+      'ATENCAO: regra frota diaria nao podera ser cumprida — nenhum briefing de frota disponivel. Rodar /runs/weekly antes pra gerar.',
+    );
+  }
+  log.info({
+    found: briefingsToProcess.length,
+    limit,
+    first_category: briefingsToProcess[0]?.topic.category,
+    frota_hoje: temFrotaHoje,
+  }, 'briefings pra processar');
 
   const errors: string[] = [];
   let total_cost = 0;
