@@ -116,6 +116,60 @@ export async function moveFile(input: { from: string; to: string; message: strin
   return { commit_sha };
 }
 
+/** Pega o sha do HEAD de uma branch (necessario para criar branch nova a partir dela). */
+export async function getBranchSha(branch: string): Promise<string> {
+  const { owner, repo } = parseRepo();
+  const { data } = await client().rest.repos.getBranch({ owner, repo, branch });
+  return data.commit.sha;
+}
+
+/** Cria uma branch nova a partir de um sha. Idempotente: se ja existe, retorna o sha existente. */
+export async function createBranch(name: string, fromSha: string): Promise<{ ref: string; sha: string }> {
+  const { owner, repo } = parseRepo();
+  try {
+    const { data } = await client().rest.git.createRef({
+      owner, repo,
+      ref: `refs/heads/${name}`,
+      sha: fromSha,
+    });
+    log.info({ branch: name, sha: fromSha.slice(0, 7) }, 'branch criada');
+    return { ref: data.ref, sha: data.object.sha };
+  } catch (e) {
+    const status = (e as { status?: number }).status;
+    if (status === 422) {
+      log.info({ branch: name }, 'branch ja existe — reutilizando');
+      const sha = await getBranchSha(name);
+      return { ref: `refs/heads/${name}`, sha };
+    }
+    throw e;
+  }
+}
+
+export interface PullRequestResult {
+  number: number;
+  html_url: string;
+  state: string;
+}
+
+/** Abre um Pull Request. NUNCA mergea automaticamente — humano aprova no GitHub. */
+export async function createPullRequest(opts: {
+  head: string;
+  base: string;
+  title: string;
+  body: string;
+}): Promise<PullRequestResult> {
+  const { owner, repo } = parseRepo();
+  const { data } = await client().rest.pulls.create({
+    owner, repo,
+    head: opts.head,
+    base: opts.base,
+    title: opts.title,
+    body: opts.body,
+  });
+  log.info({ pr: data.number, url: data.html_url, head: opts.head, base: opts.base }, 'PR aberto');
+  return { number: data.number, html_url: data.html_url, state: data.state };
+}
+
 /** Lista arquivos em uma pasta — usado pra detectar slugs existentes. */
 export async function listFolder(path: string, branch?: string): Promise<string[]> {
   const { owner, repo } = parseRepo();

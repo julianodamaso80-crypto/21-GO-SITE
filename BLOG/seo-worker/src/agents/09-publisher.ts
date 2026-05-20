@@ -1,26 +1,32 @@
 /**
- * Agente 09 — Publisher
+ * Agente 09 — Publisher (branch + PR, sem auto-merge)
  *
- * Move MDX de _drafts/ pra content/blog/ via Octokit (commit no branch base do site).
+ * Fluxo:
+ *   1. Pega sha do branch base (GITHUB_BRANCH_BASE, ex: master)
+ *   2. Cria branch nova `seo/publish-{slug}-{timestamp}` a partir desse sha
+ *   3. Commita o MDX em `21go-website/content/blog/{slug}.mdx` NA BRANCH NOVA
+ *   4. Abre Pull Request da branch nova para o branch base
+ *   5. Article.status = 'awaiting_pr_merge' + pr_url + pr_branch
+ *
+ * NAO mergea — humano aprova o PR no GitHub.
+ *
+ * Apos o merge humano + rebuild EasyPanel, o cron de 15 em 15 minutos de recheck
+ * (publish.worker.ts handlePublishJob mode='recheck-pending-indexing')
+ * varre artigos em 'awaiting_pr_merge' e verifica se a URL ja esta live;
+ * se sim, marca como 'published' e dispara Agentes 10-12.
  *
  * Pre-condicoes (hard):
- *   - article.status === 'in_review'
- *   - article.review_status === 'APROVADO' ou 'APROVADO_COM_AJUSTES'
+ *   - article.status in ('draft', 'in_review')
+ *   - article.review_status in (null, 'APROVADO', 'APROVADO_COM_AJUSTES')
  *   - AUTO_PUBLISH_ENABLED=true OU skip_human_review=true (override manual)
- *
- * Apos commit:
- *   - article.status = 'published'
- *   - article.published_at = now
- *   - article.mdx_path = 'content/blog/{slug}.mdx' (sem _drafts)
- *   - article.mdx_sha = blob_sha do GitHub
- *   - remove o arquivo local de _drafts/ (limpeza)
+ *   - GITHUB_TOKEN e GITHUB_REPO configurados
  */
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { Agent } from './_types.js';
 import type { ArticleRow } from '../db/repositories/articles.js';
 import { updateArticle, saveVersion } from '../db/repositories/articles.js';
-import { commitFile } from '../integrations/github.js';
+import { commitFile, getBranchSha, createBranch, createPullRequest } from '../integrations/github.js';
 import { config } from '../config.js';
 import { child } from '../lib/logger.js';
 
@@ -32,40 +38,41 @@ interface Input {
 }
 
 interface Output {
-  published: boolean;
+  pr_opened: boolean;
   reason?: string;
+  pr_number?: number;
+  pr_url?: string;
+  pr_branch?: string;
   commit_sha?: string;
-  blob_sha?: string;
-  new_mdx_path?: string;
 }
 
-const TARGET_DIR = '21go-website/content/blog'; // sem _drafts/
+const TARGET_DIR = '21go-website/content/blog';
 
 export const agent09: Agent<Input, Output> = {
   id: '09-publisher',
-  description: 'Publica rascunho aprovado: move MDX pra content/blog/ via Octokit + dispara rebuild',
+  description: 'Cria branch + commit + PR (sem auto-merge). Humano aprova no GitHub.',
   async run(input, ctx) {
     const a = input.article;
     const skip = !!input.skip_human_review;
 
     // ===== Pre-checks =====
     if (a.status !== 'in_review' && a.status !== 'draft') {
-      return { output: { published: false, reason: `status=${a.status} (esperado in_review)` } };
+      return { output: { pr_opened: false, reason: `status=${a.status} (esperado draft|in_review)` } };
     }
     if (a.review_status === 'REPROVADO') {
-      return { output: { published: false, reason: 'review_status=REPROVADO' } };
+      return { output: { pr_opened: false, reason: 'review_status=REPROVADO — Reviewer 06 vetou' } };
     }
     if (!config.AUTO_PUBLISH_ENABLED && !skip) {
       return {
         output: {
-          published: false,
-          reason: 'AUTO_PUBLISH_ENABLED=false (primeiros 30 dias). Use skip_human_review:true via /runs/publish manual.',
+          pr_opened: false,
+          reason: 'AUTO_PUBLISH_ENABLED=false (primeiros 30 dias). Use skip_human_review=true em /runs/publish.',
         },
       };
     }
-    if (!a.mdx_path) return { output: { published: false, reason: 'article sem mdx_path' } };
+    if (!a.mdx_path) return { output: { pr_opened: false, reason: 'article sem mdx_path' } };
     if (!config.GITHUB_TOKEN || !config.GITHUB_REPO) {
-      return { output: { published: false, reason: 'Pendente de credencial: GITHUB_TOKEN/GITHUB_REPO' } };
+      return { output: { pr_opened: false, reason: 'Pendente de credencial: GITHUB_TOKEN/GITHUB_REPO' } };
     }
 
     // ===== Le MDX local =====
@@ -75,56 +82,92 @@ export const agent09: Agent<Input, Output> = {
     try {
       mdx = await fs.readFile(localPath, 'utf8');
     } catch (e) {
-      return { output: { published: false, reason: `nao leu MDX local: ${(e as Error).message}` } };
+      return { output: { pr_opened: false, reason: `nao leu MDX local: ${(e as Error).message}` } };
     }
-
-    const newPath = `${TARGET_DIR}/${a.slug}.mdx`;
-    log.info({ from: a.mdx_path, to: newPath, articleId: a.id }, 'publicando');
 
     if (ctx.dry_run) {
-      log.info('DRY-RUN — nao commita no github');
-      return { output: { published: false, reason: 'dry_run' } };
+      log.info({ articleId: a.id }, 'DRY-RUN — nao abre PR');
+      return { output: { pr_opened: false, reason: 'dry_run' } };
     }
 
-    // ===== Commit no GitHub =====
-    let commitResult: { commit_sha: string; blob_sha: string; html_url: string };
+    // ===== Branch + commit + PR =====
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const branchName = `seo/publish-${a.slug}-${ts}`;
+    const targetPath = `${TARGET_DIR}/${a.slug}.mdx`;
+
     try {
-      commitResult = await commitFile({
-        path: newPath,
+      // 1. Sha do base
+      const baseSha = await getBranchSha(config.GITHUB_BRANCH_BASE);
+      log.info({ base: config.GITHUB_BRANCH_BASE, sha: baseSha.slice(0, 7) }, 'sha do base');
+
+      // 2. Cria branch nova
+      await createBranch(branchName, baseSha);
+
+      // 3. Commita MDX na branch nova
+      const commitResult = await commitFile({
+        path: targetPath,
         content: mdx,
-        message: `feat(blog): publica "${a.title}"\n\nGerado pelo seo-worker (Agente 09 Publisher).\nArticle: ${a.id}\nSlug: ${a.slug}`,
-        branch: config.GITHUB_BRANCH_BASE,
+        message: `feat(blog): publica "${a.title}"\n\nGerado pela esteira SEO (Agente 09 Publisher).\nArticle: ${a.id}\nSlug: ${a.slug}`,
+        branch: branchName,
       });
+
+      // 4. Abre PR
+      const pr = await createPullRequest({
+        head: branchName,
+        base: config.GITHUB_BRANCH_BASE,
+        title: `[blog] ${a.title}`,
+        body: [
+          `## Novo artigo do blog gerado pela esteira SEO`,
+          ``,
+          `- **Slug:** \`${a.slug}\``,
+          `- **Categoria:** ${a.category ?? '(nao informada)'}`,
+          `- **Palavra-chave principal:** ${a.main_keyword ?? '(nao informada)'}`,
+          `- **Word count:** ${a.word_count ?? '?'} (~${a.read_time_min ?? '?'} min leitura)`,
+          `- **Review status:** ${a.review_status ?? '(sem review)'}`,
+          ``,
+          `**URL futura:** ${a.url}`,
+          ``,
+          `**Article ID:** \`${a.id}\` (super-banco \`seo.articles\`)`,
+          ``,
+          `### Como aprovar`,
+          `1. Revise o MDX neste PR`,
+          `2. Se OK, mergeia (Squash recomendado)`,
+          `3. EasyPanel rebuilda o site automaticamente`,
+          `4. Apos rebuild, o cron de 15 em 15 minutos do seo-worker detecta a URL live, marca status='published' e dispara Agentes 10-12 (sitemap + Google + Bing + IndexNow)`,
+          ``,
+          `### Como rejeitar`,
+          `Fecha o PR sem merge. O article fica em \`awaiting_pr_merge\` indefinidamente — pode ser arquivado depois via SQL.`,
+        ].join('\n'),
+      });
+
+      // 5. Salva versao + atualiza article
+      await saveVersion(a.id, 1, mdx, 'agent:09-publisher', `PR #${pr.number} aberto`);
+      await updateArticle(a.id, {
+        status: 'awaiting_pr_merge',
+        mdx_path: targetPath,
+        mdx_sha: commitResult.blob_sha,
+        pr_url: pr.html_url,
+        pr_branch: branchName,
+      });
+
+      log.info({
+        articleId: a.id, pr: pr.number, url: pr.html_url, branch: branchName,
+      }, 'PR aberto — aguardando merge humano');
+
+      return {
+        output: {
+          pr_opened: true,
+          pr_number: pr.number,
+          pr_url: pr.html_url,
+          pr_branch: branchName,
+          commit_sha: commitResult.commit_sha,
+        },
+      };
     } catch (e) {
-      return { output: { published: false, reason: `github commit falhou: ${(e as Error).message}` } };
+      const msg = (e as Error).message;
+      log.error({ err: msg, articleId: a.id }, 'falha ao abrir PR');
+      return { output: { pr_opened: false, reason: `github falhou: ${msg}` } };
     }
-
-    // ===== Atualiza article + versiona =====
-    await saveVersion(a.id, 1, mdx, 'agent:09-publisher', `publicado em ${commitResult.commit_sha.slice(0, 7)}`);
-    await updateArticle(a.id, {
-      status: 'published',
-      published_at: new Date().toISOString(),
-      mdx_path: newPath,
-      mdx_sha: commitResult.blob_sha,
-    });
-
-    // ===== Remove arquivo local de _drafts/ =====
-    try {
-      await fs.unlink(localPath);
-      log.info({ localPath }, 'arquivo local de _drafts removido');
-    } catch (e) {
-      log.warn({ err: (e as Error).message }, 'falha ao remover arquivo local — segue');
-    }
-
-    log.info({ articleId: a.id, commit: commitResult.commit_sha.slice(0, 7), slug: a.slug }, 'publicado');
-    return {
-      output: {
-        published: true,
-        commit_sha: commitResult.commit_sha,
-        blob_sha: commitResult.blob_sha,
-        new_mdx_path: newPath,
-      },
-    };
   },
 };
 

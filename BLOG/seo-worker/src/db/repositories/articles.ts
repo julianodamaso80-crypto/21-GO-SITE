@@ -5,7 +5,7 @@ import { supabase } from '../supabase.js';
 import { config } from '../../config.js';
 import type { KeywordCategory } from './keywords.js';
 
-export type ArticleStatus = 'draft' | 'in_review' | 'approved' | 'published' | 'archived' | 'updating';
+export type ArticleStatus = 'draft' | 'in_review' | 'approved' | 'awaiting_pr_merge' | 'published' | 'archived' | 'updating';
 export type ReviewStatus = 'APROVADO' | 'APROVADO_COM_AJUSTES' | 'REPROVADO';
 
 export interface BriefingInsert {
@@ -58,6 +58,8 @@ export interface ArticleRow extends ArticleInsert {
   review_status: ReviewStatus | null;
   review_notes: string | null;
   mdx_sha: string | null;
+  pr_url: string | null;
+  pr_branch: string | null;
   embedding: number[] | null;
   created_at: string;
   updated_at: string;
