@@ -21,8 +21,10 @@ RUN npm run build
 FROM node:20-slim AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
+# NAO usar --ignore-scripts: o @xenova/transformers depende de sharp,
+# que precisa rodar postinstall pra baixar o binario linux-x64.
 RUN --mount=type=cache,target=/root/.npm \
-    npm install --omit=dev --ignore-scripts
+    npm install --omit=dev --platform=linux --arch=x64
 
 # ----- Stage 3: runner -----
 FROM node:20-slim AS runner
