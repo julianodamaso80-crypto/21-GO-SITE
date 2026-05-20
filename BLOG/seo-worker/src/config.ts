@@ -17,15 +17,18 @@ const optStr = () => z.preprocess(
 );
 
 /**
- * Fallbacks documentados pra modelos LLM. Usados APENAS se AI_MODEL_GENERATOR
- * ou AI_MODEL_CLASSIFIER nao vierem do ambiente. Log.warn explicito no boot
- * avisa que esta usando fallback.
+ * Modelos LLM da esteira SEO.
  *
- * Slugs validos do OpenRouter — mesmo formato usado pelo agente Leticya
- * em 21go-website/src/lib/leticya/supervisor.ts.
+ * REGRA DURA (decisao do user em 2026-05-20): SEMPRE Gemini 2.5 Flash.
+ * Sonnet/Opus/Haiku Claude estao PROIBIDOS aqui — custavam ~10x mais
+ * e nao agregam qualidade pra blog de SEO local.
+ *
+ * Os 2 tiers (main/light) existem pra compatibilidade com a API interna
+ * mas apontam pro MESMO modelo barato. Se AI_MODEL_GENERATOR/CLASSIFIER
+ * vier do env, ainda e respeitado — mas o default e Flash em ambos.
  */
-export const LLM_FALLBACK_MAIN = 'anthropic/claude-sonnet-4.6';
-export const LLM_FALLBACK_LIGHT = 'anthropic/claude-haiku-4.5';
+export const LLM_FALLBACK_MAIN = 'google/gemini-2.5-flash';
+export const LLM_FALLBACK_LIGHT = 'google/gemini-2.5-flash';
 
 const Schema = z.object({
   // Runtime
