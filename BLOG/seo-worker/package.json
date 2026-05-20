@@ -29,6 +29,7 @@
     "gray-matter": "^4.0.3",
     "ioredis": "^5.4.1",
     "node-cron": "^3.0.3",
+    "pg": "^8.20.0",
     "pino": "^9.5.0",
     "pino-pretty": "^11.3.0",
     "undici": "^8.2.0",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@types/node": "^22.10.5",
     "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.20.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }

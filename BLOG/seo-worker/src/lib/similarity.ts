@@ -8,7 +8,7 @@
  * 60 posts existentes em content/blog/*.mdx tambem entram no calculo (importados via Agente 03).
  */
 import { pipeline } from '@xenova/transformers';
-import { supabase } from '../db/supabase.js';
+import { query } from '../db/pg.js';
 import { child } from './logger.js';
 
 const log = child('lib:similarity');
@@ -53,32 +53,26 @@ export interface SimilarityHit {
  * Combina: vector cosine (top K) + trigram (top K) e funde por max score.
  */
 export async function findSimilar(text: string, k = 10): Promise<SimilarityHit[]> {
-  const sb = supabase();
   const queryEmbedding = await embedQuery(text);
 
-  // Vetorial — operador <=> em pgvector retorna distance, similarity = 1 - distance.
-  // Usamos rpc se houver, ou query inline via PostgREST RPC fictícia. Como nao temos a fn,
-  // usamos a API REST via filtro em hnsw nao da, entao fazemos via PostgREST "rpc" depois.
-  // Como Agente 03 e o consumidor principal, vamos delegar pra uma fn SQL futura;
-  // por enquanto, busca trigram simples + import vector somente quando articles tiver embedding.
-  type Row = { id: string; title: string; slug: string; embedding: number[] | null };
-  const { data, error } = await sb
-    .from('articles')
-    .select('id, title, slug, embedding')
-    .order('created_at', { ascending: false })
-    .limit(500);
-  if (error) throw new Error(`articles.select para similarity falhou: ${error.message}`);
+  // pg direto — usa pgvector cosine distance ja em SQL (HNSW index)
+  // embedding e armazenado como vector(384). Operador <=> retorna cosine distance.
+  // similarity = 1 - distance.
+  type Row = { id: string; title: string; slug: string; sim: number };
+  const vectorLiteral = '[' + queryEmbedding.join(',') + ']';
+  const rows = await query<Row>(
+    `SELECT id, title, slug,
+            (1 - (embedding <=> $1::vector))::float AS sim
+     FROM seo.articles
+     WHERE embedding IS NOT NULL
+     ORDER BY embedding <=> $1::vector
+     LIMIT $2`,
+    [vectorLiteral, k],
+  );
 
-  const hits: SimilarityHit[] = [];
-  for (const r of (data ?? []) as Row[]) {
-    let sim = 0;
-    if (r.embedding && Array.isArray(r.embedding) && r.embedding.length === queryEmbedding.length) {
-      sim = cosine(queryEmbedding, r.embedding);
-    }
-    if (sim > 0) hits.push({ article_id: r.id, title: r.title, slug: r.slug, similarity: sim });
-  }
-  hits.sort((a, b) => b.similarity - a.similarity);
-  return hits.slice(0, k);
+  return rows
+    .filter((r) => r.sim > 0)
+    .map((r) => ({ article_id: r.id, title: r.title, slug: r.slug, similarity: r.sim }));
 }
 
 function cosine(a: number[], b: number[]): number {

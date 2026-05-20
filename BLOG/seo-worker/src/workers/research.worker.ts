@@ -80,19 +80,14 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
 
   // ===== Agente 04 — Briefing pra cada topic aprovado =====
   let briefings = 0;
+  const { getById: getTopicById } = await import('../db/repositories/topics.js');
   for (const topicId of approvedTopicIds) {
     try {
-      const { supabase } = await import('../db/supabase.js');
-      const { data, error } = await supabase()
-        .from('topics')
-        .select('*')
-        .eq('id', topicId)
-        .single();
-      if (error || !data) {
-        errors.push(`04 fetch topic ${topicId}: ${error?.message}`);
+      const topic = await getTopicById(topicId);
+      if (!topic) {
+        errors.push(`04 fetch topic ${topicId}: nao encontrado`);
         continue;
       }
-      const topic = data as TopicRow;
 
       const r = await withRun(
         { agent_id: '04-briefing', triggered_by: 'agent:02', input: { topic_id: topic.id } },

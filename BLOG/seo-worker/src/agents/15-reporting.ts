@@ -13,7 +13,7 @@
 import type { Agent } from './_types.js';
 import * as gsc from '../integrations/gsc.js';
 import * as ga4 from '../integrations/ga4.js';
-import { supabase } from '../db/supabase.js';
+import { query } from '../db/pg.js';
 import { upsertMetrics } from '../db/repositories/indexing.js';
 import type { MetricsDailyInsert } from '../db/repositories/indexing.js';
 import { config } from '../config.js';
@@ -44,10 +44,11 @@ export const agent15: Agent<Input, Output> = {
     const rows: MetricsDailyInsert[] = [];
 
     // Mapeia URL -> article_id
-    const sb = supabase();
     const urlToArticle = new Map<string, string>();
-    const { data: articles } = await sb.from('articles').select('id, url').eq('status', 'published');
-    for (const a of (articles ?? []) as Array<{ id: string; url: string }>) urlToArticle.set(a.url, a.id);
+    const articles = await query<{ id: string; url: string }>(
+      `SELECT id, url FROM seo.articles WHERE status='published'`,
+    );
+    for (const a of articles) urlToArticle.set(a.url, a.id);
 
     // ===== GSC =====
     let gscCount = 0;

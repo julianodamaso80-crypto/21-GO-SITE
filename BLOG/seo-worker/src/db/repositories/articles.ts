@@ -1,7 +1,7 @@
 /**
- * Repository: seo.articles + seo.briefings + seo.article_versions
+ * Repository: seo.articles + seo.briefings + seo.article_versions (via pg direto).
  */
-import { supabase } from '../supabase.js';
+import { query, queryOne, exec } from '../pg.js';
 import { config } from '../../config.js';
 import type { KeywordCategory } from './keywords.js';
 
@@ -12,9 +12,9 @@ export interface BriefingInsert {
   topic_id: string;
   seo_title: string;
   h1: string;
-  outline: unknown;          // [{h2, h3:[], notes}]
-  faqs?: unknown;            // [{q,a}]
-  internal_links?: unknown;  // [{anchor,url}]
+  outline: unknown;
+  faqs?: unknown;
+  internal_links?: unknown;
   legal_notes?: string;
   example_suggestions?: string;
   image_suggestion?: string;
@@ -28,10 +28,26 @@ export interface BriefingRow extends BriefingInsert {
 }
 
 export async function insertBriefing(b: BriefingInsert): Promise<BriefingRow> {
-  const sb = supabase();
-  const { data, error } = await sb.from('briefings').insert(b).select('*').single();
-  if (error || !data) throw new Error(`briefings.insert falhou: ${error?.message}`);
-  return data as BriefingRow;
+  const row = await queryOne<BriefingRow>(
+    `INSERT INTO seo.briefings
+       (topic_id, seo_title, h1, outline, faqs, internal_links, legal_notes,
+        example_suggestions, image_suggestion, is_update_of, llm_model_used)
+     VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,$6::jsonb,$7,$8,$9,$10,$11)
+     RETURNING *`,
+    [
+      b.topic_id, b.seo_title, b.h1,
+      JSON.stringify(b.outline),
+      b.faqs ? JSON.stringify(b.faqs) : null,
+      b.internal_links ? JSON.stringify(b.internal_links) : null,
+      b.legal_notes ?? null,
+      b.example_suggestions ?? null,
+      b.image_suggestion ?? null,
+      b.is_update_of ?? null,
+      b.llm_model_used ?? null,
+    ],
+  );
+  if (!row) throw new Error('briefings.insert nao retornou row');
+  return row;
 }
 
 export interface ArticleInsert {
@@ -68,47 +84,83 @@ export interface ArticleRow extends ArticleInsert {
 }
 
 export async function insertArticle(a: ArticleInsert): Promise<ArticleRow> {
-  const sb = supabase();
-  const { data, error } = await sb
-    .from('articles')
-    .insert({ company_id: config.COMPANY_ID, status: 'draft', ...a })
-    .select('*')
-    .single();
-  if (error || !data) throw new Error(`articles.insert falhou: ${error?.message}`);
-  return data as ArticleRow;
+  const row = await queryOne<ArticleRow>(
+    `INSERT INTO seo.articles
+       (company_id, topic_id, briefing_id, title, slug, meta_title, meta_description,
+        category, main_keyword, secondary_keywords, mdx_path, word_count, read_time_min, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+     RETURNING *`,
+    [
+      config.COMPANY_ID,
+      a.topic_id ?? null, a.briefing_id ?? null,
+      a.title, a.slug,
+      a.meta_title ?? null, a.meta_description ?? null,
+      a.category ?? null, a.main_keyword ?? null,
+      a.secondary_keywords ?? null,
+      a.mdx_path ?? null,
+      a.word_count ?? null, a.read_time_min ?? null,
+      a.status ?? 'draft',
+    ],
+  );
+  if (!row) throw new Error('articles.insert nao retornou row');
+  return row;
 }
 
+/** Patch dinamico — so atualiza campos passados. */
 export async function updateArticle(id: string, patch: Partial<ArticleRow>): Promise<void> {
-  const sb = supabase();
-  const { error } = await sb.from('articles').update(patch).eq('id', id);
-  if (error) throw new Error(`articles.update falhou: ${error.message}`);
+  const keys = Object.keys(patch).filter((k) => k !== 'id' && (patch as Record<string, unknown>)[k] !== undefined);
+  if (keys.length === 0) return;
+
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  let i = 1;
+  for (const k of keys) {
+    const v = (patch as Record<string, unknown>)[k];
+    // embedding precisa de cast pra vector
+    if (k === 'embedding' && Array.isArray(v)) {
+      sets.push(`${k} = $${i}::vector`);
+      values.push('[' + (v as number[]).join(',') + ']');
+    } else if (k === 'secondary_keywords' && Array.isArray(v)) {
+      sets.push(`${k} = $${i}`);
+      values.push(v);
+    } else {
+      sets.push(`${k} = $${i}`);
+      values.push(v);
+    }
+    i++;
+  }
+  values.push(id);
+  await exec(`UPDATE seo.articles SET ${sets.join(', ')} WHERE id = $${i}`, values);
 }
 
 export async function listAll(opts: { status?: ArticleStatus } = {}): Promise<ArticleRow[]> {
-  const sb = supabase();
-  let q = sb.from('articles').select('*').eq('company_id', config.COMPANY_ID).order('created_at', { ascending: false });
-  if (opts.status) q = q.eq('status', opts.status);
-  const { data, error } = await q;
-  if (error) throw new Error(`articles.listAll falhou: ${error.message}`);
-  return (data ?? []) as ArticleRow[];
+  if (opts.status) {
+    return query<ArticleRow>(
+      `SELECT * FROM seo.articles WHERE company_id=$1 AND status=$2 ORDER BY created_at DESC`,
+      [config.COMPANY_ID, opts.status],
+    );
+  }
+  return query<ArticleRow>(
+    `SELECT * FROM seo.articles WHERE company_id=$1 ORDER BY created_at DESC`,
+    [config.COMPANY_ID],
+  );
 }
 
 export async function findBySlug(slug: string): Promise<ArticleRow | null> {
-  const sb = supabase();
-  const { data, error } = await sb
-    .from('articles')
-    .select('*')
-    .eq('company_id', config.COMPANY_ID)
-    .eq('slug', slug)
-    .maybeSingle();
-  if (error) throw new Error(`articles.findBySlug falhou: ${error.message}`);
-  return (data ?? null) as ArticleRow | null;
+  return queryOne<ArticleRow>(
+    `SELECT * FROM seo.articles WHERE company_id=$1 AND slug=$2`,
+    [config.COMPANY_ID, slug],
+  );
+}
+
+export async function getById(id: string): Promise<ArticleRow | null> {
+  return queryOne<ArticleRow>(`SELECT * FROM seo.articles WHERE id=$1`, [id]);
 }
 
 export async function saveVersion(article_id: string, version: number, mdx_content: string, changed_by: string, diff_summary?: string): Promise<void> {
-  const sb = supabase();
-  const { error } = await sb
-    .from('article_versions')
-    .insert({ article_id, version, mdx_content, changed_by, diff_summary });
-  if (error) throw new Error(`article_versions.insert falhou: ${error.message}`);
+  await exec(
+    `INSERT INTO seo.article_versions (article_id, version, mdx_content, changed_by, diff_summary)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [article_id, version, mdx_content, changed_by, diff_summary ?? null],
+  );
 }

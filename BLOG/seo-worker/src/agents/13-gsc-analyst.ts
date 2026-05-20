@@ -14,7 +14,7 @@
  */
 import type { Agent } from './_types.js';
 import * as gsc from '../integrations/gsc.js';
-import { supabase } from '../db/supabase.js';
+import { query } from '../db/pg.js';
 import { insertRecommendation } from '../db/repositories/indexing.js';
 import type { RecommendationInsert, RecommendationType } from '../db/repositories/indexing.js';
 import { config } from '../config.js';
@@ -61,13 +61,11 @@ export const agent13: Agent<Input, Output> = {
     }
 
     // Mapeia URL -> article_id (so URLs do blog)
-    const sb = supabase();
     const slugsByUrl = new Map<string, { article_id: string; title: string; published_at: string | null }>();
-    const { data: articles } = await sb
-      .from('articles')
-      .select('id, title, slug, url, published_at')
-      .eq('status', 'published');
-    for (const a of (articles ?? []) as Array<{ id: string; title: string; slug: string; url: string; published_at: string | null }>) {
+    const articles = await query<{ id: string; title: string; slug: string; url: string; published_at: string | null }>(
+      `SELECT id, title, slug, url, published_at FROM seo.articles WHERE status='published'`,
+    );
+    for (const a of articles) {
       slugsByUrl.set(a.url, { article_id: a.id, title: a.title, published_at: a.published_at });
     }
 

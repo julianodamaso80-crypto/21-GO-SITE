@@ -1,7 +1,7 @@
 /**
- * Repository: seo.topics — pautas avaliadas pelo SEOStrategist.
+ * Repository: seo.topics — pautas avaliadas pelo SEOStrategist (via pg direto).
  */
-import { supabase } from '../supabase.js';
+import { query, queryOne, exec } from '../pg.js';
 import { config } from '../../config.js';
 import type { KeywordCategory, KeywordIntent } from './keywords.js';
 
@@ -38,14 +38,24 @@ export interface TopicRow extends TopicInsert {
 }
 
 export async function insertTopic(t: TopicInsert): Promise<TopicRow> {
-  const sb = supabase();
-  const { data, error } = await sb
-    .from('topics')
-    .insert({ company_id: config.COMPANY_ID, ...t })
-    .select('*')
-    .single();
-  if (error || !data) throw new Error(`topics.insert falhou: ${error?.message}`);
-  return data as TopicRow;
+  const row = await queryOne<TopicRow>(
+    `INSERT INTO seo.topics
+       (company_id, title, main_keyword_id, secondary_keywords, category, intent,
+        audience, pain_point, pillar_page, anti_repetition_score, similar_articles,
+        decision, decision_reason, target_article_id, scheduled_for)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+     RETURNING *`,
+    [
+      config.COMPANY_ID, t.title, t.main_keyword_id ?? null,
+      t.secondary_keywords ?? null, t.category, t.intent ?? null,
+      t.audience ?? null, t.pain_point ?? null, t.pillar_page ?? null,
+      t.anti_repetition_score ?? null, t.similar_articles ?? null,
+      t.decision ?? 'PENDENTE', t.decision_reason ?? null,
+      t.target_article_id ?? null, t.scheduled_for ?? null,
+    ],
+  );
+  if (!row) throw new Error('topics.insert nao retornou row');
+  return row;
 }
 
 export async function updateDecision(
@@ -54,23 +64,32 @@ export async function updateDecision(
   reason: string,
   extras: Partial<Pick<TopicRow, 'anti_repetition_score' | 'similar_articles' | 'target_article_id'>> = {},
 ): Promise<void> {
-  const sb = supabase();
-  const { error } = await sb
-    .from('topics')
-    .update({ decision, decision_reason: reason, ...extras })
-    .eq('id', id);
-  if (error) throw new Error(`topics.updateDecision falhou: ${error.message}`);
+  await exec(
+    `UPDATE seo.topics SET
+       decision=$2, decision_reason=$3,
+       anti_repetition_score=COALESCE($4, anti_repetition_score),
+       similar_articles=COALESCE($5, similar_articles),
+       target_article_id=COALESCE($6, target_article_id)
+     WHERE id=$1`,
+    [
+      id, decision, reason,
+      extras.anti_repetition_score ?? null,
+      extras.similar_articles ?? null,
+      extras.target_article_id ?? null,
+    ],
+  );
 }
 
 export async function listApproved(limit = 10): Promise<TopicRow[]> {
-  const sb = supabase();
-  const { data, error } = await sb
-    .from('topics')
-    .select('*')
-    .eq('company_id', config.COMPANY_ID)
-    .in('decision', ['APROVAR_ARTIGO_NOVO', 'ATUALIZAR_ARTIGO_EXISTENTE'])
-    .order('created_at', { ascending: true })
-    .limit(limit);
-  if (error) throw new Error(`topics.listApproved falhou: ${error.message}`);
-  return (data ?? []) as TopicRow[];
+  return query<TopicRow>(
+    `SELECT * FROM seo.topics
+     WHERE company_id=$1 AND decision IN ('APROVAR_ARTIGO_NOVO','ATUALIZAR_ARTIGO_EXISTENTE')
+     ORDER BY created_at ASC
+     LIMIT $2`,
+    [config.COMPANY_ID, limit],
+  );
+}
+
+export async function getById(id: string): Promise<TopicRow | null> {
+  return queryOne<TopicRow>(`SELECT * FROM seo.topics WHERE id=$1`, [id]);
 }

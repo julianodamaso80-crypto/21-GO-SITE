@@ -138,7 +138,8 @@ async function realMode(): Promise<void> {
     process.exit(1);
   }
 
-  const { supabase } = await import('../db/supabase.js');
+  const { getById: getTopicById } = await import('../db/repositories/topics.js');
+  const { getById: getArticleById } = await import('../db/repositories/articles.js');
   const { agent02 } = await import('../agents/02-seo-strategist.js');
   const { agent04 } = await import('../agents/04-briefing.js');
   const { agent05 } = await import('../agents/05-writer.js');
@@ -168,7 +169,8 @@ async function realMode(): Promise<void> {
   }
 
   // 3) Fetch topic
-  const { data: topic } = await supabase().from('topics').select('*').eq('id', r02.output.topic_id).single();
+  const topic = await getTopicById(r02.output.topic_id);
+  if (!topic) { logger.error('topic nao encontrado'); process.exit(2); }
 
   // 4) Briefing (04)
   logger.info({ topicId: topic.id }, '> Agente 04 briefing');
@@ -185,7 +187,8 @@ async function realMode(): Promise<void> {
   logger.info({ articleId: r05.output.article_id, slug: r05.output.slug, wc: r05.output.word_count, cost: r05.output.llm_cost_usd }, '< Agente 05');
   if (!r05.output.article_id) { logger.error('writer falhou'); process.exit(4); }
 
-  const { data: article } = await supabase().from('articles').select('*').eq('id', r05.output.article_id).single();
+  const article = await getArticleById(r05.output.article_id);
+  if (!article) { logger.error('article nao encontrado apos writer'); process.exit(4); }
 
   // 6) Reviewer (06)
   logger.info('> Agente 06 reviewer');

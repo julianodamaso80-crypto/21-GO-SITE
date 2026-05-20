@@ -20,16 +20,19 @@ import { child } from '../lib/logger.js';
 
 const log = child('agent:06-legal-reviewer');
 
+// Hard-block: padroes inequivocamente proibidos (sem ambiguidade contextual).
+// Patterns que dependem de contexto (ex: "aprovação automática", "sem análise"
+// podem aparecer NEGADOS em frase honesta "NAO existe aprovacao automatica") sao
+// deixados pro LLM judge avaliar — evitam falso-positivo.
 const FORBIDDEN_PHRASES: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /\bcobertura garantida\b/i, reason: 'promessa de cobertura sem analise' },
   { pattern: /\bindeniza[cç][ãa]o garantida\b/i, reason: 'promessa de indenizacao' },
-  { pattern: /\baprova[cç][ãa]o autom[aá]tica\b/i, reason: 'promessa de aprovacao sem analise' },
   { pattern: /\bcobre tudo\b/i, reason: 'absoluto sem ressalva' },
   { pattern: /\bprotege qualquer ve[ií]culo\b/i, reason: 'absoluto sem ressalva' },
   { pattern: /\bigual (a |ao |o |um )?seguro\b/i, reason: 'confusao com seguro tradicional' },
   { pattern: /\btipo (um )?seguro\b/i, reason: 'confusao com seguro tradicional' },
-  { pattern: /\b[ée] seguro\b/i, reason: 'confusao com seguro tradicional' },
-  { pattern: /\bsem (qualquer )?an[aá]lise\b/i, reason: 'promessa indevida' },
+  // /\b[ée] seguro\b/i pegava "associacao e seguro" como falso positivo — refinado pra "é seguro" so com acento.
+  { pattern: /\bé seguro\b/i, reason: 'confusao com seguro tradicional' },
 ];
 
 interface Input {
@@ -124,6 +127,7 @@ Avalie e retorne JSON conforme as instrucoes do sistema.`;
       messages: [{ role: 'user', content: userMsg }],
       max_tokens: 1500,
       temperature: 0.2,
+      timeout_ms: 120_000,
     });
 
     interface LlmReview {

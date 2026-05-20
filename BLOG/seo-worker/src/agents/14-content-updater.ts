@@ -14,7 +14,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { Agent } from './_types.js';
-import { supabase } from '../db/supabase.js';
+import { query, exec } from '../db/pg.js';
 import { updateArticle, saveVersion } from '../db/repositories/articles.js';
 import { parseMdx, buildMdx, type ArticleFrontmatter } from '../lib/mdx.js';
 import { complete } from '../integrations/llm.js';
@@ -47,32 +47,46 @@ export const agent14: Agent<Input, Output> = {
   description: 'Aplica recomendacoes abertas (title/meta/expansao) em rascunho de update',
   async run(input, ctx) {
     const limit = input.limit ?? 3;
-    const sb = supabase();
 
-    // Pega top recomendacoes abertas, prioridade alta primeiro
-    const { data: recs, error } = await sb
-      .from('recommendations')
-      .select('*, articles(*)')
-      .eq('status', 'open')
-      .in('type', ['improve_ctr', 'update_title', 'update_meta_description'])
-      .order('priority', { ascending: false })
-      .order('created_at', { ascending: true })
-      .limit(limit);
-    if (error) throw new Error(`recommendations.select falhou: ${error.message}`);
+    // Pega top recomendacoes abertas, prioridade alta primeiro — JOIN com articles
+    type RecJoined = {
+      id: string;
+      type: string;
+      article_id: string;
+      data: { url?: string };
+      art_id: string;
+      art_title: string;
+      art_slug: string;
+      art_mdx_path: string | null;
+      art_main_keyword: string | null;
+    };
+    const recs = await query<RecJoined>(
+      `SELECT r.id, r.type, r.article_id, r.data,
+              a.id AS art_id, a.title AS art_title, a.slug AS art_slug,
+              a.mdx_path AS art_mdx_path, a.main_keyword AS art_main_keyword
+       FROM seo.recommendations r
+       JOIN seo.articles a ON a.id = r.article_id
+       WHERE r.status='open'
+         AND r.type IN ('improve_ctr','update_title','update_meta_description')
+       ORDER BY r.priority DESC, r.created_at ASC
+       LIMIT $1`,
+      [limit],
+    );
 
     const errors: string[] = [];
     let applied = 0;
     let totalCost = 0;
-    const processed = (recs ?? []).length;
+    const processed = recs.length;
 
-    for (const rec of (recs ?? []) as Array<{ id: string; type: string; article_id: string; data: { url?: string }; articles?: { id: string; title: string; slug: string; mdx_path?: string; main_keyword?: string } }>) {
-      if (!rec.articles?.mdx_path) {
+    for (const rec of recs) {
+      const articles = rec.art_mdx_path ? { id: rec.art_id, title: rec.art_title, slug: rec.art_slug, mdx_path: rec.art_mdx_path, main_keyword: rec.art_main_keyword ?? undefined } : null;
+      if (!articles) {
         errors.push(`rec ${rec.id}: article sem mdx_path`);
         continue;
       }
       try {
         const repoRoot = await findRepoRoot();
-        const filePath = path.join(repoRoot, rec.articles.mdx_path);
+        const filePath = path.join(repoRoot, articles.mdx_path);
         const raw = await fs.readFile(filePath, 'utf8');
         const parsed = parseMdx(raw);
 
@@ -85,8 +99,8 @@ export const agent14: Agent<Input, Output> = {
               role: 'user',
               content: `Title atual: ${parsed.data.title}
 Description atual: ${parsed.data.description ?? '(vazio)'}
-Palavra-chave principal: ${rec.articles.main_keyword ?? '(nao informada)'}
-URL: ${rec.data.url ?? rec.articles.slug}
+Palavra-chave principal: ${articles.main_keyword ?? '(nao informada)'}
+URL: ${rec.data.url ?? articles.slug}
 
 Motivo da recomendacao: ${rec.type}
 
@@ -120,8 +134,11 @@ Retorne JSON com new_title e new_description.`,
         const newMdx = buildMdx(fm, parsed.content);
 
         // Salva versao antes de sobrescrever
-        const { data: existing } = await sb.from('article_versions').select('version').eq('article_id', rec.article_id);
-        const nextVersion = ((existing ?? []) as Array<{ version: number }>).reduce((m, v) => Math.max(m, v.version), 0) + 1;
+        const existingVersions = await query<{ version: number }>(
+          `SELECT version FROM seo.article_versions WHERE article_id=$1`,
+          [rec.article_id],
+        );
+        const nextVersion = existingVersions.reduce((m, v) => Math.max(m, v.version), 0) + 1;
         await saveVersion(rec.article_id, nextVersion, raw, 'agent:14-content-updater', `update: ${rec.type}`);
 
         // Escreve nova versao no MESMO mdx_path (publisher re-commita depois)
@@ -133,7 +150,10 @@ Retorne JSON com new_title e new_description.`,
           meta_description: fm.description,
         });
 
-        await sb.from('recommendations').update({ status: 'applied', applied_at: new Date().toISOString() }).eq('id', rec.id);
+        await exec(
+          `UPDATE seo.recommendations SET status='applied', applied_at=now() WHERE id=$1`,
+          [rec.id],
+        );
         applied++;
         log.info({ articleId: rec.article_id, recId: rec.id, new_title: sug.new_title, cost: r.cost_usd }, 'update aplicado');
       } catch (e) {

@@ -8,7 +8,8 @@
 import type { Job } from 'bullmq';
 import { child } from '../lib/logger.js';
 import { withRun } from '../db/repositories/agent-runs.js';
-import { supabase } from '../db/supabase.js';
+import { query, queryOne } from '../db/pg.js';
+import { getById as getArticleById } from '../db/repositories/articles.js';
 import type { TopicRow } from '../db/repositories/topics.js';
 import type { BriefingRow, ArticleRow } from '../db/repositories/articles.js';
 import { agent05 } from '../agents/05-writer.js';
@@ -40,20 +41,23 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
 
   log.info({ jobId: job.id, triggered_by, dry_run, limit }, 'iniciando job');
 
-  const sb = supabase();
   // Pega briefings ordenados (FIFO). Filtra os que ja tem artigo correspondente.
-  const { data: briefs, error: bErr } = await sb
-    .from('briefings')
-    .select('*, topics(*)')
-    .limit(50)
-    .order('created_at', { ascending: true });
-  if (bErr) throw new Error(`briefings.select falhou: ${bErr.message}`);
+  // JOIN com seo.topics pra trazer o topic completo de uma vez.
+  const briefs = await query<BriefingRow & { topic_json: TopicRow }>(
+    `SELECT b.*, row_to_json(t.*) AS topic_json
+     FROM seo.briefings b
+     JOIN seo.topics t ON t.id = b.topic_id
+     ORDER BY b.created_at ASC LIMIT 50`,
+  );
 
   const briefingsToProcess: Array<{ briefing: BriefingRow; topic: TopicRow }> = [];
-  for (const b of (briefs ?? []) as Array<BriefingRow & { topics: TopicRow }>) {
-    const { data: existing } = await sb.from('articles').select('id').eq('briefing_id', b.id).maybeSingle();
+  for (const b of briefs) {
+    const existing = await queryOne<{ id: string }>(
+      `SELECT id FROM seo.articles WHERE briefing_id=$1 LIMIT 1`,
+      [b.id],
+    );
     if (existing) continue;
-    briefingsToProcess.push({ briefing: b, topic: b.topics });
+    briefingsToProcess.push({ briefing: b, topic: b.topic_json });
     if (briefingsToProcess.length >= limit) break;
   }
   log.info({ found: briefingsToProcess.length, limit }, 'briefings pra processar');
@@ -82,8 +86,8 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
       drafts++;
       if (!r05.output.article_id || dry_run) continue;
 
-      const { data: aRow } = await sb.from('articles').select('*').eq('id', r05.output.article_id).single();
-      article = aRow as ArticleRow;
+      article = await getArticleById(r05.output.article_id);
+      if (!article) throw new Error('article nao encontrado apos writer');
 
       // === 06 Legal Reviewer ===
       const r06 = await withRun(

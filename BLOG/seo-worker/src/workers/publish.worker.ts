@@ -22,8 +22,8 @@
 import type { Job } from 'bullmq';
 import { child } from '../lib/logger.js';
 import { withRun } from '../db/repositories/agent-runs.js';
-import { supabase } from '../db/supabase.js';
-import { updateArticle } from '../db/repositories/articles.js';
+import { query } from '../db/pg.js';
+import { updateArticle, getById as getArticleById } from '../db/repositories/articles.js';
 import type { ArticleRow } from '../db/repositories/articles.js';
 import { agent09 } from '../agents/09-publisher.js';
 import { agent10 } from '../agents/10-sitemap.js';
@@ -61,10 +61,8 @@ export async function handlePublishJob(job: Job<JobData>): Promise<WorkerResult>
 /** Modo manual — abre PR pra 1 artigo. */
 async function manualPublish(data: JobData, ctx: { triggered_by: string; dry_run: boolean }): Promise<WorkerResult> {
   if (!data.article_id) throw new Error('publish manual exige article_id');
-  const sb = supabase();
-  const { data: aRow, error } = await sb.from('articles').select('*').eq('id', data.article_id).single();
-  if (error || !aRow) throw new Error(`article ${data.article_id} nao encontrado: ${error?.message}`);
-  const article = aRow as ArticleRow;
+  const article = await getArticleById(data.article_id);
+  if (!article) throw new Error(`article ${data.article_id} nao encontrado`);
 
   const r09 = await withRun(
     { agent_id: '09-publisher', triggered_by: ctx.triggered_by, input: { article_id: article.id } },
@@ -90,18 +88,16 @@ async function manualPublish(data: JobData, ctx: { triggered_by: string; dry_run
  *  B) artigos 'published' nas ultimas 24h sem indexing_log completo — reenviar canais faltantes.
  */
 async function recheckMode(ctx: { triggered_by: string; dry_run: boolean }): Promise<WorkerResult> {
-  const sb = supabase();
   const errors: string[] = [];
   let newlyPublished = 0;
   let indexed = 0;
 
   // === A) awaiting_pr_merge — verificar se URL ja esta live ===
-  const { data: pending } = await sb
-    .from('articles')
-    .select('*')
-    .eq('status', 'awaiting_pr_merge');
+  const pending = await query<ArticleRow>(
+    `SELECT * FROM seo.articles WHERE status='awaiting_pr_merge'`,
+  );
 
-  for (const a of (pending ?? []) as ArticleRow[]) {
+  for (const a of pending) {
     try {
       const live = await fetch(a.url, { signal: AbortSignal.timeout(10_000), redirect: 'manual' })
         .then((r) => r.status >= 200 && r.status < 300)
@@ -122,8 +118,9 @@ async function recheckMode(ctx: { triggered_by: string; dry_run: boolean }): Pro
       newlyPublished++;
 
       // Re-fetch article com status atualizado
-      const { data: refreshed } = await sb.from('articles').select('*').eq('id', a.id).single();
-      const articleNow = refreshed as ArticleRow;
+      const refreshed = await getArticleById(a.id);
+      if (!refreshed) { errors.push(`article ${a.id} sumiu apos update`); continue; }
+      const articleNow = refreshed;
 
       // Dispara 10 + 11 + 12 sequencialmente
       await withRun({ agent_id: '10-sitemap', triggered_by: 'cron:recheck', input: { article_id: articleNow.id } }, async () => {
@@ -149,21 +146,20 @@ async function recheckMode(ctx: { triggered_by: string; dry_run: boolean }): Pro
 
   // === B) published nas ultimas 24h sem indexing_log completo ===
   const yesterday = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { data: recent } = await sb
-    .from('articles')
-    .select('*')
-    .eq('status', 'published')
-    .gte('published_at', yesterday);
+  const recent = await query<ArticleRow>(
+    `SELECT * FROM seo.articles WHERE status='published' AND published_at >= $1`,
+    [yesterday],
+  );
 
-  for (const a of (recent ?? []) as ArticleRow[]) {
+  for (const a of recent) {
     try {
-      const { data: logs } = await sb
-        .from('indexing_log')
-        .select('channel, response_status')
-        .eq('article_id', a.id);
+      const logs = await query<{ channel: string; response_status: number | null }>(
+        `SELECT channel, response_status FROM seo.indexing_log WHERE article_id=$1`,
+        [a.id],
+      );
 
       const okChannels = new Set<string>();
-      for (const l of (logs ?? []) as Array<{ channel: string; response_status: number | null }>) {
+      for (const l of logs) {
         if (l.response_status && l.response_status >= 200 && l.response_status < 300) okChannels.add(l.channel);
       }
 

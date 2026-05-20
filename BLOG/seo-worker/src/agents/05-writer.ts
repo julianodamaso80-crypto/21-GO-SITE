@@ -137,6 +137,7 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
       messages: [{ role: 'user', content: userMsg }],
       max_tokens: 4000,
       temperature: 0.6,
+      timeout_ms: 180_000,
     });
 
     const body = stripFrontmatterIfAny(r.text);
