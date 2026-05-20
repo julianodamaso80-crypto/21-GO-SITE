@@ -1,7 +1,3 @@
-'use client'
-
-import { trackWhatsAppClick } from '@/lib/tracking'
-
 type Props = {
   href: string
   origin: string
@@ -10,15 +6,17 @@ type Props = {
   children: React.ReactNode
 }
 
-// Wrapper client-side para qualquer link wa.me em página server component.
-// Dispara whatsapp_click no dataLayer sem bloquear a navegação.
+// Wrapper para links wa.me. O dispatch real do whatsapp_click vem do
+// WhatsAppTracker global (event delegation). Aqui só anotamos o <a> com
+// data-track-origin pro handler global usar a origem certa.
 export function WhatsAppLink({ href, origin, buttonText, className, children }: Props) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => trackWhatsAppClick(origin, { buttonText })}
+      data-track-origin={origin}
+      data-track-button-text={buttonText}
       className={className}
     >
       {children}

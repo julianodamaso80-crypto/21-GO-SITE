@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/Footer'
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton'
 import { GTMProvider } from '@/components/GTMProvider'
 import { MetaPixelScripts } from '@/components/MetaPixelScripts'
+import { WhatsAppTracker } from '@/components/tracking/WhatsAppTracker'
 import { SchemaOrg } from '@/components/seo/SchemaOrg'
 import SmoothScrollProvider from '@/components/SmoothScrollProvider'
 import MobileCTA from '@/components/MobileCTA'
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <MetaPixelScripts />
         <GTMProvider />
+        <WhatsAppTracker />
         <SchemaOrg />
         <SmoothScrollProvider>
           <Header />
