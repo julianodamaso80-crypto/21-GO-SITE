@@ -16,6 +16,8 @@ import { agent05 } from '../agents/05-writer.js';
 import { agent06 } from '../agents/06-legal-reviewer.js';
 import { agent07 } from '../agents/07-onpage-seo.js';
 import { agent08 } from '../agents/08-design-repurpose.js';
+import { queuePublish } from '../queue.js';
+import { config } from '../config.js';
 
 const log = child('worker:write');
 
@@ -198,6 +200,16 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
           };
         },
       );
+
+      // === 09 Publisher (auto — decisao user 2026-05-20: sempre publicar direto em prod) ===
+      if (config.AUTO_PUBLISH_ENABLED && !dry_run) {
+        const pubJob = await queuePublish.add('manual-publish', {
+          article_id: article.id,
+          skip_human_review: true,
+          triggered_by: 'agent:08',
+        });
+        log.info({ articleId: article.id, pubJobId: pubJob.id }, 'publisher enfileirado (auto-publish)');
+      }
     } catch (e) {
       errors.push(`briefing=${item.briefing.id}: ${(e as Error).message}`);
       log.error({ err: (e as Error).message, briefingId: item.briefing.id }, 'falha no encadeamento');

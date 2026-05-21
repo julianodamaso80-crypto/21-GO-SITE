@@ -16,8 +16,6 @@
  *   - Sempre CTA pra falar com consultor
  *   - Frontmatter compativel com src/lib/blog.ts atual do site
  */
-import { promises as fs } from 'fs';
-import path from 'path';
 import type { Agent } from './_types.js';
 import type { TopicRow } from '../db/repositories/topics.js';
 import type { BriefingRow, ArticleRow } from '../db/repositories/articles.js';
@@ -30,9 +28,6 @@ import { config } from '../config.js';
 import { child } from '../lib/logger.js';
 
 const log = child('agent:05-writer');
-
-/** Diretorio do site relativo a raiz do repo (worker e site coabitam). */
-const DRAFTS_DIR_FROM_REPO = '21go-website/content/blog/_drafts';
 
 const SYSTEM_PROMPT = `Voce e o redator senior do blog da 21Go (associacao de protecao patrimonial veicular do Rio, 20+ anos de mercado).
 
@@ -223,15 +218,8 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
       };
     }
 
-    // ===== Salva no disco =====
-    const repoRoot = await findRepoRoot();
-    const driftsDir = path.join(repoRoot, DRAFTS_DIR_FROM_REPO);
-    await fs.mkdir(driftsDir, { recursive: true });
-    const mdxPath = path.join(driftsDir, `${slug}.mdx`);
-    await fs.writeFile(mdxPath, mdx, 'utf8');
-    log.info({ mdxPath }, 'rascunho salvo no disco');
-
-    // ===== Insere ArticleRow =====
+    // ===== Persiste MDX no DB (sem filesystem — worker e site sao containers separados) =====
+    const mdxPath = `21go-website/content/blog/${slug}.mdx`;
     const article: ArticleRow = await insertArticle({
       topic_id: topic.id,
       briefing_id: briefing.id,
@@ -242,11 +230,13 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
       category: topic.category,
       main_keyword: topic.title,
       secondary_keywords: topic.secondary_keywords,
-      mdx_path: path.relative(repoRoot, mdxPath).replace(/\\/g, '/'),
+      mdx_path: mdxPath,
+      mdx_content: mdx,
       word_count,
       read_time_min,
       status: 'draft',
     });
+    log.info({ articleId: article.id, slug, mdxPath, bytes: mdx.length }, 'MDX persistido em seo.articles.mdx_content');
 
     // ===== Embedding (best-effort) =====
     try {
@@ -284,18 +274,3 @@ function truncate(s: string, n: number): string {
   return s.slice(0, n - 1).trim() + '…';
 }
 
-/** Encontra raiz do repo subindo ate achar .git */
-async function findRepoRoot(): Promise<string> {
-  let dir = process.cwd();
-  for (let i = 0; i < 8; i++) {
-    try {
-      await fs.access(path.join(dir, '.git'));
-      return dir;
-    } catch { /* segue subindo */ }
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  // Fallback: CWD
-  return process.cwd();
-}

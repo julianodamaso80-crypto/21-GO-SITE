@@ -61,12 +61,13 @@ export interface ArticleInsert {
   main_keyword?: string;
   secondary_keywords?: string[];
   mdx_path?: string;
+  mdx_content?: string;
   word_count?: number;
   read_time_min?: number;
   status?: ArticleStatus;
 }
 
-export interface ArticleRow extends ArticleInsert {
+export interface ArticleRow extends Omit<ArticleInsert, 'mdx_content'> {
   id: string;
   company_id: string;
   url: string;
@@ -74,6 +75,7 @@ export interface ArticleRow extends ArticleInsert {
   review_status: ReviewStatus | null;
   review_notes: string | null;
   mdx_sha: string | null;
+  mdx_content: string | null;
   pr_url: string | null;
   pr_branch: string | null;
   embedding: number[] | null;
@@ -87,8 +89,8 @@ export async function insertArticle(a: ArticleInsert): Promise<ArticleRow> {
   const row = await queryOne<ArticleRow>(
     `INSERT INTO seo.articles
        (company_id, topic_id, briefing_id, title, slug, meta_title, meta_description,
-        category, main_keyword, secondary_keywords, mdx_path, word_count, read_time_min, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+        category, main_keyword, secondary_keywords, mdx_path, mdx_content, word_count, read_time_min, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      RETURNING *`,
     [
       config.COMPANY_ID,
@@ -98,6 +100,7 @@ export async function insertArticle(a: ArticleInsert): Promise<ArticleRow> {
       a.category ?? null, a.main_keyword ?? null,
       a.secondary_keywords ?? null,
       a.mdx_path ?? null,
+      a.mdx_content ?? null,
       a.word_count ?? null, a.read_time_min ?? null,
       a.status ?? 'draft',
     ],

@@ -9,8 +9,6 @@
  *
  * Atualiza seo.articles.review_status / review_notes.
  */
-import { promises as fs } from 'fs';
-import path from 'path';
 import type { Agent } from './_types.js';
 import type { ArticleRow, ReviewStatus } from '../db/repositories/articles.js';
 import { updateArticle } from '../db/repositories/articles.js';
@@ -78,17 +76,8 @@ export const agent06: Agent<Input, Output> = {
   description: 'Revisa artigo gerado: hard-block regex + LLM judge',
   async run(input, ctx) {
     const a = input.article;
-    if (!a.mdx_path) throw new Error('article sem mdx_path — nao tem o que revisar');
-
-    // Le arquivo
-    const repoRoot = await findRepoRoot();
-    const filePath = path.join(repoRoot, a.mdx_path);
-    let mdx: string;
-    try {
-      mdx = await fs.readFile(filePath, 'utf8');
-    } catch (e) {
-      throw new Error(`nao consegui ler ${filePath}: ${(e as Error).message}`);
-    }
+    if (!a.mdx_content) throw new Error('article sem mdx_content — nao tem o que revisar');
+    const mdx = a.mdx_content;
 
     // ===== 1) Hard-block regex (frases proibidas + escopo) =====
     const hardMatches: Array<{ pattern: string; reason: string }> = [];
@@ -226,13 +215,3 @@ Avalie e retorne JSON conforme as instrucoes do sistema.`;
   },
 };
 
-async function findRepoRoot(): Promise<string> {
-  let dir = process.cwd();
-  for (let i = 0; i < 8; i++) {
-    try { await fs.access(path.join(dir, '.git')); return dir; } catch { /* sobe */ }
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return process.cwd();
-}

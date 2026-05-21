@@ -13,8 +13,6 @@
  * Retorna warnings (nao bloqueia publicacao — Reviewer ja fez isso). Atualiza
  * frontmatter no MDX (description/keywords) e seo.articles correspondentes.
  */
-import { promises as fs } from 'fs';
-import path from 'path';
 import type { Agent } from './_types.js';
 import type { ArticleRow } from '../db/repositories/articles.js';
 import { updateArticle } from '../db/repositories/articles.js';
@@ -37,11 +35,8 @@ export const agent07: Agent<Input, Output> = {
   description: 'Valida e ajusta meta tags/slug/keywords no MDX (determinista)',
   async run(input, ctx) {
     const a = input.article;
-    if (!a.mdx_path) throw new Error('article sem mdx_path');
-    const repoRoot = await findRepoRoot();
-    const filePath = path.join(repoRoot, a.mdx_path);
-    const raw = await fs.readFile(filePath, 'utf8');
-    const parsed = parseMdx(raw);
+    if (!a.mdx_content) throw new Error('article sem mdx_content');
+    const parsed = parseMdx(a.mdx_content);
 
     const warnings: string[] = [];
     const fixes: string[] = [];
@@ -105,12 +100,13 @@ export const agent07: Agent<Input, Output> = {
       warnings.push('imagem destacada generica (/blog/default.jpg) — sugerir asset proprio');
     }
 
-    // === 8) Reescreve MDX se houve fix ===
+    // === 8) Reescreve MDX se houve fix (persiste em seo.articles.mdx_content) ===
     if (fixes.length > 0 && !ctx.dry_run) {
       const newMdx = buildMdx(fm, parsed.content);
-      await fs.writeFile(filePath, newMdx, 'utf8');
-      log.info({ articleId: a.id, fixes }, 'mdx atualizado');
-      await updateArticle(a.id, { meta_description: fm.description });
+      await updateArticle(a.id, { mdx_content: newMdx, meta_description: fm.description });
+      // Atualiza referencia in-memory pra Publisher ler a versao corrigida
+      (a as ArticleRow).mdx_content = newMdx;
+      log.info({ articleId: a.id, fixes }, 'mdx atualizado no DB');
     }
 
     log.info({ articleId: a.id, warnings: warnings.length, fixes: fixes.length }, 'onpage check');
@@ -129,13 +125,3 @@ function extractFirstSentence(content: string, maxLen: number): string {
   return cut.slice(0, lastSpace > 0 ? lastSpace : maxLen).trim() + '…';
 }
 
-async function findRepoRoot(): Promise<string> {
-  let dir = process.cwd();
-  for (let i = 0; i < 8; i++) {
-    try { await fs.access(path.join(dir, '.git')); return dir; } catch { /* sobe */ }
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return process.cwd();
-}

@@ -21,8 +21,6 @@
  *   - AUTO_PUBLISH_ENABLED=true OU skip_human_review=true (override manual)
  *   - GITHUB_TOKEN e GITHUB_REPO configurados
  */
-import { promises as fs } from 'fs';
-import path from 'path';
 import type { Agent } from './_types.js';
 import type { ArticleRow } from '../db/repositories/articles.js';
 import { updateArticle, saveVersion } from '../db/repositories/articles.js';
@@ -70,20 +68,15 @@ export const agent09: Agent<Input, Output> = {
         },
       };
     }
-    if (!a.mdx_path) return { output: { pr_opened: false, reason: 'article sem mdx_path' } };
     if (!config.GITHUB_TOKEN || !config.GITHUB_REPO) {
       return { output: { pr_opened: false, reason: 'Pendente de credencial: GITHUB_TOKEN/GITHUB_REPO' } };
     }
 
-    // ===== Le MDX local =====
-    const repoRoot = await findRepoRoot();
-    const localPath = path.join(repoRoot, a.mdx_path);
-    let mdx: string;
-    try {
-      mdx = await fs.readFile(localPath, 'utf8');
-    } catch (e) {
-      return { output: { pr_opened: false, reason: `nao leu MDX local: ${(e as Error).message}` } };
+    // ===== Le MDX do banco (mdx_content) =====
+    if (!a.mdx_content) {
+      return { output: { pr_opened: false, reason: 'article sem mdx_content (Writer falhou ou article muito antigo)' } };
     }
+    const mdx = a.mdx_content;
 
     if (ctx.dry_run) {
       log.info({ articleId: a.id }, 'DRY-RUN — nao commita');
@@ -167,13 +160,3 @@ async function triggerEasyPanelRebuild(): Promise<void> {
   log.info({ pid: child.pid }, 'SSH rebuild disparado em background');
 }
 
-async function findRepoRoot(): Promise<string> {
-  let dir = process.cwd();
-  for (let i = 0; i < 8; i++) {
-    try { await fs.access(path.join(dir, '.git')); return dir; } catch { /* sobe */ }
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return process.cwd();
-}
