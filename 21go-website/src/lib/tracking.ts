@@ -164,9 +164,12 @@ export function trackCotacaoInicio(opts?: { form_name?: string }) {
     content_category: 'protecao_veicular',
   })
 
-  // Meta Pixel: InitiateCheckout
+  // Meta Pixel: Lead — dispara JÁ no clique do "Ver Simulação".
+  // Antes era InitiateCheckout (só dispara quando backend retorna OK), mas
+  // assim perdiamos sinal quando FIPE/PowerCRM falhavam. Lead aqui = form
+  // preenchido + enviado = sinal forte de intenção.
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', 'InitiateCheckout', {
+    window.fbq('track', 'Lead', {
       content_category: 'protecao_veicular',
     }, { eventID: eventId })
   }
@@ -201,9 +204,13 @@ export function trackCotacaoCompleta(data: {
     currency: 'BRL',
   })
 
-  // Meta Pixel: Lead
+  // Meta Pixel: CompleteRegistration — sinal de QUALIDADE (cliente viu o
+  // preço completo). O Lead "principal" agora dispara antes, no clique
+  // do Ver Simulação (trackCotacaoInicio). Aqui marcamos como completou
+  // a jornada de visualização da cotação — útil pra audience de upper-funnel
+  // qualificado, sem inflar o evento Lead.
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', 'Lead', {
+    window.fbq('track', 'CompleteRegistration', {
       content_name: `${data.marca} ${data.modelo} ${data.ano}`,
       content_category: data.plano,
       value: data.valorMensal,

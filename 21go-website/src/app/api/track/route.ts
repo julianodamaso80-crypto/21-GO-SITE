@@ -26,11 +26,16 @@ type AllowedEvent = (typeof ALLOWED_EVENTS)[number]
 // Mapeamento evento interno → nome esperado pelo Meta CAPI.
 // `null` = pula Meta CAPI (eventos de blog). Comerciais usam nomes Meta
 // canônicos pra dedup correta com o Pixel client (event_id em comum).
+// Mapeamento Meta CAPI:
+// - cotacao_inicio → Lead (dispara cedo no Ver Simulação — captura mesmo
+//   se backend FIPE/PowerCRM falhar; algoritmo otimiza pra clique do form)
+// - cotacao_completa → CompleteRegistration (sinal de qualidade — viu o
+//   preço; nao infla Lead pra manter ROAS preciso)
 const META_EVENT_NAME: Record<AllowedEvent, string | null> = {
   page_view: 'PageView',
   whatsapp_click: 'Contact',
-  cotacao_inicio: 'InitiateCheckout',
-  cotacao_completa: 'Lead',
+  cotacao_inicio: 'Lead',
+  cotacao_completa: 'CompleteRegistration',
   pedido_orcamento: 'Purchase',
   blog_article_view: null,
   blog_scroll_depth: null,
