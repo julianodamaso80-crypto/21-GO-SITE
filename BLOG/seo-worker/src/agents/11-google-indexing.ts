@@ -17,7 +17,7 @@ import { child } from '../lib/logger.js';
 
 const log = child('agent:11-google-indexing');
 
-const SITEMAP_URL = 'https://21go.site/sitemap-0.xml';
+const SITEMAP_URL = 'https://21go.site/sitemap.xml';
 
 interface Input {
   article: ArticleRow;
