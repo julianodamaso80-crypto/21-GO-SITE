@@ -22,6 +22,7 @@ import type { BriefingRow, ArticleRow } from '../db/repositories/articles.js';
 import { insertArticle, updateArticle } from '../db/repositories/articles.js';
 import { complete } from '../integrations/llm.js';
 import { buildMdx, slugify, type ArticleFrontmatter } from '../lib/mdx.js';
+import { enforceWriterRules } from '../lib/enforce-writer-rules.js';
 import { embedPassage } from '../lib/similarity.js';
 import { SCOPE_RULES_TEXT } from '../lib/scope-guard.js';
 import { config } from '../config.js';
@@ -209,7 +210,13 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
       image: '/blog/default.jpg',
     };
 
-    const mdx = buildMdx(frontmatter, body);
+    // Pos-processador determinista: forca >=3 CTAs/links internos + remove veiculos pesados
+    const rawMdx = buildMdx(frontmatter, body);
+    const enforced = enforceWriterRules(rawMdx);
+    const mdx = enforced.mdx;
+    if (enforced.was_modified) {
+      log.info({ slug, changes: enforced.changes }, 'pos-processador aplicou correcoes');
+    }
 
     if (ctx.dry_run) {
       log.info({ slug, word_count, read_time_min, cost: r.cost_usd }, 'DRY-RUN — nao salva no disco/DB');
