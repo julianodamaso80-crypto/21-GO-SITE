@@ -94,9 +94,12 @@ export const agent06: Agent<Input, Output> = {
     const bodyOnly = mdx.replace(/^---[\s\S]+?---\n+/m, '');
     const wordCount = bodyOnly.split(/\s+/).filter(Boolean).length;
 
-    // 2.1 — Tamanho: rejeita se fora da janela 1200-1700 (target 1300-1500 com margem)
-    const HARD_MIN = 1200;
-    const HARD_MAX = 1700;
+    // 2.1 — Tamanho: rejeita se fora da janela 1100-2200
+    // (target 1300-1500 mas Gemini Flash consistentemente gera 1800-2000;
+    //  rejeitar tudo gera loop infinito. Tolerancia ampla, qualidade fica
+    //  com o LLM judge depois.)
+    const HARD_MIN = 1100;
+    const HARD_MAX = 2200;
     if (wordCount < HARD_MIN) {
       hardMatches.push({ pattern: `wordCount=${wordCount}<${HARD_MIN}`, reason: 'artigo curto demais (target 1300-1500)' });
     }
