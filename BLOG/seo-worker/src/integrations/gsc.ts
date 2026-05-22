@@ -60,28 +60,27 @@ export async function searchAnalytics(opts: {
   }));
 }
 
-/** Submete (re)submissao de sitemap. */
-export async function submitSitemap(sitemapUrl: string): Promise<{ ok: boolean; status: number; body?: string }> {
-  const siteUrl = encodeURIComponent(config.GSC_SITE_URL);
+/** Submete (re)submissao de sitemap. Se gscSite omitido, usa o padrao do config. */
+export async function submitSitemap(sitemapUrl: string, gscSite?: string): Promise<{ ok: boolean; status: number; body?: string }> {
+  const siteUrl = encodeURIComponent(gscSite ?? config.GSC_SITE_URL);
   const feedpath = encodeURIComponent(sitemapUrl);
   const res = await gscFetch(`/webmasters/v3/sites/${siteUrl}/sitemaps/${feedpath}`, { method: 'PUT' });
   if (!res.ok) {
     const body = await res.text();
-    log.warn({ status: res.status, body: body.slice(0, 200) }, 'sitemap submit falhou');
+    log.warn({ status: res.status, body: body.slice(0, 200), gscSite }, 'sitemap submit falhou');
     return { ok: false, status: res.status, body };
   }
-  log.info({ sitemap: sitemapUrl }, 'sitemap submetido');
+  log.info({ sitemap: sitemapUrl, gscSite }, 'sitemap submetido');
   return { ok: true, status: res.status };
 }
 
-/** URL Inspection (search.google.com/u/0/search-console/inspect?... — via API). */
-export async function urlInspection(url: string): Promise<{ ok: boolean; status: number; data?: unknown; error?: string }> {
-  // API: https://searchconsole.googleapis.com/v1/urlInspection/index:inspect
+/** URL Inspection. Se gscSite omitido, usa o padrao do config. */
+export async function urlInspection(url: string, gscSite?: string): Promise<{ ok: boolean; status: number; data?: unknown; error?: string }> {
   const token = await getAccessToken(SCOPE);
   const res = await fetch('https://searchconsole.googleapis.com/v1/urlInspection/index:inspect', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inspectionUrl: url, siteUrl: config.GSC_SITE_URL, languageCode: 'pt-BR' }),
+    body: JSON.stringify({ inspectionUrl: url, siteUrl: gscSite ?? config.GSC_SITE_URL, languageCode: 'pt-BR' }),
   });
   if (!res.ok) {
     const body = await res.text();

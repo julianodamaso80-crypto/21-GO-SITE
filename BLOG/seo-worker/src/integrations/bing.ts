@@ -14,28 +14,30 @@ function key(): string {
   return config.BING_API_KEY;
 }
 
-/** Submete uma URL ao Bing (max 10/dia por padrao Webmaster). */
-export async function submitUrl(url: string): Promise<{ ok: boolean; status: number; body?: string }> {
+/** Submete uma URL ao Bing. Se bingSite omitido, usa o padrao do config. */
+export async function submitUrl(url: string, bingSite?: string): Promise<{ ok: boolean; status: number; body?: string }> {
+  const siteUrl = bingSite ?? config.BING_SITE_URL;
   const res = await fetch(`${BASE}/SubmitUrl?apikey=${key()}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ siteUrl: config.BING_SITE_URL, url }),
+    body: JSON.stringify({ siteUrl, url }),
   });
   if (!res.ok) {
     const body = await res.text();
-    log.warn({ status: res.status, body: body.slice(0, 200) }, 'bing submitUrl falhou');
+    log.warn({ status: res.status, body: body.slice(0, 200), siteUrl }, 'bing submitUrl falhou');
     return { ok: false, status: res.status, body };
   }
-  log.info({ url }, 'bing submitUrl ok');
+  log.info({ url, siteUrl }, 'bing submitUrl ok');
   return { ok: true, status: res.status };
 }
 
-/** Submete sitemap ao Bing. */
-export async function submitSitemap(sitemapUrl: string): Promise<{ ok: boolean; status: number; body?: string }> {
+/** Submete sitemap ao Bing. Se bingSite omitido, usa o padrao do config. */
+export async function submitSitemap(sitemapUrl: string, bingSite?: string): Promise<{ ok: boolean; status: number; body?: string }> {
+  const siteUrl = bingSite ?? config.BING_SITE_URL;
   const res = await fetch(`${BASE}/SubmitFeed?apikey=${key()}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ siteUrl: config.BING_SITE_URL, feedUrl: sitemapUrl }),
+    body: JSON.stringify({ siteUrl, feedUrl: sitemapUrl }),
   });
   if (!res.ok) {
     const body = await res.text();
