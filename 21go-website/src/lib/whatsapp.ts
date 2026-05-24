@@ -1,11 +1,15 @@
 /**
- * Envio de WhatsApp via Evolution API (instância 21gosite2 — validada 2026-05-08).
- * Usa fetch global do Node.js (Undici interno).
+ * Envio de WhatsApp via Evolution API.
+ * Instância em produção: disparo_xHH2aIEs_site21go @ evolution.sinistro21go.site
+ * (número 5521980214882 — Consultora Letycya). Validado em 2026-05-24.
+ *
+ * IMPORTANTE: NÃO confundir com a inst antiga 21gosite/21gosite2 do servidor klo3fa
+ * (número 5521969454824 abandonado) — clientes só conversam pelo número da Letycya.
  */
 
 const EVOLUTION_API_URL =
-  process.env.EVOLUTION_API_URL || 'https://automacoes-evolution-api.klo3fa.easypanel.host'
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || '21gosite'
+  process.env.EVOLUTION_API_URL || 'https://evolution.sinistro21go.site'
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'disparo_xHH2aIEs_site21go'
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
 
 export function isWhatsappConfigured(): boolean {
