@@ -90,7 +90,7 @@ Apos vistoria aprovada, costuma ser rapido. Fale com um consultor para ver o pra
 
 ---
 
-Quer entender se sua moto se enquadra na protecao da 21Go? [Faca uma simulacao gratuita](/cotacao) ou [fale com um consultor](https://wa.me/5521969454824).`;
+Quer entender se sua moto se enquadra na protecao da 21Go? [Faca uma simulacao gratuita](/cotacao) ou [fale com um consultor](https://wa.me/5521980214882).`;
 
   const repoRoot = await findRepoRoot();
   const driftsDir = path.join(repoRoot, '21go-website/content/blog/_drafts');

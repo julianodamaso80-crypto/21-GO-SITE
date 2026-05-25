@@ -4,7 +4,8 @@
  * (número 5521980214882 — Consultora Letycya). Validado em 2026-05-24.
  *
  * IMPORTANTE: NÃO confundir com a inst antiga 21gosite/21gosite2 do servidor klo3fa
- * (número 5521969454824 abandonado) — clientes só conversam pelo número da Letycya.
+ * (número 5521969454824 abandonado em 2026-05-25 — substituído por 5521980214882).
+ * Clientes só conversam pelo número da Consultora Letycya.
  */
 
 const EVOLUTION_API_URL =

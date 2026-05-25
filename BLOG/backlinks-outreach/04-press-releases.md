@@ -71,7 +71,7 @@ credenciados.
 
 Site oficial: https://21go.site
 Cotação online: https://21go.site/cotacao
-WhatsApp: +55 21 96945-4824
+WhatsApp: +55 21 98021-4882
 
 INFORMAÇÕES PARA IMPRENSA
 [Nome do contato de imprensa]

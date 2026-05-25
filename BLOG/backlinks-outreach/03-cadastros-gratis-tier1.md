@@ -27,9 +27,9 @@ proteção veicular, seguro auto alternativo, mutualismo veicular, associação 
 ### Contato padrão
 ```
 Site: https://21go.site
-Telefone: +55 21 96945-4824 (substituir pelo real)
+Telefone: +55 21 98021-4882
 Email: contato@21go.site
-WhatsApp: https://wa.me/5521969454824
+WhatsApp: https://wa.me/5521980214882
 Endereço: [seu endereço completo Rio de Janeiro]
 ```
 
