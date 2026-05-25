@@ -19,7 +19,18 @@ const SITE_URL = 'https://21go.site'
 const ORG_NAME = '21Go'
 const ORG_LOGO = `${SITE_URL}/logo.png`
 
-const AUTHORS: Record<string, { url: string; sameAs: string[]; description: string }> = {
+/**
+ * Authors com Person schema completo + jobTitle + worksFor + alumniOf.
+ * Quanto mais campos, mais o Knowledge Graph reconhece como entidade real
+ * (+200% citation em AI Overviews segundo Schema 2026).
+ */
+const AUTHORS: Record<string, {
+  url: string
+  sameAs: string[]
+  description: string
+  jobTitle: string
+  knowsAbout: string[]
+}> = {
   '21Go': {
     url: `${SITE_URL}/sobre`,
     sameAs: [
@@ -27,6 +38,8 @@ const AUTHORS: Record<string, { url: string; sameAs: string[]; description: stri
       'https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/',
     ],
     description: 'Equipe Editorial 21Go — Associação de proteção patrimonial veicular do Rio de Janeiro, 20+ anos de mercado.',
+    jobTitle: 'Equipe Editorial',
+    knowsAbout: ['Proteção patrimonial veicular', 'Mutualismo', 'Código Civil', 'Segurança veicular'],
   },
   'Letycya': {
     url: `${SITE_URL}/sobre`,
@@ -34,6 +47,8 @@ const AUTHORS: Record<string, { url: string; sameAs: string[]; description: stri
       'https://www.instagram.com/21goprotpatri/',
     ],
     description: 'Consultora especialista em proteção patrimonial veicular da 21Go, 15+ anos de experiência.',
+    jobTitle: 'Consultora de Proteção Patrimonial Veicular',
+    knowsAbout: ['Proteção patrimonial veicular', 'Atendimento ao associado', 'Cotação FIPE', 'Sinistros veiculares'],
   },
 }
 
@@ -64,6 +79,9 @@ export function ArticleSchema({ post }: ArticleSchemaProps) {
       url: author.url,
       sameAs: author.sameAs,
       description: author.description,
+      jobTitle: author.jobTitle,
+      worksFor: { '@type': 'Organization', name: '21Go', url: SITE_URL },
+      knowsAbout: author.knowsAbout,
     },
     publisher: {
       '@type': 'Organization',

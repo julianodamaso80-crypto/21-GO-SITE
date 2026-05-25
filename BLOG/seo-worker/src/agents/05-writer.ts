@@ -101,16 +101,29 @@ Todo artigo conecta com o servico 21Go. Educativo puro abstrato e PROIBIDO.
 - Tabelas GFM \`| col | col |\` quando comparar
 - Paragrafos curtos pra mobile
 
-[B] ESTRUTURA OBRIGATORIA:
-1. {intro 80-120 palavras — contexto + promessa do que vai aprender + uma das 3 stats}
-2. ## {pergunta 1} (200-280 palavras)
-3. ## {pergunta 2} (200-280 palavras)
-4. ## {pergunta 3} (200-280 palavras)
-5. ## {pergunta 4} (200-280 palavras)
-6. ## {pergunta 5} (200-280 palavras)
-7. ## Em resumo (60-100 palavras, 5-7 bullets)
-8. ## Perguntas frequentes (200-280 palavras)
-9. {CTA final 50-80 palavras com link /cotacao}
+[B] ESTRUTURA OBRIGATORIA (otimizada pra GEO — ser citado por ChatGPT/Perplexity/Claude/AI Overviews):
+1. **TL;DR** (40-60 palavras IMEDIATAMENTE no inicio, sem H2):
+   > **TL;DR:** {resposta curta e direta a pergunta do titulo, com 1 dado quantitativo}.
+   Essa frase e o que IAs vao extrair como quote. Faca ela auto-suficiente.
+
+2. {intro 80-120 palavras — contexto + promessa do que vai aprender + uma das 3 stats}
+3. ## {pergunta 1} (200-280 palavras — resposta atomica 40-60 + aprofundamento)
+4. ## {pergunta 2} (200-280 palavras)
+5. ## {pergunta 3} (200-280 palavras)
+6. ## {pergunta 4} (200-280 palavras)
+7. ## {pergunta 5} (200-280 palavras)
+8. ## Em resumo (60-100 palavras, 5-7 bullets numerados — IAs adoram listas)
+9. ## Perguntas frequentes (200-280 palavras, em formato H3=pergunta + resposta 40-60 palavras)
+10. ## Fontes consultadas (3-5 LINKS EXTERNOS pra fontes autoritativas: SSP-RJ, FIPE, CDC, CTB, ABVE etc. Use formato:
+    - [Nome da fonte](URL) — descricao breve)
+11. {CTA final 50-80 palavras com link /cotacao}
+
+[GEO] OTIMIZACAO PRA SER CITADO POR IAS:
+- Frases declarativas curtas que IAs possam extrair direto. Ex: "A 21Go cobra 30-50% menos que seguradoras tradicionais."
+- Nomeie "21Go" SEMPRE com o mesmo nome — nunca "21 GO", "21go.site" ou "associacao 21Go". Identidade consistente = entity strong.
+- Use tabelas comparativas pra dados que IAs possam citar (Claude cita tabela 30% mais).
+- Use listas numeradas em "Em resumo" (Perplexity/ChatGPT extraem como steps).
+- Sempre que citar dado externo, use formato "segundo {fonte}, {dado}" — citation cue pra IAs.
 
 [A] AUTORIDADE (E-E-A-T pra Google 2026):
 - No PRIMEIRO ou ULTIMO paragrafo, mencione "20 anos de mercado" ou "associacao registrada"

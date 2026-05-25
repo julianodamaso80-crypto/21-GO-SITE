@@ -1,0 +1,457 @@
+{
+  "generated_at": "2026-05-11T17:56:34.550Z",
+  "persona_version": "v2",
+  "persona_chars": 15762,
+  "model": "anthropic/claude-sonnet-4.6",
+  "resultados": [
+    {
+      "cenario": 1,
+      "titulo": "Lead do site, Honda moto, quer contratar",
+      "input": "Olá! Fiz uma simulação no site.\nNome: Cicero Virginio\nWhatsApp: (21) 99776-6932\nPlaca: RKO7E86\nSeguro/proteção atual: Suhai\nVeículo: HONDA CG 160 FAN Flex\nFIPE: R$ 17.500\nPlano: VIP Moto até 400cc\nMensalidade: R$ 186,84/mês\nAtivação: R$ 419,91\nQuero contratar!",
+      "response_text": "oi Cicero! tudo bem? 🥰\n\nque ótimo que o senhor quer contratar, vamos resolver isso!\n\no senhor já tem proteção com a Suhai, tem um boleto recente deles que comprove? posso tentar algo melhor no sistema pra o senhor 😊",
+      "bubbles": [
+        "oi Cicero! tudo bem? 🥰",
+        "que ótimo que o senhor quer contratar, vamos resolver isso!",
+        "o senhor já tem proteção com a Suhai, tem um boleto recente deles que comprove? posso tentar algo melhor no sistema pra o senhor 😊"
+      ],
+      "bubbles_count": 3,
+      "issues": [],
+      "latency_ms": 1620,
+      "tokens": {
+        "prompt_tokens": 6430,
+        "completion_tokens": 79,
+        "total_tokens": 6509,
+        "cost": 0.020475,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.020475,
+          "upstream_inference_prompt_cost": 0.01929,
+          "upstream_inference_completions_cost": 0.001185
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 2,
+      "titulo": "Lead WhatsApp frio — só pede cotação",
+      "input": "Bom dia, gostaria de uma cotação",
+      "response_text": "bom diaaa Matheus! 🥰\n\nclaro, vou te ajudar com isso!\n\nme diz o veículo, pode ser a placa ou marca/modelo/ano",
+      "bubbles": [
+        "bom diaaa Matheus! 🥰",
+        "claro, vou te ajudar com isso!",
+        "me diz o veículo, pode ser a placa ou marca/modelo/ano"
+      ],
+      "bubbles_count": 3,
+      "issues": [],
+      "latency_ms": 5367,
+      "tokens": {
+        "prompt_tokens": 6307,
+        "completion_tokens": 49,
+        "total_tokens": 6356,
+        "cost": 0.019656,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.019656,
+          "upstream_inference_prompt_cost": 0.018921,
+          "upstream_inference_completions_cost": 0.000735
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 3,
+      "titulo": "Objeção preço — não tem o valor da ativação",
+      "input": "Ativação tá 519 com rastreador, não tenho esse valor agora. Parcela?",
+      "response_text": "se eu conseguir um desconto pro senhor, que dia o senhor consegue fechar?",
+      "bubbles": [
+        "se eu conseguir um desconto pro senhor, que dia o senhor consegue fechar?"
+      ],
+      "bubbles_count": 1,
+      "issues": [],
+      "latency_ms": 1231,
+      "tokens": {
+        "prompt_tokens": 6319,
+        "completion_tokens": 24,
+        "total_tokens": 6343,
+        "cost": 0.019317,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.019317,
+          "upstream_inference_prompt_cost": 0.018957,
+          "upstream_inference_completions_cost": 0.00036
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 3.1,
+      "titulo": "Objeção preço — variante \"tá caro\"",
+      "input": "Tá caro pra mim, consegue um desconto?",
+      "response_text": "se eu conseguir um desconto pro senhor, que dia o senhor consegue fechar?",
+      "bubbles": [
+        "se eu conseguir um desconto pro senhor, que dia o senhor consegue fechar?"
+      ],
+      "bubbles_count": 1,
+      "issues": [],
+      "latency_ms": 1010,
+      "tokens": {
+        "prompt_tokens": 6309,
+        "completion_tokens": 24,
+        "total_tokens": 6333,
+        "cost": 0.019287,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.019287,
+          "upstream_inference_prompt_cost": 0.018927,
+          "upstream_inference_completions_cost": 0.00036
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 3.2,
+      "titulo": "Objeção preço — comparou com concorrente",
+      "input": "Na Alamo me ofereceram a R$ 250, vocês conseguem fazer mais barato?",
+      "response_text": "se eu conseguir um desconto pro senhor, que dia o senhor consegue fechar?",
+      "bubbles": [
+        "se eu conseguir um desconto pro senhor, que dia o senhor consegue fechar?"
+      ],
+      "bubbles_count": 1,
+      "issues": [],
+      "latency_ms": 1873,
+      "tokens": {
+        "prompt_tokens": 6316,
+        "completion_tokens": 24,
+        "total_tokens": 6340,
+        "cost": 0.019308,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.019308,
+          "upstream_inference_prompt_cost": 0.018948,
+          "upstream_inference_completions_cost": 0.00036
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 4,
+      "titulo": "Veículo rejeitado — Fiat Freemont",
+      "input": "Bom dia. Tenho um Fiat Freemont 2012, quero fazer proteção",
+      "response_text": "bom diaaa Fernanda 🥰\n\ninfelizmente o Fiat Freemont é um veículo que a gente não faz aqui na 21Go 😢\n\nse a senhora tiver outro veículo, fico feliz em ajudar!",
+      "bubbles": [
+        "bom diaaa Fernanda 🥰",
+        "infelizmente o Fiat Freemont é um veículo que a gente não faz aqui na 21Go 😢",
+        "se a senhora tiver outro veículo, fico feliz em ajudar!"
+      ],
+      "bubbles_count": 3,
+      "issues": [],
+      "latency_ms": 1144,
+      "tokens": {
+        "prompt_tokens": 6320,
+        "completion_tokens": 69,
+        "total_tokens": 6389,
+        "cost": 0.019995,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.019995,
+          "upstream_inference_prompt_cost": 0.01896,
+          "upstream_inference_completions_cost": 0.001035
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 5,
+      "titulo": "Cliente reclamando demora",
+      "input": "Já mandei 3 mensagens e ninguém responde. Estou vendo com outras empresas, até me responderam rápido.",
+      "response_text": "oi Joana, me desculpa mesmo por isso 😢\n\nfui ver aqui e vi sua mensagem, vou priorizar o seu atendimento agora\n\nme conta, o senhor... a senhora tá cotando pra qual veículo?",
+      "bubbles": [
+        "oi Joana, me desculpa mesmo por isso 😢",
+        "fui ver aqui e vi sua mensagem, vou priorizar o seu atendimento agora",
+        "me conta, o senhor... a senhora tá cotando pra qual veículo?"
+      ],
+      "bubbles_count": 3,
+      "issues": [],
+      "latency_ms": 1738,
+      "tokens": {
+        "prompt_tokens": 6329,
+        "completion_tokens": 64,
+        "total_tokens": 6393,
+        "cost": 0.019947,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.019947,
+          "upstream_inference_prompt_cost": 0.018987,
+          "upstream_inference_completions_cost": 0.00096
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 6,
+      "titulo": "Vai pensar / falar com cônjuge",
+      "input": "Vou mandar essas informações pra meu esposo e retorno o contato, ok?",
+      "response_text": "perfeito! qualquer dúvida que o senhor tiver, é só me chamar aqui 🥰\n\ntô por aqui!",
+      "bubbles": [
+        "perfeito! qualquer dúvida que o senhor tiver, é só me chamar aqui 🥰",
+        "tô por aqui!"
+      ],
+      "bubbles_count": 2,
+      "issues": [],
+      "latency_ms": 1273,
+      "tokens": {
+        "prompt_tokens": 6319,
+        "completion_tokens": 38,
+        "total_tokens": 6357,
+        "cost": 0.019527,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.019527,
+          "upstream_inference_prompt_cost": 0.018957,
+          "upstream_inference_completions_cost": 0.00057
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 7,
+      "titulo": "Confiança — viu vídeo do Pastor",
+      "input": "Vocês são confiáveis? Vi um vídeo do Pastor no Instagram",
+      "response_text": "Roberto, com certeza! a 21Go tem mais de 20 anos de mercado e é cadastrada na SUSEP como associação de proteção veicular\n\no Pastor mesmo usa a proteção e indica porque confia de verdade, não é parceria de fachada 🥰\n\nme diz, o senhor já tem alguma proteção no veículo hoje?",
+      "bubbles": [
+        "Roberto, com certeza! a 21Go tem mais de 20 anos de mercado e é cadastrada na SUSEP como associação de proteção veicular",
+        "o Pastor mesmo usa a proteção e indica porque confia de verdade, não é parceria de fachada 🥰",
+        "me diz, o senhor já tem alguma proteção no veículo hoje?"
+      ],
+      "bubbles_count": 3,
+      "issues": [],
+      "latency_ms": 1152,
+      "tokens": {
+        "prompt_tokens": 6311,
+        "completion_tokens": 88,
+        "total_tokens": 6399,
+        "cost": 0.020253,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.020253,
+          "upstream_inference_prompt_cost": 0.018933,
+          "upstream_inference_completions_cost": 0.00132
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 8,
+      "titulo": "Quer ser consultor (funil APN)",
+      "input": "Olá, gostaria de ser consultor da 21Go. Como faço pra participar do treinamento?",
+      "response_text": "oii Janaina, tudo bem? 🥰\n\nque bacana! aqui na 21Go a gente tem o programa de consultor\n\ntem treinamento online às 19h30 pelo Meet e presencial aqui em Campo Grande — vou te incluir no grupo do treinamento, pode? 💼",
+      "bubbles": [
+        "oii Janaina, tudo bem? 🥰",
+        "que bacana! aqui na 21Go a gente tem o programa de consultor",
+        "tem treinamento online às 19h30 pelo Meet e presencial aqui em Campo Grande — vou te incluir no grupo do treinamento, pode? 💼"
+      ],
+      "bubbles_count": 3,
+      "issues": [],
+      "latency_ms": 1982,
+      "tokens": {
+        "prompt_tokens": 6323,
+        "completion_tokens": 77,
+        "total_tokens": 6400,
+        "cost": 0.020124,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.020124,
+          "upstream_inference_prompt_cost": 0.018969,
+          "upstream_inference_completions_cost": 0.001155
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 9,
+      "titulo": "EMERGÊNCIA — sinistro em andamento",
+      "input": "Minha moto foi roubada agora! Preciso de ajuda urgente!",
+      "response_text": "Carlos, que situação horrível, sinto muito mesmo 😢\n\nVou acionar nossa equipe de assistência AGORA pra te ajudar.\n\nLiga imediatamente pro 0800 234-5555 — é 24 horas, eles vão te orientar em tudo que precisa fazer agora.",
+      "bubbles": [
+        "Carlos, que situação horrível, sinto muito mesmo 😢",
+        "Vou acionar nossa equipe de assistência AGORA pra te ajudar.",
+        "Liga imediatamente pro 0800 234-5555 — é 24 horas, eles vão te orientar em tudo que precisa fazer agora."
+      ],
+      "bubbles_count": 3,
+      "issues": [],
+      "latency_ms": 1589,
+      "tokens": {
+        "prompt_tokens": 6314,
+        "completion_tokens": 81,
+        "total_tokens": 6395,
+        "cost": 0.020157,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.020157,
+          "upstream_inference_prompt_cost": 0.018942,
+          "upstream_inference_completions_cost": 0.001215
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    },
+    {
+      "cenario": 10,
+      "titulo": "Pergunta sobre cota de participação",
+      "input": "Qual a franquia de vocês? E pra carro elétrico fica como?",
+      "response_text": "a cota de participação pra carros convencionais é 6% da FIPE\n\npra elétricos é 10% da FIPE\n\nqual o modelo do seu veículo, Bruno? me diz que já calculo o valor certinho pra o senhor",
+      "bubbles": [
+        "a cota de participação pra carros convencionais é 6% da FIPE",
+        "pra elétricos é 10% da FIPE",
+        "qual o modelo do seu veículo, Bruno? me diz que já calculo o valor certinho pra o senhor"
+      ],
+      "bubbles_count": 3,
+      "issues": [],
+      "latency_ms": 1322,
+      "tokens": {
+        "prompt_tokens": 6314,
+        "completion_tokens": 66,
+        "total_tokens": 6380,
+        "cost": 0.019932,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0.019932,
+          "upstream_inference_prompt_cost": 0.018942,
+          "upstream_inference_completions_cost": 0.00099
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "model": "anthropic/claude-4.6-sonnet-20260217"
+    }
+  ]
+}
