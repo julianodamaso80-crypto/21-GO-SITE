@@ -1,9 +1,10 @@
 import { Metadata } from 'next'
-import { Calendar, User, Clock, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Calendar, User, Clock, ArrowLeft, ArrowRight, ShieldCheck, RefreshCw, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { getPostBySlug, getPostSlugs, getAllPosts } from '@/lib/blog'
 import { notFound } from 'next/navigation'
 import { BlogTracking } from '@/components/tracking/BlogTracking'
+import { ArticleSchema } from '@/components/seo/ArticleSchema'
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>
@@ -13,10 +14,31 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   const { slug } = await params
   const post = getPostBySlug(slug)
   if (!post) return { title: 'Post nao encontrado' }
+  const url = `https://21go.site/blog/${slug}`
+  const imageUrl = post.image.startsWith('http') ? post.image : `https://21go.site${post.image}`
   return {
     title: `${post.title} | Blog 21Go`,
     description: post.description,
-    openGraph: { type: 'article', title: post.title },
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'article',
+      title: post.title,
+      description: post.description,
+      url,
+      siteName: '21Go',
+      locale: 'pt_BR',
+      publishedTime: post.date,
+      modifiedTime: post.lastUpdated || post.date,
+      authors: [post.author],
+      tags: post.keywords,
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      images: [imageUrl],
+    },
   }
 }
 
@@ -34,6 +56,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <>
+      <ArticleSchema post={post} />
       <BlogTracking
         articleSlug={slug}
         articleTitle={post.title}
@@ -43,6 +66,17 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       {/* Article header */}
       <section className="pt-32 pb-16 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82]">
         <div className="max-w-4xl mx-auto px-6">
+          {/* Breadcrumb visivel — alinha com BreadcrumbList JSON-LD */}
+          <nav aria-label="Breadcrumb" className="mb-6">
+            <ol className="flex items-center gap-2 text-xs text-white/50">
+              <li><Link href="/" className="hover:text-white">Início</Link></li>
+              <ChevronRight className="w-3 h-3" />
+              <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
+              <ChevronRight className="w-3 h-3" />
+              <li className="text-white/80 line-clamp-1 max-w-[200px] md:max-w-[400px]" aria-current="page">{post.title}</li>
+            </ol>
+          </nav>
+
           <Link
             href="/blog"
             className="inline-flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors mb-8"
@@ -60,16 +94,22 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </h1>
 
           <div className="flex flex-wrap items-center gap-5 text-sm text-white/50">
-            <div className="flex items-center gap-2">
+            <Link href="/sobre" className="flex items-center gap-2 hover:text-white transition-colors">
               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                 <User className="w-4 h-4" />
               </div>
               <span>{post.author}</span>
-            </div>
+            </Link>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               <span>{new Date(post.date).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
             </div>
+            {post.lastUpdated && post.lastUpdated !== post.date && (
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Atualizado em {new Date(post.lastUpdated).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
               <span>{post.readTime} min de leitura</span>

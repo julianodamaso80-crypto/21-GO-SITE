@@ -27,65 +27,97 @@ import { embedPassage } from '../lib/similarity.js';
 import { SCOPE_RULES_TEXT } from '../lib/scope-guard.js';
 import { config } from '../config.js';
 import { child } from '../lib/logger.js';
+import { pickRelevantSources, formatForPrompt } from '../db/repositories/data-sources.js';
+import { injectInternalLinks } from '../lib/internal-linker.js';
+import { generateCoverImages } from '../integrations/image-gen.js';
 
 const log = child('agent:05-writer');
 
 const SYSTEM_PROMPT = `Voce e o redator senior do blog da 21Go (associacao de protecao patrimonial veicular do Rio, 20+ anos de mercado).
 
+Voce escreve no padrao "Atomic Answer" — formato vencedor pra Google AI Overviews em 2026:
+- Cada H2 e uma PERGUNTA real que o leitor faria.
+- LOGO ABAIXO de cada H2, uma resposta DIRETA de 40-60 palavras (parafrafo curto).
+- Em seguida, o aprofundamento da resposta com 150-250 palavras.
+
 ${SCOPE_RULES_TEXT}
 
-REGRAS HARD (qualquer violacao = artigo REPROVADO automaticamente):
+==================================================================
+REGRAS HARD (violacao = artigo REPROVADO):
+==================================================================
 
-[T] TAMANHO
-- OBRIGATORIO: ${config.WORDS_PER_ARTICLE_MIN}-${config.WORDS_PER_ARTICLE_MAX} palavras no corpo.
-- Mire 1400. Se passar de ${config.WORDS_PER_ARTICLE_MAX}, conclua o pensamento atual e PARE.
-- Artigos longos demais perdem leitor mobile e sao penalizados pelo Google.
+[T] TAMANHO POR SECAO (preciso pra ficar 1300-1500 total):
+- Intro: 80-120 palavras
+- 5 H2s, cada um com 200-280 palavras (resposta direta 40-60 + aprofundamento 150-220)
+- Secao "## Em resumo": 60-100 palavras com 5-7 bullets
+- FAQ ("## Perguntas frequentes"): 200-280 palavras
+- CTA final: 50-80 palavras
+TOTAL ALVO: 1400 palavras +/- 100. NUNCA passe de 1600. Se sentir que vai passar, CORTE.
 
-[C] CTAs OBRIGATORIOS (no MINIMO 3 ao longo do artigo)
-- CTA 1 — no meio do artigo (apos o ~50% do conteudo, link pra /protecao-veicular ou /cotacao):
-    "Quer entender se a protecao patrimonial veicular da 21Go cobre seu caso? [Conheca os planos](/protecao-veicular)."
-- CTA 2 — antes do FAQ (link pra /cotacao):
-    "Faca uma [cotacao gratuita em 30 segundos](/cotacao) e veja o valor pro seu veiculo."
-- CTA 3 — no final (link pra /cotacao OU consultor):
-    "Pra entender o que faz sentido pro seu caso, [fale com um consultor da 21Go](/cotacao) sem compromisso."
+[I] INFORMATION GAIN — DADOS UNICOS (no MINIMO 3 dos 6 tipos abaixo):
+Toda materia precisa carregar 3+ dados unicos. Sem isso, AI Overviews ignora.
+1. ESTATISTICA com fonte real: "Rio teve 56.802 carros roubados em 2024, segundo SSP-RJ"
+2. TABELA COMPARATIVA: Markdown table com 4+ colunas e 4+ linhas (ex: comparar 3 planos)
+3. CASO REAL (persona ficticia + situacao concreta): "Marcos, motorista da Uber em Campo Grande, paga R$ 187/mes em sua Onix 2019..."
+4. CITACAO DE NORMA: CTB (art X), Codigo Civil, SUSEP, CDC, BACEN com numero do artigo
+5. CALCULO PRATICO passo-a-passo: "Carro FIPE R$ 50.000 x 2.8% = R$ 1.400 + R$ 35 admin = R$ 1.435/mes"
+6. DADO LOCAL ESPECIFICO: "Em Bangu, indice de roubo veicular e 3x acima da media do Rio"
 
-[L] LINKS INTERNOS OBRIGATORIOS (no MINIMO 3 dentro do corpo)
-SEMPRE incluir pelo menos:
-  - 1 link pra /protecao-veicular (pagina pilar)
-  - 1 link pra /cotacao
-  - 1 link pra /faq
-Adicionais permitidos: /indique, /sobre.
+[C] CTAs OBRIGATORIOS (MINIMO 3):
+- CTA 1 ~50% do artigo: "Quer entender se a protecao patrimonial veicular da 21Go cobre seu caso? [Conheca os planos](/protecao-veicular)."
+- CTA 2 antes do FAQ: "Faca uma [cotacao gratuita em 30 segundos](/cotacao) e veja o valor pro seu veiculo."
+- CTA 3 no final: "Pra entender o que faz sentido pro seu caso, [fale com um consultor da 21Go](/cotacao) sem compromisso."
 
-[V] CONEXAO COM PROTECAO VEICULAR (regra de negocio)
-Todo artigo precisa explicar — de forma natural, sem forcar — como o tema se conecta com o que a 21Go oferece. Nunca seja so educativo abstrato.
+[L] LINKS INTERNOS OBRIGATORIOS (MINIMO 4):
+- 1 link pra /protecao-veicular (pagina pilar)
+- 1 link pra /cotacao
+- 1 link pra /faq
+- 1+ link pro PILLAR DO CLUSTER (se topic tem cluster: usar o pillar_url do briefing)
+Sistema injeta automatic. links pra artigos relacionados pos-processamento.
 
-[X] NUNCA USAR
+[V] CONEXAO COM PROTECAO VEICULAR:
+Todo artigo conecta com o servico 21Go. Educativo puro abstrato e PROIBIDO.
+
+[X] NUNCA USAR:
 - "cobertura garantida" / "indenizacao garantida"
-- "aprovacao automatica" (so em frases NEGADAS: "Nao existe aprovacao automatica" e OK)
+- "aprovacao automatica" (so em negativa: "Nao existe aprovacao automatica" — ok)
 - "cobre tudo" / "protege qualquer veiculo"
 - "igual seguro" / "tipo seguro" / "e seguro" (afirmativo)
 - "garantia" sem ressalva
+- Mencionar caminhao, carreta, onibus, bitrem, frete pesado, transporte pesado
 - frases que prometam resultado sem analise
 
-[E] SEMPRE
-- Tratar o leitor como pessoa real, nao como persona generica
-- Dar 1-2 exemplos praticos concretos (com nomes ficticios tipo "Maria" ou "Joao" e situacao realista)
-- Reforcar: "protecao patrimonial veicular" e diferente de seguro tradicional (mas faca uma vez so — nao repita 5x)
+[E] SEMPRE:
+- Tratar leitor como pessoa real, primeira ou segunda pessoa
+- Reforcar: "protecao patrimonial veicular" e diferente de seguro (1x so, no comeco)
+- E-E-A-T: assinar como Equipe Editorial 21Go ou Letycya (depende do briefing)
 
-[F] FORMATO
-- Markdown puro (sem HTML, sem componentes React)
-- H1 unico = o titulo do artigo. NAO comece com H1 — o H1 vai no frontmatter.
-- H2/H3 conforme o briefing
-- Listas com bullets reais (nao bullets vazios)
-- Tabelas GFM \`| col | col |\` quando comparar planos/coberturas
-- Paragrafos curtos (3-5 linhas), escaneaveis
+[F] FORMATO (Markdown puro):
+- NAO inclua H1 (vai no frontmatter)
+- H2s sao PERGUNTAS reais (ex: "## Como funciona a protecao veicular para carro novo?")
+- 1 paragrafo curto direto apos cada H2 (resposta atomica 40-60 palavras)
+- Aprofundamento em paragrafos curtos (3-5 linhas)
+- Listas com bullets reais
+- Tabelas GFM \`| col | col |\` quando comparar
+- Paragrafos curtos pra mobile
 
-[B] FAQ
-- Secao "## Perguntas frequentes" no fim
-- Inclui TODOS os FAQs do briefing
-- Pode adicionar 1-2 perguntas se fizer sentido
+[B] ESTRUTURA OBRIGATORIA:
+1. {intro 80-120 palavras — contexto + promessa do que vai aprender + uma das 3 stats}
+2. ## {pergunta 1} (200-280 palavras)
+3. ## {pergunta 2} (200-280 palavras)
+4. ## {pergunta 3} (200-280 palavras)
+5. ## {pergunta 4} (200-280 palavras)
+6. ## {pergunta 5} (200-280 palavras)
+7. ## Em resumo (60-100 palavras, 5-7 bullets)
+8. ## Perguntas frequentes (200-280 palavras)
+9. {CTA final 50-80 palavras com link /cotacao}
 
-SAIDA: APENAS o corpo do artigo em Markdown (sem frontmatter — eu adiciono depois).`;
+[A] AUTORIDADE (E-E-A-T pra Google 2026):
+- No PRIMEIRO ou ULTIMO paragrafo, mencione "20 anos de mercado" ou "associacao registrada"
+- Quando citar dados externos, escreva "segundo {fonte}" SEMPRE
+- No FAQ, responda com confianca de quem ja viu o caso (experiencia)
+
+SAIDA: APENAS o corpo do artigo em Markdown (sem frontmatter — sistema adiciona).`;
 
 interface Input {
   topic: TopicRow;
@@ -124,6 +156,16 @@ export const agent05: Agent<Input, Output> = {
       .map((l, i) => `  ${i + 1}. [${l.anchor}](${l.url})`)
       .join('\n');
 
+    // ===== Information Gain: pega dados unicos relevantes pro topico =====
+    const tagsForDataLookup = [topic.category, ...(topic.secondary_keywords ?? [])]
+      .filter((s): s is string => typeof s === 'string')
+      .map(s => s.toLowerCase().split(/\s+/))
+      .flat()
+      .filter(w => w.length > 3);
+    const dataSources = await pickRelevantSources(tagsForDataLookup, 6).catch(() => []);
+    const dataSourcesText = formatForPrompt(dataSources);
+    log.info({ topic: topic.id, sources_picked: dataSources.length }, 'data sources pra information gain');
+
     const userMsg = `Topico: "${topic.title}"
 Categoria: ${topic.category}
 Audiencia: ${topic.audience ?? '(nao informada)'}
@@ -132,7 +174,7 @@ Dor: ${topic.pain_point ?? '(nao informada)'}
 Title SEO definitivo: "${briefing.seo_title}"
 H1: "${briefing.h1}"
 
-Outline a seguir RIGOROSAMENTE:
+Outline (transforme cada H2 em PERGUNTA real do leitor):
 ${outlineText || '  (vazio)'}
 
 FAQs a incluir no final:
@@ -149,9 +191,18 @@ ${briefing.example_suggestions ?? '(nenhum)'}
 
 Pagina pilar relacionada: ${topic.pillar_page ?? '/protecao-veicular'}
 
-ESCREVA o corpo do artigo em Markdown puro (${config.WORDS_PER_ARTICLE_MIN}-${config.WORDS_PER_ARTICLE_MAX} palavras), seguindo TODAS as regras do system prompt.
-NAO inclua frontmatter YAML. NAO inclua H1 no inicio (sera renderizado a partir do title).
-Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
+==================================================================
+DADOS UNICOS DA BASE (use no MINIMO 3 desses no artigo — citacao obrigatoria com "segundo {fonte}"):
+==================================================================
+${dataSourcesText}
+
+==================================================================
+INSTRUCAO FINAL:
+ESCREVA o corpo do artigo em Markdown puro, 1300-1500 palavras (alvo 1400).
+Use Atomic Answer (H2=pergunta + resposta 40-60 palavras direto).
+Inclua 3+ dados unicos da lista acima com "segundo {fonte}".
+NAO inclua frontmatter, NAO inclua H1.
+Termine com "## Em resumo" (bullets) + "## Perguntas frequentes" + CTA final.`;
 
     log.info({ topic: topic.id, briefing: briefing.id, slug }, 'gerando artigo');
 
@@ -200,6 +251,16 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
       if (keywords.length >= 6) break;
     }
 
+    // ===== Cover image (Sprint 5) — best-effort =====
+    let coverImage = '/blog/default.jpg';
+    try {
+      const imgQuery = `${topic.category} ${topic.title.split(' ').slice(0, 4).join(' ')} brasil`;
+      const covers = await generateCoverImages(imgQuery);
+      coverImage = covers.url_16x9 ?? covers.url_4x3 ?? covers.url_1x1 ?? '/blog/default.jpg';
+    } catch (e) {
+      log.warn({ err: (e as Error).message }, 'cover image falhou — usando default');
+    }
+
     const frontmatter: ArticleFrontmatter = {
       title: briefing.seo_title,
       description: truncate(briefing.h1, 160),
@@ -207,7 +268,7 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
       author: '21Go',
       category: categoryDisplay,
       keywords,
-      image: '/blog/default.jpg',
+      image: coverImage,
     };
 
     // Pos-processador determinista: forca >=3 CTAs/links internos + remove veiculos pesados
@@ -227,6 +288,7 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
 
     // ===== Persiste MDX no DB (sem filesystem — worker e site sao containers separados) =====
     const mdxPath = `21go-website/content/blog/${slug}.mdx`;
+    // Insere primeiro (precisamos do article.id pro internal linker)
     const article: ArticleRow = await insertArticle({
       topic_id: topic.id,
       briefing_id: briefing.id,
@@ -248,10 +310,27 @@ Termine com uma secao "## Perguntas frequentes" e depois um CTA final.`;
     // ===== Embedding (best-effort) =====
     try {
       const emb = await embedPassage(`${frontmatter.title}. ${body.slice(0, 2000)}`);
-      // Supabase JS nao tem helper direto pra escrever vector — usa rpc/postgrest com tipagem livre
       await updateArticle(article.id, { embedding: emb as unknown as number[] });
     } catch (e) {
       log.warn({ err: (e as Error).message }, 'embedding falhou — seguindo sem');
+    }
+
+    // ===== Internal linking algorithmic (Sprint 5) =====
+    // Injeta 3-5 links pra artigos relacionados (cosine 0.45-0.75)
+    try {
+      const { body: bodyWithLinks, injected, related_count } = await injectInternalLinks(
+        article.id,
+        body,
+        frontmatter.title,
+      );
+      if (injected > 0) {
+        // Reconstroi MDX com links + re-aplica enforce
+        const enforcedAgain = enforceWriterRules(buildMdx(frontmatter, bodyWithLinks));
+        await updateArticle(article.id, { mdx_content: enforcedAgain.mdx });
+        log.info({ articleId: article.id, links_injected: injected, related_count }, 'internal links injetados');
+      }
+    } catch (e) {
+      log.warn({ err: (e as Error).message }, 'internal-linker falhou — seguindo sem');
     }
 
     return {

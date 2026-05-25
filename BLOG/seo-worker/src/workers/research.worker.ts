@@ -19,6 +19,8 @@ interface JobData {
   triggered_by?: string;
   limit?: number;
   dry_run?: boolean;
+  /** Sprint 6: refill focado em uma categoria especifica (carros/motos/frotas) */
+  focus_category?: 'carros' | 'motos' | 'frotas' | 'educativo';
 }
 
 interface WorkerResult {
@@ -50,7 +52,12 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
   );
 
   // ===== Agente 02 — para cada keyword pendente, decide pauta =====
-  const pendingKws = dry_run ? [] : await listPending(limit);
+  // Se focus_category, filtra so dessa categoria
+  const allPending = dry_run ? [] : await listPending(limit * 3);
+  const pendingKws = job.data.focus_category
+    ? allPending.filter((k) => k.category === job.data.focus_category).slice(0, limit)
+    : allPending.slice(0, limit);
+  log.info({ focus: job.data.focus_category, total_pending: allPending.length, will_process: pendingKws.length }, 'keywords pra strategist');
   const approvedTopicIds: string[] = [];
 
   for (const kw of pendingKws) {

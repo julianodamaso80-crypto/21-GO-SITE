@@ -15,6 +15,9 @@ export interface BlogPost {
   image: string
   content: string
   readTime: number
+  lastUpdated?: string
+  cluster?: string
+  funnelStage?: 'top' | 'mid' | 'bottom'
 }
 
 export function getAllPosts(): BlogPost[] {
@@ -43,6 +46,9 @@ export function getPostBySlug(slug: string): BlogPost | null {
     image: data.image || '/blog/default.jpg',
     content,
     readTime: Math.ceil(wordCount / 200),
+    lastUpdated: data.last_updated || data.lastUpdated || undefined,
+    cluster: data.cluster || undefined,
+    funnelStage: data.funnel_stage || data.funnelStage || undefined,
   }
 }
 

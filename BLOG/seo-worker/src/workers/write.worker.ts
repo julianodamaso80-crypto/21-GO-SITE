@@ -69,6 +69,40 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   const slotsFaltando = SLOTS_OBRIGATORIOS.filter((s) => (articlesHoje[s] ?? 0) === 0);
   log.info({ slots_faltando: slotsFaltando }, 'slots obrigatorios pendentes');
 
+  // ============================================================
+  // REFILL AUTOMATICO (Sprint 6 — decisao user 2026-05-25)
+  // Antes de processar slots, garante que cada categoria tem >= 2
+  // briefings disponiveis. Senao, enfileira research-worker focado.
+  // ============================================================
+  const stockByCategory = await query<{ category: string; n: number }>(
+    `SELECT t.category, count(*)::int AS n
+     FROM seo.briefings b
+     JOIN seo.topics t ON t.id = b.topic_id
+     LEFT JOIN seo.articles a ON a.briefing_id = b.id
+     WHERE a.id IS NULL AND t.category IN ('carros','motos','frotas')
+     GROUP BY t.category`,
+  );
+  const stockMap: Record<string, number> = {};
+  for (const r of stockByCategory) stockMap[r.category] = r.n;
+
+  const REFILL_THRESHOLD = 2;
+  for (const cat of SLOTS_OBRIGATORIOS) {
+    const stock = stockMap[cat] ?? 0;
+    if (stock < REFILL_THRESHOLD) {
+      log.warn({ category: cat, stock, threshold: REFILL_THRESHOLD }, 'estoque baixo — enfileirando refill');
+      try {
+        const { queueResearch } = await import('../queue.js');
+        await queueResearch.add('refill-focused', {
+          focus_category: cat,
+          limit: 5,
+          triggered_by: `refill:${cat}`,
+        });
+      } catch (e) {
+        log.error({ err: (e as Error).message, cat }, 'refill enqueue falhou');
+      }
+    }
+  }
+
   // Busca briefings disponiveis (sem artigo ainda) por categoria
   const briefs = await query<BriefingRow & { topic_json: TopicRow; topic_category: string }>(
     `SELECT b.*, row_to_json(t.*) AS topic_json, t.category AS topic_category

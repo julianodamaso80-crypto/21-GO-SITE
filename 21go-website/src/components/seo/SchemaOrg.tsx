@@ -1,3 +1,13 @@
+/**
+ * Schema.org global (root layout) — Organization + LocalBusiness.
+ *
+ * FAQPage REMOVIDO (Google retirou rich results FAQ em 07/05/2026).
+ * Foco em entity linking via sameAs pra Knowledge Graph + AI Overviews citation.
+ *
+ * Refs:
+ *  - https://developers.google.com/search/docs/appearance/structured-data
+ *  - https://www.digitalapplied.com/blog/structured-data-after-io-2026-schema-updates
+ */
 export function SchemaOrg() {
   const schema = {
     '@context': 'https://schema.org',
@@ -5,23 +15,34 @@ export function SchemaOrg() {
       {
         '@type': 'Organization',
         '@id': 'https://21go.site/#organization',
-        name: '21Go Proteção Veicular',
+        name: '21Go Proteção Patrimonial Veicular',
+        alternateName: '21Go',
         url: 'https://21go.site',
         logo: {
           '@type': 'ImageObject',
           url: 'https://21go.site/logo21go.png',
         },
-        description: 'Associação de proteção veicular no Rio de Janeiro com mais de 20 anos de mercado. Proteção por mutualismo contra roubo, furto, colisão e incêndio.',
+        description: 'Associação de proteção patrimonial veicular no Rio de Janeiro, 20+ anos. Proteção por mutualismo contra roubo, furto, colisão e incêndio para carros, motos e frotas.',
         foundingDate: '2004',
+        // sameAs robusto pra entity linking no Knowledge Graph (+200% citation em AI Overviews)
         sameAs: [
-          'https://instagram.com/21go.veicular',
-          'https://facebook.com/21goveicular',
+          'https://www.instagram.com/21goprotpatri/',
+          'https://www.facebook.com/21goprotpatri',
+          'https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/',
+          'https://www.youtube.com/@21goprotpatri',
         ],
+        contactPoint: {
+          '@type': 'ContactPoint',
+          telephone: '+55-21-96945-4824',
+          contactType: 'customer service',
+          areaServed: 'BR',
+          availableLanguage: ['Portuguese'],
+        },
       },
       {
         '@type': 'LocalBusiness',
         '@id': 'https://21go.site/#localbusiness',
-        name: '21Go Proteção Veicular',
+        name: '21Go Proteção Patrimonial Veicular',
         url: 'https://21go.site',
         logo: 'https://21go.site/logo21go.png',
         image: 'https://21go.site/logo21go.png',
@@ -46,17 +67,20 @@ export function SchemaOrg() {
           closes: '18:00',
         },
         priceRange: '$$',
+        areaServed: { '@type': 'Country', name: 'Brasil' },
       },
       {
-        '@type': 'FAQPage',
-        '@id': 'https://21go.site/#faq',
-        mainEntity: [
-          { '@type': 'Question', name: 'O que é proteção veicular?', acceptedAnswer: { '@type': 'Answer', text: 'Proteção veicular é um sistema cooperativo (mutualismo) onde associados dividem os custos de eventos. Diferente do seguro tradicional, não há análise de perfil e o custo é significativamente menor.' } },
-          { '@type': 'Question', name: 'Qual a diferença entre proteção veicular e seguro?', acceptedAnswer: { '@type': 'Answer', text: 'O seguro é oferecido por seguradoras com análise de perfil e preços altos. A proteção veicular funciona por mutualismo — todos contribuem para um fundo comum, o que reduz o custo em até 60%.' } },
-          { '@type': 'Question', name: 'Quanto custa a proteção veicular na 21Go?', acceptedAnswer: { '@type': 'Answer', text: 'Para carros a partir de R$106,50/mês (Básico), para motos a partir de R$77,50/mês. Temos 8 planos: Básico, Do Seu Jeito, VIP, Premium, SUV, VIP Moto 400cc, VIP Moto 1000cc e Veículos Especiais.' } },
-          { '@type': 'Question', name: 'Posso cancelar a qualquer momento?', acceptedAnswer: { '@type': 'Answer', text: 'Sim. Não existe fidelidade nem multa por cancelamento. Você pode cancelar quando quiser.' } },
-          { '@type': 'Question', name: 'A 21Go aceita carros antigos?', acceptedAnswer: { '@type': 'Answer', text: 'Sim! A 21Go protege qualquer carro, qualquer ano, sem análise de perfil.' } },
-        ],
+        '@type': 'WebSite',
+        '@id': 'https://21go.site/#website',
+        url: 'https://21go.site',
+        name: '21Go Proteção Patrimonial Veicular',
+        publisher: { '@id': 'https://21go.site/#organization' },
+        inLanguage: 'pt-BR',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: 'https://21go.site/blog?q={search_term_string}',
+          'query-input': 'required name=search_term_string',
+        },
       },
     ],
   }
