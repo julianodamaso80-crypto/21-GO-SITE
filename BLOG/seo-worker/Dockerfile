@@ -45,7 +45,12 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY package.json ./
 
+# Cache writable pelo Xenova/transformers + tmp/migrations pelo user nao-root
+RUN mkdir -p /app/node_modules/@xenova/transformers/.cache /home/app/.cache /app/migrations \
+    && chown -R app:app /app /home/app
+
 USER app
+ENV TRANSFORMERS_CACHE=/home/app/.cache
 EXPOSE 8080
 
 # Healthcheck respondido por GET /healthz

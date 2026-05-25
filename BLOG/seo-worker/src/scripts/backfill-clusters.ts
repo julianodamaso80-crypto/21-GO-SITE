@@ -23,7 +23,13 @@ interface Article {
   slug: string;
   title: string;
   category: string | null;
-  embedding: number[] | null;
+  embedding_text: string | null;
+}
+
+function parseVector(s: string | null): number[] | null {
+  if (!s) return null;
+  const trimmed = s.replace(/^\[|\]$/g, '');
+  return trimmed.split(',').map((n) => parseFloat(n));
 }
 
 function cosine(a: number[], b: number[]): number {
@@ -52,7 +58,7 @@ async function main() {
 
   // Pega artigos sem cluster
   const articles = await query<Article>(
-    `SELECT id, slug, title, category, embedding::text::float8[] AS embedding
+    `SELECT id, slug, title, category, embedding::text AS embedding_text
      FROM seo.articles
      WHERE company_id='company-21go' AND cluster_id IS NULL AND embedding IS NOT NULL`,
   );
@@ -60,12 +66,12 @@ async function main() {
 
   let attributed = 0;
   for (const a of articles) {
-    if (!a.embedding) continue;
+    const emb = parseVector(a.embedding_text);
+    if (!emb) continue;
 
     let best: { cluster: Cluster; sim: number } | null = null;
-    for (const { cluster, emb } of clusterEmbs) {
-      // Bonus se a categoria do artigo bater com a do cluster
-      let sim = cosine(a.embedding as number[], emb);
+    for (const { cluster, emb: clusterEmb } of clusterEmbs) {
+      let sim = cosine(emb, clusterEmb);
       if (cluster.category === a.category) sim += 0.1;
       if (!best || sim > best.sim) best = { cluster, sim };
     }
