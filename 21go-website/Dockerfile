@@ -70,10 +70,10 @@ ENV NODE_ENV=production \
     PUPPETEER_SKIP_DOWNLOAD=true
 
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# Next standalone — server.js + deps mínimas tracadas pelo Next (sem node_modules cru).
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 # Blog MDX precisa estar disponivel em runtime (app/sitemap.ts e API routes leem).
 COPY --from=builder /app/content ./content
 EXPOSE 3000
-CMD ["npx", "next", "start", "-H", "0.0.0.0", "-p", "3000"]
+CMD ["node", "server.js"]
