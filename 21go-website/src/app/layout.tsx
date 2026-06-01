@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/Footer'
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton'
 import { GTMProvider } from '@/components/GTMProvider'
 import { MetaPixelScripts } from '@/components/MetaPixelScripts'
+import { GoogleAdsConversionScripts } from '@/components/GoogleAdsConversionScripts'
 import { WhatsAppTracker } from '@/components/tracking/WhatsAppTracker'
 import { CtaTracker } from '@/components/tracking/CtaTracker'
 import { SchemaOrg } from '@/components/seo/SchemaOrg'
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={inter.variable}>
       <body>
         <MetaPixelScripts />
+        <GoogleAdsConversionScripts />
         <GTMProvider />
         <WhatsAppTracker />
         <CtaTracker />

@@ -19,6 +19,44 @@ declare global {
   interface Window {
     dataLayer: Record<string, unknown>[]
     fbq?: (...args: unknown[]) => void
+    gtag?: (...args: unknown[]) => void
+    __21GO_GADS?: { CONVERSION_ID: string; LEAD_LABEL: string }
+  }
+}
+
+/* ─── Google Ads Conversion helper ───
+ * Dispara gtag('event', 'conversion', {...}) direto pro Google Ads.
+ * Config + IDs vêm de <GoogleAdsConversionScripts /> (SSR) que injeta
+ * window.__21GO_GADS no <body>. Não depende de GTM publicado.
+ *
+ * Why direto via gtag: GTM-WQ9L62XN tem a tag de conversion com placeholder
+ * AW-0000000000 (não publicado corretamente). Bypass o GTM evita race
+ * condition de publicação e garante sinal pro Google Ads.
+ */
+function fireGoogleAdsConversion(
+  kind: 'lead',
+  value: number | undefined,
+  transactionId: string | undefined,
+) {
+  if (typeof window === 'undefined' || !window.gtag) return
+  const gads = window.__21GO_GADS
+  if (!gads) return
+
+  const sendTo = `AW-${gads.CONVERSION_ID}/${gads.LEAD_LABEL}`
+  const params: Record<string, unknown> = { send_to: sendTo }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    params.value = value
+    params.currency = 'BRL'
+  }
+  if (transactionId) params.transaction_id = transactionId
+
+  try {
+    window.gtag('event', 'conversion', params)
+    if (typeof console !== 'undefined' && console.debug) {
+      console.debug('[21go-track] gads_conversion', kind, sendTo, params)
+    }
+  } catch {
+    // silencioso: se gtag falhar, não derruba o resto do fluxo
   }
 }
 
@@ -174,6 +212,10 @@ export function trackCotacaoInicio(opts?: { form_name?: string }) {
     }, { eventID: eventId })
   }
 
+  // Google Ads Conversion (21go-site-lead): dispara JUNTO com Meta Lead.
+  // Sinal forte pra otimização da campanha BOFU/CONSULTOR.
+  fireGoogleAdsConversion('lead', 50, eventId)
+
   sendServerSide('cotacao_inicio', eventId, {
     form_name: opts?.form_name,
     content_category: 'protecao_veicular',
@@ -217,6 +259,11 @@ export function trackCotacaoCompleta(data: {
       currency: 'BRL',
     }, { eventID: eventId })
   }
+
+  // Google Ads Conversion (21go-site-lead): mesma conversion do clique,
+  // mas com value REAL (mensalidade do plano selecionado) — sinal de
+  // qualidade pro Smart Bidding.
+  fireGoogleAdsConversion('lead', data.valorMensal, eventId)
 
   // Hashes assíncronos pra dataLayer (user_data_update) E pro server-side.
   // E-mail/telefone em texto puro NUNCA são enviados pelo navegador — só os
@@ -291,6 +338,12 @@ export function trackWhatsAppClick(origem: string, data?: {
     }
     window.fbq('track', 'Contact', fbqParams, { eventID: eventId })
   }
+
+  // Google Ads Conversion (21go-site-lead): clique em WhatsApp = sinal
+  // forte de intenção (especialmente nos botões da home e flutuante).
+  // Sem isso, campanhas que mandam tráfego direto pro WhatsApp ficavam
+  // sem sinal de conversão.
+  fireGoogleAdsConversion('lead', data?.valor, eventId)
 
   sendServerSide('whatsapp_click', eventId, {
     click_origin: origem,
