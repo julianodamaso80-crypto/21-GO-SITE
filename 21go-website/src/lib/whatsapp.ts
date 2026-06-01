@@ -1,16 +1,16 @@
 /**
  * Envio de WhatsApp via Evolution API.
- * Instância em produção: disparo_xHH2aIEs_site21go @ evolution.sinistro21go.site
- * (número 5521980214882 — Consultora Letycya). Validado em 2026-05-24.
+ * Instância em produção: site21leticya @ evolution.sinistro21go.site
+ * (número 5521969454824 — Consultora Letycya). Atualizado em 2026-06-01.
  *
- * IMPORTANTE: NÃO confundir com a inst antiga 21gosite/21gosite2 do servidor klo3fa
- * (número 5521969454824 abandonado em 2026-05-25 — substituído por 5521980214882).
- * Clientes só conversam pelo número da Consultora Letycya.
+ * Backup desativado mantido na Evolution: disparo_xHH2aIEs_site21go
+ * (número 5521980214882) — fica no painel só pra fallback rápido se o chip cair.
+ * Clientes só conversam pelo número da Consultora Letycya (atual: 824).
  */
 
 const EVOLUTION_API_URL =
   process.env.EVOLUTION_API_URL || 'https://evolution.sinistro21go.site'
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'disparo_xHH2aIEs_site21go'
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'site21leticya'
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
 
 export function isWhatsappConfigured(): boolean {
