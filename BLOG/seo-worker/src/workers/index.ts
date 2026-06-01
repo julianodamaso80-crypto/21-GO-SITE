@@ -14,11 +14,27 @@ import { handleReportingJob } from './reporting.worker.js';
 const log = child('workers');
 const workers: Worker[] = [];
 
+/**
+ * lockDuration 5min + stalledInterval 1min:
+ *
+ * Writer (Agente 05) faz chamada LLM (Gemini Flash) que leva 30-90s.
+ * Encadeamento Writer→Reviewer→OnPage→Repurpose→Publisher por artigo
+ * pode passar de 3min. E o daily processa N artigos sequencial dentro
+ * de UM job — total pode chegar a 15min facil.
+ *
+ * Defaults BullMQ (lockDuration=30s, stalledInterval=30s) matavam jobs
+ * legitimos como "stalled" e o BullMQ retentava infinitamente.
+ *
+ * Decisao 2026-05-30: aumentar pra que job longo possa terminar.
+ */
 const baseOpts = {
   connection: redis,
   concurrency: 1, // 1 job por fila — sequencial pra evitar conflito de rate-limit/DB
   removeOnComplete: { count: 200, age: 7 * 24 * 3600 },
   removeOnFail: { count: 1000, age: 30 * 24 * 3600 },
+  lockDuration: 300_000,       // 5min — job renova lock a cada movimentacao
+  stalledInterval: 60_000,     // 1min — BullMQ checa stalled a cada 1min (era 30s)
+  maxStalledCount: 1,          // 1 stall = fail (era 1 default mas explicito)
 };
 
 export function startAllWorkers(): void {

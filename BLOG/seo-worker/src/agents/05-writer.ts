@@ -151,7 +151,27 @@ export const agent05: Agent<Input, Output> = {
   description: 'Gera artigo MDX em rascunho (content/blog/_drafts/) a partir de briefing',
   async run(input, ctx) {
     const { topic, briefing } = input;
-    const slug = slugify(briefing.seo_title);
+    // Slug com de-duplicacao: se o slug base ja existe em articles, tenta -2, -3, ...
+    // Resolve falhas silenciosas "duplicate key constraint" no insertArticle.
+    const baseSlug = slugify(briefing.seo_title);
+    let slug = baseSlug;
+    if (!ctx.dry_run) {
+      const { query } = await import('../db/pg.js');
+      for (let i = 0; i < 20; i++) {
+        const candidate = i === 0 ? baseSlug : `${baseSlug}-${i + 1}`;
+        const exists = await query<{ id: string }>(
+          `SELECT id FROM seo.articles WHERE slug = $1`,
+          [candidate],
+        );
+        if (exists.length === 0) {
+          slug = candidate;
+          break;
+        }
+      }
+      if (slug !== baseSlug) {
+        log.warn({ topic_id: topic.id, baseSlug, finalSlug: slug }, 'slug renomeado pra evitar conflito');
+      }
+    }
 
     // ===== Monta prompt =====
     const outlineText = (briefing.outline as Array<{ h2: string; h3?: string[]; notes?: string }> | undefined ?? [])
