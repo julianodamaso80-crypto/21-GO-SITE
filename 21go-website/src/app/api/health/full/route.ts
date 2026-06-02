@@ -34,7 +34,7 @@ const POWERCRM_BASE_URL = process.env.POWERCRM_BASE_URL || 'https://api.powercrm
 const POWERAPI_TOKEN = process.env.POWERAPI_TOKEN
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || '21gosite'
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'disparo_xHH2aIEs_site21go'
 const PUPPETEER_PATH = process.env.PUPPETEER_EXECUTABLE_PATH
 
 async function timed<T>(fn: () => Promise<T>): Promise<{ result: T | null; ms: number; error?: string }> {
