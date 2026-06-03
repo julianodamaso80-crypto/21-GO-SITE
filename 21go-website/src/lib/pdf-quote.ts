@@ -5,6 +5,8 @@ import {
   getAllRelevantPlans,
   findPrice,
   PRICING_TABLES,
+  calcActivation,
+  activationInstallment12x,
   type QuotePlanFull,
   type PlanId,
 } from '@/data/pricing'
@@ -212,11 +214,12 @@ function renderComparisonPage(
     kind: 'carros' | 'suv' | 'moto' | 'especial'
   },
 ): string {
-  // REGRA OFICIAL 21Go: ativacao = mensalidade cheia + R$ 50. Sem gross-up.
-  // Mesmo valor a vista e parcelado em 12x sem juros.
+  // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): piso R$ 399,
+  // mensalidade de referencia + R$ 50 acima disso, BYD R$ 1.550 fixo.
+  // 12x com juros do Mercado Pago repassados ao cliente (nao e taxa / 12).
   const taxa = ctx.taxa
   const taxaAvista = taxa
-  const taxa12xParcela = taxa / 12
+  const taxa12xParcela = activationInstallment12x(taxa)
 
   const firstName = input.nome.split(' ')[0]
 
@@ -416,7 +419,7 @@ function renderComparisonPage(
           <span class="entrada-vals-num">R$ ${formatBRL(taxaAvista)}</span>
         </div>
         <div class="entrada-vals-item">
-          <span class="entrada-vals-tag">12x sem juros</span>
+          <span class="entrada-vals-tag">12x no cartão</span>
           <span class="entrada-vals-num">R$ ${formatBRL(taxa12xParcela)}</span>
         </div>
       </div>
@@ -512,11 +515,10 @@ function renderHTML(input: QuotePdfInput): string {
   const refIsCarro =
     referencePlan && !['moto-400', 'moto-1000'].includes(referencePlan.id)
 
-  // REGRA OFICIAL 21Go: ativacao = mensalidade do plano VIP de referencia + R$ 50.
-  // SEM gross-up, SEM gracinha. Mesmo valor a vista e parcelado em 12x sem juros.
-  // EXCECAO BYD: ativacao FIXA em R$ 1.550 pra qualquer modelo da marca BYD.
+  // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): piso R$ 399,
+  // mensalidade do VIP de referencia + R$ 50 quando acima disso, BYD R$ 1.550 fixo.
   const isBYD = (input.marca || '').trim().toUpperCase() === 'BYD'
-  const taxa = isBYD ? 1550 : (referencePlan?.monthly || input.mensalidade) + 50
+  const taxa = calcActivation(referencePlan?.monthly || input.mensalidade, isBYD)
 
   // Determinar tipo (carros / suv / moto / especial) baseado nos planos
   let kind: 'carros' | 'suv' | 'moto' | 'especial' = 'carros'

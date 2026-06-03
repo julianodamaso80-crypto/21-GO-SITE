@@ -27,6 +27,8 @@ import {
   PLAN_INFO,
   formatPrice,
   getApplicablePlans,
+  calcActivation,
+  activationInstallment12x,
 } from '@/data/pricing'
 import { getExclusionReason, type ExclusionReason } from '@/data/vehicle-exclusions'
 
@@ -515,17 +517,20 @@ export default function CotacaoPage() {
     : ''
   const fipeFormatted = vehicle ? vehicle.fipeValue.toLocaleString('pt-BR') : '0'
 
-  // REGRA OFICIAL 21Go: ativacao = mensalidade do plano VIP + R$ 50.
+  // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts):
+  //   - piso de R$ 399 pra todos (carro e moto)
+  //   - mensalidade de referencia > 399 → mensalidade + R$ 50
+  //   - BYD → R$ 1.550 fixo
   // SEMPRE VIP de referencia (nao depende do plano que o cliente selecionou).
   // Ordem de fallback quando nao ha VIP "puro" (moto/suv/especial usam o "VIP" deles).
   const vipOrder: PlanId[] = ['vip', 'suv', 'moto-1000', 'moto-400', 'especial', 'premium', 'do-seu-jeito', 'basico']
   const vipPlan = vipOrder.map((id) => plans.find((p) => p.id === id)).find((p) => !!p) || null
   const vipMonthly = (vipPlan?.monthly || 0) + carroAppExtra
-  // EXCECAO BYD: ativacao FIXA em R$ 1.550 pra qualquer modelo da marca BYD.
   const isBYD = (vehicle?.marca || '').trim().toUpperCase() === 'BYD'
-  const taxaAtivacao = vipMonthly > 0 ? (isBYD ? 1550 : vipMonthly + 50) : 0
+  const taxaAtivacao = calcActivation(vipMonthly, isBYD)
   const ativacaoAvista = taxaAtivacao
-  const ativacaoParcela12x = taxaAtivacao / 12
+  // 12x com juros do Mercado Pago repassados ao cliente (nao e taxa / 12).
+  const ativacaoParcela12x = activationInstallment12x(taxaAtivacao)
   const today = new Date()
   const dayOfMonth = today.getDate()
   const currentMonth = today.getMonth()

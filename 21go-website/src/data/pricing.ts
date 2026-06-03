@@ -576,6 +576,51 @@ export function formatPrice(value: number): string {
   return value.toFixed(2).replace('.', ',')
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Ativação (taxa de adesão) e parcelamento — REGRA OFICIAL 21Go
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/** Ativação fixa pra qualquer modelo da marca BYD. */
+export const BYD_ACTIVATION = 1550
+
+/** Piso da ativação: vale pra todos os veículos (carro e moto). */
+export const ACTIVATION_FLOOR = 399
+
+/**
+ * Coeficiente de parcelamento em 12x do Mercado Pago — modalidade "Parcelado
+ * com Acréscimos", juros absorvidos pelo COMPRADOR, recebimento na hora (D0).
+ * 12x = +22,11% sobre o valor (idêntico em Checkout, Link, maquininha e QR).
+ * Fonte: Tabela de Taxas e Tarifas Mercado Pago, vigente 03/11/2025.
+ * Se a conta tiver taxa negociada diferente, basta ajustar aqui.
+ */
+export const MP_INSTALLMENT_12X_COEF = 1.2211
+
+/**
+ * Calcula a taxa de ativação a partir da mensalidade do plano VIP de referência.
+ *
+ * Regra oficial 21Go:
+ *   - BYD → R$ 1.550 fixo (qualquer modelo)
+ *   - mensalidade de referência > R$ 399 → mensalidade + R$ 50 (ex: 600 → 650)
+ *   - mensalidade de referência ≤ R$ 399 → piso de R$ 399
+ *
+ * A base é SEMPRE o VIP de referência do veículo, não o plano que o cliente clicou.
+ */
+export function calcActivation(vipReferenceMonthly: number, isBYD: boolean): number {
+  if (isBYD) return BYD_ACTIVATION
+  if (!Number.isFinite(vipReferenceMonthly) || vipReferenceMonthly <= 0) return 0
+  return vipReferenceMonthly > ACTIVATION_FLOOR
+    ? vipReferenceMonthly + 50
+    : ACTIVATION_FLOOR
+}
+
+/**
+ * Valor de cada parcela em 12x no cartão, com os juros do Mercado Pago
+ * repassados ao cliente (o vendedor recebe na hora). NÃO é o valor / 12.
+ */
+export function activationInstallment12x(activation: number): number {
+  return (activation * MP_INSTALLMENT_12X_COEF) / 12
+}
+
 /* ─── getAllRelevantPlans / QuotePlanFull / planIdFromName ───
  * Espelho do CRM pra usar no PDF.
  */
