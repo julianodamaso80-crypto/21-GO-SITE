@@ -587,13 +587,24 @@ export const BYD_ACTIVATION = 1550
 export const ACTIVATION_FLOOR = 399
 
 /**
- * Coeficiente de parcelamento em 12x do Mercado Pago — modalidade "Parcelado
- * com Acréscimos", juros absorvidos pelo COMPRADOR, recebimento na hora (D0).
- * 12x = +22,11% sobre o valor (idêntico em Checkout, Link, maquininha e QR).
- * Fonte: Tabela de Taxas e Tarifas Mercado Pago, vigente 03/11/2025.
- * Se a conta tiver taxa negociada diferente, basta ajustar aqui.
+ * Taxas do Mercado Pago da conta 21Go — recebimento NA HORA (D0), Link de
+ * pagamento / Checkout, cartão de crédito. Objetivo: a 21Go recebe o valor
+ * da ativação CHEIO; o cliente arca com as duas taxas.
+ *   - MP_SALE_FEE_D0: taxa por venda (4,98%). Incide à vista e como base do
+ *     parcelado. Pra receber `net` cheio, cobra-se `net / (1 - 0,0498)`.
+ *   - MP_INSTALLMENT_12X_SURCHARGE: acréscimo do parcelamento em 12x (22,11%),
+ *     aplicado sobre o valor já com o gross-up da taxa de venda.
+ * Conferido no simulador da conta (2026-06-03): receber R$ 1.000 → cliente
+ * paga R$ 1.052,41 à vista, ou 12x de R$ 107,09 (total R$ 1.285,10).
  */
-export const MP_INSTALLMENT_12X_COEF = 1.2211
+export const MP_SALE_FEE_D0 = 0.0498
+export const MP_INSTALLMENT_12X_SURCHARGE = 0.2211
+
+/** Valor cobrado do cliente à vista no cartão pra a 21Go receber `net` cheio. */
+export function activationCashPrice(net: number): number {
+  if (!Number.isFinite(net) || net <= 0) return 0
+  return net / (1 - MP_SALE_FEE_D0)
+}
 
 /**
  * Calcula a taxa de ativação a partir da mensalidade do plano VIP de referência.
@@ -614,11 +625,12 @@ export function calcActivation(vipReferenceMonthly: number, isBYD: boolean): num
 }
 
 /**
- * Valor de cada parcela em 12x no cartão, com os juros do Mercado Pago
- * repassados ao cliente (o vendedor recebe na hora). NÃO é o valor / 12.
+ * Valor de cada parcela em 12x no cartão pra a 21Go receber `net` cheio:
+ * gross-up da taxa de venda + acréscimo do parcelamento, dividido em 12.
+ * Os juros vão pro cliente; a 21Go recebe o valor cheio na hora. NÃO é net / 12.
  */
-export function activationInstallment12x(activation: number): number {
-  return (activation * MP_INSTALLMENT_12X_COEF) / 12
+export function activationInstallment12x(net: number): number {
+  return (activationCashPrice(net) * (1 + MP_INSTALLMENT_12X_SURCHARGE)) / 12
 }
 
 /* ─── getAllRelevantPlans / QuotePlanFull / planIdFromName ───

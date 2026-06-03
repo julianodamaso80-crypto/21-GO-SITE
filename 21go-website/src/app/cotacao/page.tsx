@@ -28,6 +28,7 @@ import {
   formatPrice,
   getApplicablePlans,
   calcActivation,
+  activationCashPrice,
   activationInstallment12x,
 } from '@/data/pricing'
 import { getExclusionReason, type ExclusionReason } from '@/data/vehicle-exclusions'
@@ -528,8 +529,9 @@ export default function CotacaoPage() {
   const vipMonthly = (vipPlan?.monthly || 0) + carroAppExtra
   const isBYD = (vehicle?.marca || '').trim().toUpperCase() === 'BYD'
   const taxaAtivacao = calcActivation(vipMonthly, isBYD)
-  const ativacaoAvista = taxaAtivacao
-  // 12x com juros do Mercado Pago repassados ao cliente (nao e taxa / 12).
+  // 21Go recebe a ativacao CHEIA: cliente arca com a taxa de venda (a vista) e
+  // tambem com o acrescimo do parcelamento (12x). Ver pricing.ts.
+  const ativacaoAvista = activationCashPrice(taxaAtivacao)
   const ativacaoParcela12x = activationInstallment12x(taxaAtivacao)
   const today = new Date()
   const dayOfMonth = today.getDate()

@@ -6,6 +6,7 @@ import {
   findPrice,
   PRICING_TABLES,
   calcActivation,
+  activationCashPrice,
   activationInstallment12x,
   type QuotePlanFull,
   type PlanId,
@@ -216,9 +217,10 @@ function renderComparisonPage(
 ): string {
   // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): piso R$ 399,
   // mensalidade de referencia + R$ 50 acima disso, BYD R$ 1.550 fixo.
-  // 12x com juros do Mercado Pago repassados ao cliente (nao e taxa / 12).
+  // 21Go recebe a ativacao CHEIA: cliente arca com a taxa de venda (a vista) e
+  // tambem com o acrescimo do parcelamento (12x). Ver pricing.ts.
   const taxa = ctx.taxa
-  const taxaAvista = taxa
+  const taxaAvista = activationCashPrice(taxa)
   const taxa12xParcela = activationInstallment12x(taxa)
 
   const firstName = input.nome.split(' ')[0]
