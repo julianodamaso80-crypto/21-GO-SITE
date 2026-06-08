@@ -137,7 +137,7 @@ export default function CotacaoPage() {
 
   // Atendimento humano: quando PowerCRM + API Brasil + Parallelum falham
   // ou quando o veículo não retorna FIPE confiável. Cliente é direcionado
-  // pro WhatsApp da consultora (5521980214882) com dados pré-preenchidos.
+  // pro WhatsApp da consultora (5521969454824) com dados pré-preenchidos.
   const [requiresHumanSupport, setRequiresHumanSupport] = useState(false)
   const [humanSupportReason, setHumanSupportReason] = useState<'fipe_indisponivel' | 'consulta_falhou' | 'manual'>('consulta_falhou')
 
@@ -880,7 +880,7 @@ export default function CotacaoPage() {
                       <p className="text-[#DC2626]/70 mt-1">
                         Verifique a placa ou{' '}
                         <a
-                          href="https://wa.me/5521980214882?text=Olá! Preciso de ajuda com uma simulação."
+                          href="https://wa.me/5521969454824?text=Olá! Preciso de ajuda com uma simulação."
                           target="_blank"
                           rel="noopener noreferrer"
                           data-track-origin="cotacao_erro_placa"
@@ -912,7 +912,7 @@ export default function CotacaoPage() {
                     </div>
 
                     <a
-                      href={`https://wa.me/5521980214882?text=${encodeURIComponent(
+                      href={`https://wa.me/5521969454824?text=${encodeURIComponent(
                         `Olá! Tentei fazer uma simulação no site e não consegui. Pode me ajudar?\n\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.placa ? `\nPlaca: ${form.placa}` : ''}${form.email ? `\nE-mail: ${form.email}` : ''}`,
                       )}`}
                       target="_blank"
@@ -1207,7 +1207,7 @@ export default function CotacaoPage() {
                   </div>
                   )}
 
-                  <a href={`https://wa.me/5521980214882?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
+                  <a href={`https://wa.me/5521969454824?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
                     target="_blank" rel="noopener noreferrer"
                     data-track-origin="cotacao_resultado"
                     data-track-button-text="Contratar pelo WhatsApp"
