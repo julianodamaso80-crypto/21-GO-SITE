@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     cilindrada: body.cilindrada as number | null | undefined,
     carroApp: body.carroApp as boolean | undefined,
     leilao: body.leilao as string | null | undefined,
+    motoTerceiros: body.motoTerceiros as boolean | undefined,
     seguroAtual: body.seguroAtual as string | null | undefined,
   }
   const html = renderQuoteHTML(input)

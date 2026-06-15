@@ -49,6 +49,7 @@ interface LeadInput {
   plano?: string | null
   valorMensal?: number
   carroApp?: boolean
+  motoTerceiros?: boolean
   leilao?: 'nao' | 'leilao' | 'remarcado' | string
   seguroAtual?: string | null
   cidade?: string | null
@@ -407,6 +408,7 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
   if (body.leilao === 'leilao') internalNotes.push('Veículo de leilão')
   if (body.leilao === 'remarcado') internalNotes.push('Veículo remarcado')
   if (body.carroApp) internalNotes.push('Carro de aplicativo (Uber/99)')
+  if (body.motoTerceiros) internalNotes.push('Moto com Danos a Terceiros (+R$ 22/mês)')
   if (body.seguroAtual && body.seguroAtual.trim())
     internalNotes.push(`Já possui proteção atual: ${body.seguroAtual.trim()}`)
 
@@ -523,6 +525,7 @@ async function sendQuotePdfWhatsApp(body: LeadInput, leadId: string) {
       cilindrada: body.cilindrada,
       carroApp: body.carroApp,
       leilao: body.leilao,
+      motoTerceiros: body.motoTerceiros,
       seguroAtual: body.seguroAtual,
     })
   } catch (err) {

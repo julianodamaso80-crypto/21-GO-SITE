@@ -41,6 +41,7 @@ interface FormData {
   placa: string
   leilao: 'nao' | 'leilao' | 'remarcado'
   carroApp: 'nao' | 'sim'
+  danosTerceiros: 'nao' | 'sim'
   temSeguro: 'nao' | 'sim'
   nomeSeguro: string
 }
@@ -167,6 +168,7 @@ export default function CotacaoPage() {
     placa: '',
     leilao: 'nao',
     carroApp: 'nao',
+    danosTerceiros: 'nao',
     temSeguro: 'nao',
     nomeSeguro: '',
   })
@@ -332,6 +334,7 @@ export default function CotacaoPage() {
         placa: form.placa,
         leilao: form.leilao,
         carroApp: form.carroApp === 'sim',
+        motoTerceiros: form.danosTerceiros === 'sim',
         seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
         requires_human_support: true,
         human_support_reason: reason,
@@ -407,6 +410,7 @@ export default function CotacaoPage() {
             combustivel: v.combustivel,
             plano: 'EXCLUIDO',
             carroApp: form.carroApp === 'sim',
+            motoTerceiros: form.danosTerceiros === 'sim',
             seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
             powercrmBrandId: data.powercrm?.brandId,
             powercrmModelId: data.powercrm?.modelId,
@@ -480,6 +484,7 @@ export default function CotacaoPage() {
           plano: defaultPlan.name,
           valorMensal: defaultPlan.monthly,
           carroApp: form.carroApp === 'sim',
+          motoTerceiros: form.danosTerceiros === 'sim',
           seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
           // IDs PowerCRM já mapeados — backend usa direto, sem adivinhar
           powercrmBrandId: data.powercrm?.brandId,
@@ -511,8 +516,17 @@ export default function CotacaoPage() {
   const planInfo = selectedPlan ? PLAN_INFO[selectedPlan.id as PlanId] : null
   // Carro de aplicativo: +R$ 20/mês na mensalidade (regra 21Go)
   const carroAppExtra = form.carroApp === 'sim' ? 20 : 0
-  const price = (selectedPlan?.monthly || 0) + carroAppExtra
+  // Moto com Danos a Terceiros opcional: +R$ 22/mês (só planos de moto)
+  const selIsMoto = selectedPlan?.id === 'moto-400' || selectedPlan?.id === 'moto-1000'
+  const motoTerceirosExtra = form.danosTerceiros === 'sim' && selIsMoto ? 22 : 0
+  const price = (selectedPlan?.monthly || 0) + carroAppExtra + motoTerceirosExtra
   const priceFormatted = formatPrice(price)
+  // Benefícios exibidos: motos com Danos a Terceiros opcional ganham a linha extra.
+  const planFeatures = planInfo
+    ? motoTerceirosExtra > 0
+      ? [...planInfo.features, { text: 'Danos a Terceiros', included: true }]
+      : planInfo.features
+    : []
   const vehicleLabel = vehicle
     ? `${vehicle.marca} ${vehicle.modelo} ${vehicle.ano}`
     : ''
@@ -526,7 +540,9 @@ export default function CotacaoPage() {
   // Ordem de fallback quando nao ha VIP "puro" (moto/suv/especial usam o "VIP" deles).
   const vipOrder: PlanId[] = ['vip', 'suv', 'moto-1000', 'moto-400', 'especial', 'premium', 'do-seu-jeito', 'basico']
   const vipPlan = vipOrder.map((id) => plans.find((p) => p.id === id)).find((p) => !!p) || null
+  const vipIsMoto = vipPlan?.id === 'moto-400' || vipPlan?.id === 'moto-1000'
   const vipMonthly = (vipPlan?.monthly || 0) + carroAppExtra
+    + (form.danosTerceiros === 'sim' && vipIsMoto ? 22 : 0)
   const isBYD = (vehicle?.marca || '').trim().toUpperCase() === 'BYD'
   const taxaAtivacao = calcActivation(vipMonthly, isBYD)
   // 21Go recebe a ativacao CHEIA: cliente arca com a taxa de venda (a vista) e
@@ -830,6 +846,32 @@ export default function CotacaoPage() {
                     </div>
                   </div>
 
+                  {/* Danos a Terceiros (motos) */}
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1A2754] mb-2">Se for moto: incluir Danos a Terceiros?</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        { value: 'nao', label: 'Não' },
+                        { value: 'sim', label: 'Sim (+R$22/mês)' },
+                      ] as const).map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          disabled={loading}
+                          onClick={() => set('danosTerceiros', opt.value)}
+                          className={`py-3.5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 disabled:opacity-50 ${
+                            form.danosTerceiros === opt.value
+                              ? 'border-[#293C82] bg-[#293C82]/10 text-[#293C82] shadow-sm'
+                              : 'border-[#D1DFFA] bg-[#F7F8FC] text-[#64748B] hover:border-[#293C82]/40'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-[#64748B]">Cobertura opcional, válida apenas para motos.</p>
+                  </div>
+
                   {/* Seguro atual */}
                   <div>
                     <label className="block text-sm font-semibold text-[#1A2754] mb-2">Esse carro possui seguro ou proteção?</label>
@@ -1012,7 +1054,7 @@ export default function CotacaoPage() {
                     setExcluded(false)
                     setVehicle(null)
                     setPlans([])
-                    setForm({ nome: '', whatsapp: '', email: '', placa: '', leilao: 'nao', carroApp: 'nao', temSeguro: 'nao', nomeSeguro: '' })
+                    setForm({ nome: '', whatsapp: '', email: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' })
                   }}
                   className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#1A2754] transition-colors"
                 >
@@ -1071,7 +1113,7 @@ export default function CotacaoPage() {
 
                   {showCoberturas && planInfo && (
                     <ul className="space-y-3.5">
-                      {planInfo.features.map(c => (
+                      {planFeatures.map(c => (
                         <li key={c.text} className="flex items-center gap-3">
                           {c.included
                             ? <div className="w-6 h-6 rounded-full bg-[#10B981]/10 flex items-center justify-center flex-shrink-0"><Check className="w-3.5 h-3.5 text-[#10B981]" /></div>
@@ -1207,7 +1249,7 @@ export default function CotacaoPage() {
                   </div>
                   )}
 
-                  <a href={`https://wa.me/5521969454824?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
+                  <a href={`https://wa.me/5521969454824?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${motoTerceirosExtra > 0 ? `\nDanos a Terceiros (moto): Sim (+R$ 22/mês)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
                     target="_blank" rel="noopener noreferrer"
                     data-track-origin="cotacao_resultado"
                     data-track-button-text="Contratar pelo WhatsApp"
@@ -1241,7 +1283,7 @@ export default function CotacaoPage() {
                   className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#1A2754] transition-colors">
                   <ArrowLeft className="w-4 h-4" /> Editar dados
                 </button>
-                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', placa: '', leilao: 'nao', carroApp: 'nao', temSeguro: 'nao', nomeSeguro: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setFipeMarcaCode(''); setFipeMarcaText(''); setFipeModeloCode(''); setFipeModeloText(''); setFipeModeloCodFipe(''); setFipeAnoCode(''); whatsappClicked.current = false }}
+                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setFipeMarcaCode(''); setFipeMarcaText(''); setFipeModeloCode(''); setFipeModeloText(''); setFipeModeloCodFipe(''); setFipeAnoCode(''); whatsappClicked.current = false }}
                   className="text-sm text-[#293C82] hover:text-[#3D72DE] transition-colors">
                   Nova simulação
                 </button>

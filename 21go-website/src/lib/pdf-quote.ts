@@ -37,12 +37,17 @@ export interface QuotePdfInput {
   carroApp?: boolean | null
   /** Origem do veículo: "nao" | "leilao" | "remarcado". Quando leilão/remarcado, indenização cobre 80% da FIPE. */
   leilao?: string | null
+  /** Moto com cobertura opcional de Danos a Terceiros — adiciona +R$ 22/mês (só motos). */
+  motoTerceiros?: boolean | null
   /** Seguro/proteção atual do veículo (texto livre — ex: "Porto Seguro", "Allianz"). */
   seguroAtual?: string | null
 }
 
 /** Carro de app: +R$ 20/mes em todos os planos exibidos. */
 const CARRO_APP_EXTRA = 20
+
+/** Moto: Danos a Terceiros opcional, +R$ 22/mes (so planos de moto). */
+const MOTO_TERCEIROS_EXTRA = 22
 
 /* ─────────────────────────────────────────────────────────────────────────
  * MATRIZ DE COBERTURAS — formato oficial do PowerCRM 21Go
@@ -70,7 +75,7 @@ const COVERAGE_TABLE: CoverageRow[] = [
   { label: 'Carro amigo',                                    carros: [null, '25 km de raio', '25 km de raio', ''],                                              suv: '25 km de raio', moto: null, especial: '25 km de raio' },
   { label: '01 Reboque Adicional',                           carros: [null, null, null, '200 km (totais)'],                                                     suv: null, moto: null, especial: null },
   { label: 'Cobertura Todos os Vidros',                      carros: [null, null, null, ''],                                                                    suv: null, moto: null, especial: null },
-  { label: 'Monitoramento 24h',                              carros: ['', '', 'Valor acima de R$ 50.000', ''],                                                  suv: '', moto: 'Acima de R$ 8.000', especial: '' },
+  { label: 'Monitoramento 24h',                              carros: ['', '', 'Valor acima de R$ 50.000', ''],                                                  suv: '', moto: 'Acima de R$ 15.000', especial: '' },
   { label: 'Reboque',                                        carros: ['200 km (totais)', '400 km (totais)', '1.000 km (totais)', '1.200 km (totais)'],          suv: '1.000 km (totais)', moto: '1.000 km (totais)', especial: '1.000 km (totais)' },
   { label: 'Chaveiro',                                       carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
   { label: 'Substituição de pneu furado',                    carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
@@ -186,11 +191,31 @@ export function resolvePlans(input: QuotePdfInput): QuotePlanFull[] {
       }]
     : plansRaw
 
+  // Veículo de leilão/remarcado: a indenização cobre 80% da FIPE, então a
+  // mensalidade também é 80% do valor cheio (regra oficial 21Go). Aplica ANTES
+  // do extra de carro de app (que é fixo, sem desconto), exatamente como o site
+  // faz em cotacao/page.tsx. Reflete em planos, plano de referência e ativação.
+  const isLeilao = !!input.leilao && input.leilao !== 'nao'
+  let out = isLeilao
+    ? plans.map((p) => ({ ...p, monthly: Math.round(p.monthly * 0.8 * 100) / 100 }))
+    : plans
+
+  // Moto com Danos a Terceiros opcional: soma +R$ 22/mês SÓ nos planos de moto.
+  // Aplica depois do desconto de leilão e antes do extra de carro de app, igual
+  // ao site (cotacao/page.tsx). Reflete em planos, referência e ativação.
+  if (input.motoTerceiros) {
+    out = out.map((p) =>
+      p.id === 'moto-400' || p.id === 'moto-1000'
+        ? { ...p, monthly: Math.round((p.monthly + MOTO_TERCEIROS_EXTRA) * 100) / 100 }
+        : p,
+    )
+  }
+
   // Se for carro de aplicativo, soma +R$ 20/mês em TODOS os planos exibidos.
   if (input.carroApp) {
-    return plans.map((p) => ({ ...p, monthly: p.monthly + CARRO_APP_EXTRA }))
+    return out.map((p) => ({ ...p, monthly: p.monthly + CARRO_APP_EXTRA }))
   }
-  return plans
+  return out
 }
 
 /**
@@ -231,6 +256,7 @@ function renderComparisonPage(
   if (input.carroApp) infoChips.push('Carro de aplicativo (Uber, 99, etc.)')
   if (input.leilao === 'leilao') infoChips.push('Veiculo de leilao')
   if (input.leilao === 'remarcado') infoChips.push('Veiculo remarcado')
+  if (input.motoTerceiros) infoChips.push('Danos a Terceiros (+R$ 22/mes)')
   if (input.seguroAtual && input.seguroAtual.trim()) {
     infoChips.push(`Ja possui protecao: ${input.seguroAtual.trim()}`)
   }
@@ -342,8 +368,16 @@ function renderComparisonPage(
     return null
   }
 
+  // Moto com Danos a Terceiros opcional (+R$ 22): habilita a linha pra coluna moto.
+  const motoTerceirosOn = ctx.kind === 'moto' && !!input.motoTerceiros
+  const coverageRows = motoTerceirosOn
+    ? COVERAGE_TABLE.map((row) =>
+        row.label === 'Danos a terceiros' ? { ...row, moto: '' } : row,
+      )
+    : COVERAGE_TABLE
+
   // Filtra coberturas: só mostra linhas que pelo menos UMA coluna inclui
-  const visibleRows = COVERAGE_TABLE.filter((row) =>
+  const visibleRows = coverageRows.filter((row) =>
     cols.some((col) => getCell(row, col) !== null),
   )
 
