@@ -586,6 +586,9 @@ export const BYD_ACTIVATION = 1550
 /** Acréscimo da ativação sobre a mensalidade CHEIA do plano de referência. */
 export const ACTIVATION_SURCHARGE = 50
 
+/** Piso da ativação: nunca cobra menos que isto (ex: regular 120 + 50 = 170 → 249). */
+export const ACTIVATION_FLOOR = 249
+
 /**
  * Acréscimo dos JUROS do parcelamento em 12x no cartão (22,11%). O 21Go NUNCA
  * parcela sem juros — o custo do cartão vai pro cliente. Aplicado só no 12x.
@@ -602,18 +605,18 @@ export function activationCashPrice(net: number): number {
 }
 
 /**
- * Taxa de ativação (REGRA OFICIAL 21Go — decisão user 2026-06-15):
+ * Taxa de ativação (REGRA OFICIAL 21Go — decisão user 2026-06-16):
  *   - BYD → R$ 1.550 fixo (qualquer modelo)
- *   - demais → mensalidade CHEIA do plano de referência + R$ 50 (ex: 500 → 550)
+ *   - demais → mensalidade CHEIA do plano de referência + R$ 50, com PISO de R$ 249
+ *     (ex: 500 → 550; regular 120 → 170, mas piso eleva pra 249)
  *
- * SEM piso e SEM gross-up. A base é o VIP de referência do veículo (ou o plano
- * de moto, pra motos), não o plano que o cliente clicou. Carro e moto seguem
- * a mesma regra: plano de referência + R$ 50.
+ * SEM gross-up. A base é o VIP de referência do veículo (ou o plano de moto, pra
+ * motos), não o plano que o cliente clicou. Carro e moto seguem a mesma regra.
  */
 export function calcActivation(vipReferenceMonthly: number, isBYD: boolean): number {
   if (isBYD) return BYD_ACTIVATION
   if (!Number.isFinite(vipReferenceMonthly) || vipReferenceMonthly <= 0) return 0
-  return vipReferenceMonthly + ACTIVATION_SURCHARGE
+  return Math.max(vipReferenceMonthly + ACTIVATION_SURCHARGE, ACTIVATION_FLOOR)
 }
 
 /**
