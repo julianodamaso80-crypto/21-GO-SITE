@@ -535,7 +535,7 @@ export default function CotacaoPage() {
   // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts):
   //   - mensalidade CHEIA do plano de referencia + R$ 50 (carro e moto)
   //   - BYD → R$ 1.550 fixo
-  //   - sem piso e sem gross-up (a vista = valor cheio, 12x = valor / 12)
+  //   - sem piso. A vista = valor cheio; 12x = valor + juros 22,11% / 12 (nunca sem juros)
   // SEMPRE VIP de referencia (nao depende do plano que o cliente selecionou).
   // Ordem de fallback quando nao ha VIP "puro" (moto/suv/especial usam o "VIP" deles).
   const vipOrder: PlanId[] = ['vip', 'suv', 'moto-1000', 'moto-400', 'especial', 'premium', 'do-seu-jeito', 'basico']
@@ -545,7 +545,7 @@ export default function CotacaoPage() {
     + (form.danosTerceiros === 'sim' && vipIsMoto ? 22 : 0)
   const isBYD = (vehicle?.marca || '').trim().toUpperCase() === 'BYD'
   const taxaAtivacao = calcActivation(vipMonthly, isBYD)
-  // A vista = valor cheio da ativacao (VIP + R$50); 12x = valor / 12 sem juros.
+  // A vista = valor cheio (VIP + R$50); 12x = valor + juros 22,11% / 12 (nunca sem juros).
   const ativacaoAvista = activationCashPrice(taxaAtivacao)
   const ativacaoParcela12x = activationInstallment12x(taxaAtivacao)
   const today = new Date()

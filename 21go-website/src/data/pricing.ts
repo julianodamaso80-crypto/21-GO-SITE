@@ -587,9 +587,14 @@ export const BYD_ACTIVATION = 1550
 export const ACTIVATION_SURCHARGE = 50
 
 /**
- * Valor da ativação cobrado do cliente. É o valor CHEIO, sem gross-up de taxa
- * de cartão — o que aparece como "à vista" é exatamente este número.
- * (REGRA OFICIAL 21Go — decisão user 2026-06-15.)
+ * Acréscimo dos JUROS do parcelamento em 12x no cartão (22,11%). O 21Go NUNCA
+ * parcela sem juros — o custo do cartão vai pro cliente. Aplicado só no 12x.
+ */
+export const MP_INSTALLMENT_12X_SURCHARGE = 0.2211
+
+/**
+ * Valor da ativação à vista (pagamento único). É o valor CHEIO: VIP cheio + R$ 50.
+ * À vista não é parcelamento, então não leva juros. (REGRA OFICIAL 21Go.)
  */
 export function activationCashPrice(net: number): number {
   if (!Number.isFinite(net) || net <= 0) return 0
@@ -611,10 +616,14 @@ export function calcActivation(vipReferenceMonthly: number, isBYD: boolean): num
   return vipReferenceMonthly + ACTIVATION_SURCHARGE
 }
 
-/** Ativação parcelada em 12x SEM juros: valor cheio dividido por 12. */
+/**
+ * Ativação parcelada em 12x no cartão COM juros (o 21Go nunca parcela sem juros).
+ * Valor cheio + acréscimo de 22,11% do parcelamento, dividido em 12.
+ * Ex: ativação 550 → 12x de R$ 55,97 (total R$ 671,61).
+ */
 export function activationInstallment12x(net: number): number {
   if (!Number.isFinite(net) || net <= 0) return 0
-  return net / 12
+  return (net * (1 + MP_INSTALLMENT_12X_SURCHARGE)) / 12
 }
 
 /* ─── getAllRelevantPlans / QuotePlanFull / planIdFromName ───

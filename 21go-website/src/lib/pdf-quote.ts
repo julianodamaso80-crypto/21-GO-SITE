@@ -241,8 +241,8 @@ function renderComparisonPage(
   },
 ): string {
   // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): mensalidade CHEIA do
-  // plano de referencia + R$ 50 (carro e moto), BYD R$ 1.550 fixo. Sem piso e
-  // sem gross-up — a vista = valor cheio, 12x = valor / 12 (sem juros).
+  // plano de referencia + R$ 50 (carro e moto), BYD R$ 1.550 fixo. Sem piso.
+  // A vista = valor cheio; 12x = valor cheio + juros 22,11% / 12 (nunca sem juros).
   const taxa = ctx.taxa
   const taxaAvista = activationCashPrice(taxa)
   const taxa12xParcela = activationInstallment12x(taxa)
