@@ -240,10 +240,9 @@ function renderComparisonPage(
     kind: 'carros' | 'suv' | 'moto' | 'especial'
   },
 ): string {
-  // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): piso R$ 399,
-  // mensalidade de referencia + R$ 50 acima disso, BYD R$ 1.550 fixo.
-  // 21Go recebe a ativacao CHEIA: cliente arca com a taxa de venda (a vista) e
-  // tambem com o acrescimo do parcelamento (12x). Ver pricing.ts.
+  // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): mensalidade CHEIA do
+  // plano de referencia + R$ 50 (carro e moto), BYD R$ 1.550 fixo. Sem piso e
+  // sem gross-up — a vista = valor cheio, 12x = valor / 12 (sem juros).
   const taxa = ctx.taxa
   const taxaAvista = activationCashPrice(taxa)
   const taxa12xParcela = activationInstallment12x(taxa)
@@ -551,8 +550,8 @@ function renderHTML(input: QuotePdfInput): string {
   const refIsCarro =
     referencePlan && !['moto-400', 'moto-1000'].includes(referencePlan.id)
 
-  // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): piso R$ 399,
-  // mensalidade do VIP de referencia + R$ 50 quando acima disso, BYD R$ 1.550 fixo.
+  // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): mensalidade CHEIA do
+  // VIP de referencia + R$ 50, BYD R$ 1.550 fixo. Sem piso, sem gross-up.
   const isBYD = (input.marca || '').trim().toUpperCase() === 'BYD'
   const taxa = calcActivation(referencePlan?.monthly || input.mensalidade, isBYD)
 
@@ -717,30 +716,31 @@ function renderHTML(input: QuotePdfInput): string {
 
   /* ENTRADA compacta */
   .entrada {
-    background: #fff;
-    border: 1px solid #E5E7EB;
-    border-radius: 8px;
-    padding: 7px 12px;
+    background: #FFF7ED;
+    border: 2px solid #F2911D;
+    border-radius: 9px;
+    padding: 9px 13px;
     margin-bottom: 8px;
     display: flex; align-items: center;
     justify-content: space-between; gap: 12px;
+    box-shadow: 0 2px 6px rgba(242,145,29,0.18);
   }
   .entrada-left { display: flex; flex-direction: column; gap: 1px; }
   .entrada-label {
-    font-size: 8px; font-weight: 700; color: #94A3B8;
+    font-size: 9px; font-weight: 800; color: #F2911D;
     text-transform: uppercase; letter-spacing: 1.2px;
   }
   .entrada-sub {
-    font-size: 9.5px; color: #475569; font-weight: 500;
+    font-size: 9.5px; color: #9A3412; font-weight: 600;
   }
   .entrada-vals { display: flex; align-items: baseline; gap: 14px; }
   .entrada-vals-item { display: flex; flex-direction: column; align-items: flex-end; }
   .entrada-vals-tag {
-    font-size: 8px; color: #94A3B8; font-weight: 600;
+    font-size: 8px; color: #C2410C; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.6px;
   }
   .entrada-vals-num {
-    font-size: 13px; font-weight: 800; color: #F2911D;
+    font-size: 14px; font-weight: 800; color: #F2911D;
     letter-spacing: -0.03em;
   }
 

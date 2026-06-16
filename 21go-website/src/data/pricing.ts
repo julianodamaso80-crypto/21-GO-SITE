@@ -583,54 +583,38 @@ export function formatPrice(value: number): string {
 /** Ativação fixa pra qualquer modelo da marca BYD. */
 export const BYD_ACTIVATION = 1550
 
-/** Piso da ativação: vale pra todos os veículos (carro e moto). */
-export const ACTIVATION_FLOOR = 399
+/** Acréscimo da ativação sobre a mensalidade CHEIA do plano de referência. */
+export const ACTIVATION_SURCHARGE = 50
 
 /**
- * Taxas do Mercado Pago da conta 21Go — recebimento NA HORA (D0), Link de
- * pagamento / Checkout, cartão de crédito. Objetivo: a 21Go recebe o valor
- * da ativação CHEIO; o cliente arca com as duas taxas.
- *   - MP_SALE_FEE_D0: taxa por venda (4,98%). Incide à vista e como base do
- *     parcelado. Pra receber `net` cheio, cobra-se `net / (1 - 0,0498)`.
- *   - MP_INSTALLMENT_12X_SURCHARGE: acréscimo do parcelamento em 12x (22,11%),
- *     aplicado sobre o valor já com o gross-up da taxa de venda.
- * Conferido no simulador da conta (2026-06-03): receber R$ 1.000 → cliente
- * paga R$ 1.052,41 à vista, ou 12x de R$ 107,09 (total R$ 1.285,10).
+ * Valor da ativação cobrado do cliente. É o valor CHEIO, sem gross-up de taxa
+ * de cartão — o que aparece como "à vista" é exatamente este número.
+ * (REGRA OFICIAL 21Go — decisão user 2026-06-15.)
  */
-export const MP_SALE_FEE_D0 = 0.0498
-export const MP_INSTALLMENT_12X_SURCHARGE = 0.2211
-
-/** Valor cobrado do cliente à vista no cartão pra a 21Go receber `net` cheio. */
 export function activationCashPrice(net: number): number {
   if (!Number.isFinite(net) || net <= 0) return 0
-  return net / (1 - MP_SALE_FEE_D0)
+  return net
 }
 
 /**
- * Calcula a taxa de ativação a partir da mensalidade do plano VIP de referência.
- *
- * Regra oficial 21Go:
+ * Taxa de ativação (REGRA OFICIAL 21Go — decisão user 2026-06-15):
  *   - BYD → R$ 1.550 fixo (qualquer modelo)
- *   - mensalidade de referência > R$ 399 → mensalidade + R$ 50 (ex: 600 → 650)
- *   - mensalidade de referência ≤ R$ 399 → piso de R$ 399
+ *   - demais → mensalidade CHEIA do plano de referência + R$ 50 (ex: 500 → 550)
  *
- * A base é SEMPRE o VIP de referência do veículo, não o plano que o cliente clicou.
+ * SEM piso e SEM gross-up. A base é o VIP de referência do veículo (ou o plano
+ * de moto, pra motos), não o plano que o cliente clicou. Carro e moto seguem
+ * a mesma regra: plano de referência + R$ 50.
  */
 export function calcActivation(vipReferenceMonthly: number, isBYD: boolean): number {
   if (isBYD) return BYD_ACTIVATION
   if (!Number.isFinite(vipReferenceMonthly) || vipReferenceMonthly <= 0) return 0
-  return vipReferenceMonthly > ACTIVATION_FLOOR
-    ? vipReferenceMonthly + 50
-    : ACTIVATION_FLOOR
+  return vipReferenceMonthly + ACTIVATION_SURCHARGE
 }
 
-/**
- * Valor de cada parcela em 12x no cartão pra a 21Go receber `net` cheio:
- * gross-up da taxa de venda + acréscimo do parcelamento, dividido em 12.
- * Os juros vão pro cliente; a 21Go recebe o valor cheio na hora. NÃO é net / 12.
- */
+/** Ativação parcelada em 12x SEM juros: valor cheio dividido por 12. */
 export function activationInstallment12x(net: number): number {
-  return (activationCashPrice(net) * (1 + MP_INSTALLMENT_12X_SURCHARGE)) / 12
+  if (!Number.isFinite(net) || net <= 0) return 0
+  return net / 12
 }
 
 /* ─── getAllRelevantPlans / QuotePlanFull / planIdFromName ───
