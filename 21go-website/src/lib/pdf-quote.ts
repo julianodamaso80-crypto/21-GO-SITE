@@ -66,7 +66,7 @@ interface CoverageRow {
 const COVERAGE_TABLE: CoverageRow[] = [
   { label: 'Roubo',                                          carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
   { label: 'Furto',                                          carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
-  { label: 'Incêndio',                                       carros: ['', 'Proveniente de colisão', 'Proveniente de colisão', 'Proveniente de colisão'],          suv: '', moto: null, especial: 'Proveniente de colisão' },
+  { label: 'Incêndio',                                       carros: ['Proveniente de colisão', 'Proveniente de colisão', 'Proveniente de colisão', 'Proveniente de colisão'],          suv: 'Proveniente de colisão', moto: null, especial: 'Proveniente de colisão' },
   { label: 'Fenômenos da natureza',                          carros: [null, '', '', ''],                                                                        suv: '', moto: '', especial: '' },
   { label: 'Colisão',                                        carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
   { label: 'Danos a terceiros',                              carros: ['R$ 5.000,00', 'R$ 10.000,00', 'R$ 50.000,00', 'R$ 100.000,00'],                          suv: 'R$ 50.000,00', moto: null, especial: 'R$ 50.000,00' },

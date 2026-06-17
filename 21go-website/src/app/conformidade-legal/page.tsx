@@ -35,7 +35,7 @@ export default function ConformidadeLegalPage() {
               <Building2 className="w-5 h-5 text-[#F2911D]" /> O que é a 21Go juridicamente
             </h2>
             <p className="text-[#475569] text-[15px] leading-[1.8] mb-4">
-              A 21Go é uma <strong>associação de proteção patrimonial veicular</strong>, constituída segundo os <strong>artigos 53 a 61 do Código Civil brasileiro</strong> (Lei 10.406/2002). Funciona por <strong>mutualismo</strong>: um grupo de associados contribui mensalmente para um fundo comum, que cobre eventos como roubo, furto, colisão e incêndio.
+              A 21Go é uma <strong>associação de proteção patrimonial veicular</strong>, constituída segundo os <strong>artigos 53 a 61 do Código Civil brasileiro</strong> (Lei 10.406/2002). Funciona por <strong>mutualismo</strong>: um grupo de associados contribui mensalmente para um fundo comum, que cobre eventos como roubo, furto, colisão e incêndio (proveniente de colisão).
             </p>
             <p className="text-[#475569] text-[15px] leading-[1.8]">
               Diferente das seguradoras, a 21Go <strong>não opera por contrato de seguro</strong> e portanto <strong>não é regulada pela SUSEP</strong> (Superintendência de Seguros Privados). Esse formato cooperativo é o que permite o custo significativamente menor — em média 30-50% mais barato que seguro tradicional.

@@ -33,11 +33,11 @@ export const plans: Plan[] = [
     name: 'Do Seu Jeito',
     rate: 0,
     adminFee: 0,
-    description: 'Tudo do Basico + colisao, incendio e mais.',
+    description: 'Tudo do Basico + colisao, incendio (proveniente de colisao) e mais.',
     features: [
       'Tudo do Basico',
       'Colisao total e parcial',
-      'Incendio e eventos da natureza',
+      'Incendio (proveniente de colisao) e eventos da natureza',
       'Terceiros R$10.000',
       'Assistencia residencial',
     ],
@@ -78,7 +78,7 @@ export const comparisonFeatures: PlanFeature[] = [
   { name: 'Assistencia 24h', basico: true, completo: true, premium: true },
   { name: 'Guincho/Reboque', basico: true, completo: true, premium: true },
   { name: 'Colisao', basico: false, completo: true, premium: true },
-  { name: 'Incendio', basico: false, completo: true, premium: true },
+  { name: 'Incendio (proveniente de colisao)', basico: false, completo: true, premium: true },
   { name: 'Terceiros', basico: false, completo: true, premium: true },
   { name: 'Assistencia Residencial', basico: false, completo: true, premium: true },
   { name: 'Carro Reserva', basico: false, completo: false, premium: true },
@@ -89,7 +89,7 @@ export const comparisonFeatures: PlanFeature[] = [
 export const faqItems = [
   {
     question: 'O que e protecao veicular?',
-    answer: 'Protecao veicular e uma alternativa ao seguro tradicional. Funciona por mutualismo: um grupo de associados contribui mensalmente para um fundo comum que cobre sinistros como roubo, furto, colisao e incendio. Quanto mais associados, menor o custo para todos.',
+    answer: 'Protecao veicular e uma alternativa ao seguro tradicional. Funciona por mutualismo: um grupo de associados contribui mensalmente para um fundo comum que cobre sinistros como roubo, furto, colisao e incendio (proveniente de colisao). Quanto mais associados, menor o custo para todos.',
   },
   {
     question: 'Protecao veicular e legal?',
@@ -133,7 +133,7 @@ export const faqItems = [
   },
   {
     question: 'O que cobre o plano Premium?',
-    answer: 'O Premium cobre tudo: roubo, furto, colisao, incendio, assistencia 24h, guincho 200km, carro reserva por 15 dias, danos a terceiros ate R$100.000, protecao de vidros e rastreamento veicular. E a protecao mais completa do mercado. Tambem temos o plano VIP (mais escolhido) e o Do Seu Jeito (personalizavel).',
+    answer: 'O Premium cobre tudo: roubo, furto, colisao, incendio (proveniente de colisao), assistencia 24h, guincho 200km, carro reserva por 15 dias, danos a terceiros ate R$100.000, protecao de vidros e rastreamento veicular. E a protecao mais completa do mercado. Tambem temos o plano VIP (mais escolhido) e o Do Seu Jeito (personalizavel).',
   },
   {
     question: 'Quanto tempo para ativar a protecao?',

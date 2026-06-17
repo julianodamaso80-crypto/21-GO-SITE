@@ -4,7 +4,7 @@ const benefits = [
   'Cadastro SUSEP · Regulamentada',
   'Colisão · Proteção parcial e total',
   'Roubo e Furto · Reembolso FIPE',
-  'Incêndio · Eventos da natureza',
+  'Incêndio (proveniente de colisão) · Eventos da natureza',
   'Guincho 200km · Todo o Brasil',
   'Carro Reserva · Até 15 dias',
   'Assistência 24h · Chaveiro, pneu, pane seca',

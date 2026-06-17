@@ -15,7 +15,7 @@ const categories = [
     items: [
       {
         q: 'O que é proteção veicular?',
-        a: 'Proteção veicular é um sistema cooperativo (mutualismo) em que todos os associados contribuem mensalmente para um fundo comum. Quando alguém sofre um evento — roubo, furto, colisão ou incêndio — o fundo cobre a indenização. Diferente do seguro tradicional, não há análise de perfil e os custos são muito menores.',
+        a: 'Proteção veicular é um sistema cooperativo (mutualismo) em que todos os associados contribuem mensalmente para um fundo comum. Quando alguém sofre um evento — roubo, furto, colisão ou incêndio (proveniente de colisão) — o fundo cobre a indenização. Diferente do seguro tradicional, não há análise de perfil e os custos são muito menores.',
       },
       {
         q: 'Proteção veicular é legal?',

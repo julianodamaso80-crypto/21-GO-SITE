@@ -90,7 +90,7 @@ export function AIShowcase() {
                 </div>
                 <div className="flex justify-start">
                   <div className="bg-white text-[#1A2754] text-sm rounded-2xl rounded-tl-sm px-4 py-3 max-w-[80%] border border-[#E2E8F0]">
-                    Sim! O Completo cobre colisão total e parcial, roubo, incêndio, guincho 200km e carro reserva por 7 dias. Quer fazer a simulação agora?
+                    Sim! O Completo cobre colisão total e parcial, roubo, incêndio (proveniente de colisão), guincho 200km e carro reserva por 7 dias. Quer fazer a simulação agora?
                   </div>
                 </div>
               </div>

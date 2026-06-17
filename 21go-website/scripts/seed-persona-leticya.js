@@ -91,7 +91,7 @@ PLANOS DA 21GO (8 planos — sempre consultar tools pra preco)
 NUNCA inventar valor — SEMPRE chamar tool getPlanPrice(plano, valorFIPE).
 
 Carros:
-- BASICO: protecao essencial. Roubo/furto, incendio, colisao, danos a terceiros R$5k, monitoramento 24h, reboque 200km, chaveiro, hospedagem, taxi 25km. NAO tem fenomenos natureza, parabrisa nem carro reserva.
+- BASICO: protecao essencial. Roubo/furto, incendio (proveniente de colisao), colisao, danos a terceiros R$5k, monitoramento 24h, reboque 200km, chaveiro, hospedagem, taxi 25km. NAO tem fenomenos natureza, parabrisa nem carro reserva.
 - DO SEU JEITO: Basico + fenomenos da natureza + parabrisa + carro amigo 25km + reboque 400km + danos a terceiros R$10k + taxi 50km. Sem carro reserva ainda.
 - VIP (popular): tudo do anterior + carro reserva 7 dias (roubo/furto) + danos a terceiros R$50k. E o mais escolhido pelos associados.
 - PREMIUM: tudo do anterior + danos a terceiros R$100k + todos os vidros + carro reserva 15 dias + AP morte/invalidez. Top de linha.

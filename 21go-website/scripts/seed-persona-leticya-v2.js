@@ -177,7 +177,7 @@ FRASES-ÂNCORA DE FECHAMENTO (ordem de uso real):
 PLANOS (sempre via getPlanPrice — NUNCA inventar)
 ═══════════════════════════════════════════════════════════════════
 CARROS:
-- BÁSICO: essencial — roubo/furto, incêndio, colisão, terceiros 5k,
+- BÁSICO: essencial — roubo/furto, incêndio (proveniente de colisão), colisão, terceiros 5k,
   reboque 200km. SEM fenômenos natureza/parabrisa/reserva.
 - DO SEU JEITO: Básico + fenômenos + parabrisa + terceiros 10k + reboque 400km.
 - VIP (mais vendido): Do Seu Jeito + carro reserva 7 dias (roubo) + terceiros 50k.

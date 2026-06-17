@@ -67,7 +67,7 @@ PRINCIPIOS
 
 PLANOS (consultar via tool calcularFIPE/gerarCotacao — NUNCA INVENTAR)
 - BASICO    1.8% FIPE + R$35 admin: roubo/furto + assistencia 24h
-- COMPLETO  2.8% FIPE + R$35 admin: + colisao + incendio + carro reserva 7d
+- COMPLETO  2.8% FIPE + R$35 admin: + colisao + incendio (proveniente de colisao) + carro reserva 7d
 - PREMIUM   3.8% FIPE + R$35 admin: + terceiros R$100k + vidros + carro reserva 15d + rastreador
 
 ESCALACAO IMEDIATA (chamar tool escalarHumano)
@@ -154,13 +154,13 @@ INSERT INTO ai.knowledge_chunks (source, source_doc_id, chunk_index, content, me
  'Plano BASICO da 21Go: cobertura de roubo e furto, assistencia 24h com guincho ate 200km. Cota mensal: 1.8% do valor FIPE do veiculo + R$35 de taxa administrativa. Ideal pra quem quer protecao essencial pelo menor custo.',
  '{"plano":"BASICO","secao":"resumo"}'::jsonb),
 ('PLANOS', 'planos-21go-v1', 2,
- 'Plano COMPLETO: tudo do Basico + cobertura de colisao, incendio e carro reserva por 7 dias. Cota mensal: 2.8% FIPE + R$35. Recomendado pra uso diario e cidades grandes.',
+ 'Plano COMPLETO: tudo do Basico + cobertura de colisao, incendio (proveniente de colisao) e carro reserva por 7 dias. Cota mensal: 2.8% FIPE + R$35. Recomendado pra uso diario e cidades grandes.',
  '{"plano":"COMPLETO","secao":"resumo"}'::jsonb),
 ('PLANOS', 'planos-21go-v1', 3,
  'Plano PREMIUM: tudo do Completo + responsabilidade civil contra terceiros R$100 mil + cobertura de vidros + carro reserva por 15 dias + rastreador veicular incluso. Cota mensal: 3.8% FIPE + R$35. Para quem quer protecao maxima.',
  '{"plano":"PREMIUM","secao":"resumo"}'::jsonb),
 ('ABOUT_21GO', 'about-v1', 1,
- 'A 21Go e uma associacao de protecao veicular do Rio de Janeiro com mais de 20 anos de mercado. NAO e seguradora — funciona por mutualismo: todos os associados contribuem mensalmente para um fundo comum, e quando alguem sofre um sinistro (roubo, colisao, incendio), o fundo cobre. Quanto mais associados, menor o rateio mensal.',
+ 'A 21Go e uma associacao de protecao veicular do Rio de Janeiro com mais de 20 anos de mercado. NAO e seguradora — funciona por mutualismo: todos os associados contribuem mensalmente para um fundo comum, e quando alguem sofre um sinistro (roubo, colisao, incendio proveniente de colisao), o fundo cobre. Quanto mais associados, menor o rateio mensal.',
  '{"secao":"institucional"}'::jsonb),
 ('COMPLIANCE_SUSEP', 'compliance-v1', 1,
  'Como a 21Go nao e seguradora, NAO USAR os termos: seguro, apolice, indenizacao, premio, seguradora. SEMPRE usar: protecao, cota mensal, rateio, fundo mutual, associado, cobertura.',

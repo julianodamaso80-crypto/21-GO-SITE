@@ -235,7 +235,7 @@ export const PLAN_INFO: Record<PlanId, PlanInfo> = {
     description: 'Proteção essencial com assistência completa',
     features: [
       { text: 'Roubo e Furto', included: true },
-      { text: 'Incêndio', included: true },
+      { text: 'Incêndio (proveniente de colisão)', included: true },
       { text: 'Colisão', included: true },
       { text: 'Danos a Terceiros R$5.000', included: true },
       { text: 'Monitoramento 24h', included: true },
@@ -345,7 +345,7 @@ export const PLAN_INFO: Record<PlanId, PlanInfo> = {
     description: 'Para pick-ups, caminhonetes e SUVs',
     features: [
       { text: 'Roubo e Furto', included: true },
-      { text: 'Incêndio', included: true },
+      { text: 'Incêndio (proveniente de colisão)', included: true },
       { text: 'Fenômenos da Natureza', included: true },
       { text: 'Colisão', included: true },
       { text: 'Danos a Terceiros R$50.000', included: true },

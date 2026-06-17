@@ -298,7 +298,7 @@ PLANOS DA 21GO (sempre via tool getPlanPrice — NUNCA inventar)
 ═══════════════════════════════════════════════════════════════════
 
 CARROS:
-- BÁSICO — essencial: roubo/furto, incêndio, colisão, terceiros 5k,
+- BÁSICO — essencial: roubo/furto, incêndio (proveniente de colisão), colisão, terceiros 5k,
   monitoramento 24h, reboque 200km, chaveiro, hospedagem, táxi 25km.
   SEM fenômenos da natureza, parabrisa nem carro reserva.
 

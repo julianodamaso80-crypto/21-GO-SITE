@@ -439,7 +439,7 @@ MENSALIDADE
 - Pagando 5 dias antes do vencimento: 5% de desconto
 
 COBERTURA
-- Roubo, furto, colisão, incêndio, terceiros (conforme plano)
+- Roubo, furto, colisão, incêndio (proveniente de colisão), terceiros (conforme plano)
 - 100% da FIPE (80% se leilão/remarcado)
 - Cobertura ATIVA: imediata após pagamento + vistoria aprovada
 - Benefícios (assistência 24h, reboque): ativos em 72h

@@ -22,7 +22,7 @@ export function SchemaOrg() {
           '@type': 'ImageObject',
           url: 'https://21go.site/logo21go.png',
         },
-        description: 'Associação de proteção patrimonial veicular no Rio de Janeiro, 20+ anos. Proteção por mutualismo contra roubo, furto, colisão e incêndio para carros, motos e frotas.',
+        description: 'Associação de proteção patrimonial veicular no Rio de Janeiro, 20+ anos. Proteção por mutualismo contra roubo, furto, colisão e incêndio (proveniente de colisão) para carros, motos e frotas.',
         foundingDate: '2004',
         // sameAs robusto pra entity linking no Knowledge Graph (+200% citation em AI Overviews)
         sameAs: [

@@ -8,7 +8,7 @@ import { fadeInUp, staggerContainer } from '@/lib/motion'
 const coverages = [
   { icon: ShieldCheck, title: 'Colisão', desc: 'Proteção parcial e total para batidas e acidentes', color: '#293C82' },
   { icon: Lock, title: 'Roubo e Furto', desc: 'Reembolso pela tabela FIPE em caso de perda total', color: '#293C82' },
-  { icon: Flame, title: 'Incêndio', desc: 'Proteção contra incêndio e eventos da natureza', color: '#F2911D' },
+  { icon: Flame, title: 'Incêndio (proveniente de colisão)', desc: 'Cobertura para incêndio proveniente de colisão e eventos da natureza', color: '#F2911D' },
   { icon: Truck, title: 'Guincho 200km', desc: 'Reboque gratuito em todo o território nacional', color: '#293C82' },
   { icon: Car, title: 'Carro Reserva', desc: 'Veículo substituto por até 15 dias nos planos superiores', color: '#293C82' },
   { icon: Clock, title: 'Assistência 24h', desc: 'Chaveiro, pneu, pane seca e elétrica a qualquer hora', color: '#F2911D' },

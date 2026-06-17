@@ -46,7 +46,7 @@ interface FeatureRow {
 
 const comparisonFeatures: FeatureRow[] = [
   { feature: 'Roubo e Furto', basico: true, jeito: true, vip: true, premium: true },
-  { feature: 'Incêndio', basico: true, jeito: 'Proveniente de colisão', vip: 'Proveniente de colisão', premium: 'Proveniente de colisão' },
+  { feature: 'Incêndio', basico: 'Proveniente de colisão', jeito: 'Proveniente de colisão', vip: 'Proveniente de colisão', premium: 'Proveniente de colisão' },
   { feature: 'Colisão', basico: true, jeito: true, vip: true, premium: true },
   { feature: 'Fenômenos da Natureza', basico: false, jeito: true, vip: true, premium: true },
   { feature: 'Danos a Terceiros', basico: 'R$5.000', jeito: 'R$10.000', vip: 'R$50.000', premium: 'R$100.000' },
