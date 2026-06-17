@@ -1,9 +1,9 @@
 /**
  * Envio de WhatsApp via Evolution API.
  * Instância em produção: site21leticya @ evolution.sinistro21go.site
- * (número 5521980214882). Atualizado em 2026-06-02.
+ * (número 5521969454824). Atualizado em 2026-06-02.
  *
- * Instância anterior site21leticya (5521980214882) foi BANIDA pelo WhatsApp —
+ * Instância anterior site21leticya (5521969454824) foi BANIDA pelo WhatsApp —
  * trocada por site21leticya, que estava de backup no painel.
  */
 
