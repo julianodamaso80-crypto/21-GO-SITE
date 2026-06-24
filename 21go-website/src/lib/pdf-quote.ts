@@ -255,7 +255,7 @@ function renderComparisonPage(
   if (input.carroApp) infoChips.push('Carro de aplicativo (Uber, 99, etc.)')
   if (input.leilao === 'leilao') infoChips.push('Veiculo de leilao')
   if (input.leilao === 'remarcado') infoChips.push('Veiculo remarcado')
-  if (input.motoTerceiros) infoChips.push('Danos a Terceiros (+R$ 22/mes)')
+  if (input.motoTerceiros && ctx.kind === 'moto') infoChips.push('Danos a Terceiros (+R$ 22/mes)')
   if (input.seguroAtual && input.seguroAtual.trim()) {
     infoChips.push(`Ja possui protecao: ${input.seguroAtual.trim()}`)
   }
