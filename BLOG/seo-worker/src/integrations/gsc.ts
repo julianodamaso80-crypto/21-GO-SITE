@@ -50,9 +50,11 @@ export async function searchAnalytics(opts: {
   }
   type Resp = { rows?: Array<{ keys?: string[]; clicks: number; impressions: number; ctr: number; position: number }> };
   const json = (await res.json()) as Resp;
+  const pageIdx = opts.dimensions.indexOf('page');
+  const queryIdx = opts.dimensions.indexOf('query');
   return (json.rows ?? []).map((r) => ({
-    url: r.keys?.[0] ?? '',
-    query: opts.dimensions.includes('query') ? r.keys?.[1] : undefined,
+    url: pageIdx >= 0 ? r.keys?.[pageIdx] ?? '' : '',
+    query: queryIdx >= 0 ? r.keys?.[queryIdx] : undefined,
     clicks: r.clicks,
     impressions: r.impressions,
     ctr: r.ctr,
