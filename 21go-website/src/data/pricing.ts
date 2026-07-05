@@ -477,6 +477,51 @@ export interface QuotePlan {
 }
 
 /**
+ * Resolve a cilindrada de uma moto: usa a informada; se ausente (0), tenta
+ * extrair do nome do modelo (ex: "ZR 125" -> 125, "XRE 300" -> 300, "MT-07" -> 689).
+ * Retorna 0 só quando é realmente impossível determinar.
+ */
+export function resolveMotoCc(cilindrada?: number, modelo?: string): number {
+  let cc = cilindrada || 0
+  if (cc > 0) return cc
+  const mod = (modelo || '').toLowerCase()
+  if (!mod) return 0
+  // Sem word-boundary: pega cilindrada colada na letra também (ex: "Z900" -> 900, "CB500F" -> 500)
+  const matches = mod.match(/(\d{2,4})/g)
+  if (matches) {
+    for (const match of matches) {
+      const num = parseInt(match, 10)
+      if (num > 1900 && num < 2100) continue // ignora anos
+      if (num >= 50 && num <= 2500) {
+        cc = num
+        break
+      }
+    }
+  }
+  // Casos especiais Yamaha MT (cilindrada não aparece no nome)
+  if (cc === 0) {
+    if (mod.includes('mt-03') || mod.includes('mt 03')) cc = 321
+    else if (mod.includes('mt-07') || mod.includes('mt 07')) cc = 689
+    else if (mod.includes('mt-09') || mod.includes('mt 09')) cc = 890
+  }
+  return cc
+}
+
+/**
+ * MOTO SEMPRE TEM UM PLANO SÓ — depende da cilindrada (regra oficial 21Go).
+ * 450cc ou mais -> VIP Moto 450-1000cc; abaixo disso (e default quando
+ * indeterminável) -> VIP Moto até 400cc, que cobre a esmagadora maioria.
+ */
+export function motoPlanId(cc: number): 'moto-400' | 'moto-1000' {
+  return cc >= 450 ? 'moto-1000' : 'moto-400'
+}
+
+const MOTO_PLAN_NAME: Record<'moto-400' | 'moto-1000', string> = {
+  'moto-400': 'VIP Moto até 400cc',
+  'moto-1000': 'VIP Moto 450-1000cc',
+}
+
+/**
  * Retorna os planos aplicaveis e seus precos para um veiculo.
  *
  * @param fipeValue - valor FIPE do veiculo em reais
@@ -510,45 +555,13 @@ export function getApplicablePlans(
     return []
   }
 
-  // Moto
+  // Moto — SEMPRE um plano só, definido pela cilindrada (extraída do nome se preciso)
   if (isMoto) {
-    // Tenta usar a cilindrada da API, ou extrai do nome do modelo (ex: "XRE 190" -> 190)
-    let cc = cilindrada || 0
-    if (cc === 0 && mod) {
-      const matches = mod.match(/\b(\d{2,4})\b/g)
-      if (matches) {
-        for (const match of matches) {
-          const num = parseInt(match, 10)
-          if (num > 1900 && num < 2100) continue // ignora anos
-          if (num >= 50 && num <= 2500) {
-            cc = num
-            break
-          }
-        }
-      }
-      // Casos especiais Yamaha MT
-      if (cc === 0) {
-        if (mod.includes('mt-03') || mod.includes('mt 03')) cc = 321
-        else if (mod.includes('mt-07') || mod.includes('mt 07')) cc = 689
-        else if (mod.includes('mt-09') || mod.includes('mt 09')) cc = 890
-      }
-    }
-
-    if (cc > 0 && cc <= 449) {
-      const price = findPrice(MOTO_400, fipeValue)
-      if (price) return [{ id: 'moto-400', name: 'VIP Moto até 400cc', monthly: price }]
-    } else if (cc >= 450 && cc <= 1000) {
-      const price = findPrice(MOTO_1000, fipeValue)
-      if (price) return [{ id: 'moto-1000', name: 'VIP Moto 450-1000cc', monthly: price }]
-    }
-
-    // Se cilindrada desconhecida, mostra ambos
-    const plans: QuotePlan[] = []
-    const p400 = findPrice(MOTO_400, fipeValue)
-    if (p400) plans.push({ id: 'moto-400', name: 'VIP Moto até 400cc', monthly: p400 })
-    const p1000 = findPrice(MOTO_1000, fipeValue)
-    if (p1000) plans.push({ id: 'moto-1000', name: 'VIP Moto 450-1000cc', monthly: p1000 })
-    return plans
+    const cc = resolveMotoCc(cilindrada, mod)
+    const id = motoPlanId(cc)
+    const price = findPrice(id === 'moto-1000' ? MOTO_1000 : MOTO_400, fipeValue)
+    if (price) return [{ id, name: MOTO_PLAN_NAME[id], monthly: price }]
+    return []
   }
 
   // SUV / Pick-up / Caminhonete
@@ -655,18 +668,15 @@ export function getAllRelevantPlans(
   const isEletrico = ELETRICO_KEYWORDS.some((k) => fuel.includes(k))
   const isEspecial = isEletrico || fipeValue > 150000
 
-  const cc = cilindrada || 0
+  const cc = resolveMotoCc(cilindrada, mod)
+  const motoId = motoPlanId(cc)
 
   const applicableIds = new Set<PlanId>()
   if (isEspecial) {
     applicableIds.add('especial')
   } else if (isMoto) {
-    if (cc > 0 && cc <= 400) applicableIds.add('moto-400')
-    else if (cc >= 450 && cc <= 1000) applicableIds.add('moto-1000')
-    else {
-      applicableIds.add('moto-400')
-      applicableIds.add('moto-1000')
-    }
+    // Moto SEMPRE tem um plano só, definido pela cilindrada
+    applicableIds.add(motoId)
   } else if (isSuv) {
     applicableIds.add('suv')
   } else {
@@ -677,14 +687,7 @@ export function getAllRelevantPlans(
   }
 
   const allPlans: { id: PlanId; name: string; categoryLabel: string; popular?: boolean }[] = isMoto
-    ? cc > 0 && cc <= 400
-      ? [{ id: 'moto-400', name: 'VIP Moto até 400cc', categoryLabel: 'Moto' }]
-      : cc >= 450 && cc <= 1000
-        ? [{ id: 'moto-1000', name: 'VIP Moto 450-1000cc', categoryLabel: 'Moto' }]
-        : [
-            { id: 'moto-400', name: 'VIP Moto até 400cc', categoryLabel: 'Moto' },
-            { id: 'moto-1000', name: 'VIP Moto 450-1000cc', categoryLabel: 'Moto', popular: true },
-          ]
+    ? [{ id: motoId, name: MOTO_PLAN_NAME[motoId as 'moto-400' | 'moto-1000'], categoryLabel: 'Moto' }]
     : isEspecial
       ? [{ id: 'especial', name: 'Veículos Especiais', categoryLabel: 'Especial' }]
       : isSuv
