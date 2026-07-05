@@ -469,7 +469,7 @@ CARROS:
 - VIP          — Do Seu Jeito + carro reserva 7 dias + terceiros 50k
                  (PLANO MAIS VENDIDO)
 - PREMIUM      — VIP + terceiros 100k + todos vidros + reserva
-                 15 dias + AP morte/invalidez
+                 15 dias
 
 ESPECÍFICOS:
 - SUV          — SUVs/caminhonetes (até FIPE R$ 150k)

@@ -74,7 +74,6 @@ const plansByCategory: Record<Category, {
         { text: 'Reboque 1.000km', included: true },
         { text: 'Táxi 100km', included: true },
         { text: 'Todos os Vidros', included: false },
-        { text: 'AP morte/invalidez', included: false },
       ],
     },
     {
@@ -89,7 +88,6 @@ const plansByCategory: Record<Category, {
         { text: 'Reboque Adicional 200km', included: true },
         { text: 'Reboque 1.200km total', included: true },
         { text: 'Táxi 150km', included: true },
-        { text: 'AP morte/invalidez R$10.000', included: true },
       ],
     },
   ],
@@ -108,7 +106,6 @@ const plansByCategory: Record<Category, {
         { text: 'Chaveiro / Pneu / Combustível', included: true },
         { text: 'Socorro mecânico / elétrico', included: true },
         { text: 'Hospedagem + Retorno', included: true },
-        { text: 'AP morte acidental R$10.000', included: true },
       ],
     },
     {
@@ -124,7 +121,6 @@ const plansByCategory: Record<Category, {
         { text: 'Chaveiro / Pneu / Combustível', included: true },
         { text: 'Socorro mecânico / elétrico', included: true },
         { text: 'Hospedagem + Retorno', included: true },
-        { text: 'AP morte acidental R$10.000', included: true },
       ],
     },
   ],
@@ -146,7 +142,6 @@ const plansByCategory: Record<Category, {
         { text: 'Monitoramento 24h', included: true },
         { text: 'Reboque 1.000km', included: true },
         { text: 'Assistência 24h completa', included: true },
-        { text: 'AP morte/invalidez R$10.000', included: true },
       ],
     },
     {

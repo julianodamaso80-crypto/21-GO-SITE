@@ -58,7 +58,6 @@ const comparisonFeatures: FeatureRow[] = [
   { feature: 'Todos os Vidros', basico: false, jeito: false, vip: false, premium: true },
   { feature: 'Monitoramento 24h', basico: true, jeito: true, vip: 'Acima R$50K', premium: true },
   { feature: 'Táxi', basico: '25km', jeito: '50km', vip: '100km', premium: '150km' },
-  { feature: 'AP morte/invalidez', basico: false, jeito: false, vip: false, premium: 'R$10.000' },
   { feature: 'Clube de Benefícios', basico: true, jeito: true, vip: true, premium: true },
 ]
 

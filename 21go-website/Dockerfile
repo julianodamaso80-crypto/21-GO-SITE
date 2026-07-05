@@ -37,15 +37,22 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
+# Baixa o Chrome PINADO pelo puppeteer (versao testada e compativel com puppeteer-core).
+# NUNCA usar `apt-get install chromium`: o Debian bookworm-security atualiza o chromium
+# sem aviso (em 2026-07 subiu pra v150, que crashava com SIGTRAP) e derrubava a geracao
+# de PDF a cada rebuild. O Chrome do puppeteer nao muda sozinho — congela o problema.
+RUN npx puppeteer browsers install chrome
+
 # ====== Stage 3: runner ======
 FROM node:20-slim AS runner
 WORKDIR /app
 
-# Instala Chromium + libs necessárias (~250MB extra)
+# Somente as libs de runtime que o Chrome headless precisa (SEM instalar o chromium do
+# apt). O binario do Chrome vem do cache do puppeteer, copiado do builder logo abaixo.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
     fonts-liberation \
     fonts-noto-color-emoji \
+    ca-certificates \
     libnss3 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
@@ -60,14 +67,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libcairo2 \
     libasound2 \
+    libxshmfence1 \
+    libx11-xcb1 \
+    libxcb1 \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
     NEXT_TELEMETRY_DISABLED=1 \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
     PUPPETEER_SKIP_DOWNLOAD=true
+
+# Chrome pinado pelo puppeteer (resolveChromiumPath acha em /root/.cache/puppeteer/chrome)
+COPY --from=builder /root/.cache/puppeteer /root/.cache/puppeteer
 
 COPY --from=builder /app/public ./public
 # Next standalone — server.js + deps mínimas tracadas pelo Next (sem node_modules cru).

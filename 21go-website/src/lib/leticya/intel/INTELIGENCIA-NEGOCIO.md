@@ -249,7 +249,7 @@ Precisando, pode me ligar que te ajudo com qualquer dúvida ou suporte!
 **Resposta real:** "obvio que somos. somos um protecao patrimonial veicular cadastrada na susep" + "21Go tem mais de 20 anos de mercado"
 
 ### 4.12 — "Quero plano premium / mais completo"
-**Manejo:** Premium é o top de linha (carro reserva 15 dias, terceiros 100k, AP morte/invalidez, vidros premium). VIP é o mais vendido.
+**Manejo:** Premium é o top de linha (carro reserva 15 dias, terceiros 100k, vidros premium). VIP é o mais vendido.
 
 ---
 

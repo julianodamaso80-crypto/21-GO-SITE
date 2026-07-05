@@ -310,7 +310,7 @@ CARROS:
   + terceiros 50k.
 
 - PREMIUM — VIP + terceiros 100k + todos vidros + carro reserva
-  15 dias + AP morte/invalidez.
+  15 dias.
 
 ESPECÍFICOS:
 - SUV — plano dedicado pra SUVs/caminhonetes (até FIPE R$ 150k)
