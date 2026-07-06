@@ -23,7 +23,7 @@ export const maxDuration = 30
  */
 
 const COMPANY_ID = 'company-21go'
-const EXPECTED_INSTANCE = process.env.EVOLUTION_INSTANCE || 'site21leticya'
+const EXPECTED_INSTANCE = process.env.EVOLUTION_INSTANCE || 'disparo_xHH2aIEs_site21go'
 const WEBHOOK_TOKEN = process.env.EVOLUTION_WEBHOOK_TOKEN || ''
 
 interface EvolutionPayload {

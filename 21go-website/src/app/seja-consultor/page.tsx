@@ -351,7 +351,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
       ? `\nJá trabalhei com proteção veicular: ${form.experiencia.trim()}`
       : ''
     const waText = `Olá! Acabei de me cadastrar como consultor 21Go.\nNome: ${form.nome}\nE-mail: ${form.email}\nWhatsApp: ${form.contato}\nLocal: ${form.cidade} - ${form.estado}${expLine}`
-    const waUrl = `https://wa.me/5521969454824?text=${encodeURIComponent(waText)}`
+    const waUrl = `https://wa.me/5521980214882?text=${encodeURIComponent(waText)}`
 
     // Tracking ANTES de abrir a janela — caso o popup blocker mate o gesto
     // ou o usuario navegue, o evento ja foi pra dataLayer + /api/track.
@@ -416,7 +416,7 @@ function ConsultorModal({ open, onClose }: { open: boolean; onClose: () => void 
   if (!open) return null
 
   const waFallbackText = `Olá! Acabei de me cadastrar como consultor 21Go.\nNome: ${form.nome}\nE-mail: ${form.email}\nWhatsApp: ${form.contato}\nLocal: ${form.cidade} - ${form.estado}${form.experiencia.trim() ? `\nJá trabalhei com proteção veicular: ${form.experiencia.trim()}` : ''}`
-  const waLink = `https://wa.me/5521969454824?text=${encodeURIComponent(waFallbackText)}`
+  const waLink = `https://wa.me/5521980214882?text=${encodeURIComponent(waFallbackText)}`
 
   return (
     <div
