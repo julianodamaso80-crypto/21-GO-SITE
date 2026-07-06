@@ -141,6 +141,9 @@ export default function CotacaoPage() {
   // pro WhatsApp da consultora (5521980214882) com dados pré-preenchidos.
   const [requiresHumanSupport, setRequiresHumanSupport] = useState(false)
   const [humanSupportReason, setHumanSupportReason] = useState<'fipe_indisponivel' | 'consulta_falhou' | 'manual'>('consulta_falhou')
+  // Rate-limit: bloqueia após 3 veículos distintos por 7 dias (anti-consultor concorrente).
+  // No 4º, abre pop-up com WhatsApp em vez de mostrar a simulação.
+  const [limitBlocked, setLimitBlocked] = useState(false)
 
   // Fluxo principal: integração PowerCRM (tipo → marca → ano → modelo).
   // Placa permanece como campo OPCIONAL — não bloqueia cotação.
@@ -383,6 +386,25 @@ export default function CotacaoPage() {
       const v = data.vehicle
       setVehicle(v)
 
+      // Rate-limit: 3 veículos distintos por 7 dias (por device + IP). No 4º, abre
+      // pop-up com WhatsApp em vez da simulação. Fail-open: erro de infra não bloqueia.
+      try {
+        const limitRes = await fetch(`${API_BASE}/api/vehicle/quote-limit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ marca: v.marca, modelo: v.modelo, ano: v.ano }),
+        })
+        const limitData = await limitRes.json().catch(() => ({ allowed: true }))
+        if (limitData && limitData.allowed === false) {
+          setLimitBlocked(true)
+          setLoading(false)
+          return
+        }
+      } catch {
+        /* fail-open — segue a cotação normalmente */
+      }
+
       const reason = getExclusionReason(v.marca, v.modelo, v.ano)
       if (reason) {
         setExclusionReason(reason)
@@ -590,6 +612,52 @@ export default function CotacaoPage() {
       }} />
 
       <div className="relative z-10">
+        {/* Pop-up de limite atingido (3 veículos / 7 dias) — CTA WhatsApp */}
+        {limitBlocked && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1120]/60 backdrop-blur-sm">
+            <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 sm:p-8">
+              <button
+                onClick={() => setLimitBlocked(false)}
+                aria-label="Fechar"
+                className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-[#94A3B8] hover:bg-[#F1F5F9] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="w-14 h-14 rounded-2xl bg-[#F2911D]/10 flex items-center justify-center mb-5">
+                <Lock className="w-7 h-7 text-[#F2911D]" />
+              </div>
+
+              <h3 className="text-xl font-bold text-[#1A2754]">
+                Limite de simulações atingido
+              </h3>
+              <p className="text-[#64748B] text-sm mt-2 leading-relaxed">
+                Você já simulou 3 veículos. Para continuar e receber uma cotação
+                personalizada com nossa consultora, fale com a gente no WhatsApp — o
+                atendimento é rápido e sem compromisso.
+              </p>
+
+              <a
+                href={`https://wa.me/5521980214882?text=${encodeURIComponent(
+                  `Olá! Fiz algumas simulações no site e gostaria de continuar meu atendimento.${form.nome ? `\nNome: ${form.nome}` : ''}${form.whatsapp ? `\nWhatsApp: ${form.whatsapp}` : ''}`,
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-track-origin="cotacao_limite_simulacoes"
+                data-track-button-text="Falar com a consultora"
+                className="flex items-center justify-center gap-2.5 w-full mt-6 py-4 bg-gradient-to-r from-[#10B981] to-[#059669] text-white font-bold text-base rounded-full shadow-lg shadow-[#10B981]/20 hover:shadow-xl hover:shadow-[#10B981]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Falar com a consultora
+              </a>
+
+              <p className="text-center text-xs text-[#94A3B8] mt-4">
+                Atendimento humano direto, sem robô.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Stepper */}
         {step <= 1 && (
           <div className="pt-28 pb-8">
