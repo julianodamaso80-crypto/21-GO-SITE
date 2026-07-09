@@ -163,7 +163,7 @@ export default function FAQPage() {
                   Fale com nosso time pelo WhatsApp. Estamos prontos para ajudar.
                 </p>
                 <WhatsAppLink
-                  href="https://wa.me/5521980214882?text=Ol%C3%A1!%20Tenho%20uma%20d%C3%BAvida%20sobre%20prote%C3%A7%C3%A3o%20veicular."
+                  href="https://wa.me/5521969620781?text=Ol%C3%A1!%20Tenho%20uma%20d%C3%BAvida%20sobre%20prote%C3%A7%C3%A3o%20veicular."
                   origin="faq_sidebar"
                   buttonText="Falar no WhatsApp"
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-[#10B981] text-white font-semibold text-sm hover:bg-[#059669] transition-colors mb-4"

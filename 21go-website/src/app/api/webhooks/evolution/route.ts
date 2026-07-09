@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
   }
 
   const event = (payload.event || '').toLowerCase()
-  const instance = payload.instance || process.env.EVOLUTION_INSTANCE || 'disparo_xHH2aIEs_site21go'
+  const instance = payload.instance || process.env.EVOLUTION_INSTANCE || '21 go 0741'
   const data = payload.data || {}
 
   try {
