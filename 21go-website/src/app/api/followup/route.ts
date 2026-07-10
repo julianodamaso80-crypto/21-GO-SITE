@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || ''
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || '21 go 0741'
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'sitelet1234'
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
 const CRM_API = process.env.NEXT_PUBLIC_API_URL || 'https://crm-21-go-production.up.railway.app'
 
