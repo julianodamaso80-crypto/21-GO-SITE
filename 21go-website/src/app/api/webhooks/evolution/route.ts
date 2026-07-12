@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
   }
 
   const event = (payload.event || '').toLowerCase()
-  const instance = payload.instance || process.env.EVOLUTION_INSTANCE || 'sitelet1234'
+  const instance = payload.instance || process.env.EVOLUTION_INSTANCE || 'site4240'
   const data = payload.data || {}
 
   try {

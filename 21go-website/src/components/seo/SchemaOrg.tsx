@@ -33,7 +33,7 @@ export function SchemaOrg() {
         ],
         contactPoint: {
           '@type': 'ContactPoint',
-          telephone: '+55-21-99834-5734',
+          telephone: '+55-21-96577-4240',
           contactType: 'customer service',
           areaServed: 'BR',
           availableLanguage: ['Portuguese'],
@@ -46,7 +46,7 @@ export function SchemaOrg() {
         url: 'https://21go.site',
         logo: 'https://21go.site/logo21go.png',
         image: 'https://21go.site/logo21go.png',
-        telephone: '+55-21-99834-5734',
+        telephone: '+55-21-96577-4240',
         email: 'contato@21go.org',
         address: {
           '@type': 'PostalAddress',

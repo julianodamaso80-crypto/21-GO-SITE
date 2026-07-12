@@ -85,7 +85,7 @@ export default function IndiquePage() {
 
           <motion.div variants={fadeInUp}>
             <a
-              href="https://wa.me/5521998345734?text=Ol%C3%A1!%20Quero%20meu%20link%20de%20indica%C3%A7%C3%A3o%20do%20programa%20Member%20Get%20Member.%20Meu%20nome%3A%20"
+              href="https://wa.me/5521965774240?text=Ol%C3%A1!%20Quero%20meu%20link%20de%20indica%C3%A7%C3%A3o%20do%20programa%20Member%20Get%20Member.%20Meu%20nome%3A%20"
               target="_blank"
               rel="noopener noreferrer"
               data-track-origin="indique_topo"
@@ -210,7 +210,7 @@ export default function IndiquePage() {
             Entre em contato pelo WhatsApp e solicite seu link exclusivo de indicação.
           </p>
           <a
-            href="https://wa.me/5521998345734?text=Ol%C3%A1!%20Quero%20meu%20link%20de%20indica%C3%A7%C3%A3o.%20Meu%20nome%3A%20"
+            href="https://wa.me/5521965774240?text=Ol%C3%A1!%20Quero%20meu%20link%20de%20indica%C3%A7%C3%A3o.%20Meu%20nome%3A%20"
             target="_blank"
             rel="noopener noreferrer"
             data-track-origin="indique_fim"

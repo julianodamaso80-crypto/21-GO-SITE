@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'https://evolution.sinistro21go.site'
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'sitelet1234'
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'site4240'
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
-const NOTIFY_NUMBER = process.env.NOTIFY_NUMBER || '5521998345734'
+const NOTIFY_NUMBER = process.env.NOTIFY_NUMBER || '5521965774240'
 
 export async function POST(request: NextRequest) {
   try {
