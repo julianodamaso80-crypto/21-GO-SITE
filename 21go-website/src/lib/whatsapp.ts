@@ -273,33 +273,47 @@ export function buildIncompleteDataMessage(input: {
 /**
  * Mensagem para veículos da lista de exclusão (sem cotação automática).
  */
+const EXC_CORPOS: ((v: string, p: string) => string)[] = [
+  (v, p) => `Recebi aqui a sua simulação ${p} *${v}*.`,
+  (v, p) => `Chegou a sua simulação ${p} *${v}* aqui pra mim.`,
+  (v, p) => `Vi que você fez uma simulação ${p} *${v}* no nosso site.`,
+]
+
+const EXC_STATUS: string[] = [
+  `No momento a 21Go ainda não está fazendo proteção pra esse tipo de veículo, mas já *guardei o seu contato* com todo cuidado 🙌`,
+  `Esse tipo de veículo a gente ainda não está aceitando por enquanto — mas já deixei o seu *contato salvo* aqui 🙌`,
+  `Ainda não estamos cobrindo esse tipo de veículo neste momento, porém o seu *contato já ficou guardado* com a gente 🙌`,
+]
+
+const EXC_FECHOS: string[] = [
+  `Assim que voltarmos a aceitar, eu te aviso por aqui. Obrigada pelo interesse! 💛`,
+  `Quando liberar pra esse veículo, eu entro em contato com você. Valeu por simular com a gente! 💛`,
+  `Assim que abrir pra esse tipo de veículo, te chamo por aqui. Obrigada! 💛`,
+]
+
+/**
+ * Mensagem para veículos da lista de exclusão. NÃO pede confirmação nem chama
+ * o cliente pra responder — só avisa que o contato ficou salvo e que a 21Go
+ * entra em contato quando voltar a aceitar o veículo. Variada por leadId.
+ */
 export function buildExcludedMessage(input: {
   nome: string
-  whatsapp: string
+  whatsapp?: string
   placa?: string | null
   marca?: string | null
   modelo?: string | null
   ano?: string | number | null
   fipe?: number | null
+  seed?: string | null
 }): string {
   const firstName = input.nome.split(' ')[0]
-  const fipeFormatted =
-    input.fipe && input.fipe > 0
-      ? input.fipe.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      : ''
-  const veiculoLabel = [input.marca, input.modelo, input.ano].filter(Boolean).join(' ').trim()
+  const { veiculoText, prep } = resolveVeiculo(input)
+  const seed = input.seed || `${input.nome}|${input.modelo || ''}`
 
-  const lines: string[] = [
-    `Oi *${firstName}*! Tudo bem? 😊`,
-    ``,
-    `Vi que você fez uma simulação no nosso site, mas o seu veículo precisa de uma *cotação especial*`,
-    ``,
-    `• Nome: *${input.nome}*`,
-    `• WhatsApp: *${input.whatsapp}*`,
-  ]
-  if (input.placa) lines.push(`• Placa: *${input.placa}*`)
-  if (veiculoLabel) lines.push(`• Veículo: *${veiculoLabel}*`)
-  if (fipeFormatted) lines.push(`• FIPE: *R$ ${fipeFormatted}*`)
-  lines.push('', 'Confirma os dados por favor')
-  return lines.join('\n')
+  const saudacao = pickVariant(FU_SAUDACOES, seed, 'exc-saud')(firstName)
+  const corpo = pickVariant(EXC_CORPOS, seed, 'exc-corpo')(veiculoText, prep)
+  const status = pickVariant(EXC_STATUS, seed, 'exc-status')
+  const fecho = pickVariant(EXC_FECHOS, seed, 'exc-fecho')
+
+  return [saudacao, ``, corpo, ``, status, ``, fecho].join('\n')
 }

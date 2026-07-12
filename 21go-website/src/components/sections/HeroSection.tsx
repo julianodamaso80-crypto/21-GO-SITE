@@ -96,6 +96,14 @@ export function HeroSection() {
           São 90 carros e 39 motos por dia. O seu está protegido?
         </motion.p>
 
+        {/* Cobertura nacional */}
+        <motion.div variants={fadeInUp} className="mt-5">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#C7D301]/40 bg-[#C7D301]/10 px-4 py-2 text-sm font-semibold text-white">
+            <span aria-hidden="true">🇧🇷</span>
+            Atendemos todo o Brasil
+          </span>
+        </motion.div>
+
         {/* Diferenciais — 3 mini-cards */}
         <motion.div
           variants={fadeInUp}

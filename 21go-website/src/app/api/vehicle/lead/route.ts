@@ -472,6 +472,7 @@ async function sendQuotePdfWhatsApp(body: LeadInput, leadId: string) {
       modelo: body.modelo,
       ano: body.ano,
       fipe: body.valorFipe,
+      seed: leadId,
     })
     const result = await sendText(phone, text)
     await registerOutboundMessage({

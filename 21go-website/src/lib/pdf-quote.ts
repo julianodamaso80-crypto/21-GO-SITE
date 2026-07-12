@@ -441,6 +441,9 @@ function renderComparisonPage(
         Seu veículo está avaliado em <b class="laranja">R$ ${formatBRL(input.fipe)}</b>
         <span class="greet-fipe-note">(de acordo com a tabela FIPE atual)</span>
       </p>
+      <div style="display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 14px;border-radius:999px;background:#EEF3FF;border:1px solid #293C82;color:#293C82;font-weight:700;font-size:12px;letter-spacing:.02em;">
+        <span>🇧🇷</span> Atendemos em todo o Brasil
+      </div>
     </section>
 
     <section class="entrada">
