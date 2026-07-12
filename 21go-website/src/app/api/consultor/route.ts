@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'https://evolution.sinistro21go.site'
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'site4240'
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || '4240'
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
 const NOTIFY_NUMBER = process.env.NOTIFY_NUMBER || '5521965774240'
 const COMPANY_ID = process.env.DEFAULT_COMPANY_ID || 'company-21go'
