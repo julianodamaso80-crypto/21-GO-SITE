@@ -7,6 +7,8 @@
  * trocada por 4240, que estava de backup no painel.
  */
 
+import crypto from 'crypto'
+
 const EVOLUTION_API_URL =
   process.env.EVOLUTION_API_URL || 'https://evolution.sinistro21go.site'
 const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || '4240'
@@ -107,38 +109,141 @@ export async function sendPdfMedia(
   return parseEvolutionResponse(parsed)
 }
 
+/* ───────────────── Ritmo humano (anti-ban) ───────────────── */
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** Inteiro aleatório inclusivo em [min, max]. */
+export function randInt(min: number, max: number): number {
+  return Math.floor(min + Math.random() * (max - min + 1))
+}
+
 /**
- * Constrói a mensagem padrão de follow-up (idêntica ao CRM).
- * Quando o lead é normal (com PDF), serve como caption do PDF.
+ * Envia presença ("digitando…") antes de uma mensagem, pra simular
+ * comportamento humano. Best-effort: se a Evolution não suportar ou falhar,
+ * apenas loga e segue — nunca quebra o envio.
  */
-export function buildFollowUpMessage(input: {
+export async function sendPresence(
+  phone: string,
+  presence: 'composing' | 'recording' | 'available' | 'paused' = 'composing',
+  delayMs = 2500,
+): Promise<void> {
+  if (!EVOLUTION_API_KEY) return
+  try {
+    const url = `${EVOLUTION_API_URL}/chat/sendPresence/${EVOLUTION_INSTANCE}`
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: EVOLUTION_API_KEY },
+      body: JSON.stringify({ number: phone, delay: delayMs, presence }),
+    })
+  } catch (err) {
+    console.warn('[WhatsApp] sendPresence falhou (ignorado):', err instanceof Error ? err.message : err)
+  }
+}
+
+/* ───────────────── Variação de conteúdo (Spintax anti-ban) ───────────────── */
+
+/**
+ * Escolhe uma variante de forma determinística pelo `seed` (ex: leadId).
+ * Mesmo lead → sempre a mesma combinação (idempotente em retries);
+ * leads diferentes → combinações diferentes, sem repetir o mesmo texto.
+ */
+function pickVariant<T>(arr: T[], seed: string, salt: string): T {
+  const h = crypto.createHash('md5').update(`${seed}|${salt}`).digest()
+  return arr[h[0] % arr.length]
+}
+
+interface FollowUpInput {
   nome: string
   marca?: string | null
   modelo?: string | null
   placa?: string | null
-}): string {
-  const firstName = input.nome.split(' ')[0]
+  /** Semente pra variação determinística (use o leadId). */
+  seed?: string | null
+}
+
+function resolveVeiculo(input: { marca?: string | null; modelo?: string | null }): {
+  veiculoText: string
+  prep: 'da' | 'do'
+} {
   const isMoto =
     (input.marca || '').toLowerCase().includes('moto') ||
     (input.modelo || '').toLowerCase().includes('moto')
-  const tipo = isMoto ? 'moto' : 'carro'
   const veiculoText =
     input.modelo && input.modelo !== '(manual)' && input.modelo !== '(informado manualmente)'
       ? `${input.marca || ''} ${input.modelo}`.trim()
-      : tipo === 'moto'
+      : isMoto
         ? 'sua moto'
         : 'seu carro'
-  const placaText = input.placa ? `, placa *${input.placa}*` : ''
+  return { veiculoText, prep: isMoto ? 'da' : 'do' }
+}
 
-  return [
-    `Oi *${firstName}*! Tudo bem? 😊`,
-    ``,
-    `Me chamo Letycia e estou aqui para dar sequência no seu atendimento.`,
-    ``,
-    `Preparei sua *simulação completa* em PDF d${isMoto ? 'a' : 'o'} *${veiculoText}*${placaText}.`,
-    ``,
-    `Ficou com alguma dúvida que eu possa te ajudar? Se sim, qual dúvida?`,
-  ].join('\n')
+const FU_SAUDACOES: ((n: string) => string)[] = [
+  (n) => `Oi *${n}*! Tudo bem? 😊`,
+  (n) => `Olá, *${n}*! Como você está?`,
+  (n) => `Oi *${n}*, tudo certo por aí? 🙌`,
+  (n) => `E aí *${n}*, beleza?`,
+  (n) => `Oiê *${n}*! Espero que esteja tudo bem 🙂`,
+]
+
+const FU_APRESENTACOES: string[] = [
+  `Aqui é a Letycia, da 21Go.`,
+  `Sou a Letycia e vou te acompanhar por aqui 🙂`,
+  `Me chamo Letycia, do time da 21Go.`,
+  `Quem fala é a Letycia, da 21Go.`,
+]
+
+const FU_CORPOS: ((v: string, p: string) => string)[] = [
+  (v, p) => `Terminei de montar a sua *simulação* ${p} *${v}* e vou te enviar o PDF completo agora 👇`,
+  (v, p) => `Já preparei o *orçamento* ${p} *${v}* — te mando o arquivo aqui embaixo 📄`,
+  (v, p) => `Fiz a *cotação completa* ${p} *${v}* que você simulou. Segue o PDF logo abaixo 👇`,
+  (v, p) => `Deixei pronta a *proposta* ${p} *${v}*, te envio em PDF agora mesmo.`,
+]
+
+const FU_FECHOS: string[] = [
+  `Qualquer dúvida é só me chamar por aqui 😉`,
+  `Me conta o que achou, tô à disposição!`,
+  `Se quiser, te explico cada cobertura. Pode perguntar 🙂`,
+  `Ficou alguma dúvida? Respondo rapidinho.`,
+]
+
+const FU_CAPTIONS: string[] = [
+  `Segue a sua simulação completa 👆`,
+  `Aqui está o PDF com todos os detalhes 📄`,
+  `Prontinho! Tá tudo aí no arquivo 😉`,
+  `Esse é o resumo completo da sua proteção 👆`,
+]
+
+/**
+ * Constrói a mensagem de follow-up variada (Spintax). É a mensagem de texto
+ * que vai ANTES do PDF. Cada lead recebe uma combinação diferente pra não
+ * deixar "impressão digital" de spam no WhatsApp.
+ */
+export function buildFollowUpMessage(input: FollowUpInput): string {
+  const firstName = input.nome.split(' ')[0]
+  const { veiculoText, prep } = resolveVeiculo(input)
+  const seed = input.seed || `${input.nome}|${input.modelo || ''}`
+
+  const saudacao = pickVariant(FU_SAUDACOES, seed, 'saud')(firstName)
+  const apresentacao = pickVariant(FU_APRESENTACOES, seed, 'apres')
+  const corpo = pickVariant(FU_CORPOS, seed, 'corpo')(veiculoText, prep)
+  const fecho = pickVariant(FU_FECHOS, seed, 'fecho')
+
+  const lines = [saudacao, ``, apresentacao, ``, corpo]
+  if (input.placa) lines.push(``, `Placa *${input.placa}*.`)
+  lines.push(``, fecho)
+  return lines.join('\n')
+}
+
+/**
+ * Caption curto e variado pro PDF (que vai DEPOIS do texto). Curto de
+ * propósito: a mensagem de valor já foi no texto anterior.
+ */
+export function buildPdfCaption(input: FollowUpInput): string {
+  const seed = input.seed || `${input.nome}|${input.modelo || ''}`
+  return pickVariant(FU_CAPTIONS, seed, 'cap')
 }
 
 /**

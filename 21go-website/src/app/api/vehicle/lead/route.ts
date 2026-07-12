@@ -6,11 +6,15 @@ import {
   buildExcludedMessage,
   buildFollowUpMessage,
   buildIncompleteDataMessage,
+  buildPdfCaption,
   formatPhone,
   getEvolutionInstance,
   isWhatsappConfigured,
+  randInt,
   sendPdfMedia,
+  sendPresence,
   sendText,
+  sleep,
   type SendResult,
 } from '@/lib/whatsapp'
 import {
@@ -598,12 +602,42 @@ async function sendQuotePdfWhatsApp(body: LeadInput, leadId: string) {
     }
   }
 
-  const caption = buildFollowUpMessage({
+  // ── Anti-ban: mensagem de texto variada PRIMEIRO, com "digitando…" ──
+  // Cada lead recebe uma combinação diferente (Spintax por leadId), evitando
+  // a impressão digital de spam de mandar sempre o mesmo texto.
+  const followText = buildFollowUpMessage({
     nome: body.nome || '',
     marca: body.marca,
     modelo: body.modelo,
     placa: body.placa,
+    seed: leadId,
   })
+  await sendPresence(phone, 'composing', 3000)
+  await sleep(randInt(2500, 4500))
+  const textResult = await sendText(phone, followText)
+  await registerOutboundMessage({
+    result: textResult,
+    jid,
+    instance,
+    leadId,
+    message_type: 'text',
+    content: followText,
+  })
+
+  // ── Delay rotativo de 20-60s antes do PDF (ritmo humano, nada depois) ──
+  const pdfDelayMs = randInt(20_000, 60_000)
+  console.log(`[lead] aguardando ${Math.round(pdfDelayMs / 1000)}s antes do PDF (anti-ban) lead=${leadId}`)
+  await sleep(pdfDelayMs)
+
+  const caption = buildPdfCaption({
+    nome: body.nome || '',
+    marca: body.marca,
+    modelo: body.modelo,
+    placa: body.placa,
+    seed: leadId,
+  })
+  await sendPresence(phone, 'composing', 3000)
+  await sleep(randInt(2500, 4500))
   const result = await sendPdfMedia(phone, media, caption, filename)
   await registerOutboundMessage({
     result,
