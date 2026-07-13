@@ -8,6 +8,12 @@
  */
 
 import crypto from 'crypto'
+import {
+  getAllRelevantPlans,
+  calcActivation,
+  activationCashPrice,
+  activationInstallment12x,
+} from '@/data/pricing'
 
 const EVOLUTION_API_URL =
   process.env.EVOLUTION_API_URL || 'https://evolution.sinistro21go.site'
@@ -244,6 +250,82 @@ export function buildFollowUpMessage(input: FollowUpInput): string {
 export function buildPdfCaption(input: FollowUpInput): string {
   const seed = input.seed || `${input.nome}|${input.modelo || ''}`
   return pickVariant(FU_CAPTIONS, seed, 'cap')
+}
+
+/* ───────────────── Resumo da cotação em texto (substitui o PDF) ───────────────── */
+
+const QS_FECHOS: string[] = [
+  `Quer que eu te explique as coberturas ou veja outro plano? 😉`,
+  `Posso te detalhar tudo que está incluso, é só me chamar 🙂`,
+  `Ficou com alguma dúvida sobre o que entra no plano?`,
+  `Se quiser, te mostro os outros planos também. Me diz 😉`,
+]
+
+function fmtBRL(v: number): string {
+  return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/**
+ * Mensagem curta com a cotação em TEXTO (substitui o PDF, decisão 2026-07-12).
+ * Mostra a mensalidade personalizada do plano de referência (VIP pra carro;
+ * plano único pra moto/suv/especial) e a taxa de ativação — SEMPRE calculadas
+ * pela tabela oficial (getAllRelevantPlans + calcActivation), nunca inventadas.
+ * Variada por leadId (spintax) pra reduzir risco de ban.
+ */
+export function buildQuoteSummaryMessage(input: {
+  nome: string
+  marca?: string | null
+  modelo?: string | null
+  placa?: string | null
+  fipe: number
+  categoria?: string | null
+  combustivel?: string | null
+  cilindrada?: number | null
+  seed?: string | null
+}): string {
+  const firstName = input.nome.split(' ')[0]
+  const { veiculoText, prep } = resolveVeiculo(input)
+  const seed = input.seed || `${input.nome}|${input.modelo || ''}`
+
+  const plans = getAllRelevantPlans(
+    input.fipe,
+    input.categoria || undefined,
+    input.combustivel || undefined,
+    input.cilindrada || undefined,
+    input.modelo || undefined,
+  )
+  // Referência: VIP pra carro; senão o plano aplicável (moto/suv/especial).
+  const ref = plans.find((p) => p.id === 'vip') || plans.find((p) => p.applicable) || plans[0]
+
+  // Sem plano calculável (FIPE inválido) → mensagem honesta de dados incompletos.
+  if (!ref || ref.monthly <= 0) {
+    return buildIncompleteDataMessage({
+      nome: input.nome,
+      marca: input.marca,
+      modelo: input.modelo,
+      placa: input.placa,
+    })
+  }
+
+  const isBYD = (input.marca || '').toUpperCase().includes('BYD')
+  const taxa = calcActivation(ref.monthly, isBYD)
+  const avista = activationCashPrice(taxa)
+  const parcela12 = activationInstallment12x(taxa)
+  const emDia = ref.monthly * 0.95
+
+  const saudacao = pickVariant(FU_SAUDACOES, seed, 'qs-saud')(firstName)
+  const fecho = pickVariant(QS_FECHOS, seed, 'qs-fecho')
+
+  return [
+    saudacao,
+    ``,
+    `Sou a Letycia, da 21Go 🙂 Fiz a sua simulação ${prep} *${veiculoText}*:`,
+    ``,
+    `🛡️ *Plano ${ref.name}*: R$ ${fmtBRL(ref.monthly)}/mês _(R$ ${fmtBRL(emDia)} pagando em dia)_`,
+    `✅ *Adesão*: R$ ${fmtBRL(avista)} à vista ou 12x de R$ ${fmtBRL(parcela12)}`,
+    ``,
+    fecho,
+  ].join('\n')
 }
 
 /**

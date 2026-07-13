@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { generateQuotePdf } from '@/lib/pdf-quote'
-import { isStorageConfigured, uploadPdf } from '@/lib/storage'
 import {
   buildExcludedMessage,
-  buildFollowUpMessage,
   buildIncompleteDataMessage,
-  buildPdfCaption,
+  buildQuoteSummaryMessage,
   formatPhone,
   getEvolutionInstance,
   isWhatsappConfigured,
   randInt,
-  sendPdfMedia,
   sendPresence,
   sendText,
   sleep,
@@ -506,188 +502,34 @@ async function sendQuotePdfWhatsApp(body: LeadInput, leadId: string) {
     return
   }
 
-  const filename = `simulacao-21go-${leadId}.pdf`
-
-  // Tenta gerar PDF. Se falhar (Chromium quebrado, etc), cai pro fallback texto
-  // e marca pdf_falhou=true no Supabase pra retry posterior via /api/admin/resend.
-  let pdf: Buffer
-  try {
-    pdf = await generateQuotePdf({
-      nome: body.nome || '',
-      whatsapp: body.whatsapp || '',
-      email: body.email,
-      placa: body.placa,
-      marca: body.marca,
-      modelo: body.modelo,
-      ano: body.ano || '',
-      cor: body.cor,
-      fipe: body.valorFipe,
-      planoNome: body.plano,
-      mensalidade: body.valorMensal,
-      isMoto: (body.categoria || '').toLowerCase().includes('moto'),
-      categoria: body.categoria,
-      combustivel: body.combustivel,
-      cilindrada: body.cilindrada,
-      carroApp: body.carroApp,
-      leilao: body.leilao,
-      motoTerceiros: body.motoTerceiros,
-      seguroAtual: body.seguroAtual,
-    })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[lead] PDF falhou — fallback texto. Erro:', msg)
-    // Marca o lead pra retry
-    await markLeadPdfFailed(leadId, msg).catch(() => {})
-    // Manda texto explicando
-    const fallbackText = buildFollowUpMessage({
-      nome: body.nome || '',
-      marca: body.marca,
-      modelo: body.modelo,
-      placa: body.placa,
-    })
-    const result = await sendText(phone, fallbackText)
-    await registerOutboundMessage({
-      result,
-      jid,
-      instance,
-      leadId,
-      message_type: 'text',
-      content: fallbackText,
-    })
-    return
-  }
-
-  // Estratégia: PDF vai pro Supabase Storage (bucket 'quotes', público).
-  // URL Supabase NÃO passa pelo nosso Cloudflare — a Evolution consegue baixar.
-  // Descoberta em 2026-05-08: URL via 21go.site (Cloudflare) era bloqueada
-  // pra Evolution como bot, retornando "Failed to fetch stream".
-  //
-  // Fallbacks: MinIO/R2 → endpoint /api/pdfs/[leadId] → base64.
-  let media: string
-  let pdfUrl: string | null = null
-
-  try {
-    const { supabaseAdmin: getSupa } = await import('@/lib/supabase-admin')
-    const supa = getSupa()
-    const path = `${new Date().toISOString().slice(0, 10)}/${leadId}.pdf`
-    const { error: upErr } = await supa.storage
-      .from('quotes')
-      .upload(path, pdf, {
-        contentType: 'application/pdf',
-        upsert: true,
-        cacheControl: '300',
-      })
-    if (upErr) throw new Error(upErr.message)
-    const { data: pub } = supa.storage.from('quotes').getPublicUrl(path)
-    if (!pub?.publicUrl) throw new Error('publicUrl ausente')
-    media = pub.publicUrl
-    pdfUrl = pub.publicUrl
-  } catch (err) {
-    console.warn(
-      '[lead] Supabase Storage falhou, usando fallback /api/pdfs:',
-      err instanceof Error ? err.message : err,
-    )
-    if (isStorageConfigured()) {
-      try {
-        const key = `quotes/${new Date().toISOString().slice(0, 10)}/${leadId}.pdf`
-        const { url } = await uploadPdf(key, pdf, filename)
-        media = url
-        pdfUrl = url
-      } catch {
-        media = pdf.toString('base64')
-      }
-    } else {
-      const PUBLIC_BASE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://21go.site').replace(/\/$/, '')
-      media = `${PUBLIC_BASE}/api/pdfs/${leadId}`
-      pdfUrl = media
-    }
-  }
-
-  // ── Anti-ban: mensagem de texto variada PRIMEIRO, com "digitando…" ──
-  // Cada lead recebe uma combinação diferente (Spintax por leadId), evitando
-  // a impressão digital de spam de mandar sempre o mesmo texto.
-  const followText = buildFollowUpMessage({
+  // ── Resumo da cotação em TEXTO (sem PDF) ──
+  // Decisão 2026-07-12: paramos de enviar o PDF pra reduzir o peso do disparo —
+  // documento em contato frio pesa mais no anti-spam do WhatsApp e vinha
+  // derrubando o chip. Enviamos UMA mensagem curta e variada com a mensalidade
+  // personalizada do plano de referência (VIP pra carro) e a taxa de ativação,
+  // calculadas pela tabela oficial (buildQuoteSummaryMessage). Nada depois.
+  const text = buildQuoteSummaryMessage({
     nome: body.nome || '',
     marca: body.marca,
     modelo: body.modelo,
     placa: body.placa,
+    fipe: body.valorFipe ?? 0,
+    categoria: body.categoria,
+    combustivel: body.combustivel,
+    cilindrada: body.cilindrada,
     seed: leadId,
   })
   await sendPresence(phone, 'composing', 3000)
   await sleep(randInt(2500, 4500))
-  const textResult = await sendText(phone, followText)
-  await registerOutboundMessage({
-    result: textResult,
-    jid,
-    instance,
-    leadId,
-    message_type: 'text',
-    content: followText,
-  })
-
-  // ── Delay rotativo de 20-60s antes do PDF (ritmo humano, nada depois) ──
-  const pdfDelayMs = randInt(20_000, 60_000)
-  console.log(`[lead] aguardando ${Math.round(pdfDelayMs / 1000)}s antes do PDF (anti-ban) lead=${leadId}`)
-  await sleep(pdfDelayMs)
-
-  const caption = buildPdfCaption({
-    nome: body.nome || '',
-    marca: body.marca,
-    modelo: body.modelo,
-    placa: body.placa,
-    seed: leadId,
-  })
-  await sendPresence(phone, 'composing', 3000)
-  await sleep(randInt(2500, 4500))
-  const result = await sendPdfMedia(phone, media, caption, filename)
+  const result = await sendText(phone, text)
   await registerOutboundMessage({
     result,
     jid,
     instance,
     leadId,
-    message_type: 'document',
-    content: caption,
-    caption,
-    media_url: pdfUrl,
-    media_filename: filename,
-    media_mime_type: 'application/pdf',
+    message_type: 'text',
+    content: text,
   })
-
-  // PDF entregue com sucesso → marca no lead pra observabilidade
-  await markLeadPdfSent(leadId).catch(() => {})
-}
-
-async function markLeadPdfFailed(leadId: string, errorMsg: string): Promise<void> {
-  const { supabaseAdmin } = await import('@/lib/supabase-admin')
-  const supa = supabaseAdmin()
-  await supa
-    .from('leads')
-    .update({
-      pdf_enviado: false,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', leadId)
-  // Loga em outbound_event_log pra trail
-  await supa.from('outbound_event_log').insert({
-    lead_id: leadId,
-    kind: 'powerapi_get_negotiation', // reaproveita kind existente — depois posso adicionar 'pdf_generation'
-    request_payload: { leadId },
-    response_payload: { error: errorMsg },
-    error: errorMsg,
-  })
-}
-
-async function markLeadPdfSent(leadId: string): Promise<void> {
-  const { supabaseAdmin } = await import('@/lib/supabase-admin')
-  const supa = supabaseAdmin()
-  await supa
-    .from('leads')
-    .update({
-      pdf_enviado: true,
-      pdf_enviado_em: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', leadId)
 }
 
 async function registerOutboundMessage(args: {
