@@ -254,11 +254,43 @@ export function buildPdfCaption(input: FollowUpInput): string {
 
 /* ───────────────── Resumo da cotação em texto (substitui o PDF) ───────────────── */
 
+// Intro variada (apresentação da Letycia + "fiz a simulação do X"). ${p} = 'da'|'do'.
+const QS_INTROS: ((v: string, p: string) => string)[] = [
+  (v, p) => `Sou a Letycia, da 21Go 🙂 Fiz a sua simulação ${p} *${v}*:`,
+  (v, p) => `Aqui é a Letycia, da 21Go. Terminei a cotação ${p} *${v}* — olha só:`,
+  (v, p) => `Quem fala é a Letycia 🙂 Já preparei os números ${p} *${v}*:`,
+  (v, p) => `Letycia, da 21Go, por aqui! Segue a simulação ${p} *${v}*:`,
+  (v, p) => `Sou a Letycia 🙂 Deixei prontinha a sua cotação ${p} *${v}*:`,
+  (v, p) => `Aqui é a Letycia, da 21Go. Olha o que preparei ${p} *${v}*:`,
+  (v, p) => `Me chamo Letycia, do time da 21Go. Sua simulação ${p} *${v}* ficou assim:`,
+  (v, p) => `Letycia da 21Go aqui 🙌 Fiz a conta ${p} *${v}* pra você:`,
+  (v, p) => `Sou a Letycia 🙂 Rodei a simulação ${p} *${v}* e ficou assim:`,
+  (v, p) => `Aqui quem fala é a Letycia, da 21Go. Cotação ${p} *${v}* na mão:`,
+]
+
+// Formato dos valores (mensalidade + adesão). n=plano, m=mensal, e=em dia, a=à vista, x=12x.
+const QS_VALORES: ((n: string, m: string, e: string, a: string, x: string) => string)[] = [
+  (n, m, e, a, x) =>
+    `🛡️ *Plano ${n}*: R$ ${m}/mês _(R$ ${e} pagando em dia)_\n✅ *Adesão*: R$ ${a} à vista ou 12x de R$ ${x}`,
+  (n, m, e, a, x) =>
+    `💙 *${n}* — R$ ${m}/mês _(R$ ${e} pagando em dia)_\n📄 *Ativação* — R$ ${a} à vista ou 12x de R$ ${x}`,
+  (n, m, e, a, x) =>
+    `No *plano ${n}* a mensalidade fica em *R$ ${m}* (R$ ${e} pagando em dia).\nA adesão é *R$ ${a}* à vista, ou 12x de R$ ${x}.`,
+  (n, m, e, a, x) =>
+    `📌 *${n}*\n• Mensalidade: R$ ${m} _(R$ ${e} em dia)_\n• Adesão: R$ ${a} à vista (ou 12x de R$ ${x})`,
+]
+
 const QS_FECHOS: string[] = [
   `Quer que eu te explique as coberturas ou veja outro plano? 😉`,
   `Posso te detalhar tudo que está incluso, é só me chamar 🙂`,
   `Ficou com alguma dúvida sobre o que entra no plano?`,
   `Se quiser, te mostro os outros planos também. Me diz 😉`,
+  `Quer que eu te passe as coberturas? Respondo rapidinho 🙂`,
+  `Te interessou? Posso te explicar tudo com calma 🙂`,
+  `Quer ver como funciona a proteção na prática? É só falar 👊`,
+  `Me conta o que achou — e se quiser vejo outra opção pra você 🙂`,
+  `Alguma dúvida? Tô aqui pra te ajudar no que precisar 💛`,
+  `Bora conversar? Qualquer dúvida eu respondo por aqui 😉`,
 ]
 
 function fmtBRL(v: number): string {
@@ -314,18 +346,17 @@ export function buildQuoteSummaryMessage(input: {
   const emDia = ref.monthly * 0.95
 
   const saudacao = pickVariant(FU_SAUDACOES, seed, 'qs-saud')(firstName)
+  const intro = pickVariant(QS_INTROS, seed, 'qs-intro')(veiculoText, prep)
+  const valores = pickVariant(QS_VALORES, seed, 'qs-val')(
+    ref.name,
+    fmtBRL(ref.monthly),
+    fmtBRL(emDia),
+    fmtBRL(avista),
+    fmtBRL(parcela12),
+  )
   const fecho = pickVariant(QS_FECHOS, seed, 'qs-fecho')
 
-  return [
-    saudacao,
-    ``,
-    `Sou a Letycia, da 21Go 🙂 Fiz a sua simulação ${prep} *${veiculoText}*:`,
-    ``,
-    `🛡️ *Plano ${ref.name}*: R$ ${fmtBRL(ref.monthly)}/mês _(R$ ${fmtBRL(emDia)} pagando em dia)_`,
-    `✅ *Adesão*: R$ ${fmtBRL(avista)} à vista ou 12x de R$ ${fmtBRL(parcela12)}`,
-    ``,
-    fecho,
-  ].join('\n')
+  return [saudacao, ``, intro, ``, valores, ``, fecho].join('\n')
 }
 
 /**
