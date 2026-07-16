@@ -163,14 +163,21 @@ export async function POST(req: NextRequest) {
     return { ok: false, lead_id: leadId }
   })
 
-  // 3) PDF + WhatsApp em background, registrando cada mensagem no Supabase
-  ;(async () => {
-    try {
-      await sendQuotePdfWhatsApp(body, leadId)
-    } catch (err) {
-      console.error('[lead] Falha PDF/WhatsApp:', err instanceof Error ? err.message : err)
-    }
-  })()
+  // 3) Inbound-first (decisão 2026-07): por padrão NÃO disparamos WhatsApp
+  //    automático. O cliente inicia a conversa clicando no botão da tela de
+  //    planos (wa.me com a mensagem já pronta), o que zera o cold outbound e
+  //    reduz drasticamente o risco de queda/ban do chip. O lead continua salvo
+  //    no PowerCRM + Supabase pra atendimento. Pra religar o disparo automático,
+  //    defina WHATSAPP_AUTO_DISPATCH=true no ambiente.
+  if (process.env.WHATSAPP_AUTO_DISPATCH === 'true') {
+    ;(async () => {
+      try {
+        await sendQuotePdfWhatsApp(body, leadId)
+      } catch (err) {
+        console.error('[lead] Falha envio WhatsApp:', err instanceof Error ? err.message : err)
+      }
+    })()
+  }
 
   return NextResponse.json({
     success: true,

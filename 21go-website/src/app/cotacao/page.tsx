@@ -1316,6 +1316,9 @@ export default function CotacaoPage() {
                   </div>
                   )}
 
+                  <p className="text-center text-sm font-semibold text-[#1A2754] mb-3">
+                    Gostou dos planos? 🎉 Dá o próximo passo pra sair protegido — a Letycia te acompanha daqui 👇
+                  </p>
                   <a href={`https://wa.me/5521965774240?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${motoTerceirosExtra > 0 ? `\nDanos a Terceiros (moto): Sim (+R$ 22/mês)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
                     target="_blank" rel="noopener noreferrer"
                     data-track-origin="cotacao_resultado"
@@ -1334,7 +1337,7 @@ export default function CotacaoPage() {
                     }}
                     className="flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold text-base rounded-full shadow-lg shadow-[#F2911D]/20 hover:shadow-xl hover:shadow-[#F2911D]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 mb-4">
                     <MessageCircle className="w-5 h-5" />
-                    Contratar pelo WhatsApp
+                    Gostei! Quero sair protegido 🛡️
                   </a>
 
                   <div className="flex items-center justify-center gap-2 text-xs text-[#94A3B8]">
