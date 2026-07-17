@@ -603,6 +603,56 @@ export default function CotacaoPage() {
   const stickerPlusEarlyPrice = Math.round(stickerPrice * 0.95 * 100) / 100
   const stickerPlusEarlyFormatted = formatPrice(stickerPlusEarlyPrice)
 
+  // ── CTA de contratação (reaproveitado em vários pontos do resultado) ──
+  // Mesmo link/rastreamento em todos os botões "Quero contratar".
+  const contratarHref = selectedPlan && vehicle
+    ? `https://wa.me/5521965774240?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${motoTerceirosExtra > 0 ? `\nDanos a Terceiros (moto): Sim (+R$ 22/mês)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`
+    : '#'
+  const handleContratarClick = () => {
+    if (!selectedPlan) return
+    trackPedidoOrcamento({
+      plano: selectedPlan.name,
+      valor: price,
+      marca: vehicle?.marca,
+      modelo: vehicle?.modelo,
+      ano: vehicle?.ano,
+    })
+    notifyWhatsAppClick()
+  }
+  // Botão "Quero contratar" — usado no topo do card de preço, após os benefícios
+  // e no rodapé. Todos abrem o WhatsApp com o mesmo resumo pré-montado.
+  const ContratarCTA = ({
+    label,
+    sub,
+    wrapClass,
+    variant = 'solid',
+  }: {
+    label: string
+    sub?: string
+    wrapClass?: string
+    variant?: 'solid' | 'outline'
+  }) => (
+    <div className={wrapClass}>
+      <a
+        href={contratarHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-track-origin="cotacao_resultado"
+        data-track-button-text="Contratar pelo WhatsApp"
+        onClick={handleContratarClick}
+        className={
+          variant === 'solid'
+            ? 'flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold text-base rounded-full shadow-lg shadow-[#F2911D]/20 hover:shadow-xl hover:shadow-[#F2911D]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200'
+            : 'flex items-center justify-center gap-2.5 w-full py-3.5 bg-white text-[#F2911D] font-bold text-base rounded-full border-2 border-[#F2911D] hover:bg-[#FFF7ED] active:scale-[0.99] transition-all duration-200'
+        }
+      >
+        <MessageCircle className="w-5 h-5" />
+        {label}
+      </a>
+      {sub && <p className="text-center text-[11px] text-[#94A3B8] mt-2">{sub}</p>}
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-[#F7F8FC] relative">
       {/* Subtle background pattern */}
@@ -1319,7 +1369,7 @@ export default function CotacaoPage() {
                   <p className="text-center text-sm font-semibold text-[#1A2754] mb-3">
                     Gostou dos planos? 🎉 Dá o próximo passo pra sair protegido — a Letycia te acompanha daqui 👇
                   </p>
-                  <a href={`https://wa.me/5521965774240?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${motoTerceirosExtra > 0 ? `\nDanos a Terceiros (moto): Sim (+R$ 22/mês)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
+                  <a href={`https://wa.me/5521980214882?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${motoTerceirosExtra > 0 ? `\nDanos a Terceiros (moto): Sim (+R$ 22/mês)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
                     target="_blank" rel="noopener noreferrer"
                     data-track-origin="cotacao_resultado"
                     data-track-button-text="Contratar pelo WhatsApp"
