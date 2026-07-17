@@ -36,7 +36,7 @@ export function HeroSection() {
           aria-hidden="true"
           loading="eager"
           fetchPriority="high"
-          className="h-full w-full object-cover object-[80%_center] md:object-center"
+          className="h-full w-full object-cover object-[97%_center] md:object-center"
         />
       </picture>
 
