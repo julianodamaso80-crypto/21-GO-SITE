@@ -27,19 +27,23 @@ export function HeroSection() {
         />
         <source media="(max-width: 768px)" srcSet="/images/hero-bg-mobile.jpg" />
         <source srcSet="/images/hero-bg.webp" type="image/webp" />
+        {/* Mobile: object-position à direita corta o logo "21 Go!" embutido no
+            canto esquerdo da foto (evita logo duplicada / letra trepada) e
+            enquadra o presidente centralizado. Desktop mantém object-center. */}
         <img
           src="/images/hero-bg.jpg"
           alt=""
           aria-hidden="true"
           loading="eager"
           fetchPriority="high"
-          className="h-full w-full object-cover object-center"
+          className="h-full w-full object-cover object-[80%_center] md:object-center"
         />
       </picture>
 
-      {/* Mobile: overlay leve no meio (rosto visível) e mais forte nas pontas (texto + CTAs)
-          A imagem mobile vertical já tem fundo escuro próprio, então não precisa abafar o meio */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#1A2754]/55 via-[#1A2754]/10 to-[#1A2754]/75 md:hidden" />
+      {/* Mobile: topo bem escuro (badge + título 100% legíveis, sem competir com a
+          foto), meio mais aberto pro rosto do presidente e base escura pros CTAs.
+          A imagem mobile vertical já tem fundo escuro próprio. */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#1A2754]/95 via-[#1A2754]/45 to-[#1A2754]/95 md:hidden" />
 
       {/* Desktop: overlay direcional — escuro à esquerda (texto + logo) e LIMPO à direita
           pra dar destaque MÁXIMO ao presidente. Stops em %: 0% escuro, 50% médio,

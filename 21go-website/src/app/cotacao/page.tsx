@@ -1200,8 +1200,8 @@ export default function CotacaoPage() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:gap-8">
-                {/* Coberturas */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8">
+                {/* Coberturas — no mobile vem DEPOIS do preço (order-2), no desktop à esquerda */}
+                <div className="order-2 lg:order-1 bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8">
                   {/* Plan tabs */}
                   <div className={`flex gap-1 bg-[#F0F4FA] rounded-2xl p-1.5 mb-6 sm:mb-8 ${plans.length > 4 ? 'flex-wrap' : ''}`}>
                     {plans.map((plan, idx) => (
@@ -1240,11 +1240,18 @@ export default function CotacaoPage() {
                       ))}
                     </ul>
                   )}
+
+                  {/* CTA após os benefícios — cliente rolou as coberturas e pode seguir daqui */}
+                  <ContratarCTA
+                    label="Gostei! Quero contratar"
+                    variant="outline"
+                    wrapClass="mt-7"
+                  />
                 </div>
 
-                {/* Preço / CTA */}
-                <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8 h-fit lg:sticky lg:top-28">
-                  <div className="text-center mb-6">
+                {/* Preço / CTA — no mobile vem PRIMEIRO (order-1), preço + botão na 1ª dobra */}
+                <div className="order-1 lg:order-2 bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8 h-fit lg:sticky lg:top-28">
+                  <div className="text-center mb-5">
                     <p className="text-sm text-[#64748B] mb-1">Plano {selectedPlan.name}</p>
                     <div className="flex items-baseline justify-center gap-1">
                       <span className="text-lg text-[#64748B] font-medium">R$</span>
@@ -1252,6 +1259,13 @@ export default function CotacaoPage() {
                       <span className="text-lg text-[#64748B] font-medium">/mês</span>
                     </div>
                   </div>
+
+                  {/* CTA principal — acima da dobra, logo abaixo do preço */}
+                  <ContratarCTA
+                    label="Quero contratar 🛡️"
+                    sub="Sem compromisso · a Letycia te responde na hora"
+                    wrapClass="mb-6"
+                  />
 
                   <div className="border-t border-[#E8ECF4] pt-4 mb-6 space-y-4 text-sm">
                     {/* ATIVAÇÃO — Pagamento único do plano (cartão à vista ou 12x) */}
@@ -1369,26 +1383,10 @@ export default function CotacaoPage() {
                   <p className="text-center text-sm font-semibold text-[#1A2754] mb-3">
                     Gostou dos planos? 🎉 Dá o próximo passo pra sair protegido — a Letycia te acompanha daqui 👇
                   </p>
-                  <a href={`https://wa.me/5521980214882?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${motoTerceirosExtra > 0 ? `\nDanos a Terceiros (moto): Sim (+R$ 22/mês)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    data-track-origin="cotacao_resultado"
-                    data-track-button-text="Contratar pelo WhatsApp"
-                    onClick={() => {
-                      // whatsapp_click vem do WhatsAppTracker global (event delegation).
-                      // Aqui mantemos só lógicas extras do botão de contratação.
-                      trackPedidoOrcamento({
-                        plano: selectedPlan.name,
-                        valor: price,
-                        marca: vehicle?.marca,
-                        modelo: vehicle?.modelo,
-                        ano: vehicle?.ano,
-                      })
-                      notifyWhatsAppClick()
-                    }}
-                    className="flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold text-base rounded-full shadow-lg shadow-[#F2911D]/20 hover:shadow-xl hover:shadow-[#F2911D]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 mb-4">
-                    <MessageCircle className="w-5 h-5" />
-                    Gostei! Quero sair protegido 🛡️
-                  </a>
+                  <ContratarCTA
+                    label="Gostei! Quero sair protegido 🛡️"
+                    wrapClass="mb-4"
+                  />
 
                   <div className="flex items-center justify-center gap-2 text-xs text-[#94A3B8]">
                     <Lock className="w-3.5 h-3.5" />
