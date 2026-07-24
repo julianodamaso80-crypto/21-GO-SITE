@@ -1,9 +1,9 @@
 /**
  * Envio de WhatsApp via Evolution API.
  * Instância em produção: 4240 @ evolution.sinistro21go.site
- * (número 5521965774240). Atualizado em 2026-06-02.
+ * (número 5521969454824). Atualizado em 2026-06-02.
  *
- * Instância anterior 4240 (5521965774240) foi BANIDA pelo WhatsApp —
+ * Instância anterior 4240 (5521969454824) foi BANIDA pelo WhatsApp —
  * trocada por 4240, que estava de backup no painel.
  */
 
@@ -17,7 +17,7 @@ import {
 
 const EVOLUTION_API_URL =
   process.env.EVOLUTION_API_URL || 'https://evolution.sinistro21go.site'
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || '4240'
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'site4824'
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
 
 export function isWhatsappConfigured(): boolean {

@@ -13,7 +13,7 @@ import { supabaseAdmin } from './supabase-admin'
  */
 
 const DEFAULT_COMPANY_ID = process.env.DEFAULT_COMPANY_ID || 'company-21go'
-const DEFAULT_INSTANCE = process.env.EVOLUTION_INSTANCE || '4240'
+const DEFAULT_INSTANCE = process.env.EVOLUTION_INSTANCE || 'site4824'
 
 export type Direction = 'inbound' | 'outbound'
 export type MessageStatus =
