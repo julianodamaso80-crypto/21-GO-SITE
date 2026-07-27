@@ -8,7 +8,8 @@ const navLinks = [
   { label: 'Planos', href: '/protecao-veicular' },
   { label: 'Simulação', href: '/cotacao' },
   { label: 'Indique', href: '/indique' },
-  { label: 'Seja Consultor', href: '/seja-consultor' },
+  // OCULTO 2026-07: recrutamento de consultores pausado. Descomentar pra reativar.
+  // { label: 'Seja Consultor', href: '/seja-consultor' },
   { label: 'Blog', href: '/blog' },
   { label: 'FAQ', href: '/faq' },
 ]
