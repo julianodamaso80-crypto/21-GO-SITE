@@ -1,4 +1,4 @@
-import { CinematicHero } from '@/components/sections/CinematicHero'
+import { PresidentHero } from '@/components/sections/PresidentHero'
 import { JourneyProtecao } from '@/components/sections/JourneyProtecao'
 import { MensagemPresidente } from '@/components/sections/MensagemPresidente'
 import { TrustBar } from '@/components/sections/TrustBar'
@@ -19,7 +19,7 @@ import { FinalCTA } from '@/components/sections/FinalCTA'
 export default function Home() {
   return (
     <>
-      <CinematicHero />
+      <PresidentHero />
       <TrustBar />
       <JourneyProtecao />
       <ProblemSolution />
