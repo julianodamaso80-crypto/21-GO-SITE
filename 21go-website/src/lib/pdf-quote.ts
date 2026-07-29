@@ -4,6 +4,7 @@ import {
   planIdFromName,
   getAllRelevantPlans,
   findPrice,
+  isLeilaoOrigin,
   PRICING_TABLES,
   calcActivation,
   activationCashPrice,
@@ -35,7 +36,10 @@ export interface QuotePdfInput {
   cilindrada?: number | null
   /** Carro de aplicativo (Uber, 99, etc.) — adiciona +R$ 20/mês em todos os planos. */
   carroApp?: boolean | null
-  /** Origem do veículo: "nao" | "leilao" | "remarcado". Quando leilão/remarcado, indenização cobre 80% da FIPE. */
+  /**
+   * Origem do veículo: "nao" | "leilao" | "remarcado". Quando leilão/remarcado a
+   * mensalidade cai UMA FAIXA na tabela e a indenização cobre 80% da FIPE.
+   */
   leilao?: string | null
   /** Moto com cobertura opcional de Danos a Terceiros — adiciona +R$ 22/mês (só motos). */
   motoTerceiros?: boolean | null
@@ -112,13 +116,21 @@ function addDaysBR(date: Date, days: number): string {
  * independente do que está em planoNome / categoria / combustivel.
  *
  * Retorna null se nenhum match exato for encontrado.
+ *
+ * `isLeilao` precisa ser o mesmo do lead: em leilão/remarcado a mensalidade que
+ * o cliente viu veio da faixa ANTERIOR, então o cruzamento tem que usar a mesma
+ * regra — senão nenhum plano bate e o PDF cai no fallback pelo nome.
  */
-export function detectPlanByValue(fipe: number, mensalidade: number): PlanId | null {
+export function detectPlanByValue(
+  fipe: number,
+  mensalidade: number,
+  isLeilao = false,
+): PlanId | null {
   const ids: PlanId[] = ['especial', 'premium', 'vip', 'suv', 'do-seu-jeito', 'basico', 'moto-1000', 'moto-400']
   // Tolerância de 1 centavo p/ evitar problema de float
   const matches: PlanId[] = []
   for (const id of ids) {
-    const price = findPrice(PRICING_TABLES[id], fipe)
+    const price = findPrice(PRICING_TABLES[id], fipe, isLeilao)
     if (price !== null && Math.abs(price - mensalidade) < 0.01) {
       matches.push(id)
     }
@@ -145,8 +157,13 @@ export function detectPlanByValue(fipe: number, mensalidade: number): PlanId | n
  * Exportada pra ser testável sem rodar Puppeteer.
  */
 export function resolvePlans(input: QuotePdfInput): QuotePlanFull[] {
+  // Leilão/remarcado: a mensalidade cai UMA FAIXA na tabela (regra oficial 21Go,
+  // decisão user 2026-07-29). Resolvido dentro de findPrice — não é mais um
+  // percentual aplicado por fora. Reflete em planos, referência e ativação.
+  const isLeilao = isLeilaoOrigin(input.leilao)
+
   // 1) Defesa primária: identificar plano pelo valor exato
-  const detected = detectPlanByValue(input.fipe, input.mensalidade)
+  const detected = detectPlanByValue(input.fipe, input.mensalidade, isLeilao)
 
   // 2) Inferência por nome (fallback)
   const fromName = planIdFromName(input.planoNome) as PlanId
@@ -178,6 +195,7 @@ export function resolvePlans(input: QuotePdfInput): QuotePlanFull[] {
     combustivel || undefined,
     cilindrada,
     input.modelo,
+    isLeilao,
   )
 
   // Se nada bateu (pricing band não cobre), devolve pelo menos o plano selecionado
@@ -191,17 +209,10 @@ export function resolvePlans(input: QuotePdfInput): QuotePlanFull[] {
       }]
     : plansRaw
 
-  // Veículo de leilão/remarcado: a indenização cobre 80% da FIPE, então a
-  // mensalidade também é 80% do valor cheio (regra oficial 21Go). Aplica ANTES
-  // do extra de carro de app (que é fixo, sem desconto), exatamente como o site
-  // faz em cotacao/page.tsx. Reflete em planos, plano de referência e ativação.
-  const isLeilao = !!input.leilao && input.leilao !== 'nao'
-  let out = isLeilao
-    ? plans.map((p) => ({ ...p, monthly: Math.round(p.monthly * 0.8 * 100) / 100 }))
-    : plans
+  let out = plans
 
   // Moto com Danos a Terceiros opcional: soma +R$ 22/mês SÓ nos planos de moto.
-  // Aplica depois do desconto de leilão e antes do extra de carro de app, igual
+  // Aplica depois do preço de leilão e antes do extra de carro de app, igual
   // ao site (cotacao/page.tsx). Reflete em planos, referência e ativação.
   if (input.motoTerceiros) {
     out = out.map((p) =>

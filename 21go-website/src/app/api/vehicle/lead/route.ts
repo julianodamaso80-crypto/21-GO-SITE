@@ -524,6 +524,7 @@ async function sendQuotePdfWhatsApp(body: LeadInput, leadId: string) {
     categoria: body.categoria,
     combustivel: body.combustivel,
     cilindrada: body.cilindrada,
+    leilao: body.leilao,
     seed: leadId,
   })
   await sendPresence(phone, 'composing', 3000)

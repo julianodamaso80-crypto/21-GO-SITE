@@ -427,14 +427,40 @@ export const PLAN_INFO: Record<PlanId, PlanInfo> = {
 
 /* ─── Helpers ─── */
 
-/** Busca preco na tabela por faixa FIPE */
-export function findPrice(table: PricingBand[], fipeValue: number): number | null {
+/**
+ * Normaliza a flag de origem do veículo ('nao' | 'leilao' | 'remarcado').
+ * Qualquer valor diferente de vazio/'nao' conta como leilão.
+ */
+export function isLeilaoOrigin(leilao?: string | null): boolean {
+  const v = (leilao || '').trim().toLowerCase()
+  return v !== '' && v !== 'nao' && v !== 'não'
+}
+
+/**
+ * Busca preco na tabela por faixa FIPE.
+ *
+ * REGRA LEILÃO/REMARCADO (oficial 21Go — decisão user 2026-07-29): o veículo
+ * paga a faixa IMEDIATAMENTE ABAIXO da que ele cairia. Ex: SUV FIPE 95.500 →
+ * faixa 95.001-100.000 = R$ 472,90; marcado como leilão → faixa 90.001-95.000
+ * = R$ 451,30. Vale pra TODAS as tabelas (carro, SUV, moto, especial).
+ * Na primeira faixa não há anterior — fica no próprio valor (é o piso).
+ */
+export function findPrice(
+  table: PricingBand[],
+  fipeValue: number,
+  isLeilao = false,
+): number | null {
   // GUARD ABSOLUTO: nunca retorna preço pra FIPE <= 0. Sem isso, fipeValue=0
   // cairia na primeira banda (min: 0) e devolveria preço errado (R$ 126,50
   // do VIP, R$ 106,50 do BÁSICO etc). Veículo não existe de graça.
   if (!Number.isFinite(fipeValue) || fipeValue <= 0) return null
-  const band = table.find(b => fipeValue >= b.min && fipeValue <= b.max)
-  return band ? band.price : null
+  const idx = table.findIndex(b => fipeValue >= b.min && fipeValue <= b.max)
+  if (idx < 0) return null
+  const price = table[idx].price
+  if (!isLeilao || idx === 0) return price
+  // Salvaguarda: leilão nunca pode sair MAIS CARO que o preço cheio. Protege
+  // contra faixa fora de curva na tabela (ex: SUV 75-80k = 470 > 80-85k = 421,80).
+  return Math.min(table[idx - 1].price, price)
 }
 
 /** Categorias da API Brasil que indicam SUV/pick-up/caminhonete */
@@ -522,6 +548,7 @@ const MOTO_PLAN_NAME: Record<'moto-400' | 'moto-1000', string> = {
  * @param combustivel - tipo de combustivel (ex: "GASOLINA", "ELETRICO")
  * @param cilindrada - cilindrada em cc (para motos)
  * @param modelo - nome do modelo (fallback para detectar SUV quando categoria nao vem)
+ * @param isLeilao - veiculo de leilao/remarcado: paga a faixa imediatamente abaixo
  */
 export function getApplicablePlans(
   fipeValue: number,
@@ -529,6 +556,7 @@ export function getApplicablePlans(
   combustivel?: string,
   cilindrada?: number,
   modelo?: string,
+  isLeilao = false,
 ): QuotePlan[] {
   const cat = (categoria || '').toLowerCase()
   const fuel = (combustivel || '').toLowerCase()
@@ -541,7 +569,7 @@ export function getApplicablePlans(
 
   // Veiculo especial: eletrico ou FIPE > 150.000
   if (isEletrico || fipeValue > 150000) {
-    const price = findPrice(ESPECIAL, fipeValue)
+    const price = findPrice(ESPECIAL, fipeValue, isLeilao)
     if (price) {
       return [{ id: 'especial', name: 'Veículos Especiais', monthly: price }]
     }
@@ -552,27 +580,27 @@ export function getApplicablePlans(
   if (isMoto) {
     const cc = resolveMotoCc(cilindrada, mod)
     const id = motoPlanId(cc)
-    const price = findPrice(id === 'moto-1000' ? MOTO_1000 : MOTO_400, fipeValue)
+    const price = findPrice(id === 'moto-1000' ? MOTO_1000 : MOTO_400, fipeValue, isLeilao)
     if (price) return [{ id, name: MOTO_PLAN_NAME[id], monthly: price }]
     return []
   }
 
   // SUV / Pick-up / Caminhonete
   if (isSuv) {
-    const price = findPrice(SUV, fipeValue)
+    const price = findPrice(SUV, fipeValue, isLeilao)
     if (price) return [{ id: 'suv', name: 'SUV', monthly: price }]
     return []
   }
 
   // Carro normal: 4 planos
   const plans: QuotePlan[] = []
-  const pBasico = findPrice(BASICO, fipeValue)
+  const pBasico = findPrice(BASICO, fipeValue, isLeilao)
   if (pBasico) plans.push({ id: 'basico', name: 'Básico', monthly: pBasico })
-  const pJeito = findPrice(DO_SEU_JEITO, fipeValue)
+  const pJeito = findPrice(DO_SEU_JEITO, fipeValue, isLeilao)
   if (pJeito) plans.push({ id: 'do-seu-jeito', name: 'Do Seu Jeito', monthly: pJeito })
-  const pVip = findPrice(VIP, fipeValue)
+  const pVip = findPrice(VIP, fipeValue, isLeilao)
   if (pVip) plans.push({ id: 'vip', name: 'VIP', monthly: pVip, popular: true })
-  const pPremium = findPrice(PREMIUM, fipeValue)
+  const pPremium = findPrice(PREMIUM, fipeValue, isLeilao)
   if (pPremium) plans.push({ id: 'premium', name: 'Premium', monthly: pPremium })
   return plans
 }
@@ -650,6 +678,7 @@ export function getAllRelevantPlans(
   combustivel?: string,
   cilindrada?: number,
   modelo?: string,
+  isLeilao = false,
 ): QuotePlanFull[] {
   const cat = (categoria || '').toLowerCase()
   const fuel = (combustivel || '').toLowerCase()
@@ -694,7 +723,7 @@ export function getAllRelevantPlans(
 
   const result: QuotePlanFull[] = []
   for (const p of allPlans) {
-    const price = findPrice(PRICING_TABLES[p.id], fipeValue)
+    const price = findPrice(PRICING_TABLES[p.id], fipeValue, isLeilao)
     if (price) {
       result.push({
         id: p.id,

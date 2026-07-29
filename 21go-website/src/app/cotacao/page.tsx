@@ -370,6 +370,7 @@ export default function CotacaoPage() {
           modelText: fipeModeloText,
           year: fipeAnoCode,
           codFipe: fipeModeloCodFipe || null,
+          leilao: form.leilao,
         }),
       })
       const data = await precoRes.json()
@@ -449,24 +450,23 @@ export default function CotacaoPage() {
         return
       }
 
-      // Calcula planos localmente pela tabela real (defesa em camada — bate com /preco)
-      const localPlans = getApplicablePlans(
+      // Calcula planos localmente pela tabela real (defesa em camada — bate com /preco).
+      // Leilão/remarcado: cobra a faixa imediatamente ABAIXO da tabela (regra oficial
+      // 21Go — tratada dentro de findPrice, não como percentual).
+      const isLeilao = form.leilao !== 'nao'
+      const finalPlans = getApplicablePlans(
         v.fipeValue,
         v.categoria,
         v.combustivel,
         undefined,
         v.modelo,
+        isLeilao,
       )
 
-      if (localPlans.length === 0) {
+      if (finalPlans.length === 0) {
         setApiError('Não encontramos planos para esse veículo. Fale com um consultor.')
         return
       }
-
-      const isLeilao = form.leilao !== 'nao'
-      const finalPlans = isLeilao
-        ? localPlans.map(p => ({ ...p, monthly: Math.round(p.monthly * 0.8 * 100) / 100 }))
-        : localPlans
 
       setPlans(finalPlans)
       const popularIdx = finalPlans.findIndex(p => p.popular)

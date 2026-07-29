@@ -13,6 +13,7 @@ import {
   calcActivation,
   activationCashPrice,
   activationInstallment12x,
+  isLeilaoOrigin,
 } from '@/data/pricing'
 
 const EVOLUTION_API_URL =
@@ -313,18 +314,24 @@ export function buildQuoteSummaryMessage(input: {
   categoria?: string | null
   combustivel?: string | null
   cilindrada?: number | null
+  /** Origem do veículo: 'nao' | 'leilao' | 'remarcado'. Leilão paga a faixa abaixo. */
+  leilao?: string | null
   seed?: string | null
 }): string {
   const firstName = input.nome.split(' ')[0]
   const { veiculoText, prep } = resolveVeiculo(input)
   const seed = input.seed || `${input.nome}|${input.modelo || ''}`
 
+  // Leilão/remarcado cobra a faixa imediatamente abaixo da tabela — a mensagem
+  // tem que bater com o que o cliente viu na tela, senão a consultora recebe
+  // contestação de preço.
   const plans = getAllRelevantPlans(
     input.fipe,
     input.categoria || undefined,
     input.combustivel || undefined,
     input.cilindrada || undefined,
     input.modelo || undefined,
+    isLeilaoOrigin(input.leilao),
   )
   // Referência: VIP pra carro; senão o plano aplicável (moto/suv/especial).
   const ref = plans.find((p) => p.id === 'vip') || plans.find((p) => p.applicable) || plans[0]

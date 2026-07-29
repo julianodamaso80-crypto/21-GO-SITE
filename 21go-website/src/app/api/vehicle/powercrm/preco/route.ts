@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listYearsPowerCrm } from '@/lib/powercrm-lookup'
 import { lookupFipeDirect } from '@/lib/fipe-direct'
-import { getApplicablePlans, type QuotePlan } from '@/data/pricing'
+import { getApplicablePlans, isLeilaoOrigin, type QuotePlan } from '@/data/pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -29,6 +29,8 @@ interface PrecoBody {
   modelText: string
   year: number | string
   codFipe?: string | null
+  /** Origem do veículo: 'nao' | 'leilao' | 'remarcado'. Leilão paga a faixa abaixo. */
+  leilao?: string | null
 }
 
 export async function POST(req: NextRequest) {
@@ -95,7 +97,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // 3) Calcula planos local
+  // 3) Calcula planos local (leilão/remarcado desce uma faixa na tabela)
   const categoria = tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL'
   const plans: QuotePlan[] = getApplicablePlans(
     direct.fipeValue,
@@ -103,6 +105,7 @@ export async function POST(req: NextRequest) {
     combustivel || direct.matchedYear,
     undefined,
     modelText,
+    isLeilaoOrigin(body.leilao),
   )
 
   return NextResponse.json({

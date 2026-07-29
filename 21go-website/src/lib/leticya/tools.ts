@@ -177,11 +177,15 @@ export const getPlanPriceTool = tool({
       .enum(['basico', 'do-seu-jeito', 'vip', 'premium', 'suv', 'moto-400', 'moto-1000', 'especial'])
       .describe('ID do plano'),
     fipe_value: z.number().positive().describe('Valor FIPE em reais (ex: 45000)'),
+    leilao: z
+      .boolean()
+      .optional()
+      .describe('Veículo de leilão ou remarcado — paga a faixa imediatamente abaixo da tabela'),
   }),
-  execute: async ({ plan_id, fipe_value }) => {
+  execute: async ({ plan_id, fipe_value, leilao }) => {
     const table = PRICING_TABLES[plan_id as PlanId]
     if (!table) return { ok: false, error: `plano ${plan_id} desconhecido` }
-    const price = findPrice(table, fipe_value)
+    const price = findPrice(table, fipe_value, !!leilao)
     if (price == null) {
       return {
         ok: false,
@@ -195,6 +199,7 @@ export const getPlanPriceTool = tool({
       plan_name: info?.name ?? plan_id,
       monthly_brl: price,
       fipe_value,
+      leilao: !!leilao,
       popular: info?.popular ?? false,
     }
   },
