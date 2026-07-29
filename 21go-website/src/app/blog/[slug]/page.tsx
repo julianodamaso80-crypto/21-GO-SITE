@@ -121,12 +121,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       {/* Content + Sidebar */}
       <section className="py-12 md:py-16 bg-[#F7F8FC]">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid lg:grid-cols-[1fr_320px] gap-10">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-10">
             {/* Article content */}
-            <div className="bg-white rounded-2xl border border-[#E8ECF4] shadow-sm p-8 md:p-12">
+            <div className="bg-white rounded-2xl border border-[#E8ECF4] shadow-sm p-5 sm:p-8 md:p-12 min-w-0 overflow-hidden">
               <article
                 className="
-                  max-w-none
+                  max-w-none min-w-0 break-words
                   [&_h2]:font-[var(--font-display)] [&_h2]:text-[1.5rem] [&_h2]:font-bold [&_h2]:text-[#1A2754] [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:pb-3 [&_h2]:border-b [&_h2]:border-[#E8ECF4]
                   [&_h3]:font-[var(--font-display)] [&_h3]:text-[1.2rem] [&_h3]:font-semibold [&_h3]:text-[#1A2754] [&_h3]:mt-8 [&_h3]:mb-3
                   [&_p]:text-[#475569] [&_p]:text-[15px] [&_p]:leading-[1.8] [&_p]:mb-5
