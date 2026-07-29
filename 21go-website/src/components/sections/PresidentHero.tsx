@@ -37,8 +37,16 @@ function PresidentLayer() {
   const [videoFailed, setVideoFailed] = useState(false)
 
   useEffect(() => {
+    // Decisão do proprietário: o gesto do presidente é conteúdo essencial da
+    // marca — o vídeo (mudo, sutil) roda SEMPRE no desktop; só economia de
+    // dados mantém a foto estática. Mobile usa a foto grande (leve).
     const isDesktop = window.matchMedia('(min-width: 1024px)').matches
-    setUseVideo(isDesktop && !prefersStatic())
+    let saveData = false
+    try {
+      const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection
+      saveData = !!conn?.saveData
+    } catch { /* noop */ }
+    setUseVideo(isDesktop && !saveData)
   }, [])
 
   /* pausa fora da tela / aba oculta */

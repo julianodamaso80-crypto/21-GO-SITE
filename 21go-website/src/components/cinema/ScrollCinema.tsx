@@ -75,11 +75,32 @@ const COPY = [
   { id: 'copy-final', inAt: 0.855, outAt: 1.0, title: 'Seu problema vira o nosso problema.', sub: null, ctas: false, final: true },
 ]
 
+export const SCENES_HOME: SceneCfg[] = [
+  { dir: 'scene-02', desktop: 97, mobile: 64, start: 0.0, end: 0.25, label: 'Em cada caminho' },
+  { dir: 'scene-03', desktop: 97, mobile: 64, start: 0.25, end: 0.5, label: 'Assistência 24h' },
+  { dir: 'scene-04', desktop: 97, mobile: 64, start: 0.5, end: 0.75, label: 'Vistoria e cuidado' },
+  { dir: 'scene-05', desktop: 97, mobile: 64, start: 0.75, end: 1.0, label: 'De volta pra casa' },
+]
+
+const COPY_HOME = [
+  { id: 'copy-rua', inAt: 0.03, outAt: 0.21, title: 'Proteção que acompanha você em cada caminho.', sub: null as string | null, ctas: false, final: false },
+  { id: 'copy-assistencia', inAt: 0.28, outAt: 0.46, title: 'Assistência quando você mais precisa.', sub: null, ctas: false, final: false },
+  { id: 'copy-vistoria', inAt: 0.53, outAt: 0.71, title: 'Do atendimento à solução, cada etapa acompanhada.', sub: null, ctas: false, final: false },
+  { id: 'copy-familia', inAt: 0.78, outAt: 0.97, title: 'Mais que proteger veículos. Cuidar de pessoas.', sub: null, ctas: false, final: false },
+]
+
 function framePath(base: string, scene: SceneCfg, idx1: number) {
   return `${base}/${scene.dir}/frame-${String(idx1).padStart(4, '0')}.webp`
 }
 
-export function ScrollCinema() {
+interface ScrollCinemaProps {
+  /** 'full' = prototipo completo (6 cenas) · 'home' = jornada da home (4 cenas, sem hero/presidente) */
+  variant?: 'full' | 'home'
+}
+
+export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
+  const scenes = variant === 'home' ? SCENES_HOME : SCENES
+  const copies = variant === 'home' ? COPY_HOME : COPY
   const sectionRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -93,7 +114,18 @@ export function ScrollCinema() {
     // ?motion=1 forca a experiencia completa (avaliacao interna) mesmo com
     // prefers-reduced-motion ativo no sistema operacional.
     const forced = new URLSearchParams(window.location.search).get('motion') === '1'
-    setReduced(forced ? false : window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    let saveData = false
+    try {
+      const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection
+      saveData = !!conn?.saveData
+    } catch { /* noop */ }
+    if (variant === 'home') {
+      // Home: a jornada e conteudo central da pagina — roda sempre, exceto
+      // modo economia de dados (fallback estatico leve).
+      setReduced(saveData)
+    } else {
+      setReduced(forced ? false : window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    }
   }, [])
 
   useEffect(() => {
@@ -109,7 +141,7 @@ export function ScrollCinema() {
     const natural = isMobile ? { w: 640, h: 360 } : { w: 1280, h: 720 }
 
     /* Índice global de frames (todas as cenas concatenadas) */
-    const counts = SCENES.map((s) => s[key])
+    const counts = scenes.map((s) => s[key])
     const offsets: number[] = []
     let acc = 0
     for (const c of counts) { offsets.push(acc); acc += c }
@@ -122,7 +154,7 @@ export function ScrollCinema() {
     let destroyed = false
 
     function globalToScene(g: number) {
-      for (let s = SCENES.length - 1; s >= 0; s--) {
+      for (let s = scenes.length - 1; s >= 0; s--) {
         if (g >= offsets[s]) return { s, local: g - offsets[s] }
       }
       return { s: 0, local: 0 }
@@ -140,7 +172,7 @@ export function ScrollCinema() {
         onDone?.()
       }
       img.onerror = () => { ok[g] = false; onDone?.() }
-      img.src = framePath(base, SCENES[s], local + 1)
+      img.src = framePath(base, scenes[s], local + 1)
       images[g] = img
     }
 
@@ -149,7 +181,7 @@ export function ScrollCinema() {
     const queue: number[] = []
     for (let i = 0; i < counts[0]; i += 6) queue.push(i)
     for (let i = 0; i < counts[0]; i++) queue.push(i)
-    for (let s2 = 1; s2 < SCENES.length; s2++) {
+    for (let s2 = 1; s2 < scenes.length; s2++) {
       for (let i = 0; i < counts[s2]; i++) queue.push(offsets[s2] + i)
     }
     let qi = 0
@@ -213,12 +245,12 @@ export function ScrollCinema() {
     }
 
     function sceneAt(p: number) {
-      for (let s = SCENES.length - 1; s >= 0; s--) if (p >= SCENES[s].start) return s
+      for (let s = scenes.length - 1; s >= 0; s--) if (p >= scenes[s].start) return s
       return 0
     }
 
     function frameOfScene(s: number, p: number) {
-      const sc = SCENES[s]
+      const sc = scenes[s]
       const lp = Math.min(1, Math.max(0, (p - sc.start) / (sc.end - sc.start)))
       return offsets[s] + Math.round(lp * (counts[s] - 1))
     }
@@ -234,8 +266,8 @@ export function ScrollCinema() {
       if (gi >= 0 && images[gi]) { drawCover(images[gi]!, 1); hasDrawnFrame = true }
 
       /* Dissolve curto na fronteira da PRÓXIMA cena (e simétrico ao voltar) */
-      if (s < SCENES.length - 1) {
-        const boundary = SCENES[s].end
+      if (s < scenes.length - 1) {
+        const boundary = scenes[s].end
         if (p > boundary - DISSOLVE) {
           const a = (p - (boundary - DISSOLVE)) / (2 * DISSOLVE) // 0..0.5 antes da fronteira
           const nFirst = offsets[s + 1]
@@ -244,7 +276,7 @@ export function ScrollCinema() {
         }
       }
       if (s > 0) {
-        const boundary = SCENES[s].start
+        const boundary = scenes[s].start
         if (p < boundary + DISSOLVE) {
           const a = (boundary + DISSOLVE - p) / (2 * DISSOLVE)
           const prevLast = offsets[s - 1] + counts[s - 1] - 1
@@ -256,7 +288,7 @@ export function ScrollCinema() {
       /* HUD de progresso */
       if (progressFillRef.current) progressFillRef.current.style.height = `${(p * 100).toFixed(2)}%`
       if (progressPctRef.current) progressPctRef.current.textContent = `${Math.round(p * 100)}%`
-      if (progressLabelRef.current) progressLabelRef.current.textContent = SCENES[s].label
+      if (progressLabelRef.current) progressLabelRef.current.textContent = scenes[s].label
     }
 
     /* ── ScrollTrigger: PIN REAL + SCRUB ── */
@@ -289,7 +321,7 @@ export function ScrollCinema() {
       },
     })
     const WIN = 0.018 // duração das rampas de entrada/saída
-    for (const c of COPY) {
+    for (const c of copies) {
       if (c.id === 'copy-hero') {
         // Hero já nasce visível no progresso 0 — só anima a SAÍDA.
         gsap.set(`#${c.id}`, { opacity: 1, y: 0 })
@@ -318,7 +350,7 @@ export function ScrollCinema() {
       st.scrollTrigger?.kill()
       st.kill()
     }
-  }, [reduced])
+  }, [reduced, variant])
 
   /* ── Fallback estático (reduced-motion / SSR inicial) ── */
   if (reduced !== false) {
@@ -328,8 +360,8 @@ export function ScrollCinema() {
           <p className="rounded-xl border border-[#C7D301]/30 bg-[#C7D301]/10 px-4 py-3 text-center text-sm text-[#C7D301]">
             Seu sistema está com animações reduzidas — <a className="underline font-semibold" href="?motion=1">clique aqui para ver a experiência cinematográfica completa</a>.
           </p>
-          <img src={`${FRAMES_BASE}/scene-01/frame-0001.webp`} alt="Automóvel protegido na garagem ao anoitecer" width={1280} height={720} className="rounded-2xl w-full h-auto" />
-          {COPY.map((c) => (
+          <img src={`${FRAMES_BASE}/${(variant === 'home' ? SCENES_HOME : SCENES)[0].dir}/frame-0001.webp`} alt="Automóvel protegido na garagem ao anoitecer" width={1280} height={720} className="rounded-2xl w-full h-auto" />
+          {copies.map((c) => (
             <div key={c.id} className="text-center">
               <h2 className="font-[var(--font-outfit)] text-2xl md:text-3xl font-bold !text-white">{c.title}</h2>
             </div>
@@ -353,7 +385,7 @@ export function ScrollCinema() {
       )}
 
       {/* 700vh desktop / 480vh mobile — a altura é a duração da jornada */}
-      <div ref={sectionRef} className="cinematic-scroll-section relative h-[480vh] md:h-[700vh]">
+      <div ref={sectionRef} className={variant === 'home' ? 'cinematic-scroll-section relative h-[340vh] md:h-[480vh]' : 'cinematic-scroll-section relative h-[480vh] md:h-[700vh]'}>
         <div
           ref={stageRef}
           className="cinematic-stage relative top-0 h-[100svh] w-full overflow-hidden"
@@ -371,7 +403,7 @@ export function ScrollCinema() {
 
           {/* Textos HTML sincronizados — nunca desenhados no vídeo */}
           <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-[16svh] md:items-center md:pb-0" style={{ transformStyle: 'preserve-3d' }}>
-            {COPY.map((c) => (
+            {copies.map((c) => (
               <div
                 key={c.id}
                 id={c.id}

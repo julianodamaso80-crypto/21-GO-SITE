@@ -1,5 +1,5 @@
 import { PresidentHero } from '@/components/sections/PresidentHero'
-import { JourneyProtecao } from '@/components/sections/JourneyProtecao'
+import { ScrollCinema } from '@/components/cinema/ScrollCinema'
 import { MensagemPresidente } from '@/components/sections/MensagemPresidente'
 import { TrustBar } from '@/components/sections/TrustBar'
 import { ProblemSolution } from '@/components/sections/ProblemSolution'
@@ -21,7 +21,7 @@ export default function Home() {
     <>
       <PresidentHero />
       <TrustBar />
-      <JourneyProtecao />
+      <ScrollCinema variant="home" />
       <ProblemSolution />
       <SusepSection />
       <PlansSection />
