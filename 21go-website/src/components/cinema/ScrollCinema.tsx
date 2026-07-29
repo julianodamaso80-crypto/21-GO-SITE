@@ -136,7 +136,7 @@ export function ScrollCinema() {
       img.onload = () => {
         ok[g] = true
         loadedCount++
-        if (!destroyed && loadedCount % 12 === 0) setLoadedPct(Math.round((loadedCount / totalFrames) * 100))
+        if (!destroyed && (loadedCount % 36 === 0 || loadedCount === totalFrames)) setLoadedPct(Math.round((loadedCount / totalFrames) * 100))
         onDone?.()
       }
       img.onerror = () => { ok[g] = false; onDone?.() }
@@ -160,7 +160,14 @@ export function ScrollCinema() {
         const g = queue[qi++]
         if (images[g]) continue
         inFlight++
-        load(g, () => { inFlight--; pump(); scheduleRender() })
+        load(g, () => {
+          inFlight--
+          pump()
+          // Redesenha SOMENTE se este frame interessa agora (evita tempestade
+          // de decodes síncronos durante o pré-carregamento das 582 imagens).
+          const need = frameOfScene(sceneAt(state.progress), state.progress)
+          if (!hasDrawnFrame || Math.abs(g - need) < 4) scheduleRender()
+        })
       }
     }
 
@@ -199,6 +206,7 @@ export function ScrollCinema() {
     }
 
     const state = { progress: 0 }
+    let hasDrawnFrame = false
     let raf = 0
     function scheduleRender() {
       if (!raf) raf = requestAnimationFrame(() => { raf = 0; renderCurrentFrame() })
@@ -223,7 +231,7 @@ export function ScrollCinema() {
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       const gi = nearestLoaded(g)
-      if (gi >= 0 && images[gi]) drawCover(images[gi]!, 1)
+      if (gi >= 0 && images[gi]) { drawCover(images[gi]!, 1); hasDrawnFrame = true }
 
       /* Dissolve curto na fronteira da PRÓXIMA cena (e simétrico ao voltar) */
       if (s < SCENES.length - 1) {
