@@ -1,4 +1,6 @@
-import { HeroSection } from '@/components/sections/HeroSection'
+import { CinematicHero } from '@/components/sections/CinematicHero'
+import { JourneyProtecao } from '@/components/sections/JourneyProtecao'
+import { MensagemPresidente } from '@/components/sections/MensagemPresidente'
 import { TrustBar } from '@/components/sections/TrustBar'
 import { ProblemSolution } from '@/components/sections/ProblemSolution'
 import { SusepSection } from '@/components/sections/SusepSection'
@@ -17,8 +19,9 @@ import { FinalCTA } from '@/components/sections/FinalCTA'
 export default function Home() {
   return (
     <>
-      <HeroSection />
+      <CinematicHero />
       <TrustBar />
+      <JourneyProtecao />
       <ProblemSolution />
       <SusepSection />
       <PlansSection />
@@ -44,6 +47,7 @@ export default function Home() {
       <MGMBanner />
       <BlogPreview />
       <HomeFAQ />
+      <MensagemPresidente />
       <FinalCTA />
     </>
   )

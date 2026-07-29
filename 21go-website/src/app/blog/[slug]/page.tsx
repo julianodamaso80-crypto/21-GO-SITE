@@ -136,7 +136,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   [&_ul_li]:before:content-[''] [&_ul_li]:before:absolute [&_ul_li]:before:left-0 [&_ul_li]:before:top-[10px] [&_ul_li]:before:w-1.5 [&_ul_li]:before:h-1.5 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-[#F2911D]
                   [&_strong]:text-[#1A2754] [&_strong]:font-semibold
                   [&_a]:text-[#293C82] [&_a]:font-medium [&_a]:underline [&_a]:decoration-[#293C82]/30 hover:[&_a]:decoration-[#293C82]
-                  [&_table]:w-full [&_table]:my-6 [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_table]:text-sm
+                  [&_table]:w-full [&_table]:max-w-full [&_table]:block [&_table]:overflow-x-auto [&_table]:my-6 [&_table]:border-collapse [&_table]:rounded-xl [&_table]:text-sm
                   [&_thead]:bg-[#1A2754] [&_th]:text-white [&_th]:font-semibold [&_th]:text-left [&_th]:px-4 [&_th]:py-3
                   [&_td]:px-4 [&_td]:py-3 [&_td]:text-[#475569] [&_td]:border-b [&_td]:border-[#E8ECF4]
                   [&_tr:nth-child(even)]:bg-[#F7F8FC]

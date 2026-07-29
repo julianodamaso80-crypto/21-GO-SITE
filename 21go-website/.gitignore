@@ -1,6 +1,2 @@
-.vercel
-
-# Rascunhos gerados pela esteira SEO (BLOG/seo-worker)
-# Aprovados sao movidos pra content/blog/ pelo Publisher (Agente 09).
-content/blog/_drafts/*.mdx
-!content/blog/_drafts/.gitkeep
+public/media/*
+!public/media/README-MIDIA.md
