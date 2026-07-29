@@ -23,8 +23,10 @@ function handleClick(e: MouseEvent) {
   const anchor = target.closest('a') as HTMLAnchorElement | null
   if (!anchor) return
 
+  // /api/wa é a rota interna do rodízio 2:1 — ela redireciona pro wa.me, então
+  // o clique nela é clique de WhatsApp e tem que ser trackeado igual.
   const href = anchor.getAttribute('href') || ''
-  if (!/wa\.me\/|api\.whatsapp\.com|whatsapp:/i.test(href)) return
+  if (!/wa\.me\/|api\.whatsapp\.com|whatsapp:|^\/api\/wa(\?|$)/i.test(href)) return
 
   if (anchor.dataset.trackSkipGlobal === 'true') return
 

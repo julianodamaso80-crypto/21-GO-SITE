@@ -1,4 +1,4 @@
-import { WHATSAPP_NUMBER } from '@/lib/constants'
+import { WHATSAPP_ROUTE } from '@/lib/constants'
 
 // O tracking deste botão (e de qualquer link wa.me no site) vem do
 // WhatsAppTracker global montado no layout — captura via event delegation.
@@ -6,7 +6,7 @@ import { WHATSAPP_NUMBER } from '@/lib/constants'
 export function WhatsAppButton() {
   return (
     <a
-      href={`https://wa.me/${WHATSAPP_NUMBER}`}
+      href={WHATSAPP_ROUTE}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Fale conosco pelo WhatsApp"
