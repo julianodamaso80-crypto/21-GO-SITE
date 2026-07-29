@@ -20,14 +20,17 @@ export async function GET(req: NextRequest) {
   const target = pickWhatsAppTarget()
   const text = req.nextUrl.searchParams.get('text')
 
-  const url = new URL(`https://wa.me/${target.number}`)
-  if (text) url.searchParams.set('text', text)
+  // Monta a query na mão: URLSearchParams codifica espaço como "+" (formato de
+  // formulário) e o WhatsApp mostra o "+" literal na mensagem pré-preenchida.
+  const url = text
+    ? `https://wa.me/${target.number}?text=${encodeURIComponent(text)}`
+    : `https://wa.me/${target.number}`
 
   console.log(`[wa] -> ${target.number} (${target.instance})`)
 
   // 302: o clique não deve ficar em cache do navegador nem de CDN, senão o
   // rodízio congela no primeiro número sorteado.
-  const res = NextResponse.redirect(url.toString(), 302)
+  const res = NextResponse.redirect(url, 302)
   res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
   return res
 }
