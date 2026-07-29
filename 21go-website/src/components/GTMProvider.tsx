@@ -13,6 +13,9 @@ import { trackPageView } from '@/lib/tracking'
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || 'GTM-WQ9L62XN'
 
 export function GTMProvider() {
+  // Preview (GitHub Pages): nao dispara analytics fora do dominio oficial
+  if (process.env.NEXT_PUBLIC_PREVIEW === '1') return null
+
   useEffect(() => {
     // Initialize dataLayer
     window.dataLayer = window.dataLayer || []

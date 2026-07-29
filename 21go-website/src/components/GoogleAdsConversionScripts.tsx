@@ -26,6 +26,9 @@ const CONVERSION_ID = '16811926370'
 const LEAD_LABEL = 'mqEWCIzt5KQcEOLGxtA-'
 
 export function GoogleAdsConversionScripts() {
+  // Preview (GitHub Pages): nao dispara analytics fora do dominio oficial
+  if (process.env.NEXT_PUBLIC_PREVIEW === '1') return null
+
   // Init gtag inline (executa ANTES do gtag.js async carregar — fila em window.dataLayer)
   const initScript = `
 window.dataLayer = window.dataLayer || [];
