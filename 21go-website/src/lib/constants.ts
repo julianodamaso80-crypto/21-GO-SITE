@@ -11,15 +11,30 @@
 export interface WhatsAppTarget {
   /** Número no formato E.164 sem "+" (o que o wa.me espera). */
   number: string
-  /** Instância na Evolution — só pra rastrear de qual chip é o número. */
+  /** Instância na Evolution — usada pra checar se o chip está no ar. */
   instance: string
   /** Quantos contatos seguidos este número recebe no ciclo. */
   share: number
+  /**
+   * Env com a apikey DESTA instância. Cada instância da Evolution tem a sua:
+   * a chave de uma devolve 401 na outra, então não dá pra usar uma só.
+   */
+  apiKeyEnv: string
 }
 
 export const WHATSAPP_TARGETS: WhatsAppTarget[] = [
-  { number: '5521980214882', instance: 'disparo_xHH2aIEs_site21go', share: 2 },
-  { number: '5521965774240', instance: '4240', share: 1 },
+  {
+    number: '5521980214882',
+    instance: 'disparo_xHH2aIEs_site21go',
+    share: 2,
+    apiKeyEnv: 'EVOLUTION_API_KEY_4882',
+  },
+  {
+    number: '5521965774240',
+    instance: '4240',
+    share: 1,
+    apiKeyEnv: 'EVOLUTION_API_KEY_4240',
+  },
 ]
 
 /**
