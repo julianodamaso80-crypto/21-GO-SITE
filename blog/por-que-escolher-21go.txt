@@ -1,0 +1,251 @@
+1:"$Sreact.fragment"
+2:I[7974,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"GTMProvider"]
+3:I[4537,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"WhatsAppTracker"]
+4:I[5819,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"CtaTracker"]
+6:I[9000,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"default"]
+7:I[3681,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"Header"]
+8:I[3612,[],""]
+9:I[346,[],""]
+12:I[1592,[],""]
+:HL["/21-GO-SITE/_next/static/css/ddb1aa53c5d309e4.css","style"]
+5:T7a5,{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://21go.site/#organization","name":"21Go Proteção Patrimonial Veicular","alternateName":"21Go","url":"https://21go.site","logo":{"@type":"ImageObject","url":"https://21go.site/logo21go.png"},"description":"Associação de proteção patrimonial veicular no Rio de Janeiro, 20+ anos. Proteção por mutualismo contra roubo, furto, colisão e incêndio (proveniente de colisão) para carros, motos e frotas.","foundingDate":"2004","sameAs":["https://www.instagram.com/21goprotpatri/","https://www.facebook.com/21goprotpatri","https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/","https://www.youtube.com/@21goprotpatri"],"contactPoint":{"@type":"ContactPoint","telephone":"+55-21-96945-4824","contactType":"customer service","areaServed":"BR","availableLanguage":["Portuguese"]}},{"@type":"LocalBusiness","@id":"https://21go.site/#localbusiness","name":"21Go Proteção Patrimonial Veicular","url":"https://21go.site","logo":"https://21go.site/logo21go.png","image":"https://21go.site/logo21go.png","telephone":"+55-21-96945-4824","email":"contato@21go.org","address":{"@type":"PostalAddress","addressLocality":"Rio de Janeiro","addressRegion":"RJ","postalCode":"20040-020","addressCountry":"BR"},"geo":{"@type":"GeoCoordinates","latitude":-22.9068,"longitude":-43.1729},"openingHoursSpecification":{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"08:00","closes":"18:00"},"priceRange":"$$","areaServed":{"@type":"Country","name":"Brasil"}},{"@type":"WebSite","@id":"https://21go.site/#website","url":"https://21go.site","name":"21Go Proteção Patrimonial Veicular","publisher":{"@id":"https://21go.site/#organization"},"inLanguage":"pt-BR","potentialAction":{"@type":"SearchAction","target":"https://21go.site/blog?q={search_term_string}","query-input":"required name=search_term_string"}}]}0:{"P":null,"b":"KfspmHrhKZuySJl0ElCUo","p":"/21-GO-SITE","c":["","blog","por-que-escolher-21go"],"i":false,"f":[[["",{"children":["blog",{"children":[["slug","por-que-escolher-21go","d"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],["",["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/21-GO-SITE/_next/static/css/ddb1aa53c5d309e4.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"pt-BR","className":"__variable_974a64","children":["$","body",null,{"children":[null,null,["$","$L2",null,{}],["$","$L3",null,{}],["$","$L4",null,{}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$5"}}],["$","$L6",null,{"children":[["$","$L7",null,{}],["$","main",null,{"children":["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":"$La"}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],"$Lb","$Lc","$Ld"]}]]}]}]]}],{"children":["blog","$Le",{"children":[["slug","por-que-escolher-21go","d"],"$Lf",{"children":["__PAGE__","$L10",{},null,false]},null,false]},null,false]},null,false],"$L11",false]],"m":"$undefined","G":["$12",[]],"s":false,"S":true}
+13:I[733,["733","static/chunks/733-26af3e09486af18d.js","369","static/chunks/369-394965b6f4dfaa2c.js","953","static/chunks/app/blog/%5Bslug%5D/page-fb6a4282445abe08.js"],""]
+14:I[8898,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"Image"]
+1b:I[6963,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"default"]
+1d:I[521,[],"OutletBoundary"]
+1f:I[964,[],"AsyncMetadataOutlet"]
+21:I[521,[],"ViewportBoundary"]
+23:I[521,[],"MetadataBoundary"]
+24:"$Sreact.suspense"
+a:["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]
+b:["$","footer",null,{"className":"bg-[#1A2754]","children":[["$","div",null,{"className":"mx-auto max-w-7xl px-6 py-16 lg:py-20","children":[["$","div",null,{"className":"grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 lg:gap-16","children":[["$","div",null,{"className":"col-span-2 md:col-span-1","children":[["$","$L13",null,{"href":"/","className":"flex items-center gap-2.5 mb-5","children":[["$","$L14",null,{"src":"/logo21go.png","alt":"21Go","width":32,"height":32,"className":"rounded-lg"}],["$","span",null,{"className":"font-[var(--font-outfit)] text-lg font-bold text-white","children":"21Go"}]]}],["$","p",null,{"className":"text-sm text-[#94A3B8] leading-relaxed mb-6","children":"Proteção veicular inteligente no Rio de Janeiro. 20+ anos de mercado protegendo seu patrimônio."}],["$","div",null,{"className":"flex gap-3","children":[["$","a","Instagram",{"href":"https://instagram.com/21go.veicular","target":"_blank","rel":"noopener noreferrer","aria-label":"Instagram","className":"w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":16,"height":16,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-instagram","aria-hidden":"true","children":[["$","rect","2e1cvw",{"width":"20","height":"20","x":"2","y":"2","rx":"5","ry":"5"}],["$","path","9exkf1",{"d":"M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"}],["$","line","r4j83e",{"x1":"17.5","x2":"17.51","y1":"6.5","y2":"6.5"}],"$undefined"]}]}],["$","a","Facebook",{"href":"https://facebook.com/21goveicular","target":"_blank","rel":"noopener noreferrer","aria-label":"Facebook","className":"w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":16,"height":16,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-facebook","aria-hidden":"true","children":[["$","path","1jg4f8",{"d":"M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"}],"$undefined"]}]}],["$","a","LinkedIn",{"href":"https://linkedin.com/company/21go","target":"_blank","rel":"noopener noreferrer","aria-label":"LinkedIn","className":"w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":16,"height":16,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-linkedin","aria-hidden":"true","children":[["$","path","c2jq9f",{"d":"M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"}],["$","rect","mk3on5",{"width":"4","height":"12","x":"2","y":"9"}],["$","circle","bt5ra8",{"cx":"4","cy":"4","r":"2"}],"$undefined"]}]}]]}]]}],[["$","div","Proteção",{"children":[["$","h4",null,{"className":"font-[var(--font-outfit)] text-xs font-semibold uppercase tracking-widest text-[#64748B] mb-5","children":"Proteção"}],["$","ul",null,{"className":"space-y-3","children":[["$","li","/protecao-veicular",{"children":["$","$L13",null,{"href":"/protecao-veicular","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Planos"}]}],["$","li","/cotacao",{"children":["$","$L13",null,{"href":"/cotacao","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Simulação"}]}],["$","li","/protecao-veicular#coberturas",{"children":["$","$L13",null,{"href":"/protecao-veicular#coberturas","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Benefícios"}]}]]}]]}],["$","div","Empresa",{"children":["$L15","$L16"]}],"$L17"]]}],"$L18"]}],"$L19"]}]
+1a:T450,M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413zc:["$","a",null,{"href":"/api/wa","target":"_blank","rel":"noopener noreferrer","aria-label":"Fale conosco pelo WhatsApp","className":"fixed bottom-24 md:bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:scale-110","children":[["$","span",null,{"className":"absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30"}],["$","svg",null,{"width":"28","height":"28","viewBox":"0 0 24 24","fill":"currentColor","className":"relative z-10","children":["$","path",null,{"d":"$1a"}]}]]}]
+d:["$","$L1b",null,{}]
+e:["$","$1","c",{"children":[null,["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+f:["$","$1","c",{"children":[null,["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+10:["$","$1","c",{"children":["$L1c",null,["$","$L1d",null,{"children":["$L1e",["$","$L1f",null,{"promise":"$@20"}]]}]]}]
+11:["$","$1","h",{"children":[null,[["$","$L21",null,{"children":"$L22"}],null],["$","$L23",null,{"children":["$","div",null,{"hidden":true,"children":["$","$24",null,{"fallback":null,"children":"$L25"}]}]}]]}]
+15:["$","h4",null,{"className":"font-[var(--font-outfit)] text-xs font-semibold uppercase tracking-widest text-[#64748B] mb-5","children":"Empresa"}]
+16:["$","ul",null,{"className":"space-y-3","children":[["$","li","/sobre",{"children":["$","$L13",null,{"href":"/sobre","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Sobre"}]}],["$","li","/blog",{"children":["$","$L13",null,{"href":"/blog","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Blog"}]}],["$","li","/indique",{"children":["$","$L13",null,{"href":"/indique","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Indique e Ganhe"}]}]]}]
+17:["$","div","Suporte",{"children":[["$","h4",null,{"className":"font-[var(--font-outfit)] text-xs font-semibold uppercase tracking-widest text-[#64748B] mb-5","children":"Suporte"}],["$","ul",null,{"className":"space-y-3","children":[["$","li","/faq",{"children":["$","$L13",null,{"href":"/faq","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"FAQ"}]}],["$","li","/contato",{"children":["$","$L13",null,{"href":"/contato","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Contato"}]}],["$","li","/area-do-associado",{"children":["$","$L13",null,{"href":"/area-do-associado","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Área do Associado"}]}]]}]]}]
+26:T450,M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z18:["$","div",null,{"className":"mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4","children":[["$","a",null,{"href":"/cotacao","className":"inline-flex items-center gap-2 text-sm text-[#94A3B8] hover:text-white transition-colors","children":[["$","svg",null,{"width":"16","height":"16","viewBox":"0 0 24 24","fill":"currentColor","className":"text-[#25D366]","children":["$","path",null,{"d":"$26"}]}],"WhatsApp: (21) 96945-4824"]}],["$","div",null,{"className":"flex gap-5","children":[["$","$L13",null,{"href":"/termos-de-uso","className":"text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors","children":"Termos"}],["$","$L13",null,{"href":"/politica-privacidade","className":"text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors","children":"Privacidade"}]]}]]}]
+19:["$","div",null,{"className":"border-t border-white/[0.06]","children":["$","div",null,{"className":"mx-auto max-w-7xl px-6 py-5","children":["$","p",null,{"className":"text-xs text-[#64748B] text-center","children":"© 2026 21Go Proteção Veicular. Todos os direitos reservados."}]}]}]
+28:I[906,["733","static/chunks/733-26af3e09486af18d.js","369","static/chunks/369-394965b6f4dfaa2c.js","953","static/chunks/app/blog/%5Bslug%5D/page-fb6a4282445abe08.js"],"BlogTracking"]
+27:T637,{"@context":"https://schema.org","@type":"Article","headline":"Por que Escolher a 21Go? 5 Diferenciais Reais","description":"Descubra os 5 diferenciais da 21Go: 20+ anos de mercado no RJ, atendimento IA 24/7, programa de indicacao com ate 100% de desconto e mais.","image":["https://21go.site/blog/default.jpg","https://21go.site/blog/default-4x3.jpg","https://21go.site/blog/default-16x9.jpg"],"datePublished":"2026-03-20T00:00:00.000Z","dateModified":"2026-03-20T00:00:00.000Z","author":{"@type":"Person","name":"21Go","url":"https://21go.site/sobre","sameAs":["https://www.instagram.com/21goprotpatri/","https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/"],"description":"Equipe Editorial 21Go — Associação de proteção patrimonial veicular do Rio de Janeiro, 20+ anos de mercado.","jobTitle":"Equipe Editorial","worksFor":{"@type":"Organization","name":"21Go","url":"https://21go.site"},"knowsAbout":["Proteção patrimonial veicular","Mutualismo","Código Civil","Segurança veicular"]},"publisher":{"@type":"Organization","name":"21Go","logo":{"@type":"ImageObject","url":"https://21go.site/logo.png"},"url":"https://21go.site","sameAs":["https://www.instagram.com/21goprotpatri/","https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/"]},"mainEntityOfPage":{"@type":"WebPage","@id":"https://21go.site/blog/por-que-escolher-21go"},"keywords":"21Go protecao veicular, protecao veicular Rio de Janeiro, melhor protecao veicular RJ, diferenciais 21Go, por que 21Go","inLanguage":"pt-BR","isAccessibleForFree":true,"articleSection":"21Go"}1c:[[["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$27"}}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"Início\",\"item\":\"https://21go.site\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Blog\",\"item\":\"https://21go.site/blog\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"Por que Escolher a 21Go? 5 Diferenciais Reais\",\"item\":\"https://21go.site/blog/por-que-escolher-21go\"}]}"}}]],["$","$L28",null,{"articleSlug":"por-que-escolher-21go","articleTitle":"Por que Escolher a 21Go? 5 Diferenciais Reais","articleCategory":"21Go","mainKeyword":"21Go protecao veicular"}],["$","section",null,{"className":"pt-32 pb-16 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82]","children":["$","div",null,{"className":"max-w-4xl mx-auto px-6","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6","children":["$","ol",null,{"className":"flex items-center gap-2 text-xs text-white/50","children":[["$","li",null,{"children":["$","$L13",null,{"href":"/","className":"hover:text-white","children":"Início"}]}],["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-chevron-right w-3 h-3","aria-hidden":"true","children":[["$","path","mthhwq",{"d":"m9 18 6-6-6-6"}],"$undefined"]}],["$","li",null,{"children":["$","$L13",null,{"href":"/blog","className":"hover:text-white","children":"Blog"}]}],["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-chevron-right w-3 h-3","aria-hidden":"true","children":[["$","path","mthhwq",{"d":"m9 18 6-6-6-6"}],"$undefined"]}],["$","li",null,{"className":"text-white/80 line-clamp-1 max-w-[200px] md:max-w-[400px]","aria-current":"page","children":"Por que Escolher a 21Go? 5 Diferenciais Reais"}]]}]}],"$L29","$L2a","$L2b","$L2c"]}]}],"$L2d"]
+29:["$","$L13",null,{"href":"/blog","className":"inline-flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors mb-8","children":[["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-arrow-left w-4 h-4","aria-hidden":"true","children":[["$","path","1l729n",{"d":"m12 19-7-7 7-7"}],["$","path","x3x0zl",{"d":"M19 12H5"}],"$undefined"]}],"Voltar ao Blog"]}]
+2a:["$","span",null,{"className":"inline-block bg-[#F2911D]/15 text-[#F5A845] text-xs font-semibold px-3 py-1.5 rounded-full mb-5","children":"21Go"}]
+2b:["$","h1",null,{"className":"font-[var(--font-display)] text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-white mb-8 leading-[1.15]","children":"Por que Escolher a 21Go? 5 Diferenciais Reais"}]
+2c:["$","div",null,{"className":"flex flex-wrap items-center gap-5 text-sm text-white/50","children":[["$","$L13",null,{"href":"/sobre","className":"flex items-center gap-2 hover:text-white transition-colors","children":[["$","div",null,{"className":"w-8 h-8 rounded-full bg-white/10 flex items-center justify-center","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-user w-4 h-4","aria-hidden":"true","children":[["$","path","975kel",{"d":"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"}],["$","circle","17ys0d",{"cx":"12","cy":"7","r":"4"}],"$undefined"]}]}],["$","span",null,{"children":"21Go"}]]}],["$","div",null,{"className":"flex items-center gap-2","children":[["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-calendar w-4 h-4","aria-hidden":"true","children":[["$","path","1cmpym",{"d":"M8 2v4"}],["$","path","4m81vk",{"d":"M16 2v4"}],["$","rect","1hopcy",{"width":"18","height":"18","x":"3","y":"4","rx":"2"}],["$","path","8toen8",{"d":"M3 10h18"}],"$undefined"]}],["$","span",null,{"children":"20 de março de 2026"}]]}],"$undefined",["$","div",null,{"className":"flex items-center gap-2","children":[["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-clock w-4 h-4","aria-hidden":"true","children":[["$","circle","1mglay",{"cx":"12","cy":"12","r":"10"}],["$","path","mmk7yg",{"d":"M12 6v6l4 2"}],"$undefined"]}],["$","span",null,{"children":[12," min de leitura"]}]]}]]}]
+2e:T624, max-w-none [&_h2]:font-[var(--font-display)] [&_h2]:text-[1.5rem] [&_h2]:font-bold [&_h2]:text-[#1A2754] [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:pb-3 [&_h2]:border-b [&_h2]:border-[#E8ECF4] [&_h3]:font-[var(--font-display)] [&_h3]:text-[1.2rem] [&_h3]:font-semibold [&_h3]:text-[#1A2754] [&_h3]:mt-8 [&_h3]:mb-3 [&_p]:text-[#475569] [&_p]:text-[15px] [&_p]:leading-[1.8] [&_p]:mb-5 [&_ul]:my-4 [&_ul]:pl-0 [&_ul]:space-y-2 [&_ol]:my-4 [&_ol]:pl-0 [&_ol]:space-y-2 [&_ol]:list-none [&_ol]:counter-reset-[item] [&_li]:text-[#475569] [&_li]:text-[15px] [&_li]:leading-[1.7] [&_li]:pl-6 [&_li]:relative [&_ul_li]:before:content-[''] [&_ul_li]:before:absolute [&_ul_li]:before:left-0 [&_ul_li]:before:top-[10px] [&_ul_li]:before:w-1.5 [&_ul_li]:before:h-1.5 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-[#F2911D] [&_strong]:text-[#1A2754] [&_strong]:font-semibold [&_a]:text-[#293C82] [&_a]:font-medium [&_a]:underline [&_a]:decoration-[#293C82]/30 hover:[&_a]:decoration-[#293C82] [&_table]:w-full [&_table]:max-w-full [&_table]:block [&_table]:overflow-x-auto [&_table]:my-6 [&_table]:border-collapse [&_table]:rounded-xl [&_table]:text-sm [&_thead]:bg-[#1A2754] [&_th]:text-white [&_th]:font-semibold [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_td]:px-4 [&_td]:py-3 [&_td]:text-[#475569] [&_td]:border-b [&_td]:border-[#E8ECF4] [&_tr:nth-child(even)]:bg-[#F7F8FC] [&_blockquote]:border-l-4 [&_blockquote]:border-[#F2911D] [&_blockquote]:bg-[#F2911D]/5 [&_blockquote]:px-6 [&_blockquote]:py-4 [&_blockquote]:my-6 [&_blockquote]:rounded-r-xl [&_hr]:my-8 [&_hr]:border-[#E8ECF4] 2f:T4086,
+<h2>Por que Escolher a 21Go? 5 Diferenciais que Voce Pode Verificar</h2>
+
+<p>No Rio de Janeiro, existem dezenas de associacoes de protecao veicular. Desde a regulamentacao pela <strong>LC 213/2025</strong>, mais de 2.200 associacoes estao cadastradas no Brasil. Entao por que escolher a 21Go especificamente?</p>
+
+<p>Nao vamos pedir que voce acredite na nossa palavra. Vamos apresentar <strong>5 diferenciais concretos</strong> que voce pode verificar, comparar e confirmar antes de tomar qualquer decisao.</p>
+
+<p>Se apos ler este artigo voce ainda tiver duvidas, <a href="/cotacao" target="_blank" rel="noopener noreferrer">faca uma cotacao gratuita</a> e comprove voce mesmo. Sao 30 segundos, sem compromisso.</p>
+
+<h2>Diferencial 1: Mais de 20 Anos de Operacao no Rio de Janeiro</h2>
+
+<h3>O que isso significa na pratica</h3>
+
+<p>A 21Go nao e uma startup que apareceu depois da regulamentacao. Operamos no Rio de Janeiro ha mais de <strong>duas decadas</strong>, o que significa:</p>
+
+<ul><li><strong>Milhares de sinistros pagos</strong> ao longo dos anos — o modelo funciona e cumpre o que promete, de forma comprovada pelo historico</li>
+<li><strong>Conhecimento profundo do mercado carioca</strong> — sabemos quais sao os <a href="/blog/carros-mais-roubados-rj-2026" target="_blank" rel="noopener noreferrer">carros mais roubados</a>, as regioes mais perigosas (Baixada, Zona Norte, Zona Oeste) e os melhores prestadores de servico em cada area</li>
+<li><strong>Rede consolidada</strong> de oficinas, guinchos, vistorias e parceiros em todo o estado do Rio</li>
+<li><strong>Solidez financeira</strong> comprovada pela longevidade — associacoes que nao pagam sinistros nao sobrevivem 20 anos. E matematicamente impossivel.</li></ul>
+<h3>Por que isso importa para voce</h3>
+
+<p>O maior medo de quem pesquisa protecao veicular e: "sera que pagam quando eu precisar?" Com 20+ anos de operacao continua, a resposta e dada pelo historico. Se a 21Go esta aqui ha duas decadas, passando por crises economicas, pandemias e mudancas regulatorias, e porque o fundo funciona e os sinistros sao pagos.</p>
+
+<p>Para comparar: o mercado tem muitas associacoes com 1, 2 ou 3 anos de vida. Elas podem ser serias, mas nao tem como comprovar historico. A 21Go tem.</p>
+
+<h3>O contexto do mercado</h3>
+
+<p>Segundo dados do setor, mais de <strong>2.200 associacoes</strong> de protecao veicular estao cadastradas no Brasil apos a LC 213/2025. Muitas sao novas e surgiram para aproveitar a regulamentacao. A 21Go ja operava muito antes da lei — porque nosso modelo sempre foi solido.</p>
+
+<h2>Diferencial 2: Inteligencia Artificial 24/7</h2>
+
+<h3>Tecnologia a servico do associado</h3>
+
+<p>A 21Go investiu pesado em tecnologia para oferecer uma experiencia que associacoes tradicionais simplesmente nao conseguem. Nosso sistema de inteligencia artificial funciona <strong>24 horas por dia, 7 dias por semana</strong> e atende em multiplas frentes:</p>
+
+<p><strong>Atendimento instantaneo</strong></p>
+
+<p>Duvidas sobre cobertura? Segunda via de boleto? Status do sinistro? Alteracao de dados? Tudo resolvido na hora, sem espera em fila, sem "ligue de segunda a sexta das 9h as 18h". O atendimento por IA responde em <strong>segundos</strong>, nao minutos.</p>
+
+<p><strong>Cotacao automatica</strong></p>
+
+<p>Nosso motor de <a href="/cotacao" target="_blank" rel="noopener noreferrer">cotacao</a> consulta a tabela FIPE em tempo real e calcula o valor para os tres planos instantaneamente. Voce ve o preco na tela em 30 segundos, sem precisar esperar ligacao de ninguem.</p>
+
+<p><strong>Acompanhamento de sinistros</strong></p>
+
+<p>Quando voce aciona um sinistro, pode acompanhar cada etapa em tempo real — da abertura ao encerramento. Sem precisar ligar para perguntar "como esta meu processo?" a cada dois dias.</p>
+
+<p><strong>Orientacao proativa</strong></p>
+
+<p>A IA tambem atua de forma proativa: alertas de seguranca para sua regiao, lembretes de pagamento, dicas de prevencao e informacoes relevantes para os associados.</p>
+
+<h3>Por que isso importa para voce</h3>
+
+<p>Acidentes e roubos nao acontecem de segunda a sexta, das 9h as 18h. Eles acontecem as 3h da manha de um sabado, no feriado prolongado, no dia de Natal. Com atendimento IA 24/7, voce nunca esta sozinho — e a resposta vem em segundos, nao em horas.</p>
+
+<p>No Rio de Janeiro, os horarios de pico de roubo sao entre 18h e 22h, e os furtos concentram-se na madrugada. Exatamente os horarios em que a maioria das empresas tradicionais esta fechada.</p>
+
+<h3>Comparacao com o mercado</h3>
+
+<table><thead><tr><th>Aspecto</th><th>21Go</th><th>Associacoes tradicionais</th><th>Seguradoras</th></tr></thead><tbody><tr><td>Atendimento 24h</td><td>IA + equipe humana</td><td>Telefone limitado</td><td>0800 com espera</td></tr><tr><td>Cotacao instantanea</td><td>Sim, 30 segundos</td><td>Manualmente, horas/dias</td><td>Dias</td></tr><tr><td>Acompanhamento digital</td><td>App em tempo real</td><td>Telefone</td><td>Portal basico</td></tr><tr><td>Tempo de primeira resposta</td><td>Segundos</td><td>Horas/dias</td><td>Minutos a horas</td></tr></tbody></table>
+<blockquote><p>Precisa de atendimento agora? <a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca sua cotacao online</a> ou entre em contato pelo WhatsApp — funciona 24/7.</p></blockquote>
+
+<h2>Diferencial 3: Programa Member Get Member — Ate 100% de Desconto</h2>
+
+<h3>Como funciona o programa de indicacao</h3>
+
+<p>O programa de indicacao da 21Go e simples e poderoso:</p>
+
+<ol><li>Voce indica um amigo, familiar ou colega</li>
+<li>Se essa pessoa aderir a 21Go, voce ganha <strong>10% de desconto</strong> na sua mensalidade</li>
+<li>Os descontos sao <strong>acumulativos e permanentes</strong></li>
+<li>Com <strong>10 indicacoes</strong> que fecharem, voce paga <strong>zero</strong> — protecao 100% gratuita</li></ol>
+<h3>Exemplo pratico com numeros reais</h3>
+
+<p>Joao tem um HB20 2024 no Plano Completo — paga R$ 222/mes.</p>
+
+<ul><li>Indica Maria (adesao confirmada): 10% off = paga <strong>R$ 200/mes</strong></li>
+<li>Indica Pedro: 20% off = paga <strong>R$ 178/mes</strong></li>
+<li>Indica Ana: 30% off = paga <strong>R$ 155/mes</strong></li>
+<li>Indica Carlos: 40% off = <strong>R$ 133/mes</strong></li>
+<li>Indica Julia: 50% off = <strong>R$ 111/mes</strong></li>
+<li>...continua indicando...</li>
+<li>10a indicacao: 100% off = <strong>R$ 0/mes</strong></li></ul>
+<p>Joao agora tem protecao veicular completa — com colisao, incendio (proveniente de colisao) e carro reserva — <strong>sem pagar nada</strong>. E cada pessoa que ele indicou tambem pode indicar e zerar a propria mensalidade.</p>
+
+<h3>Por que isso e possivel (nao e "bom demais para ser verdade")</h3>
+
+<p>O programa nao e promocao temporaria nem truque de marketing. E uma <strong>estrategia de crescimento sustentavel</strong>:</p>
+
+<ul><li>Cada novo associado fortalece o fundo coletivo e dilui os custos</li>
+<li>O desconto que voce ganha por indicar e <strong>menor</strong> do que o custo que a 21Go teria com publicidade para atrair esse mesmo associado</li>
+<li>Mais associados = fundo mais robusto = menor rateio = sistema mais forte</li>
+<li>Todo mundo ganha: voce economiza, o indicado ganha protecao, o fundo fica mais solido</li></ul>
+<h3>Nenhuma seguradora oferece isso</h3>
+
+<p>Nenhuma seguradora tradicional e nenhuma outra associacao que conhecemos oferece desconto acumulativo de ate 100% por indicacao. E o diferencial mais unico da 21Go.</p>
+
+<p>Saiba mais e comece a indicar: <a href="/indique" target="_blank" rel="noopener noreferrer">Programa de Indicacao 21Go</a>.</p>
+
+<h2>Diferencial 4: Sem Analise de Perfil — Todos Sao Aceitos</h2>
+
+<h3>O problema real das seguradoras</h3>
+
+<p>No seguro tradicional, voce passa por uma analise de perfil rigorosa. A seguradora avalia sua idade, genero, CEP, estado civil, profissao, tipo de garagem e historico de sinistros. O resultado:</p>
+
+<ul><li><strong>30% a 50% dos motoristas sao recusados</strong> no Rio de Janeiro</li>
+<li>Jovens de 18-25 pagam ate 3x mais que motoristas acima de 35</li>
+<li>Moradores da Baixada Fluminense (Belford Roxo, Duque de Caxias) e Zona Norte (Vicente de Carvalho, Pavuna) sao frequentemente <strong>recusados</strong> por risco elevado</li>
+<li>Veiculos com mais de 10 anos sao recusados pela maioria das seguradoras (e a idade media da frota do RJ e de 18,1 anos)</li>
+<li>Motoristas de aplicativo pagam mais ou sao recusados</li></ul>
+<p>Isso ajuda a explicar por que <strong>mais de 70% dos veiculos no Brasil</strong> rodam sem protecao (dados Fenacor). Nao e falta de vontade — e falta de acesso.</p>
+
+<h3>A abordagem da 21Go</h3>
+
+<p>Na 21Go, <strong>nao existe analise de perfil</strong>. O valor e calculado exclusivamente por dois fatores:</p>
+
+<ol><li>Valor FIPE do veiculo</li>
+<li>Plano escolhido</li></ol>
+<p>Nao importa se voce tem 18 ou 80 anos, se mora em Ipanema ou em Nova Iguacu, se e homem ou mulher, se ja bateu 5 carros ou nunca teve um arranhao, se tem nome limpo ou restrito no SPC. O preco e o mesmo para todos com o mesmo carro.</p>
+
+<h3>Quem mais se beneficia</h3>
+
+<ul><li><strong>Jovens de 18-25 anos</strong>: recusados ou cobrados absurdos pelas seguradoras. Na 21Go, mesmo preco que qualquer motorista.</li>
+<li><strong>Moradores da Baixada Fluminense e Zona Norte</strong>: recusados pela maioria das seguradoras por risco elevado. Na 21Go, aceitos sem restricao e pelo mesmo preco.</li>
+<li><strong>Motoristas de aplicativo</strong>: perfil de risco para seguradoras. Na 21Go, bem-vindos sem sobretaxa.</li>
+<li><strong>Donos de veiculos antigos (10+ anos)</strong>: seguradoras nao aceitam. Na 21Go, sem limite de idade do veiculo.</li>
+<li><strong>Quem ja teve sinistros</strong>: seguradoras penalizam na renovacao. Na 21Go, historico passado nao existe.</li></ul>
+<p>Para uma comparacao detalhada entre os dois modelos: <a href="/blog/protecao-veicular-vs-seguro" target="_blank" rel="noopener noreferrer">Protecao Veicular vs Seguro: 7 Diferencas</a>.</p>
+
+<h2>Diferencial 5: Atendimento Humanizado + Tecnologia</h2>
+
+<h3>O melhor dos dois mundos</h3>
+
+<p>Muitas empresas apostam so em tecnologia e perdem o toque humano. Outras investem so em atendimento humano e sao lentas e ineficientes. A 21Go combina os dois em um modelo que chamamos de atendimento hibrido.</p>
+
+<p><strong>Tecnologia para o que tecnologia faz melhor:</strong></p>
+<ul><li>Cotacao instantanea com consulta FIPE em tempo real</li>
+<li>Atendimento automatico 24/7 para duvidas frequentes e demandas simples</li>
+<li>Acompanhamento digital de sinistros com atualizacoes em tempo real</li>
+<li>Notificacoes, alertas e lembretes automaticos</li>
+<li>Calculo automatico de valores e boletos</li></ul>
+<p><strong>Pessoas para o que pessoas fazem melhor:</strong></p>
+<ul><li>Apoio emocional em momentos de sinistro (ser roubado e traumatico — voce precisa de alguem, nao de um robo)</li>
+<li>Resolucao de casos complexos que exigem julgamento humano e negociacao</li>
+<li>Onboarding personalizado nos primeiros 30 dias de associacao</li>
+<li>Negociacao com oficinas e prestadores de servico</li>
+<li>Escuta ativa quando o associado precisa ser ouvido</li></ul>
+<h3>Na pratica</h3>
+
+<p>Quando voce aciona a 21Go as 3h da manha apos um roubo, a IA faz o primeiro atendimento instantaneo: coleta informacoes, orienta sobre o B.O., registra o sinistro no sistema e informa os proximos passos. No dia seguinte, um <strong>ser humano</strong> liga para voce, confirma que esta tudo certo, explica o andamento com detalhes e se coloca a disposicao para qualquer necessidade.</p>
+
+<p>Voce tem a <strong>velocidade da tecnologia</strong> na hora critica com o <strong>calor do atendimento humano</strong> no acompanhamento. Isso e raro no mercado.</p>
+
+<blockquote><p>Ja e associado? Saiba como funciona o <a href="/blog/como-aderir-21go" target="_blank" rel="noopener noreferrer">processo de adesao completo</a> para indicar amigos.</p></blockquote>
+
+<h2>O que os Associados Dizem</h2>
+
+<p>Os melhores argumentos nao sao nossos — sao de quem vive a experiencia:</p>
+
+<blockquote><p>"Fui recusado por 3 seguradoras por causa do meu CEP na Baixada. A 21Go aceitou meu carro em 24 horas e o preco foi metade do que a unica seguradora que me aceitou cobrou."</p></blockquote>
+
+<blockquote><p>"Indiquei 6 amigos e ja pago quase metade do que pagava. Em mais 4 indicacoes, vou pagar zero. Melhor decisao que tomei."</p></blockquote>
+
+<blockquote><p>"Meu carro foi roubado na Av. Brasil. O atendimento foi rapido — a IA me orientou na hora e no dia seguinte ja tinha tudo encaminhado. Recebi em 35 dias."</p></blockquote>
+
+<blockquote><p>"O atendimento por WhatsApp e incomparavelmente melhor do que ficar 40 minutos no 0800 de seguradora ouvindo musiquinha."</p></blockquote>
+
+<h2>Comparativo Final: 21Go vs Mercado</h2>
+
+<table><thead><tr><th>Criterio</th><th>21Go</th><th>Outras associacoes</th><th>Seguradoras</th></tr></thead><tbody><tr><td>Tempo de mercado</td><td>20+ anos</td><td>Varia (muitas recentes)</td><td>Decadas</td></tr><tr><td>Atendimento IA 24/7</td><td>Sim</td><td>Raro</td><td>Nao</td></tr><tr><td>Analise de perfil</td><td>Nao</td><td>Geralmente nao</td><td>Sim (recusa 30-50%)</td></tr><tr><td>Programa indicacao 100%</td><td>Sim</td><td>Raro/inexistente</td><td>Nao</td></tr><tr><td>Cotacao em 30 segundos</td><td>Sim</td><td>Nem sempre</td><td>Raramente</td></tr><tr><td>Preco</td><td>Competitivo (formula publica)</td><td>Varia</td><td>2-3x mais caro</td></tr><tr><td>Transparencia no calculo</td><td>Formula 100% publica</td><td>Varia</td><td>Caixa-preta</td></tr><tr><td>Carro reserva incluso</td><td>Completo/Premium</td><td>Nem sempre</td><td>Pago a parte</td></tr><tr><td>Rastreamento incluso</td><td>Premium</td><td>Raro</td><td>Pago a parte</td></tr><tr><td>Regulamentacao</td><td>LC 213/2025 + SUSEP</td><td>LC 213/2025</td><td>SUSEP</td></tr><tr><td>Aceita qualquer CEP RJ</td><td>Sim</td><td>Geralmente sim</td><td>Nao (recusa areas de risco)</td></tr></tbody></table>
+<h2>Faca Parte da 21Go</h2>
+
+<p>Voce conhece os diferenciais. Agora so falta dar o primeiro passo.</p>
+
+<ol><li><a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca sua cotacao gratuita</a> — 30 segundos, sem compromisso, sem consulta SPC</li>
+<li>Escolha seu plano: <a href="/blog/planos-21go-basico-completo-premium" target="_blank" rel="noopener noreferrer">Basico, Completo ou Premium</a></li>
+<li>Agende a vistoria e em ate 48 horas seu carro esta protegido</li></ol>
+<p>Saiba como funciona o processo completo: <a href="/blog/como-aderir-21go" target="_blank" rel="noopener noreferrer">Como Aderir a 21Go em 3 Passos</a>.</p>
+
+<p>No Rio de Janeiro, com 30.000 veiculos roubados por ano e mais de 70% da frota sem protecao, cada dia sem protecao e um dia de risco desnecessario.</p>
+
+<h2>FAQ — Perguntas Frequentes sobre a 21Go</h2>
+
+<h3>A 21Go so atende no Rio de Janeiro?</h3>
+
+<p>A 21Go tem sua base e operacao principal no Rio de Janeiro, mas a protecao vale em <strong>todo o territorio nacional</strong>. Se voce viajar para outro estado e sofrer um sinistro, esta coberto normalmente. A assistencia 24h (guincho, socorro mecanico) tambem funciona em todo o Brasil.</p>
+
+<h3>Como sei que a 21Go vai me pagar se eu precisar?</h3>
+
+<p>A melhor evidencia e o historico: 20+ anos de operacao com milhares de sinistros pagos. Alem disso, a LC 213/2025 exige que associacoes mantenham reservas tecnicas justamente para garantir o pagamento. E a logica e simples: se uma associacao nao paga, ela fecha. A 21Go continua aqui depois de duas decadas.</p>
+
+<h3>A 21Go tem Reclame Aqui?</h3>
+
+<p>Sim. Como qualquer empresa que lida com milhares de clientes e sinistros, eventualmente surgem reclamacoes. O importante e como respondemos e resolvemos. Convidamos voce a verificar nosso perfil e avaliar como cada caso e tratado.</p>
+
+<h3>Posso visitar a sede da 21Go?</h3>
+
+<p>Sim. A 21Go tem sede fisica no Rio de Janeiro. Associados e interessados sao bem-vindos para conhecer a operacao, tirar duvidas pessoalmente e ver de perto como tudo funciona.</p>
+
+<h3>Se eu nao gostar, posso sair a qualquer momento?</h3>
+
+<p>Sim. Sem multas, sem fidelidade, sem burocracia, sem perguntas constrangedoras. Voce cancela quando quiser e a protecao cessa no mes seguinte. Simples assim.</p>
+
+<hr />
+
+<p><em>A melhor protecao veicular do Rio de Janeiro esta a 30 segundos de distancia. <a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca sua cotacao agora</a>.</em></p>
+2d:["$","section",null,{"className":"py-12 md:py-16 bg-[#F7F8FC]","children":["$","div",null,{"className":"max-w-6xl mx-auto px-6","children":["$","div",null,{"className":"grid lg:grid-cols-[1fr_320px] gap-10","children":[["$","div",null,{"className":"bg-white rounded-2xl border border-[#E8ECF4] shadow-sm p-8 md:p-12","children":["$","article",null,{"className":"$2e","dangerouslySetInnerHTML":{"__html":"$2f"}}]}],"$L30"]}]}]}]
+30:["$","aside",null,{"className":"space-y-6 lg:sticky lg:top-28 h-fit","children":[["$","div",null,{"className":"bg-gradient-to-br from-[#1A2754] to-[#293C82] rounded-2xl p-8 text-white","children":[["$","div",null,{"className":"w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-shield-check w-6 h-6 text-[#F2911D]","aria-hidden":"true","children":[["$","path","oel41y",{"d":"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"}],["$","path","dzmm74",{"d":"m9 12 2 2 4-4"}],"$undefined"]}]}],["$","h3",null,{"className":"font-[var(--font-display)] text-lg font-bold mb-2","children":"Proteja seu veículo"}],["$","p",null,{"className":"text-sm text-white/60 mb-6","children":"Simulação gratuita em 30 segundos. Sem compromisso."}],["$","$L13",null,{"href":"/cotacao","className":"flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-semibold text-sm hover:shadow-lg hover:shadow-[#F2911D]/20 transition-all","children":["Fazer Simulação ",["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-arrow-right w-4 h-4","aria-hidden":"true","children":[["$","path","1ays0h",{"d":"M5 12h14"}],["$","path","xquz4c",{"d":"m12 5 7 7-7 7"}],"$undefined"]}]]}]]}],["$","div",null,{"className":"bg-white rounded-2xl border border-[#E8ECF4] p-6","children":[["$","h3",null,{"className":"font-[var(--font-display)] text-xs font-semibold text-[#94A3B8] mb-5 uppercase tracking-wider","children":"Artigos Relacionados"}],["$","div",null,{"className":"space-y-4","children":[["$","$L13","diarios-de-bordo-historias-reais-clientes-21go",{"href":"/blog/diarios-de-bordo-historias-reais-clientes-21go","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase","children":"Geral"}],["$","p",null,{"className":"mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug","children":"Diários de Bordo: 7 Histórias Reais de Associados 21Go Que Foram Protegidos"}]]}],["$","$L13","como-evitar-clonagem-de-placa-rj",{"href":"/blog/como-evitar-clonagem-de-placa-rj","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase","children":"Seguranca"}],["$","p",null,{"className":"mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug","children":"Clonagem de Placa no Rio: Como Descobrir, Evitar e O Que Fazer"}]]}],["$","$L13","multas-rj-como-evitar-no-transito",{"href":"/blog/multas-rj-como-evitar-no-transito","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase","children":"Dicas"}],["$","p",null,{"className":"mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug","children":"Multas de Trânsito no Rio: Como Evitar E O Que Fazer Quando Recebe"}]]}]]}]]}]]}]
+22:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+1e:null
+31:I[1996,[],"IconMark"]
+20:{"metadata":[["$","title","0",{"children":"Por que Escolher a 21Go? 5 Diferenciais Reais | Blog 21Go | 21Go"}],["$","meta","1",{"name":"description","content":"Descubra os 5 diferenciais da 21Go: 20+ anos de mercado no RJ, atendimento IA 24/7, programa de indicacao com ate 100% de desconto e mais."}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","meta","3",{"name":"facebook-domain-verification","content":"0ruuwkhj1e6bnadcippr9exl3jqncs"}],["$","meta","4",{"name":"facebook-domain-verification","content":"7ov5n8z6gtw4zo8qh9q3kue5bzhp9b"}],["$","link","5",{"rel":"canonical","href":"https://21go.site/blog/por-que-escolher-21go"}],["$","meta","6",{"property":"og:title","content":"Por que Escolher a 21Go? 5 Diferenciais Reais"}],["$","meta","7",{"property":"og:description","content":"Descubra os 5 diferenciais da 21Go: 20+ anos de mercado no RJ, atendimento IA 24/7, programa de indicacao com ate 100% de desconto e mais."}],["$","meta","8",{"property":"og:url","content":"https://21go.site/blog/por-que-escolher-21go"}],["$","meta","9",{"property":"og:site_name","content":"21Go"}],["$","meta","10",{"property":"og:locale","content":"pt_BR"}],["$","meta","11",{"property":"og:image","content":"https://21go.site/blog/default.jpg"}],["$","meta","12",{"property":"og:image:width","content":"1200"}],["$","meta","13",{"property":"og:image:height","content":"630"}],["$","meta","14",{"property":"og:image:alt","content":"Por que Escolher a 21Go? 5 Diferenciais Reais"}],["$","meta","15",{"property":"og:type","content":"article"}],["$","meta","16",{"property":"article:published_time","content":"2026-03-20"}],["$","meta","17",{"property":"article:modified_time","content":"2026-03-20"}],["$","meta","18",{"property":"article:author","content":"21Go"}],["$","meta","19",{"property":"article:tag","content":"21Go protecao veicular"}],["$","meta","20",{"property":"article:tag","content":"protecao veicular Rio de Janeiro"}],["$","meta","21",{"property":"article:tag","content":"melhor protecao veicular RJ"}],["$","meta","22",{"property":"article:tag","content":"diferenciais 21Go"}],["$","meta","23",{"property":"article:tag","content":"por que 21Go"}],["$","meta","24",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","25",{"name":"twitter:title","content":"Por que Escolher a 21Go? 5 Diferenciais Reais"}],["$","meta","26",{"name":"twitter:description","content":"Descubra os 5 diferenciais da 21Go: 20+ anos de mercado no RJ, atendimento IA 24/7, programa de indicacao com ate 100% de desconto e mais."}],["$","meta","27",{"name":"twitter:image","content":"https://21go.site/blog/default.jpg"}],["$","link","28",{"rel":"icon","href":"/favicon.ico"}],["$","link","29",{"rel":"apple-touch-icon","href":"/logo21go.png"}],["$","$L31","30",{}]],"error":null,"digest":"$undefined"}
+25:"$20:metadata"

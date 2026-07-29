@@ -1,0 +1,267 @@
+1:"$Sreact.fragment"
+2:I[7974,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"GTMProvider"]
+3:I[4537,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"WhatsAppTracker"]
+4:I[5819,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"CtaTracker"]
+6:I[9000,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"default"]
+7:I[3681,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"Header"]
+8:I[3612,[],""]
+9:I[346,[],""]
+12:I[1592,[],""]
+:HL["/21-GO-SITE/_next/static/css/ddb1aa53c5d309e4.css","style"]
+5:T7a5,{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://21go.site/#organization","name":"21Go Proteção Patrimonial Veicular","alternateName":"21Go","url":"https://21go.site","logo":{"@type":"ImageObject","url":"https://21go.site/logo21go.png"},"description":"Associação de proteção patrimonial veicular no Rio de Janeiro, 20+ anos. Proteção por mutualismo contra roubo, furto, colisão e incêndio (proveniente de colisão) para carros, motos e frotas.","foundingDate":"2004","sameAs":["https://www.instagram.com/21goprotpatri/","https://www.facebook.com/21goprotpatri","https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/","https://www.youtube.com/@21goprotpatri"],"contactPoint":{"@type":"ContactPoint","telephone":"+55-21-96945-4824","contactType":"customer service","areaServed":"BR","availableLanguage":["Portuguese"]}},{"@type":"LocalBusiness","@id":"https://21go.site/#localbusiness","name":"21Go Proteção Patrimonial Veicular","url":"https://21go.site","logo":"https://21go.site/logo21go.png","image":"https://21go.site/logo21go.png","telephone":"+55-21-96945-4824","email":"contato@21go.org","address":{"@type":"PostalAddress","addressLocality":"Rio de Janeiro","addressRegion":"RJ","postalCode":"20040-020","addressCountry":"BR"},"geo":{"@type":"GeoCoordinates","latitude":-22.9068,"longitude":-43.1729},"openingHoursSpecification":{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"08:00","closes":"18:00"},"priceRange":"$$","areaServed":{"@type":"Country","name":"Brasil"}},{"@type":"WebSite","@id":"https://21go.site/#website","url":"https://21go.site","name":"21Go Proteção Patrimonial Veicular","publisher":{"@id":"https://21go.site/#organization"},"inLanguage":"pt-BR","potentialAction":{"@type":"SearchAction","target":"https://21go.site/blog?q={search_term_string}","query-input":"required name=search_term_string"}}]}0:{"P":null,"b":"KfspmHrhKZuySJl0ElCUo","p":"/21-GO-SITE","c":["","blog","5-veiculos-roubados-por-hora-rj"],"i":false,"f":[[["",{"children":["blog",{"children":[["slug","5-veiculos-roubados-por-hora-rj","d"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],["",["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/21-GO-SITE/_next/static/css/ddb1aa53c5d309e4.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"pt-BR","className":"__variable_974a64","children":["$","body",null,{"children":[null,null,["$","$L2",null,{}],["$","$L3",null,{}],["$","$L4",null,{}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$5"}}],["$","$L6",null,{"children":[["$","$L7",null,{}],["$","main",null,{"children":["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],"$La"]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],"$Lb","$Lc","$Ld"]}]]}]}]]}],{"children":["blog","$Le",{"children":[["slug","5-veiculos-roubados-por-hora-rj","d"],"$Lf",{"children":["__PAGE__","$L10",{},null,false]},null,false]},null,false]},null,false],"$L11",false]],"m":"$undefined","G":["$12",[]],"s":false,"S":true}
+13:I[733,["733","static/chunks/733-26af3e09486af18d.js","369","static/chunks/369-394965b6f4dfaa2c.js","953","static/chunks/app/blog/%5Bslug%5D/page-fb6a4282445abe08.js"],""]
+14:I[8898,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"Image"]
+1b:I[6963,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"default"]
+1d:I[521,[],"OutletBoundary"]
+1f:I[964,[],"AsyncMetadataOutlet"]
+21:I[521,[],"ViewportBoundary"]
+23:I[521,[],"MetadataBoundary"]
+24:"$Sreact.suspense"
+a:["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]
+b:["$","footer",null,{"className":"bg-[#1A2754]","children":[["$","div",null,{"className":"mx-auto max-w-7xl px-6 py-16 lg:py-20","children":[["$","div",null,{"className":"grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 lg:gap-16","children":[["$","div",null,{"className":"col-span-2 md:col-span-1","children":[["$","$L13",null,{"href":"/","className":"flex items-center gap-2.5 mb-5","children":[["$","$L14",null,{"src":"/logo21go.png","alt":"21Go","width":32,"height":32,"className":"rounded-lg"}],["$","span",null,{"className":"font-[var(--font-outfit)] text-lg font-bold text-white","children":"21Go"}]]}],["$","p",null,{"className":"text-sm text-[#94A3B8] leading-relaxed mb-6","children":"Proteção veicular inteligente no Rio de Janeiro. 20+ anos de mercado protegendo seu patrimônio."}],["$","div",null,{"className":"flex gap-3","children":[["$","a","Instagram",{"href":"https://instagram.com/21go.veicular","target":"_blank","rel":"noopener noreferrer","aria-label":"Instagram","className":"w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":16,"height":16,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-instagram","aria-hidden":"true","children":[["$","rect","2e1cvw",{"width":"20","height":"20","x":"2","y":"2","rx":"5","ry":"5"}],["$","path","9exkf1",{"d":"M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"}],["$","line","r4j83e",{"x1":"17.5","x2":"17.51","y1":"6.5","y2":"6.5"}],"$undefined"]}]}],["$","a","Facebook",{"href":"https://facebook.com/21goveicular","target":"_blank","rel":"noopener noreferrer","aria-label":"Facebook","className":"w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":16,"height":16,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-facebook","aria-hidden":"true","children":[["$","path","1jg4f8",{"d":"M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"}],"$undefined"]}]}],["$","a","LinkedIn",{"href":"https://linkedin.com/company/21go","target":"_blank","rel":"noopener noreferrer","aria-label":"LinkedIn","className":"w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":16,"height":16,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-linkedin","aria-hidden":"true","children":[["$","path","c2jq9f",{"d":"M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"}],["$","rect","mk3on5",{"width":"4","height":"12","x":"2","y":"9"}],["$","circle","bt5ra8",{"cx":"4","cy":"4","r":"2"}],"$undefined"]}]}]]}]]}],[["$","div","Proteção",{"children":[["$","h4",null,{"className":"font-[var(--font-outfit)] text-xs font-semibold uppercase tracking-widest text-[#64748B] mb-5","children":"Proteção"}],["$","ul",null,{"className":"space-y-3","children":[["$","li","/protecao-veicular",{"children":["$","$L13",null,{"href":"/protecao-veicular","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Planos"}]}],["$","li","/cotacao",{"children":["$","$L13",null,{"href":"/cotacao","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Simulação"}]}],["$","li","/protecao-veicular#coberturas",{"children":["$","$L13",null,{"href":"/protecao-veicular#coberturas","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Benefícios"}]}]]}]]}],["$","div","Empresa",{"children":["$L15","$L16"]}],"$L17"]]}],"$L18"]}],"$L19"]}]
+1a:T450,M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413zc:["$","a",null,{"href":"/api/wa","target":"_blank","rel":"noopener noreferrer","aria-label":"Fale conosco pelo WhatsApp","className":"fixed bottom-24 md:bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:scale-110","children":[["$","span",null,{"className":"absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30"}],["$","svg",null,{"width":"28","height":"28","viewBox":"0 0 24 24","fill":"currentColor","className":"relative z-10","children":["$","path",null,{"d":"$1a"}]}]]}]
+d:["$","$L1b",null,{}]
+e:["$","$1","c",{"children":[null,["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+f:["$","$1","c",{"children":[null,["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+10:["$","$1","c",{"children":["$L1c",null,["$","$L1d",null,{"children":["$L1e",["$","$L1f",null,{"promise":"$@20"}]]}]]}]
+11:["$","$1","h",{"children":[null,[["$","$L21",null,{"children":"$L22"}],null],["$","$L23",null,{"children":["$","div",null,{"hidden":true,"children":["$","$24",null,{"fallback":null,"children":"$L25"}]}]}]]}]
+15:["$","h4",null,{"className":"font-[var(--font-outfit)] text-xs font-semibold uppercase tracking-widest text-[#64748B] mb-5","children":"Empresa"}]
+16:["$","ul",null,{"className":"space-y-3","children":[["$","li","/sobre",{"children":["$","$L13",null,{"href":"/sobre","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Sobre"}]}],["$","li","/blog",{"children":["$","$L13",null,{"href":"/blog","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Blog"}]}],["$","li","/indique",{"children":["$","$L13",null,{"href":"/indique","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Indique e Ganhe"}]}]]}]
+17:["$","div","Suporte",{"children":[["$","h4",null,{"className":"font-[var(--font-outfit)] text-xs font-semibold uppercase tracking-widest text-[#64748B] mb-5","children":"Suporte"}],["$","ul",null,{"className":"space-y-3","children":[["$","li","/faq",{"children":["$","$L13",null,{"href":"/faq","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"FAQ"}]}],["$","li","/contato",{"children":["$","$L13",null,{"href":"/contato","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Contato"}]}],["$","li","/area-do-associado",{"children":["$","$L13",null,{"href":"/area-do-associado","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Área do Associado"}]}]]}]]}]
+26:T450,M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z18:["$","div",null,{"className":"mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4","children":[["$","a",null,{"href":"/cotacao","className":"inline-flex items-center gap-2 text-sm text-[#94A3B8] hover:text-white transition-colors","children":[["$","svg",null,{"width":"16","height":"16","viewBox":"0 0 24 24","fill":"currentColor","className":"text-[#25D366]","children":["$","path",null,{"d":"$26"}]}],"WhatsApp: (21) 96945-4824"]}],["$","div",null,{"className":"flex gap-5","children":[["$","$L13",null,{"href":"/termos-de-uso","className":"text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors","children":"Termos"}],["$","$L13",null,{"href":"/politica-privacidade","className":"text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors","children":"Privacidade"}]]}]]}]
+19:["$","div",null,{"className":"border-t border-white/[0.06]","children":["$","div",null,{"className":"mx-auto max-w-7xl px-6 py-5","children":["$","p",null,{"className":"text-xs text-[#64748B] text-center","children":"© 2026 21Go Proteção Veicular. Todos os direitos reservados."}]}]}]
+28:I[906,["733","static/chunks/733-26af3e09486af18d.js","369","static/chunks/369-394965b6f4dfaa2c.js","953","static/chunks/app/blog/%5Bslug%5D/page-fb6a4282445abe08.js"],"BlogTracking"]
+27:T670,{"@context":"https://schema.org","@type":"Article","headline":"5 Veiculos Roubados por Hora no RJ: Dados e Protecao","description":"A cada hora, 5 veiculos sao roubados no Rio de Janeiro. Veja as estatisticas reais do ISP-RJ, zonas de perigo e como proteger seu carro sem pagar caro.","image":["https://21go.site/blog/default.jpg","https://21go.site/blog/default-4x3.jpg","https://21go.site/blog/default-16x9.jpg"],"datePublished":"2026-03-20T00:00:00.000Z","dateModified":"2026-03-20T00:00:00.000Z","author":{"@type":"Person","name":"21Go","url":"https://21go.site/sobre","sameAs":["https://www.instagram.com/21goprotpatri/","https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/"],"description":"Equipe Editorial 21Go — Associação de proteção patrimonial veicular do Rio de Janeiro, 20+ anos de mercado.","jobTitle":"Equipe Editorial","worksFor":{"@type":"Organization","name":"21Go","url":"https://21go.site"},"knowsAbout":["Proteção patrimonial veicular","Mutualismo","Código Civil","Segurança veicular"]},"publisher":{"@type":"Organization","name":"21Go","logo":{"@type":"ImageObject","url":"https://21go.site/logo.png"},"url":"https://21go.site","sameAs":["https://www.instagram.com/21goprotpatri/","https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/"]},"mainEntityOfPage":{"@type":"WebPage","@id":"https://21go.site/blog/5-veiculos-roubados-por-hora-rj"},"keywords":"roubo de veiculos RJ, veiculos roubados Rio de Janeiro, estatisticas roubo veiculos RJ, seguranca veicular RJ, furto de carro Rio de Janeiro","inLanguage":"pt-BR","isAccessibleForFree":true,"articleSection":"Seguranca"}1c:[[["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$27"}}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"Início\",\"item\":\"https://21go.site\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Blog\",\"item\":\"https://21go.site/blog\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"5 Veiculos Roubados por Hora no RJ: Dados e Protecao\",\"item\":\"https://21go.site/blog/5-veiculos-roubados-por-hora-rj\"}]}"}}]],["$","$L28",null,{"articleSlug":"5-veiculos-roubados-por-hora-rj","articleTitle":"5 Veiculos Roubados por Hora no RJ: Dados e Protecao","articleCategory":"Seguranca","mainKeyword":"roubo de veiculos RJ"}],["$","section",null,{"className":"pt-32 pb-16 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82]","children":["$","div",null,{"className":"max-w-4xl mx-auto px-6","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6","children":["$","ol",null,{"className":"flex items-center gap-2 text-xs text-white/50","children":[["$","li",null,{"children":["$","$L13",null,{"href":"/","className":"hover:text-white","children":"Início"}]}],["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-chevron-right w-3 h-3","aria-hidden":"true","children":[["$","path","mthhwq",{"d":"m9 18 6-6-6-6"}],"$undefined"]}],["$","li",null,{"children":["$","$L13",null,{"href":"/blog","className":"hover:text-white","children":"Blog"}]}],["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-chevron-right w-3 h-3","aria-hidden":"true","children":[["$","path","mthhwq",{"d":"m9 18 6-6-6-6"}],"$undefined"]}],["$","li",null,{"className":"text-white/80 line-clamp-1 max-w-[200px] md:max-w-[400px]","aria-current":"page","children":"5 Veiculos Roubados por Hora no RJ: Dados e Protecao"}]]}]}],"$L29","$L2a","$L2b","$L2c"]}]}],"$L2d"]
+29:["$","$L13",null,{"href":"/blog","className":"inline-flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors mb-8","children":[["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-arrow-left w-4 h-4","aria-hidden":"true","children":[["$","path","1l729n",{"d":"m12 19-7-7 7-7"}],["$","path","x3x0zl",{"d":"M19 12H5"}],"$undefined"]}],"Voltar ao Blog"]}]
+2a:["$","span",null,{"className":"inline-block bg-[#F2911D]/15 text-[#F5A845] text-xs font-semibold px-3 py-1.5 rounded-full mb-5","children":"Seguranca"}]
+2b:["$","h1",null,{"className":"font-[var(--font-display)] text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-white mb-8 leading-[1.15]","children":"5 Veiculos Roubados por Hora no RJ: Dados e Protecao"}]
+2c:["$","div",null,{"className":"flex flex-wrap items-center gap-5 text-sm text-white/50","children":[["$","$L13",null,{"href":"/sobre","className":"flex items-center gap-2 hover:text-white transition-colors","children":[["$","div",null,{"className":"w-8 h-8 rounded-full bg-white/10 flex items-center justify-center","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-user w-4 h-4","aria-hidden":"true","children":[["$","path","975kel",{"d":"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"}],["$","circle","17ys0d",{"cx":"12","cy":"7","r":"4"}],"$undefined"]}]}],["$","span",null,{"children":"21Go"}]]}],["$","div",null,{"className":"flex items-center gap-2","children":[["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-calendar w-4 h-4","aria-hidden":"true","children":[["$","path","1cmpym",{"d":"M8 2v4"}],["$","path","4m81vk",{"d":"M16 2v4"}],["$","rect","1hopcy",{"width":"18","height":"18","x":"3","y":"4","rx":"2"}],["$","path","8toen8",{"d":"M3 10h18"}],"$undefined"]}],["$","span",null,{"children":"20 de março de 2026"}]]}],"$undefined",["$","div",null,{"className":"flex items-center gap-2","children":[["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-clock w-4 h-4","aria-hidden":"true","children":[["$","circle","1mglay",{"cx":"12","cy":"12","r":"10"}],["$","path","mmk7yg",{"d":"M12 6v6l4 2"}],"$undefined"]}],["$","span",null,{"children":[12," min de leitura"]}]]}]]}]
+2e:T624, max-w-none [&_h2]:font-[var(--font-display)] [&_h2]:text-[1.5rem] [&_h2]:font-bold [&_h2]:text-[#1A2754] [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:pb-3 [&_h2]:border-b [&_h2]:border-[#E8ECF4] [&_h3]:font-[var(--font-display)] [&_h3]:text-[1.2rem] [&_h3]:font-semibold [&_h3]:text-[#1A2754] [&_h3]:mt-8 [&_h3]:mb-3 [&_p]:text-[#475569] [&_p]:text-[15px] [&_p]:leading-[1.8] [&_p]:mb-5 [&_ul]:my-4 [&_ul]:pl-0 [&_ul]:space-y-2 [&_ol]:my-4 [&_ol]:pl-0 [&_ol]:space-y-2 [&_ol]:list-none [&_ol]:counter-reset-[item] [&_li]:text-[#475569] [&_li]:text-[15px] [&_li]:leading-[1.7] [&_li]:pl-6 [&_li]:relative [&_ul_li]:before:content-[''] [&_ul_li]:before:absolute [&_ul_li]:before:left-0 [&_ul_li]:before:top-[10px] [&_ul_li]:before:w-1.5 [&_ul_li]:before:h-1.5 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-[#F2911D] [&_strong]:text-[#1A2754] [&_strong]:font-semibold [&_a]:text-[#293C82] [&_a]:font-medium [&_a]:underline [&_a]:decoration-[#293C82]/30 hover:[&_a]:decoration-[#293C82] [&_table]:w-full [&_table]:max-w-full [&_table]:block [&_table]:overflow-x-auto [&_table]:my-6 [&_table]:border-collapse [&_table]:rounded-xl [&_table]:text-sm [&_thead]:bg-[#1A2754] [&_th]:text-white [&_th]:font-semibold [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_td]:px-4 [&_td]:py-3 [&_td]:text-[#475569] [&_td]:border-b [&_td]:border-[#E8ECF4] [&_tr:nth-child(even)]:bg-[#F7F8FC] [&_blockquote]:border-l-4 [&_blockquote]:border-[#F2911D] [&_blockquote]:bg-[#F2911D]/5 [&_blockquote]:px-6 [&_blockquote]:py-4 [&_blockquote]:my-6 [&_blockquote]:rounded-r-xl [&_hr]:my-8 [&_hr]:border-[#E8ECF4] 2f:T43c7,
+<h2>5 Veiculos Roubados por Hora no RJ: A Realidade em Numeros</h2>
+
+<p>Enquanto voce le este paragrafo, mais um carro esta sendo roubado no Rio de Janeiro.</p>
+
+<p>Nao e exagero. Nao e manchete sensacionalista. E matematica baseada em dados oficiais do Instituto de Seguranca Publica do Rio de Janeiro (ISP-RJ).</p>
+
+<p>O estado registrou cerca de <strong>30.000 roubos e furtos de veiculos em 2024</strong>. Isso da, em media, <strong>84 a 90 ocorrencias por dia</strong>. Ou seja: entre <strong>3,5 e 5 veiculos por hora</strong>. Aproximadamente <strong>1 a cada 15 minutos</strong>.</p>
+
+<p>E a tendencia nao e de queda. Nos dois primeiros meses de 2026, foram registrados <strong>5.344 casos</strong> de roubo e furto de veiculos no RJ — uma <strong>alta de 5%</strong> em relacao ao mesmo periodo do ano anterior.</p>
+
+<p>Leia isso de novo: a cada 15 minutos, alguem no Rio de Janeiro perde seu carro. E esse alguem pode ser voce.</p>
+
+<h2>As Estatisticas que Voce Precisa Conhecer</h2>
+
+<h3>O panorama geral do roubo de veiculos no RJ</h3>
+
+<ul><li><strong>~30.000</strong> veiculos roubados ou furtados por ano no estado (dados ISP-RJ 2024)</li>
+<li><strong>84 a 90</strong> ocorrencias por dia, em media</li>
+<li><strong>3,5 a 5</strong> veiculos a cada hora</li>
+<li><strong>5.344</strong> casos nos dois primeiros meses de 2026 (alta de 5%)</li>
+<li><strong>Frota total do RJ</strong>: aproximadamente 8 milhoes de veiculos</li>
+<li><strong>Idade media da frota</strong>: 18,1 anos (segundo dados do Detran-RJ)</li></ul>
+<h3>70% dos veiculos no Brasil nao tem protecao</h3>
+
+<p>Segundo a Fenacor (Federacao Nacional dos Corretores de Seguros), <strong>mais de 70% dos veiculos no Brasil circulam sem nenhum tipo de seguro ou protecao</strong>. No Rio de Janeiro, a combinacao de seguro caro (por conta do alto risco), renda media limitada e frota envelhecida (muitos carros acima de 10 anos que seguradoras recusam) faz com que a situacao seja ainda pior.</p>
+
+<p>A conta e assustadora: dos 8 milhoes de veiculos da frota fluminense, estima-se que <strong>mais de 5 milhoes rodam completamente desprotegidos</strong>. Se um desses for roubado, o dono perde o patrimonio inteiro.</p>
+
+<h3>Roubo vs Furto: entenda a diferenca</h3>
+
+<ul><li><strong>Roubo</strong>: com ameaca ou violencia. E o assalto a mao armada no semaforo, o rendimento na saida da garagem, a abordagem no estacionamento.</li>
+<li><strong>Furto</strong>: sem a presenca do dono. E o carro que some do estacionamento, a garagem arrombada de madrugada, o veiculo que "desaparece" enquanto voce estava no shopping.</li></ul>
+<p>No Rio, os <strong>roubos</strong> respondem por aproximadamente 60% das ocorrencias, e os <strong>furtos</strong> por 40%. Isso significa que a maioria dos motoristas cariocas perde o carro sob a mira de uma arma — uma experiencia traumatica que vai muito alem do prejuizo material.</p>
+
+<blockquote><p>Protecao veicular cobre tanto roubo quanto furto. <a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca sua cotacao agora</a> e saiba quanto custa proteger o seu.</p></blockquote>
+
+<h2>Os Horarios e Periodos Mais Perigosos</h2>
+
+<p>Os dados do ISP-RJ e estudos de seguranca revelam padroes claros:</p>
+
+<h3>Horarios de pico de roubo</h3>
+<ul><li><strong>18h as 22h</strong>: o periodo mais perigoso. Motoristas voltando do trabalho, transito pesado, semaforos como pontos de abordagem. A escuridao comecando ajuda os criminosos.</li>
+<li><strong>6h as 8h</strong>: segundo pico — hora do rush matinal, semaforos lotados, motoristas distraidos com celular.</li></ul>
+<h3>Horarios de pico de furto</h3>
+<ul><li><strong>00h as 5h</strong>: madrugada. Carros estacionados em ruas, garagens abertas, condominios sem porteiro. Silencio e escuridao facilitam a acao.</li>
+<li><strong>Fins de semana durante o dia</strong>: carros em estacionamentos de praias, shoppings e areas de lazer.</li></ul>
+<h3>Meses mais criticos</h3>
+<ul><li><strong>Dezembro e janeiro</strong>: ferias de verao, casas vazias, carros em estacionamentos de praias e eventos</li>
+<li><strong>Julho</strong>: ferias de inverno, mesmo padrao de casas vazias</li>
+<li><strong>Marco (Carnaval)</strong>: concentracao de pessoas e veiculos em areas de festa, desatencao generalizada</li>
+<li><strong>Feriados prolongados</strong>: residencias vazias, carros estacionados por dias sem supervisao</li></ul>
+<h2>O Mapa do Perigo: Onde Mais Roubam Veiculos no RJ</h2>
+
+<h3>Baixada Fluminense — O Epicentro</h3>
+
+<p>A Baixada Fluminense concentra os maiores indices de roubo de veiculos do estado. As razoes sao estruturais:</p>
+
+<ol><li><strong>Belford Roxo</strong> — lidera os indices na Baixada. Alta densidade, pouca infraestrutura de seguranca, proximidade com rotas de desmanche.</li>
+<li><strong>Duque de Caxias</strong> — vias de fuga estrategicas (Washington Luis, acesso a Via Dutra), desmanches nas areas perifericas.</li>
+<li><strong>Nova Iguacu</strong> — segunda cidade mais populosa da Baixada, extensao territorial dificulta patrulhamento.</li>
+<li><strong>Sao Joao de Meriti</strong> — alta densidade e vias de acesso rapido para fuga.</li></ol>
+<h3>Zona Norte — Corredores de Roubo</h3>
+
+<p><strong>Vicente de Carvalho</strong> e <strong>Pavuna</strong> aparecem consistentemente nos dados como areas criticas. Seguidos por Meier, Madureira, Penha, Olaria, Bonsucesso e Del Castilho. Os corredores de transito intenso — com muitos semaforos onde motoristas sao obrigados a parar — funcionam como "zonas de caca" para criminosos.</p>
+
+<h3>Zona Oeste</h3>
+
+<p><strong>Campo Grande</strong> (o bairro mais populoso do RJ), <strong>Santa Cruz</strong> e <strong>Bangu</strong> registram numeros significativos. Na <strong>Barra da Tijuca</strong>, os alvos sao veiculos de maior valor — Compass, Corolla, Civic. Os roubos acontecem em semaforos e estacionamentos de shoppings e restaurantes.</p>
+
+<h3>Os "Corredores de Roubo" — Vias mais perigosas</h3>
+
+<p>Criminosos preferem atuar proximo a vias de fuga rapida:</p>
+
+<ul><li><strong>Av. Brasil</strong>: a via mais perigosa do RJ para motoristas. Extensao enorme, muitos acessos, alta incidencia em toda a extensao.</li>
+<li><strong>Linha Amarela</strong>: conecta Zona Norte a Barra, alta incidencia nos acessos e saidas.</li>
+<li><strong>Via Dutra (BR-116)</strong>: rota para desmanches em outros estados, especialmente Sao Paulo e Minas.</li>
+<li><strong>Rodovia Washington Luis</strong>: principal acesso a Baixada Fluminense, usada como rota de fuga.</li>
+<li><strong>Ponte Rio-Niteroi</strong>: areas de acesso dos dois lados, especialmente em Sao Goncalo.</li></ul>
+<h3>Niteroi e Sao Goncalo</h3>
+
+<p><strong>Sao Goncalo</strong> tem indices alarmantes — e uma das cidades com mais roubos do estado fora da capital. <strong>Niteroi</strong> registra numeros expressivos em bairros como Fonseca e Barreto.</p>
+
+<h2>O que Acontece com o Carro Roubado</h2>
+
+<p>Voce pode pensar: "com tantas cameras e tecnologia, como nao recuperam?" A realidade e dura.</p>
+
+<h3>Desmanche: o destino da maioria (60-70%)</h3>
+
+<p>Cerca de <strong>60% a 70% dos veiculos roubados</strong> sao desmontados em desmanches clandestinos em questao de <strong>horas</strong>. Em menos de 24 horas, seu carro pode ter deixado de existir — transformado em centenas de pecas vendidas separadamente.</p>
+
+<p>Um unico desmanche profissional pode processar 5 a 10 veiculos por dia. As pecas sao distribuidas para lojas, oficinas e ate vendidas online. Um HB20 desmontado rende R$ 30.000 a R$ 50.000 em pecas — e a operacao inteira leva poucas horas.</p>
+
+<h3>Clonagem: o segundo destino (15-25%)</h3>
+
+<p>Veiculos recebem a identidade (placas, chassi adulterado, documentos) de veiculos similares de outros estados. Sao vendidos como "seminovos com preco bom" para compradores desavisados em cidades do interior. O comprador so descobre o problema meses depois.</p>
+
+<h3>Uso em crimes e abandono (10-15%)</h3>
+
+<p>Uma parcela menor e usada em assaltos, sequestros ou transporte ilicito. Depois, e abandonada (as vezes danificada) ou incendiada.</p>
+
+<h3>A taxa de recuperacao nao e o que parece</h3>
+
+<p>A taxa de recuperacao no RJ gira em torno de <strong>40% a 50%</strong>. Mas considere a realidade:</p>
+<ul><li>Maioria dos veiculos "recuperados" foi <strong>abandonada</strong> apos uso em crime, nao resgatada</li>
+<li>Muitos voltam <strong>depenados</strong> — sem rodas, som, bateria, pecas internas, espelhos</li>
+<li>A recuperacao pode demorar <strong>semanas ou meses</strong></li>
+<li>Se os danos superarem 75% do valor FIPE, e declarado <strong>perda total</strong> mesmo com o carro "recuperado"</li></ul>
+<blockquote><p>Nao conte com recuperacao. Conte com protecao. <a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca a cotacao agora</a>.</p></blockquote>
+
+<h2>O Prejuizo Real de Nao Ter Protecao</h2>
+
+<p>Vamos ser diretos com um exemplo baseado em dados FIPE reais.</p>
+
+<h3>O caso do Onix roubado sem protecao</h3>
+
+<p>Joao, motorista de aplicativo morador de Nova Iguacu, tem um Chevrolet Onix 2025 (FIPE: R$ 70.452 a R$ 100.889). O carro e financiado — ainda deve R$ 35.000 ao banco. E roubado num semaforo da Av. Brasil as 19h.</p>
+
+<p><strong>Sem protecao veicular:</strong></p>
+<ul><li>Perdeu o carro (patrimonio de R$ 70.000 a R$ 100.000)</li>
+<li>Continua pagando as parcelas de R$ 1.200/mes ao banco — sem o carro</li>
+<li>Gasta R$ 1.500/mes com Uber para continuar trabalhando</li>
+<li>Perdeu a ferramenta de trabalho — renda cai drasticamente</li>
+<li>Levara anos para se recuperar financeiramente</li></ul>
+<p><strong>Se tivesse protecao veicular (Plano Basico, ~R$ 152/mes):</strong></p>
+<ul><li>Custo acumulado em 12 meses: ~R$ 1.824</li>
+<li>Receberia o valor FIPE integral em 30-45 dias</li>
+<li>Quitaria o financiamento e ainda sobraria para dar entrada em outro carro</li>
+<li>Total economizado: <strong>dezenas de milhares de reais</strong></li></ul>
+<p>A protecao veicular nao e gasto. E o <strong>investimento mais inteligente</strong> que um motorista carioca pode fazer.</p>
+
+<h2>Quanto Custa Proteger Seu Carro no Rio</h2>
+
+<p>Menos do que voce imagina. Usando a formula geral de protecao veicular com valores FIPE reais:</p>
+
+<table><thead><tr><th>Modelo</th><th>FIPE referencia</th><th>Basico/mes</th><th>Completo/mes</th><th>Premium/mes</th></tr></thead><tbody><tr><td>Renault Kwid 2024</td><td>~R$ 60.000</td><td>~R$ 125</td><td>~R$ 175</td><td>~R$ 225</td></tr><tr><td>Fiat Argo 2024</td><td>~R$ 78.000</td><td>~R$ 152</td><td>~R$ 217</td><td>~R$ 282</td></tr><tr><td>Chevrolet Onix 2025</td><td>~R$ 85.000</td><td>~R$ 163</td><td>~R$ 233</td><td>~R$ 304</td></tr><tr><td>Hyundai HB20 2024</td><td>~R$ 80.000</td><td>~R$ 155</td><td>~R$ 222</td><td>~R$ 288</td></tr><tr><td>Fiat Pulse 2024</td><td>~R$ 98.000</td><td>~R$ 182</td><td>~R$ 264</td><td>~R$ 345</td></tr></tbody></table>
+<p><em>Valores estimados. O preco exato depende da versao e FIPE vigente.</em></p>
+
+<p>Veja os precos detalhados para todos os modelos em <a href="/blog/quanto-custa-protecao-veicular" target="_blank" rel="noopener noreferrer">Quanto Custa Protecao Veicular em 2026</a>.</p>
+
+<a href="/cotacao" target="_blank" rel="noopener noreferrer">Descubra o valor exato para o seu carro</a> — cotacao gratuita e instantanea.
+
+<h2>7 Medidas Para Reduzir Seu Risco de Roubo</h2>
+
+<h3>1. Contrate protecao veicular HOJE</h3>
+
+<p>Nao espere ser roubado para agir. A <a href="/cotacao" target="_blank" rel="noopener noreferrer">21Go oferece protecao veicular</a> sem analise de perfil, sem restricao de CEP e com adesao em ate 48 horas. Cobre tanto roubo quanto furto, em qualquer lugar do territorio nacional.</p>
+
+<h3>2. Instale rastreador veicular</h3>
+
+<p>O Plano Premium da 21Go ja inclui rastreamento com GPS. Para outros planos, um rastreador particular aumenta drasticamente as chances de recuperacao — e pode significar a diferenca entre perda total e recuperacao em horas.</p>
+
+<h3>3. Varie suas rotas e horarios</h3>
+
+<p>Criminosos estudam padroes. Se voce sai e volta do trabalho sempre pelo mesmo caminho, no mesmo horario, usando os mesmos semaforos, esta facilitando a vida de quem observa. Alterne rotas quando possivel.</p>
+
+<h3>4. Atencao maxima em semaforos</h3>
+
+<ul><li>Janelas <strong>sempre fechadas</strong>, portas <strong>sempre travadas</strong></li>
+<li>Mantenha <strong>distancia do carro da frente</strong> para ter espaco de manobra e fuga</li>
+<li>Fique na <strong>faixa central</strong> quando possivel (mais dificil abordar dos dois lados)</li>
+<li><strong>Nao mexa no celular</strong> — mantenha olhos no entorno, especialmente a noite</li>
+<li>Semaforos da Av. Brasil, Linha Amarela e acessos da Baixada sao pontos criticos</li></ul>
+<h3>5. Escolha estacionamentos seguros</h3>
+
+<p>Pagar R$ 15 a R$ 20 num estacionamento com cameras, manobrista e controle de acesso e insignificante perto do risco de perder um carro de R$ 80.000 estacionado na rua. A noite, essa escolha e ainda mais critica.</p>
+
+<h3>6. Nao ostente dentro do veiculo</h3>
+
+<p>Evite deixar objetos de valor visiveis pelo vidro: bolsas, notebooks, celulares, mochilas. Ate um carregador de celular pode sinalizar que ha coisas de valor. Porte-malas e sempre melhor que banco traseiro.</p>
+
+<h3>7. Use a tecnologia a seu favor</h3>
+
+<ul><li>Compartilhe sua localizacao em tempo real com familiares (Google Maps, WhatsApp)</li>
+<li>Ative alertas de movimentacao no rastreador</li>
+<li>Configure alerta no app da protecao veicular para acionamento rapido</li>
+<li>Use Waze para evitar areas com relatos de crimes recentes</li></ul>
+<h2>O Governo Vai Resolver o Problema?</h2>
+
+<p>Vamos ser realistas: o problema do roubo de veiculos no Rio de Janeiro e <strong>estrutural</strong> e nao sera resolvido da noite para o dia. Operacoes policiais como o Seguranca Presente, cameras de monitoramento e cercos eletronicos com leitura de placas ajudam, mas atacam as consequencias e nao a causa.</p>
+
+<p>Enquanto houver <strong>demanda</strong> por pecas roubadas no mercado paralelo, havera <strong>oferta</strong>. E enquanto houver oferta, seu carro esta em risco.</p>
+
+<p>A prova disso esta nos numeros: mesmo com todo o investimento em seguranca publica, os registros de roubo de veiculos subiram 5% nos dois primeiros meses de 2026 em relacao ao ano anterior.</p>
+
+<p>A unica coisa que voce controla e a <strong>sua protecao</strong>. Nao deixe isso nas maos do acaso.</p>
+
+<h2>Proteja-se com a 21Go</h2>
+
+<p>Ha mais de 20 anos, a 21Go protege motoristas no Rio de Janeiro. Com tecnologia de inteligencia artificial, atendimento 24/7 e tres planos que cabem em qualquer orcamento, somos a escolha de milhares de cariocas que decidiram nao ser a proxima estatistica.</p>
+
+<p>E com a <strong>LC 213/2025</strong>, a protecao veicular agora e regulamentada por lei, com supervisao da SUSEP. Voce tem <a href="/blog/protecao-veicular-e-legal" target="_blank" rel="noopener noreferrer">amparo juridico total</a>.</p>
+
+<p><strong>Nao espere perder seu carro para agir.</strong> <a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca sua cotacao agora</a> — e gratuita, sem compromisso e fica pronta em 30 segundos.</p>
+
+<p>Conheca os <a href="/blog/planos-21go-basico-completo-premium" target="_blank" rel="noopener noreferrer">planos Basico, Completo e Premium</a> e escolha o nivel de protecao ideal para voce.</p>
+
+<h2>FAQ — Perguntas Frequentes sobre Roubo de Veiculos no RJ</h2>
+
+<h3>Se meu carro for roubado, quanto tempo leva para receber da protecao veicular?</h3>
+
+<p>Apos registro do B.O. e envio de toda a documentacao, o prazo medio para indenizacao por perda total (roubo nao recuperado) e de 30 a 45 dias. A 21Go permite acompanhar o andamento pelo app em tempo real.</p>
+
+<h3>A protecao cobre roubo em qualquer bairro ou regiao?</h3>
+
+<p>Sim. A cobertura vale em <strong>todo o territorio nacional</strong>, nao importa se voce mora na Zona Sul ou na Baixada Fluminense. E diferente do seguro tradicional, nao ha diferenca de preco por bairro ou CEP.</p>
+
+<h3>Se o carro for recuperado apos o roubo, o que acontece?</h3>
+
+<p>Se o carro for recuperado <strong>antes</strong> do pagamento da indenizacao, voce recebe o veiculo de volta. Se houver danos, a cobertura de sinistro parcial entra em acao (planos Completo e Premium). Se for recuperado <strong>apos</strong> o pagamento, a associacao assume o veiculo.</p>
+
+<h3>Motorista de aplicativo pode aderir a protecao veicular?</h3>
+
+<p>Sim. A 21Go aceita veiculos usados para qualquer finalidade, incluindo motoristas de Uber, 99, InDriver e outros aplicativos. Nao ha restricao nem sobretaxa por uso profissional.</p>
+
+<h3>De onde vem os dados citados neste artigo?</h3>
+
+<p>Os dados de roubo e furto de veiculos sao do <strong>Instituto de Seguranca Publica do Rio de Janeiro (ISP-RJ)</strong>, orgao oficial que consolida as estatisticas de seguranca do estado. Os dados de frota sao do <strong>Detran-RJ</strong>. Os dados sobre percentual sem seguro sao da <strong>Fenacor</strong>. Os valores FIPE sao da <strong>Fundacao Instituto de Pesquisas Economicas</strong>.</p>
+
+<hr />
+
+<p><em>A cada 15 minutos, alguem perde o carro no RJ. Nao seja o proximo. <a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca sua cotacao agora</a> e proteja seu patrimonio.</em></p>
+2d:["$","section",null,{"className":"py-12 md:py-16 bg-[#F7F8FC]","children":["$","div",null,{"className":"max-w-6xl mx-auto px-6","children":["$","div",null,{"className":"grid lg:grid-cols-[1fr_320px] gap-10","children":[["$","div",null,{"className":"bg-white rounded-2xl border border-[#E8ECF4] shadow-sm p-8 md:p-12","children":["$","article",null,{"className":"$2e","dangerouslySetInnerHTML":{"__html":"$2f"}}]}],"$L30"]}]}]}]
+30:["$","aside",null,{"className":"space-y-6 lg:sticky lg:top-28 h-fit","children":[["$","div",null,{"className":"bg-gradient-to-br from-[#1A2754] to-[#293C82] rounded-2xl p-8 text-white","children":[["$","div",null,{"className":"w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-shield-check w-6 h-6 text-[#F2911D]","aria-hidden":"true","children":[["$","path","oel41y",{"d":"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"}],["$","path","dzmm74",{"d":"m9 12 2 2 4-4"}],"$undefined"]}]}],["$","h3",null,{"className":"font-[var(--font-display)] text-lg font-bold mb-2","children":"Proteja seu veículo"}],["$","p",null,{"className":"text-sm text-white/60 mb-6","children":"Simulação gratuita em 30 segundos. Sem compromisso."}],["$","$L13",null,{"href":"/cotacao","className":"flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-semibold text-sm hover:shadow-lg hover:shadow-[#F2911D]/20 transition-all","children":["Fazer Simulação ",["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-arrow-right w-4 h-4","aria-hidden":"true","children":[["$","path","1ays0h",{"d":"M5 12h14"}],["$","path","xquz4c",{"d":"m12 5 7 7-7 7"}],"$undefined"]}]]}]]}],["$","div",null,{"className":"bg-white rounded-2xl border border-[#E8ECF4] p-6","children":[["$","h3",null,{"className":"font-[var(--font-display)] text-xs font-semibold text-[#94A3B8] mb-5 uppercase tracking-wider","children":"Artigos Relacionados"}],["$","div",null,{"className":"space-y-4","children":[["$","$L13","diarios-de-bordo-historias-reais-clientes-21go",{"href":"/blog/diarios-de-bordo-historias-reais-clientes-21go","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase","children":"Geral"}],["$","p",null,{"className":"mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug","children":"Diários de Bordo: 7 Histórias Reais de Associados 21Go Que Foram Protegidos"}]]}],["$","$L13","como-evitar-clonagem-de-placa-rj",{"href":"/blog/como-evitar-clonagem-de-placa-rj","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase","children":"Seguranca"}],["$","p",null,{"className":"mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug","children":"Clonagem de Placa no Rio: Como Descobrir, Evitar e O Que Fazer"}]]}],["$","$L13","multas-rj-como-evitar-no-transito",{"href":"/blog/multas-rj-como-evitar-no-transito","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase","children":"Dicas"}],["$","p",null,{"className":"mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug","children":"Multas de Trânsito no Rio: Como Evitar E O Que Fazer Quando Recebe"}]]}]]}]]}]]}]
+22:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+1e:null
+31:I[1996,[],"IconMark"]
+20:{"metadata":[["$","title","0",{"children":"5 Veiculos Roubados por Hora no RJ: Dados e Protecao | Blog 21Go | 21Go"}],["$","meta","1",{"name":"description","content":"A cada hora, 5 veiculos sao roubados no Rio de Janeiro. Veja as estatisticas reais do ISP-RJ, zonas de perigo e como proteger seu carro sem pagar caro."}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","meta","3",{"name":"facebook-domain-verification","content":"0ruuwkhj1e6bnadcippr9exl3jqncs"}],["$","meta","4",{"name":"facebook-domain-verification","content":"7ov5n8z6gtw4zo8qh9q3kue5bzhp9b"}],["$","link","5",{"rel":"canonical","href":"https://21go.site/blog/5-veiculos-roubados-por-hora-rj"}],["$","meta","6",{"property":"og:title","content":"5 Veiculos Roubados por Hora no RJ: Dados e Protecao"}],["$","meta","7",{"property":"og:description","content":"A cada hora, 5 veiculos sao roubados no Rio de Janeiro. Veja as estatisticas reais do ISP-RJ, zonas de perigo e como proteger seu carro sem pagar caro."}],["$","meta","8",{"property":"og:url","content":"https://21go.site/blog/5-veiculos-roubados-por-hora-rj"}],["$","meta","9",{"property":"og:site_name","content":"21Go"}],["$","meta","10",{"property":"og:locale","content":"pt_BR"}],["$","meta","11",{"property":"og:image","content":"https://21go.site/blog/default.jpg"}],["$","meta","12",{"property":"og:image:width","content":"1200"}],["$","meta","13",{"property":"og:image:height","content":"630"}],["$","meta","14",{"property":"og:image:alt","content":"5 Veiculos Roubados por Hora no RJ: Dados e Protecao"}],["$","meta","15",{"property":"og:type","content":"article"}],["$","meta","16",{"property":"article:published_time","content":"2026-03-20"}],["$","meta","17",{"property":"article:modified_time","content":"2026-03-20"}],["$","meta","18",{"property":"article:author","content":"21Go"}],["$","meta","19",{"property":"article:tag","content":"roubo de veiculos RJ"}],["$","meta","20",{"property":"article:tag","content":"veiculos roubados Rio de Janeiro"}],["$","meta","21",{"property":"article:tag","content":"estatisticas roubo veiculos RJ"}],["$","meta","22",{"property":"article:tag","content":"seguranca veicular RJ"}],["$","meta","23",{"property":"article:tag","content":"furto de carro Rio de Janeiro"}],["$","meta","24",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","25",{"name":"twitter:title","content":"5 Veiculos Roubados por Hora no RJ: Dados e Protecao"}],["$","meta","26",{"name":"twitter:description","content":"A cada hora, 5 veiculos sao roubados no Rio de Janeiro. Veja as estatisticas reais do ISP-RJ, zonas de perigo e como proteger seu carro sem pagar caro."}],["$","meta","27",{"name":"twitter:image","content":"https://21go.site/blog/default.jpg"}],["$","link","28",{"rel":"icon","href":"/favicon.ico"}],["$","link","29",{"rel":"apple-touch-icon","href":"/logo21go.png"}],["$","$L31","30",{}]],"error":null,"digest":"$undefined"}
+25:"$20:metadata"

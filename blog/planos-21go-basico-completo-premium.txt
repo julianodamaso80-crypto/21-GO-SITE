@@ -1,0 +1,267 @@
+1:"$Sreact.fragment"
+2:I[7974,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"GTMProvider"]
+3:I[4537,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"WhatsAppTracker"]
+4:I[5819,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"CtaTracker"]
+6:I[9000,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"default"]
+7:I[3681,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"Header"]
+8:I[3612,[],""]
+9:I[346,[],""]
+12:I[1592,[],""]
+:HL["/21-GO-SITE/_next/static/css/ddb1aa53c5d309e4.css","style"]
+5:T7a5,{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://21go.site/#organization","name":"21Go Proteção Patrimonial Veicular","alternateName":"21Go","url":"https://21go.site","logo":{"@type":"ImageObject","url":"https://21go.site/logo21go.png"},"description":"Associação de proteção patrimonial veicular no Rio de Janeiro, 20+ anos. Proteção por mutualismo contra roubo, furto, colisão e incêndio (proveniente de colisão) para carros, motos e frotas.","foundingDate":"2004","sameAs":["https://www.instagram.com/21goprotpatri/","https://www.facebook.com/21goprotpatri","https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/","https://www.youtube.com/@21goprotpatri"],"contactPoint":{"@type":"ContactPoint","telephone":"+55-21-96945-4824","contactType":"customer service","areaServed":"BR","availableLanguage":["Portuguese"]}},{"@type":"LocalBusiness","@id":"https://21go.site/#localbusiness","name":"21Go Proteção Patrimonial Veicular","url":"https://21go.site","logo":"https://21go.site/logo21go.png","image":"https://21go.site/logo21go.png","telephone":"+55-21-96945-4824","email":"contato@21go.org","address":{"@type":"PostalAddress","addressLocality":"Rio de Janeiro","addressRegion":"RJ","postalCode":"20040-020","addressCountry":"BR"},"geo":{"@type":"GeoCoordinates","latitude":-22.9068,"longitude":-43.1729},"openingHoursSpecification":{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"08:00","closes":"18:00"},"priceRange":"$$","areaServed":{"@type":"Country","name":"Brasil"}},{"@type":"WebSite","@id":"https://21go.site/#website","url":"https://21go.site","name":"21Go Proteção Patrimonial Veicular","publisher":{"@id":"https://21go.site/#organization"},"inLanguage":"pt-BR","potentialAction":{"@type":"SearchAction","target":"https://21go.site/blog?q={search_term_string}","query-input":"required name=search_term_string"}}]}0:{"P":null,"b":"KfspmHrhKZuySJl0ElCUo","p":"/21-GO-SITE","c":["","blog","planos-21go-basico-completo-premium"],"i":false,"f":[[["",{"children":["blog",{"children":[["slug","planos-21go-basico-completo-premium","d"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],["",["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/21-GO-SITE/_next/static/css/ddb1aa53c5d309e4.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"pt-BR","className":"__variable_974a64","children":["$","body",null,{"children":[null,null,["$","$L2",null,{}],["$","$L3",null,{}],["$","$L4",null,{}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$5"}}],["$","$L6",null,{"children":[["$","$L7",null,{}],["$","main",null,{"children":["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],"$La"]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],"$Lb","$Lc","$Ld"]}]]}]}]]}],{"children":["blog","$Le",{"children":[["slug","planos-21go-basico-completo-premium","d"],"$Lf",{"children":["__PAGE__","$L10",{},null,false]},null,false]},null,false]},null,false],"$L11",false]],"m":"$undefined","G":["$12",[]],"s":false,"S":true}
+13:I[733,["733","static/chunks/733-26af3e09486af18d.js","369","static/chunks/369-394965b6f4dfaa2c.js","953","static/chunks/app/blog/%5Bslug%5D/page-fb6a4282445abe08.js"],""]
+14:I[8898,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"Image"]
+1b:I[6963,["111","static/chunks/d5b71ff4-86526aca457876e4.js","733","static/chunks/733-26af3e09486af18d.js","414","static/chunks/414-33a582e38853257f.js","118","static/chunks/118-cf958a1ff8e17f22.js","369","static/chunks/369-394965b6f4dfaa2c.js","177","static/chunks/app/layout-2d2ebe6ed6069a98.js"],"default"]
+1d:I[521,[],"OutletBoundary"]
+1f:I[964,[],"AsyncMetadataOutlet"]
+21:I[521,[],"ViewportBoundary"]
+23:I[521,[],"MetadataBoundary"]
+24:"$Sreact.suspense"
+a:["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]
+b:["$","footer",null,{"className":"bg-[#1A2754]","children":[["$","div",null,{"className":"mx-auto max-w-7xl px-6 py-16 lg:py-20","children":[["$","div",null,{"className":"grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 lg:gap-16","children":[["$","div",null,{"className":"col-span-2 md:col-span-1","children":[["$","$L13",null,{"href":"/","className":"flex items-center gap-2.5 mb-5","children":[["$","$L14",null,{"src":"/logo21go.png","alt":"21Go","width":32,"height":32,"className":"rounded-lg"}],["$","span",null,{"className":"font-[var(--font-outfit)] text-lg font-bold text-white","children":"21Go"}]]}],["$","p",null,{"className":"text-sm text-[#94A3B8] leading-relaxed mb-6","children":"Proteção veicular inteligente no Rio de Janeiro. 20+ anos de mercado protegendo seu patrimônio."}],["$","div",null,{"className":"flex gap-3","children":[["$","a","Instagram",{"href":"https://instagram.com/21go.veicular","target":"_blank","rel":"noopener noreferrer","aria-label":"Instagram","className":"w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":16,"height":16,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-instagram","aria-hidden":"true","children":[["$","rect","2e1cvw",{"width":"20","height":"20","x":"2","y":"2","rx":"5","ry":"5"}],["$","path","9exkf1",{"d":"M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"}],["$","line","r4j83e",{"x1":"17.5","x2":"17.51","y1":"6.5","y2":"6.5"}],"$undefined"]}]}],["$","a","Facebook",{"href":"https://facebook.com/21goveicular","target":"_blank","rel":"noopener noreferrer","aria-label":"Facebook","className":"w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":16,"height":16,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-facebook","aria-hidden":"true","children":[["$","path","1jg4f8",{"d":"M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"}],"$undefined"]}]}],["$","a","LinkedIn",{"href":"https://linkedin.com/company/21go","target":"_blank","rel":"noopener noreferrer","aria-label":"LinkedIn","className":"w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":16,"height":16,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-linkedin","aria-hidden":"true","children":[["$","path","c2jq9f",{"d":"M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"}],["$","rect","mk3on5",{"width":"4","height":"12","x":"2","y":"9"}],["$","circle","bt5ra8",{"cx":"4","cy":"4","r":"2"}],"$undefined"]}]}]]}]]}],[["$","div","Proteção",{"children":[["$","h4",null,{"className":"font-[var(--font-outfit)] text-xs font-semibold uppercase tracking-widest text-[#64748B] mb-5","children":"Proteção"}],["$","ul",null,{"className":"space-y-3","children":[["$","li","/protecao-veicular",{"children":["$","$L13",null,{"href":"/protecao-veicular","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Planos"}]}],["$","li","/cotacao",{"children":["$","$L13",null,{"href":"/cotacao","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Simulação"}]}],["$","li","/protecao-veicular#coberturas",{"children":["$","$L13",null,{"href":"/protecao-veicular#coberturas","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Benefícios"}]}]]}]]}],["$","div","Empresa",{"children":["$L15","$L16"]}],"$L17"]]}],"$L18"]}],"$L19"]}]
+1a:T450,M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413zc:["$","a",null,{"href":"/api/wa","target":"_blank","rel":"noopener noreferrer","aria-label":"Fale conosco pelo WhatsApp","className":"fixed bottom-24 md:bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:scale-110","children":[["$","span",null,{"className":"absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30"}],["$","svg",null,{"width":"28","height":"28","viewBox":"0 0 24 24","fill":"currentColor","className":"relative z-10","children":["$","path",null,{"d":"$1a"}]}]]}]
+d:["$","$L1b",null,{}]
+e:["$","$1","c",{"children":[null,["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+f:["$","$1","c",{"children":[null,["$","$L8",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L9",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+10:["$","$1","c",{"children":["$L1c",null,["$","$L1d",null,{"children":["$L1e",["$","$L1f",null,{"promise":"$@20"}]]}]]}]
+11:["$","$1","h",{"children":[null,[["$","$L21",null,{"children":"$L22"}],null],["$","$L23",null,{"children":["$","div",null,{"hidden":true,"children":["$","$24",null,{"fallback":null,"children":"$L25"}]}]}]]}]
+15:["$","h4",null,{"className":"font-[var(--font-outfit)] text-xs font-semibold uppercase tracking-widest text-[#64748B] mb-5","children":"Empresa"}]
+16:["$","ul",null,{"className":"space-y-3","children":[["$","li","/sobre",{"children":["$","$L13",null,{"href":"/sobre","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Sobre"}]}],["$","li","/blog",{"children":["$","$L13",null,{"href":"/blog","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Blog"}]}],["$","li","/indique",{"children":["$","$L13",null,{"href":"/indique","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Indique e Ganhe"}]}]]}]
+17:["$","div","Suporte",{"children":[["$","h4",null,{"className":"font-[var(--font-outfit)] text-xs font-semibold uppercase tracking-widest text-[#64748B] mb-5","children":"Suporte"}],["$","ul",null,{"className":"space-y-3","children":[["$","li","/faq",{"children":["$","$L13",null,{"href":"/faq","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"FAQ"}]}],["$","li","/contato",{"children":["$","$L13",null,{"href":"/contato","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Contato"}]}],["$","li","/area-do-associado",{"children":["$","$L13",null,{"href":"/area-do-associado","className":"text-sm text-[#94A3B8] hover:text-white transition-colors duration-200","children":"Área do Associado"}]}]]}]]}]
+26:T450,M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z18:["$","div",null,{"className":"mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4","children":[["$","a",null,{"href":"/cotacao","className":"inline-flex items-center gap-2 text-sm text-[#94A3B8] hover:text-white transition-colors","children":[["$","svg",null,{"width":"16","height":"16","viewBox":"0 0 24 24","fill":"currentColor","className":"text-[#25D366]","children":["$","path",null,{"d":"$26"}]}],"WhatsApp: (21) 96945-4824"]}],["$","div",null,{"className":"flex gap-5","children":[["$","$L13",null,{"href":"/termos-de-uso","className":"text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors","children":"Termos"}],["$","$L13",null,{"href":"/politica-privacidade","className":"text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors","children":"Privacidade"}]]}]]}]
+19:["$","div",null,{"className":"border-t border-white/[0.06]","children":["$","div",null,{"className":"mx-auto max-w-7xl px-6 py-5","children":["$","p",null,{"className":"text-xs text-[#64748B] text-center","children":"© 2026 21Go Proteção Veicular. Todos os direitos reservados."}]}]}]
+28:I[906,["733","static/chunks/733-26af3e09486af18d.js","369","static/chunks/369-394965b6f4dfaa2c.js","953","static/chunks/app/blog/%5Bslug%5D/page-fb6a4282445abe08.js"],"BlogTracking"]
+27:T664,{"@context":"https://schema.org","@type":"Article","headline":"Planos 21Go: Basico, Completo ou Premium — Qual Ideal?","description":"Comparativo dos 3 planos de protecao veicular da 21Go com coberturas detalhadas, exemplos de precos por modelo e recomendacoes para cada perfil.","image":["https://21go.site/blog/default.jpg","https://21go.site/blog/default-4x3.jpg","https://21go.site/blog/default-16x9.jpg"],"datePublished":"2026-03-20T00:00:00.000Z","dateModified":"2026-03-20T00:00:00.000Z","author":{"@type":"Person","name":"21Go","url":"https://21go.site/sobre","sameAs":["https://www.instagram.com/21goprotpatri/","https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/"],"description":"Equipe Editorial 21Go — Associação de proteção patrimonial veicular do Rio de Janeiro, 20+ anos de mercado.","jobTitle":"Equipe Editorial","worksFor":{"@type":"Organization","name":"21Go","url":"https://21go.site"},"knowsAbout":["Proteção patrimonial veicular","Mutualismo","Código Civil","Segurança veicular"]},"publisher":{"@type":"Organization","name":"21Go","logo":{"@type":"ImageObject","url":"https://21go.site/logo.png"},"url":"https://21go.site","sameAs":["https://www.instagram.com/21goprotpatri/","https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/"]},"mainEntityOfPage":{"@type":"WebPage","@id":"https://21go.site/blog/planos-21go-basico-completo-premium"},"keywords":"planos protecao veicular, plano basico completo premium, coberturas protecao veicular, melhor plano protecao veicular, planos 21Go","inLanguage":"pt-BR","isAccessibleForFree":true,"articleSection":"Planos"}1c:[[["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$27"}}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"Início\",\"item\":\"https://21go.site\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Blog\",\"item\":\"https://21go.site/blog\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"Planos 21Go: Basico, Completo ou Premium — Qual Ideal?\",\"item\":\"https://21go.site/blog/planos-21go-basico-completo-premium\"}]}"}}]],["$","$L28",null,{"articleSlug":"planos-21go-basico-completo-premium","articleTitle":"Planos 21Go: Basico, Completo ou Premium — Qual Ideal?","articleCategory":"Planos","mainKeyword":"planos protecao veicular"}],["$","section",null,{"className":"pt-32 pb-16 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82]","children":["$","div",null,{"className":"max-w-4xl mx-auto px-6","children":[["$","nav",null,{"aria-label":"Breadcrumb","className":"mb-6","children":["$","ol",null,{"className":"flex items-center gap-2 text-xs text-white/50","children":[["$","li",null,{"children":["$","$L13",null,{"href":"/","className":"hover:text-white","children":"Início"}]}],["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-chevron-right w-3 h-3","aria-hidden":"true","children":[["$","path","mthhwq",{"d":"m9 18 6-6-6-6"}],"$undefined"]}],["$","li",null,{"children":["$","$L13",null,{"href":"/blog","className":"hover:text-white","children":"Blog"}]}],["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-chevron-right w-3 h-3","aria-hidden":"true","children":[["$","path","mthhwq",{"d":"m9 18 6-6-6-6"}],"$undefined"]}],["$","li",null,{"className":"text-white/80 line-clamp-1 max-w-[200px] md:max-w-[400px]","aria-current":"page","children":"Planos 21Go: Basico, Completo ou Premium — Qual Ideal?"}]]}]}],"$L29","$L2a","$L2b","$L2c"]}]}],"$L2d"]
+29:["$","$L13",null,{"href":"/blog","className":"inline-flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors mb-8","children":[["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-arrow-left w-4 h-4","aria-hidden":"true","children":[["$","path","1l729n",{"d":"m12 19-7-7 7-7"}],["$","path","x3x0zl",{"d":"M19 12H5"}],"$undefined"]}],"Voltar ao Blog"]}]
+2a:["$","span",null,{"className":"inline-block bg-[#F2911D]/15 text-[#F5A845] text-xs font-semibold px-3 py-1.5 rounded-full mb-5","children":"Planos"}]
+2b:["$","h1",null,{"className":"font-[var(--font-display)] text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-white mb-8 leading-[1.15]","children":"Planos 21Go: Basico, Completo ou Premium — Qual Ideal?"}]
+2c:["$","div",null,{"className":"flex flex-wrap items-center gap-5 text-sm text-white/50","children":[["$","$L13",null,{"href":"/sobre","className":"flex items-center gap-2 hover:text-white transition-colors","children":[["$","div",null,{"className":"w-8 h-8 rounded-full bg-white/10 flex items-center justify-center","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-user w-4 h-4","aria-hidden":"true","children":[["$","path","975kel",{"d":"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"}],["$","circle","17ys0d",{"cx":"12","cy":"7","r":"4"}],"$undefined"]}]}],["$","span",null,{"children":"21Go"}]]}],["$","div",null,{"className":"flex items-center gap-2","children":[["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-calendar w-4 h-4","aria-hidden":"true","children":[["$","path","1cmpym",{"d":"M8 2v4"}],["$","path","4m81vk",{"d":"M16 2v4"}],["$","rect","1hopcy",{"width":"18","height":"18","x":"3","y":"4","rx":"2"}],["$","path","8toen8",{"d":"M3 10h18"}],"$undefined"]}],["$","span",null,{"children":"20 de março de 2026"}]]}],"$undefined",["$","div",null,{"className":"flex items-center gap-2","children":[["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-clock w-4 h-4","aria-hidden":"true","children":[["$","circle","1mglay",{"cx":"12","cy":"12","r":"10"}],["$","path","mmk7yg",{"d":"M12 6v6l4 2"}],"$undefined"]}],["$","span",null,{"children":[13," min de leitura"]}]]}]]}]
+2e:T624, max-w-none [&_h2]:font-[var(--font-display)] [&_h2]:text-[1.5rem] [&_h2]:font-bold [&_h2]:text-[#1A2754] [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:pb-3 [&_h2]:border-b [&_h2]:border-[#E8ECF4] [&_h3]:font-[var(--font-display)] [&_h3]:text-[1.2rem] [&_h3]:font-semibold [&_h3]:text-[#1A2754] [&_h3]:mt-8 [&_h3]:mb-3 [&_p]:text-[#475569] [&_p]:text-[15px] [&_p]:leading-[1.8] [&_p]:mb-5 [&_ul]:my-4 [&_ul]:pl-0 [&_ul]:space-y-2 [&_ol]:my-4 [&_ol]:pl-0 [&_ol]:space-y-2 [&_ol]:list-none [&_ol]:counter-reset-[item] [&_li]:text-[#475569] [&_li]:text-[15px] [&_li]:leading-[1.7] [&_li]:pl-6 [&_li]:relative [&_ul_li]:before:content-[''] [&_ul_li]:before:absolute [&_ul_li]:before:left-0 [&_ul_li]:before:top-[10px] [&_ul_li]:before:w-1.5 [&_ul_li]:before:h-1.5 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-[#F2911D] [&_strong]:text-[#1A2754] [&_strong]:font-semibold [&_a]:text-[#293C82] [&_a]:font-medium [&_a]:underline [&_a]:decoration-[#293C82]/30 hover:[&_a]:decoration-[#293C82] [&_table]:w-full [&_table]:max-w-full [&_table]:block [&_table]:overflow-x-auto [&_table]:my-6 [&_table]:border-collapse [&_table]:rounded-xl [&_table]:text-sm [&_thead]:bg-[#1A2754] [&_th]:text-white [&_th]:font-semibold [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_td]:px-4 [&_td]:py-3 [&_td]:text-[#475569] [&_td]:border-b [&_td]:border-[#E8ECF4] [&_tr:nth-child(even)]:bg-[#F7F8FC] [&_blockquote]:border-l-4 [&_blockquote]:border-[#F2911D] [&_blockquote]:bg-[#F2911D]/5 [&_blockquote]:px-6 [&_blockquote]:py-4 [&_blockquote]:my-6 [&_blockquote]:rounded-r-xl [&_hr]:my-8 [&_hr]:border-[#E8ECF4] 2f:T4483,
+<h2>Planos de Protecao Veicular 21Go: Encontre o Ideal Para Voce</h2>
+
+<p>A 21Go oferece tres planos de protecao veicular, cada um pensado para um perfil diferente de motorista e necessidade. Nao existe plano "certo" ou "errado" universal — existe o plano certo <strong>para voce</strong>, baseado no seu carro, orcamento e nivel de tranquilidade que voce busca.</p>
+
+<p>Neste guia, voce vai entender exatamente o que cada plano cobre (e o que nao cobre), ver exemplos de precos com valores FIPE reais e descobrir qual faz mais sentido para a sua situacao.</p>
+
+<p>No Rio de Janeiro, onde cerca de <a href="/blog/5-veiculos-roubados-por-hora-rj" target="_blank" rel="noopener noreferrer">5 veiculos sao roubados por hora</a> e mais de 70% da frota roda sem protecao (dados Fenacor), ter pelo menos o plano basico ja e uma decisao transformadora.</p>
+
+<h2>Visao Geral: Tabela Comparativa dos 3 Planos</h2>
+
+<table><thead><tr><th>Cobertura</th><th>Basico</th><th>Completo</th><th>Premium</th></tr></thead><tbody><tr><td>Roubo e furto (valor FIPE integral)</td><td>Sim</td><td>Sim</td><td>Sim</td></tr><tr><td>Assistencia 24h (guincho 200km)</td><td>Sim</td><td>Sim</td><td>Sim</td></tr><tr><td>Colisao (parcial e perda total)</td><td>—</td><td>Sim</td><td>Sim</td></tr><tr><td>Incendio (proveniente de colisao)</td><td>—</td><td>Sim</td><td>Sim</td></tr><tr><td>Carro reserva</td><td>—</td><td>7 dias</td><td>15 dias</td></tr><tr><td>Danos a terceiros</td><td>—</td><td>—</td><td>Ate R$ 100.000</td></tr><tr><td>Vidros (para-brisa, laterais, traseiro)</td><td>—</td><td>—</td><td>Sim</td></tr><tr><td>Rastreamento veicular GPS</td><td>—</td><td>—</td><td>Sim</td></tr><tr><td><strong>Taxa anual sobre FIPE</strong></td><td><strong>1,8%</strong></td><td><strong>2,8%</strong></td><td><strong>3,8%</strong></td></tr><tr><td><strong>Taxa administrativa mensal</strong></td><td><strong>R$ 35</strong></td><td><strong>R$ 35</strong></td><td><strong>R$ 35</strong></td></tr></tbody></table>
+<p><strong>Formula:</strong> Valor mensal = (FIPE x taxa anual) / 12 + R$ 35</p>
+
+<p>Os tres planos compartilham a mesma base: protecao contra roubo e furto + assistencia 24h. O que muda e o nivel de cobertura adicional. Vamos detalhar cada um.</p>
+
+<h2>Plano Basico: Protecao Essencial Contra Roubo</h2>
+
+<h3>O que o Plano Basico cobre</h3>
+
+<p><strong>Roubo e furto integral</strong></p>
+
+<p>Se seu carro for roubado (com ameaca ou violencia) ou furtado (sem sua presenca), voce recebe o valor integral pela tabela FIPE vigente. Isso inclui roubo na rua, no semaforo, no estacionamento, em qualquer lugar do territorio nacional. Cobre tanto roubo quanto furto — a distincao juridica nao importa para a cobertura.</p>
+
+<p>No Rio de Janeiro, com cerca de 30.000 ocorrencias de roubo/furto de veiculos por ano (dados ISP-RJ 2024), essa e a cobertura mais critica que qualquer motorista pode ter.</p>
+
+<p><strong>Assistencia 24 horas</strong></p>
+
+<p>Guincho de ate 200km, socorro mecanico, troca de pneu, carga de bateria, chaveiro — disponivel 24 horas por dia, 7 dias por semana, em todo o Brasil. Nao importa se e 3h da manha de um domingo ou feriado.</p>
+
+<h3>O que o Plano Basico NAO cobre</h3>
+
+<ul><li>Colisao (batida, capotamento, queda em buraco)</li>
+<li>Incendio</li>
+<li>Carro reserva</li>
+<li>Danos a terceiros (se voce bater em outro carro)</li>
+<li>Vidros (para-brisa, laterais, traseiro)</li>
+<li>Rastreamento veicular</li></ul>
+<h3>Para quem o Plano Basico e ideal</h3>
+
+<ul><li><strong>Quem tem orcamento mais apertado</strong> e quer pelo menos a protecao contra roubo — o maior risco financeiro no RJ</li>
+<li><strong>Donos de veiculos mais antigos</strong> (10+ anos) onde o custo de colisao pode nao compensar em relacao ao valor FIPE</li>
+<li><strong>Segundo veiculo da familia</strong> que e menos utilizado no dia a dia</li>
+<li><strong>Quem ja tem reserva financeira</strong> para cobrir batidas menores do proprio bolso</li>
+<li><strong>Motoristas experientes</strong> com baixo historico de colisoes que aceitam assumir esse risco</li></ul>
+<h3>Exemplo de preco (Plano Basico)</h3>
+
+<p>Usando valores FIPE reais:</p>
+
+<table><thead><tr><th>Modelo</th><th>FIPE referencia</th><th>Basico/mes</th></tr></thead><tbody><tr><td>Renault Kwid 2024</td><td>~R$ 60.000 (FIPE: R$ 52.829-69.400)</td><td>~R$ 125</td></tr><tr><td>Fiat Argo 2024</td><td>~R$ 78.000 (FIPE: R$ 69.215-88.005)</td><td>~R$ 152</td></tr><tr><td>Hyundai HB20 2024</td><td>~R$ 80.000 (FIPE: R$ 67.071-98.728)</td><td>~R$ 155</td></tr><tr><td>Chevrolet Onix 2025</td><td>~R$ 85.000 (FIPE: R$ 70.452-100.889)</td><td>~R$ 163</td></tr></tbody></table>
+<h3>O raciocinio por tras</h3>
+
+<p>No Rio de Janeiro, o <strong>roubo e o risco numero 1</strong>. Os <a href="/blog/carros-mais-roubados-rj-2026" target="_blank" rel="noopener noreferrer">carros mais roubados do RJ</a> sao justamente os mais populares: HB20, Onix, Argo, Renegade, Compass. Se voce dirige um desses, ter pelo menos a cobertura contra roubo e o <strong>minimo</strong> que faz sentido. O Plano Basico cobre exatamente isso, pelo menor valor possivel.</p>
+
+<blockquote><p>Nao sabe se o Basico basta? Continue lendo para entender os outros planos — ou <a href="/cotacao" target="_blank" rel="noopener noreferrer">faca a cotacao</a> e compare os tres lado a lado.</p></blockquote>
+
+<h2>Plano Completo: O Custo-Beneficio Campeao</h2>
+
+<h3>O que o Plano Completo cobre</h3>
+
+<p>Tudo do Basico, mais:</p>
+
+<p><strong>Colisao</strong></p>
+
+<p>Cobertura para danos causados por batida, capotamento, queda em buraco, colisao com poste, muro ou outro veiculo. Cobre tanto sinistros parciais (conserto em oficina credenciada) quanto perda total (quando o reparo custa mais de 75% do valor FIPE — nesse caso, voce recebe a indenizacao integral).</p>
+
+<p>No transito do RJ — Av. Brasil, Linha Amarela, Centro, Zona Norte — colisoes sao frequentes. Um unico sinistro parcial pode custar R$ 5.000 a R$ 20.000 em reparos. A cobertura de colisao se paga na primeira batida.</p>
+
+<p><strong>Incendio (proveniente de colisao)</strong></p>
+
+<p>Protecao contra incendio proveniente de colisao. Em caso de batida que resulte em fogo no veiculo, os danos sao cobertos.</p>
+
+<p><strong>Carro reserva por 7 dias</strong></p>
+
+<p>Se seu carro precisar ficar na oficina por sinistro coberto, voce recebe um veiculo reserva por ate 7 dias para nao ficar na mao. Para quem depende do carro para trabalhar, essa cobertura e essencial.</p>
+
+<h3>Para quem o Plano Completo e ideal</h3>
+
+<p>O Plano Completo e o <strong>mais escolhido</strong> pelos associados da 21Go. E ideal para:</p>
+
+<ul><li><strong>Quem usa o carro diariamente</strong> e nao pode ficar sem (trabalho, escola dos filhos, compromissos)</li>
+<li><strong>Motoristas que rodam muito</strong> em transito pesado (maior exposicao a colisoes)</li>
+<li><strong>Veiculos financiados</strong> onde qualquer dano precisa ser reparado para manter o valor do bem</li>
+<li><strong>Quem quer tranquilidade</strong> mas sem pagar o maximo do Premium</li>
+<li><strong>A maioria dos motoristas</strong> — e o equilibrio perfeito entre cobertura e preco</li>
+<li><strong>Na duvida, va de Completo</strong> — e a recomendacao mais segura</li></ul>
+<h3>Exemplo de preco (Plano Completo)</h3>
+
+<table><thead><tr><th>Modelo</th><th>FIPE referencia</th><th>Completo/mes</th></tr></thead><tbody><tr><td>Renault Kwid 2024</td><td>~R$ 60.000</td><td>~R$ 175</td></tr><tr><td>Fiat Argo 2024</td><td>~R$ 78.000</td><td>~R$ 217</td></tr><tr><td>Hyundai HB20 2024</td><td>~R$ 80.000</td><td>~R$ 222</td></tr><tr><td>Fiat Pulse 2024</td><td>~R$ 98.000 (FIPE: R$ 88.224-111.046)</td><td>~R$ 264</td></tr></tbody></table>
+<h3>A conta que vale a pena fazer</h3>
+
+<p>A diferenca entre o Basico e o Completo para um HB20 2024 e de aproximadamente <strong>R$ 67/mes</strong>. Por esse valor adicional, voce ganha:</p>
+
+<ul><li>Cobertura contra colisao (um unico sinistro parcial pode custar R$ 5.000 a R$ 20.000)</li>
+<li>Cobertura contra incendio (proveniente de colisao)</li>
+<li>Carro reserva por 7 dias (Uber durante 7 dias custaria R$ 300 a R$ 500)</li></ul>
+<p>Esses R$ 67/mes extras se pagam no <strong>primeiro acidente</strong>. E no transito do Rio de Janeiro, a pergunta nao e "se" voce vai ter um sinistro, mas "quando".</p>
+
+<h2>Plano Premium: Protecao Total Sem Preocupacao</h2>
+
+<h3>O que o Plano Premium cobre</h3>
+
+<p>Tudo do Completo, mais:</p>
+
+<p><strong>Danos a terceiros ate R$ 100.000</strong></p>
+
+<p>Se voce causar um acidente e danificar o veiculo ou a propriedade de outra pessoa, a protecao cobre ate R$ 100.000 em reparos e indenizacoes. Isso inclui danos materiais ao veiculo do terceiro, muros, portoes, postes e outros bens.</p>
+
+<p>Esta e uma cobertura <strong>critica</strong> que muita gente subestima. Um acidente onde voce bate em um carro importado, um Toyota SW4 ou um Compass pode gerar um prejuizo de R$ 30.000 a R$ 100.000 em reparos. Sem cobertura de terceiros, esse valor sai integralmente do seu bolso.</p>
+
+<p><strong>Vidros</strong></p>
+
+<p>Cobertura para para-brisa, vidros laterais e vidro traseiro. Inclui trinca, quebra e danos por objetos (pedra na estrada, vandalismo). A troca de para-brisa de um carro moderno custa R$ 800 a R$ 3.000 dependendo do modelo. Com essa cobertura, voce nao paga nada.</p>
+
+<p><strong>Carro reserva por 15 dias</strong></p>
+
+<p>O dobro do Completo. Se o sinistro for mais grave e o carro precisar de mais tempo na oficina, voce tem 15 dias de veiculo reserva garantido.</p>
+
+<p><strong>Rastreamento veicular GPS</strong></p>
+
+<p>Dispositivo GPS instalado no seu veiculo que permite localizacao em tempo real. Isso aumenta <strong>drasticamente</strong> as chances de recuperacao em caso de roubo e reduz o tempo de resolucao do sinistro. Em muitos casos, o veiculo e localizado em horas, nao dias.</p>
+
+<blockquote><p>O rastreador do Premium e especialmente valioso no RJ, onde a taxa de recuperacao de veiculos roubados gira em torno de 40-50%. Com rastreador, essa taxa sobe significativamente.</p></blockquote>
+
+<h3>Para quem o Plano Premium e ideal</h3>
+
+<ul><li><strong>Veiculos de alto valor</strong> (acima de R$ 100.000) onde qualquer sinistro e caro</li>
+<li><strong>Veiculos novos ou seminovos</strong> que voce quer proteger ao maximo</li>
+<li><strong>Quem roda em transito pesado</strong> e tem maior chance de envolver terceiros em acidentes</li>
+<li><strong>Motoristas que querem zero preocupacao</strong> — tudo coberto, sem excecao</li>
+<li><strong>Veiculos financiados de alto valor</strong> onde o banco pode exigir protecao abrangente</li>
+<li><strong>Quem mora em areas com alto indice de roubo</strong> (Baixada, Zona Norte) e quer o rastreador como camada extra de seguranca</li></ul>
+<h3>Exemplo de preco (Plano Premium)</h3>
+
+<table><thead><tr><th>Modelo</th><th>FIPE referencia</th><th>Premium/mes</th></tr></thead><tbody><tr><td>Hyundai HB20 2024</td><td>~R$ 80.000</td><td>~R$ 288</td></tr><tr><td>Fiat Pulse 2024</td><td>~R$ 98.000</td><td>~R$ 345</td></tr><tr><td>Honda Civic 2024</td><td>~R$ 130.000</td><td>~R$ 447</td></tr><tr><td>Jeep Compass 2024</td><td>~R$ 155.000</td><td>~R$ 526</td></tr><tr><td>Toyota Corolla 2024</td><td>~R$ 140.000</td><td>~R$ 478</td></tr></tbody></table>
+<h3>Por que o Premium faz sentido para carros acima de R$ 100K</h3>
+
+<p>Para veiculos de alto valor, o Premium e quase obrigatorio por uma razao matematica:</p>
+
+<ul><li>A cobertura de terceiros de R$ 100K sozinha justifica o investimento — um unico acidente onde voce e o culpado pode gerar dezenas de milhares em danos ao outro veiculo</li>
+<li>O rastreador aumenta as chances de recuperacao em caso de roubo</li>
+<li>O carro reserva de 15 dias garante mobilidade em sinistros mais complexos</li>
+<li>A cobertura de vidros evita gastos frequentes (para-brisa de Compass ou Corolla custa R$ 1.500 a R$ 3.000)</li></ul>
+<p>A diferenca de preco entre Completo e Premium para um carro de R$ 130.000 e de cerca de R$ 100/mes. Para proteger um patrimonio desse valor com cobertura total, e um investimento minimo.</p>
+
+<a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca sua cotacao gratuita</a> e compare os tres planos lado a lado para o seu veiculo.
+
+<h2>Guia de Decisao Rapida: Qual Plano Escolher?</h2>
+
+<h3>Escolha o Basico se:</h3>
+<ul><li>Seu orcamento e limitado e voce quer pelo menos cobertura contra roubo (o maior risco no RJ)</li>
+<li>Seu carro tem mais de 8-10 anos e valor FIPE mais baixo</li>
+<li>E o segundo carro da casa e voce usa pouco</li>
+<li>Voce tem reserva financeira para cobrir eventuais colisoes do bolso</li>
+<li>Voce quer o <strong>menor preco possivel</strong> com protecao contra o pior cenario (roubo)</li></ul>
+<h3>Escolha o Completo se:</h3>
+<ul><li>Voce usa o carro todos os dias e nao pode ficar sem</li>
+<li>Voce roda em transito intenso (Av. Brasil, Linha Amarela, Centro)</li>
+<li>Seu carro e financiado e voce precisa manter o valor e a integridade</li>
+<li>Voce quer o melhor <strong>custo-beneficio</strong> entre preco e cobertura</li>
+<li><strong>Na duvida, va de Completo</strong> — e a escolha mais segura para a maioria</li></ul>
+<h3>Escolha o Premium se:</h3>
+<ul><li>Seu carro vale mais de R$ 100.000</li>
+<li>Voce quer protecao contra danos a terceiros (essencial em transito pesado)</li>
+<li>Voce mora em area com alto indice de roubo e quer rastreador GPS</li>
+<li>Seu carro e novo/seminovo e voce quer protecao maxima</li>
+<li>Voce quer <strong>tranquilidade total</strong> — saber que tudo esta coberto sem excecao</li></ul>
+<h2>Posso Trocar de Plano Depois?</h2>
+
+<p>Sim. Voce pode fazer upgrade ou downgrade de plano a qualquer momento. Se comecou no Basico e quer subir para Completo, basta solicitar. O novo valor passa a valer no mes seguinte.</p>
+
+<p>Isso e util para quem:</p>
+<ul><li>Comecou no Basico por orcamento e agora pode investir mais em cobertura</li>
+<li>Estava no Premium e quer reduzir custos temporariamente</li>
+<li>Trocou de carro e precisa repensar o nivel de protecao (carro mais barato = pode descer de plano; carro mais caro = vale subir)</li></ul>
+<h2>Economize Mais com o Programa de Indicacao</h2>
+
+<p>Independente do plano escolhido, voce pode reduzir sua mensalidade com o <a href="/indique" target="_blank" rel="noopener noreferrer">programa Member Get Member</a>:</p>
+
+<ul><li><strong>1 indicacao</strong> que fecha adesao = <strong>10% de desconto</strong> na sua mensalidade</li>
+<li><strong>5 indicacoes</strong> = <strong>50% de desconto</strong></li>
+<li><strong>10 indicacoes</strong> = <strong>100% de desconto</strong> — protecao gratuita</li></ul>
+<p>Os descontos sao <strong>acumulativos e permanentes</strong>. Quanto mais voce indica, menos voce paga. Um associado do Plano Completo que paga R$ 222/mes pode chegar a R$ 0/mes com 10 indicacoes.</p>
+
+<p>Nao e promocao temporaria — e parte do modelo. Cada novo associado fortalece o fundo coletivo e reduz o custo para todos.</p>
+
+<h2>Faca Sua Escolha</h2>
+
+<p>Agora voce tem todas as informacoes para decidir. O proximo passo e simples:</p>
+
+<ol><li><a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca sua cotacao gratuita</a> e veja o valor para os tres planos com o seu carro especifico</li>
+<li>Escolha o plano que faz mais sentido para seu orcamento e necessidade</li>
+<li>Em ate 48 horas, seu carro estara protegido</li></ol>
+<p>Precisa de ajuda? O atendimento da 21Go funciona 24/7 e pode tirar qualquer duvida sobre coberturas e recomendacoes.</p>
+
+<p>Veja o <a href="/blog/como-aderir-21go" target="_blank" rel="noopener noreferrer">passo a passo completo da adesao</a> e entenda <a href="/blog/por-que-escolher-21go" target="_blank" rel="noopener noreferrer">por que escolher a 21Go</a>.</p>
+
+<h2>FAQ — Perguntas Frequentes sobre os Planos de Protecao Veicular</h2>
+
+<h3>Posso contratar coberturas avulsas (so colisao sem carro reserva)?</h3>
+
+<p>Nao. Os planos sao pacotes fechados com coberturas progressivas para simplificar a gestao e manter os precos acessiveis. A boa noticia e que voce tem tres opcoes claras com coberturas crescentes para escolher a que melhor se encaixa.</p>
+
+<h3>O carro reserva e de qual categoria?</h3>
+
+<p>O carro reserva e um veiculo basico (hatch compacto com ar-condicionado e direcao). Nao e necessariamente o mesmo modelo do seu carro, mas garante sua mobilidade durante o reparo. O objetivo e que voce nao fique sem carro, nao substituir o seu veiculo identicamente.</p>
+
+<h3>Se eu bater e for minha culpa, o Completo cobre?</h3>
+
+<p>Sim. A cobertura de colisao dos planos Completo e Premium cobre <strong>independente de culpa</strong>. Voce esta protegido tanto quando e o causador quanto quando e a vitima do acidente.</p>
+
+<h3>A cobertura de terceiros no Premium inclui danos corporais?</h3>
+
+<p>A cobertura padrao e para <strong>danos materiais</strong> a terceiros (veiculo, muro, portao, poste). Danos corporais podem ter tratamento especifico. Consulte os detalhes diretamente com a equipe da 21Go.</p>
+
+<h3>O rastreador do Premium tem custo extra de instalacao?</h3>
+
+<p>A instalacao do rastreador esta <strong>inclusa</strong> no Plano Premium, sem custo adicional. O equipamento e instalado em oficina credenciada da 21Go. A mensalidade do plano ja contempla o servico de rastreamento.</p>
+
+<hr />
+
+<p><em>O plano certo para voce esta a 30 segundos de distancia. <a href="/cotacao" target="_blank" rel="noopener noreferrer">Faca sua cotacao agora</a> e compare Basico, Completo e Premium para o seu veiculo.</em></p>
+2d:["$","section",null,{"className":"py-12 md:py-16 bg-[#F7F8FC]","children":["$","div",null,{"className":"max-w-6xl mx-auto px-6","children":["$","div",null,{"className":"grid lg:grid-cols-[1fr_320px] gap-10","children":[["$","div",null,{"className":"bg-white rounded-2xl border border-[#E8ECF4] shadow-sm p-8 md:p-12","children":["$","article",null,{"className":"$2e","dangerouslySetInnerHTML":{"__html":"$2f"}}]}],"$L30"]}]}]}]
+30:["$","aside",null,{"className":"space-y-6 lg:sticky lg:top-28 h-fit","children":[["$","div",null,{"className":"bg-gradient-to-br from-[#1A2754] to-[#293C82] rounded-2xl p-8 text-white","children":[["$","div",null,{"className":"w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-4","children":["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-shield-check w-6 h-6 text-[#F2911D]","aria-hidden":"true","children":[["$","path","oel41y",{"d":"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"}],["$","path","dzmm74",{"d":"m9 12 2 2 4-4"}],"$undefined"]}]}],["$","h3",null,{"className":"font-[var(--font-display)] text-lg font-bold mb-2","children":"Proteja seu veículo"}],["$","p",null,{"className":"text-sm text-white/60 mb-6","children":"Simulação gratuita em 30 segundos. Sem compromisso."}],["$","$L13",null,{"href":"/cotacao","className":"flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-semibold text-sm hover:shadow-lg hover:shadow-[#F2911D]/20 transition-all","children":["Fazer Simulação ",["$","svg",null,{"ref":"$undefined","xmlns":"http://www.w3.org/2000/svg","width":24,"height":24,"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":2,"strokeLinecap":"round","strokeLinejoin":"round","className":"lucide lucide-arrow-right w-4 h-4","aria-hidden":"true","children":[["$","path","1ays0h",{"d":"M5 12h14"}],["$","path","xquz4c",{"d":"m12 5 7 7-7 7"}],"$undefined"]}]]}]]}],["$","div",null,{"className":"bg-white rounded-2xl border border-[#E8ECF4] p-6","children":[["$","h3",null,{"className":"font-[var(--font-display)] text-xs font-semibold text-[#94A3B8] mb-5 uppercase tracking-wider","children":"Artigos Relacionados"}],["$","div",null,{"className":"space-y-4","children":[["$","$L13","diarios-de-bordo-historias-reais-clientes-21go",{"href":"/blog/diarios-de-bordo-historias-reais-clientes-21go","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase","children":"Geral"}],["$","p",null,{"className":"mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug","children":"Diários de Bordo: 7 Histórias Reais de Associados 21Go Que Foram Protegidos"}]]}],["$","$L13","como-evitar-clonagem-de-placa-rj",{"href":"/blog/como-evitar-clonagem-de-placa-rj","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase","children":"Seguranca"}],["$","p",null,{"className":"mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug","children":"Clonagem de Placa no Rio: Como Descobrir, Evitar e O Que Fazer"}]]}],["$","$L13","multas-rj-como-evitar-no-transito",{"href":"/blog/multas-rj-como-evitar-no-transito","className":"block group","children":[["$","span",null,{"className":"text-[10px] font-bold text-[#293C82] bg-[#293C82]/5 px-2 py-0.5 rounded-full uppercase","children":"Dicas"}],["$","p",null,{"className":"mt-1.5 text-sm font-medium text-[#1A2754] group-hover:text-[#293C82] transition-colors leading-snug","children":"Multas de Trânsito no Rio: Como Evitar E O Que Fazer Quando Recebe"}]]}]]}]]}]]}]
+22:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+1e:null
+31:I[1996,[],"IconMark"]
+20:{"metadata":[["$","title","0",{"children":"Planos 21Go: Basico, Completo ou Premium — Qual Ideal? | Blog 21Go | 21Go"}],["$","meta","1",{"name":"description","content":"Comparativo dos 3 planos de protecao veicular da 21Go com coberturas detalhadas, exemplos de precos por modelo e recomendacoes para cada perfil."}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","meta","3",{"name":"facebook-domain-verification","content":"0ruuwkhj1e6bnadcippr9exl3jqncs"}],["$","meta","4",{"name":"facebook-domain-verification","content":"7ov5n8z6gtw4zo8qh9q3kue5bzhp9b"}],["$","link","5",{"rel":"canonical","href":"https://21go.site/blog/planos-21go-basico-completo-premium"}],["$","meta","6",{"property":"og:title","content":"Planos 21Go: Basico, Completo ou Premium — Qual Ideal?"}],["$","meta","7",{"property":"og:description","content":"Comparativo dos 3 planos de protecao veicular da 21Go com coberturas detalhadas, exemplos de precos por modelo e recomendacoes para cada perfil."}],["$","meta","8",{"property":"og:url","content":"https://21go.site/blog/planos-21go-basico-completo-premium"}],["$","meta","9",{"property":"og:site_name","content":"21Go"}],["$","meta","10",{"property":"og:locale","content":"pt_BR"}],["$","meta","11",{"property":"og:image","content":"https://21go.site/blog/default.jpg"}],["$","meta","12",{"property":"og:image:width","content":"1200"}],["$","meta","13",{"property":"og:image:height","content":"630"}],["$","meta","14",{"property":"og:image:alt","content":"Planos 21Go: Basico, Completo ou Premium — Qual Ideal?"}],["$","meta","15",{"property":"og:type","content":"article"}],["$","meta","16",{"property":"article:published_time","content":"2026-03-20"}],["$","meta","17",{"property":"article:modified_time","content":"2026-03-20"}],["$","meta","18",{"property":"article:author","content":"21Go"}],["$","meta","19",{"property":"article:tag","content":"planos protecao veicular"}],["$","meta","20",{"property":"article:tag","content":"plano basico completo premium"}],["$","meta","21",{"property":"article:tag","content":"coberturas protecao veicular"}],["$","meta","22",{"property":"article:tag","content":"melhor plano protecao veicular"}],["$","meta","23",{"property":"article:tag","content":"planos 21Go"}],["$","meta","24",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","25",{"name":"twitter:title","content":"Planos 21Go: Basico, Completo ou Premium — Qual Ideal?"}],["$","meta","26",{"name":"twitter:description","content":"Comparativo dos 3 planos de protecao veicular da 21Go com coberturas detalhadas, exemplos de precos por modelo e recomendacoes para cada perfil."}],["$","meta","27",{"name":"twitter:image","content":"https://21go.site/blog/default.jpg"}],["$","link","28",{"rel":"icon","href":"/favicon.ico"}],["$","link","29",{"rel":"apple-touch-icon","href":"/logo21go.png"}],["$","$L31","30",{}]],"error":null,"digest":"$undefined"}
+25:"$20:metadata"
