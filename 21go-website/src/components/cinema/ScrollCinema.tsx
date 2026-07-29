@@ -282,7 +282,12 @@ export function ScrollCinema() {
     })
     const WIN = 0.018 // duração das rampas de entrada/saída
     for (const c of COPY) {
-      tl.fromTo(`#${c.id}`, { opacity: 0, y: 40, rotateX: 6 }, { opacity: 1, y: 0, rotateX: 0, duration: WIN, ease: 'none' }, c.inAt)
+      if (c.id === 'copy-hero') {
+        // Hero já nasce visível no progresso 0 — só anima a SAÍDA.
+        gsap.set(`#${c.id}`, { opacity: 1, y: 0 })
+      } else {
+        tl.fromTo(`#${c.id}`, { opacity: 0, y: 40, rotateX: 6 }, { opacity: 1, y: 0, rotateX: 0, duration: WIN, ease: 'none' }, c.inAt)
+      }
       if (c.outAt < 0.99) {
         tl.to(`#${c.id}`, { opacity: 0, y: -30, duration: WIN, ease: 'none' }, c.outAt)
       }
