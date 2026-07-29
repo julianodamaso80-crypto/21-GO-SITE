@@ -163,7 +163,6 @@ export function ScrollCinema() {
         load(g, () => { inFlight--; pump(); scheduleRender() })
       }
     }
-    pump()
 
     /* ── Canvas ── */
     const ctx = canvas.getContext('2d')!
@@ -175,7 +174,6 @@ export function ScrollCinema() {
       canvas.style.height = '100%'
       scheduleRender()
     }
-    resize()
     window.addEventListener('resize', resize)
 
     function nearestLoaded(g: number): number {
@@ -293,6 +291,9 @@ export function ScrollCinema() {
     tl.fromTo('.cine-orb-a', { yPercent: 20 }, { yPercent: -25, ease: 'none', duration: 1 }, 0)
     tl.fromTo('.cine-orb-b', { yPercent: -10 }, { yPercent: 20, ease: 'none', duration: 1 }, 0)
 
+    /* Inicialização — somente após TODAS as declarações acima (evita TDZ) */
+    resize()
+    pump()
     renderCurrentFrame()
 
     return () => {
