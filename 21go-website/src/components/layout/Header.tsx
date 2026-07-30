@@ -45,7 +45,11 @@ export function Header() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border-b border-[#F0F4FA]'
+          // Header é fixo: backdrop-blur nele obriga o navegador a recompor o
+          // blur de tudo que passa atrás A CADA FRAME do scroll — media 24 FPS
+          // no celular. Sobre fundo 95% branco o blur é imperceptível, então no
+          // mobile vai branco sólido e o blur fica só no desktop (md:).
+          ? 'bg-white md:bg-white/95 md:backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border-b border-[#F0F4FA]'
           : 'bg-transparent'
       }`}
     >
