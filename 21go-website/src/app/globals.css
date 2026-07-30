@@ -262,3 +262,22 @@
     animation: none !important;
   }
 }
+
+/* ── content-visibility: pular o desenho do que está fora da tela ──────────
+   A home tem 18.030 px de altura e 1.171 elementos, e as 15 seções são todas
+   client components — o navegador fazia layout e paint de tudo de uma vez.
+   Medido em celular: 8,5 s de load e um frame de 974 ms.
+
+   `content-visibility: auto` faz o navegador pular layout/paint das seções que
+   ainda não chegaram na viewport, e fazer o trabalho conforme a pessoa rola. O
+   HTML continua inteiro no documento (SSR), então SEO e Ctrl+F não mudam.
+
+   `contain-intrinsic-size` dá uma altura estimada pra barra de scroll não pular
+   enquanto as seções são medidas de verdade.
+
+   A primeira seção fica de fora: é o hero, precisa pintar imediato. */
+main > section:not(:first-of-type),
+main > div > section:not(:first-of-type) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
