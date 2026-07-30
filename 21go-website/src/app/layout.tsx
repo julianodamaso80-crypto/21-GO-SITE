@@ -39,7 +39,8 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://21go.site' },
   icons: {
     icon: '/favicon.ico',
-    apple: '/logo21go.png',
+    // 8,5 KB em vez dos 109 KB do logo original (era servido cru: images.unoptimized)
+    apple: '/apple-icon-180.png',
   },
   // Meta Domain Verification — só BM Juliano Damaso (215936062346243),
   // dono do PIXEL 21 (999953532385177) — único pixel ativo desde 2026-06-01.
