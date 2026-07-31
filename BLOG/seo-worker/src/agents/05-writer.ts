@@ -29,7 +29,7 @@ import { config } from '../config.js';
 import { child } from '../lib/logger.js';
 import { pickRelevantSources, formatForPrompt } from '../db/repositories/data-sources.js';
 import { injectInternalLinks } from '../lib/internal-linker.js';
-import { generateCoverImages } from '../integrations/image-gen.js';
+// generateCoverImages — desativado 2026-06-30 (blog sem imagem por decisão do user)
 
 const log = child('agent:05-writer');
 
@@ -284,15 +284,11 @@ Termine com "## Em resumo" (bullets) + "## Perguntas frequentes" + CTA final.`;
       if (keywords.length >= 6) break;
     }
 
-    // ===== Cover image (Sprint 5) — best-effort =====
-    let coverImage = '/blog/default.jpg';
-    try {
-      const imgQuery = `${topic.category} ${topic.title.split(' ').slice(0, 4).join(' ')} brasil`;
-      const covers = await generateCoverImages(imgQuery);
-      coverImage = covers.url_16x9 ?? covers.url_4x3 ?? covers.url_1x1 ?? '/blog/default.jpg';
-    } catch (e) {
-      log.warn({ err: (e as Error).message }, 'cover image falhou — usando default');
-    }
+    // ===== Cover image DESABILITADO (decisão user 2026-06-30) =====
+    // Blogs não usam mais imagem — escalam mais rápido, foco em texto+tabelas+CTAs.
+    // O frontmatter ainda precisa de campo `image` pra compatibilidade com o site,
+    // mas usa default fixo (não chama gerador externo).
+    const coverImage = '/blog/default.jpg';
 
     const frontmatter: ArticleFrontmatter = {
       title: briefing.seo_title,

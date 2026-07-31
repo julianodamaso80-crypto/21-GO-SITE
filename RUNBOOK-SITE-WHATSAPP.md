@@ -33,8 +33,25 @@ O número de WhatsApp aparece em **DOIS lugares independentes**. Trocar em um N�
 
 ## 🟢 CENÁRIO B — Trocar o número de WhatsApp / instância
 
+### ⛔ PASSO 0 — TESTE DE ENTREGA REAL (obrigatório, ANTES de trocar QUALQUER coisa)
+> **Lição cara (17/06): "Connected" e status `PENDING` NÃO significam que entrega.** Um chip que já foi **banido** reconecta (aparece Connected) mas o WhatsApp **bloqueia o envio** — as mensagens ficam `PENDING` e nunca chegam. Trocar o site todo pra um número assim deixa o cliente sem PDF.
+
+ANTES de mexer em env, código ou deploy, envie um teste real pela instância candidata e **confirme com uma pessoa que CHEGOU de fato** (abrir o WhatsApp e ver), não só o retorno da API:
+```bash
+# 1) número existe no WhatsApp?
+curl -s -X POST "https://evolution.sinistro21go.site/chat/whatsappNumbers/<INSTANCIA>" \
+  -H "apikey: <KEY>" -H "Content-Type: application/json" -d '{"numbers":["NUMERO_DE_TESTE"]}'
+# 2) manda um texto de teste
+curl -s -X POST "https://evolution.sinistro21go.site/message/sendText/<INSTANCIA>" \
+  -H "apikey: <KEY>" -H "Content-Type: application/json" \
+  -d '{"number":"5521992208062","text":"teste entrega - chegou?"}'
+```
+- Se em dúvida entre 2 chips, mande um texto **etiquetado por cada um** e peça pra pessoa dizer **qual chegou**. Só o que ENTREGA é candidato válido.
+- `status: PENDING` no retorno é normal (é assíncrono). A prova é a pessoa **receber**. Se ficar PENDING e não chegar → chip restrito, **NÃO use**.
+- **Só depois de confirmar a entrega real**, siga pras Partes 1 e 2.
+
 ### Parte 1 — ENVIO (Easypanel) — faz a mensagem automática sair do número novo
-1. Confirme na **Evolution** (evolution.sinistro21go.site) que a instância nova está **Connected** e é o número certo.
+1. Confirme na **Evolution** (evolution.sinistro21go.site) que a instância nova está **Connected** — e que passou no **PASSO 0** (entrega confirmada).
 2. Easypanel → **site → Ambiente**. Ajuste:
    - `EVOLUTION_INSTANCE` = nome da instância nova
    - `EVOLUTION_API_KEY` = a key DELA (cada instância tem a sua)
