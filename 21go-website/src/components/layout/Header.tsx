@@ -45,13 +45,17 @@ export function Header() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border-b border-[#F0F4FA]'
+          // Header é fixo: backdrop-blur nele obriga o navegador a recompor o
+          // blur de tudo que passa atrás A CADA FRAME do scroll — media 24 FPS
+          // no celular. Sobre fundo 95% branco o blur é imperceptível, então no
+          // mobile vai branco sólido e o blur fica só no desktop (md:).
+          ? 'bg-white md:bg-white/95 md:backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border-b border-[#F0F4FA]'
           : 'bg-transparent'
       }`}
     >
       <nav className="mx-auto max-w-7xl px-6 flex items-center justify-between h-16 lg:h-20">
         <Link href="/" className="flex items-center gap-2.5">
-          <Image src="/logo21go.png" alt="21Go Proteção Veicular" width={36} height={36} className="rounded-lg" />
+          <Image src="/logo21go-72.png" alt="21Go Proteção Veicular" width={36} height={36} className="rounded-lg" />
           <span className={`font-[var(--font-outfit)] text-xl font-bold tracking-tight transition-colors duration-300 ${
             scrolled ? 'text-[#293C82]' : 'text-white'
           }`}>21Go</span>

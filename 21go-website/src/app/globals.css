@@ -229,3 +229,61 @@
   background-clip: text;
   animation: gradient-x 3s ease infinite;
 }
+
+/* ── Performance no celular ─────────────────────────────────
+   Medido em 390px com CPU 4x mais lenta (celular médio): o scroll da home
+   rodava a 24 FPS, com 21 de 102 frames acima de 50ms. Os custos eram os
+   blurs decorativos gigantes (blur de 100–150px em divs de 400–500px, cada
+   um vira uma textura enorme pra GPU) e animações que repintam sem parar.
+
+   No desktop nada muda — só telas até 767px entram aqui. */
+@media (max-width: 767px) {
+  /* Manchas de luz decorativas: o efeito continua, com um terço do custo. */
+  .blur-\[100px\],
+  .blur-\[120px\],
+  .blur-\[150px\] {
+    filter: blur(32px);
+  }
+
+  /* box-shadow animado repinta o elemento a cada frame, e este fica fixo na
+     tela o tempo todo. O CTA não perde destaque: mantém a sombra estática. */
+  .animate-glow-pulse {
+    animation: none;
+    box-shadow: 0 0 24px 6px rgba(242, 145, 29, 0.45);
+  }
+
+  /* Gradiente animado em texto força recomposição contínua da camada. */
+  .text-gradient-orange {
+    animation: none;
+  }
+}
+
+/* Quem pediu menos animação no sistema não deve pagar por nenhuma delas. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-glow-pulse,
+  .text-gradient-orange,
+  .animate-ping,
+  .animate-pulse,
+  .animate-bounce {
+    animation: none !important;
+  }
+}
+
+/* ── content-visibility: pular o desenho do que está fora da tela ──────────
+   A home tem 18.030 px de altura e 1.171 elementos, e as 15 seções são todas
+   client components — o navegador fazia layout e paint de tudo de uma vez.
+   Medido em celular: 8,5 s de load e um frame de 974 ms.
+
+   `content-visibility: auto` faz o navegador pular layout/paint das seções que
+   ainda não chegaram na viewport, e fazer o trabalho conforme a pessoa rola. O
+   HTML continua inteiro no documento (SSR), então SEO e Ctrl+F não mudam.
+
+   `contain-intrinsic-size` dá uma altura estimada pra barra de scroll não pular
+   enquanto as seções são medidas de verdade.
+
+   A primeira seção fica de fora: é o hero, precisa pintar imediato. */
+main > section:not(:first-of-type),
+main > div > section:not(:first-of-type) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
