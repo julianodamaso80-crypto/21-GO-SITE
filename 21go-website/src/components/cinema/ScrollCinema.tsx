@@ -108,6 +108,7 @@ export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
   const progressPctRef = useRef<HTMLSpanElement>(null)
   const progressLabelRef = useRef<HTMLSpanElement>(null)
   const [loadedPct, setLoadedPct] = useState(0)
+  const [loadStarted, setLoadStarted] = useState(false)
   const [reduced, setReduced] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -338,11 +339,40 @@ export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
 
     /* Inicialização — somente após TODAS as declarações acima (evita TDZ) */
     resize()
-    pump()
     renderCurrentFrame()
+
+    /* PERF: o download dos frames NÃO começa no carregamento da página.
+       Só dispara quando a jornada se aproxima do viewport (~1,2 tela antes),
+       deixando o primeiro carregamento (hero/LCP) leve — essencial no celular. */
+    let pumpStarted = false
+    const startPump = () => {
+      if (pumpStarted || destroyed) return
+      pumpStarted = true
+      setLoadStarted(true)
+      pump()
+    }
+    // Gatilhos (o que vier primeiro):
+    //  a) primeiro gesto de rolagem do usuário — a jornada fica logo abaixo
+    //     do hero, então qualquer scroll é o sinal de que os frames serão vistos;
+    //  b) 2,5s depois do evento load — rede ociosa, sem competir com o LCP;
+    //  c) seção já visível no carregamento (deep-link/âncora).
+    window.addEventListener('scroll', startPump, { once: true, passive: true })
+    let idleTimer = 0
+    const armIdle = () => { idleTimer = window.setTimeout(startPump, 2500) }
+    if (document.readyState === 'complete') armIdle()
+    else window.addEventListener('load', armIdle, { once: true })
+    const io = new IntersectionObserver(
+      (es) => { if (es.some((e) => e.isIntersecting && e.intersectionRatio > 0.05)) { startPump(); io.disconnect() } },
+      { threshold: [0.06] },
+    )
+    io.observe(section)
 
     return () => {
       destroyed = true
+      io.disconnect()
+      window.removeEventListener('scroll', startPump)
+      window.removeEventListener('load', armIdle)
+      if (idleTimer) window.clearTimeout(idleTimer)
       window.removeEventListener('resize', resize)
       if (raf) cancelAnimationFrame(raf)
       tl.scrollTrigger?.kill()
@@ -378,7 +408,7 @@ export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
   return (
     <div className="bg-[#0c1330]">
       {/* Loader discreto até a cena 1 estar pronta */}
-      {loadedPct < 100 && (
+      {loadStarted && loadedPct < 100 && (
         <div className="fixed bottom-4 left-4 z-[70] rounded-full border border-white/15 bg-[#0c1330]/80 px-3 py-1 text-[11px] text-white/60 backdrop-blur">
           carregando cenas… {loadedPct}%
         </div>

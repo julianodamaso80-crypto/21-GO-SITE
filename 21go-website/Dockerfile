@@ -36,20 +36,10 @@ ENV NODE_ENV=production \
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# ── Mídia cinematográfica do redesign (clipes AV1/H.264 + posters AVIF/WebP) ──
-# Os vídeos NÃO ficam no git (30MB): são baixados no build e extraídos em
-# public/media. Se o download falhar, o build segue — o site degrada para os
-# posters/gradientes (SceneVideo tem fallback). Fonte: masters otimizados
-# gerados no redesign 2026-07-29 (zip 21go-media-otimizada.zip).
-ARG MEDIA_ZIP_URL="https://d2ol7oe51mr4n9.cloudfront.net/user_3GoeKQh1bDj5LzenOoPGmI2rV9E/a301d304-ad3b-468f-9788-5d272647414e.zip"
-RUN apt-get update && apt-get install -y --no-install-recommends curl unzip ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p public/media \
-    && (curl -fsSL --retry 3 -o /tmp/media.zip "$MEDIA_ZIP_URL" \
-        && unzip -o -q /tmp/media.zip -d public/media \
-        && rm /tmp/media.zip \
-        && echo "media OK: $(ls public/media | wc -l) arquivos" \
-        || echo "AVISO: download da midia falhou — site usara fallback de posters")
+# ── Mídia cinematográfica do redesign ──
+# Clipes (AV1/H.264 + posters), frames do scroll-scrub e vídeo do presidente
+# agora estão VERSIONADOS em public/media, public/frames e public/frames-mobile.
+# Nenhum download externo é necessário no build (determinístico e offline-safe).
 
 RUN npm run build
 

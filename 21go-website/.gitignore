@@ -1,2 +1,2 @@
-public/media/*
-!public/media/README-MIDIA.md
+# Mídia do redesign (public/media, public/frames, public/frames-mobile) agora é
+# VERSIONADA no git — o build de produção não depende mais de download externo.

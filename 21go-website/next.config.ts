@@ -22,6 +22,20 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     unoptimized: true,
   },
+  // Links antigos do rodapé que davam 404 no site (auditoria 2026-07-29).
+  // Sem inventar conteúdo jurídico: apontam para páginas/canais REAIS.
+  ...(isPreviewExport
+    ? {}
+    : {
+        async redirects() {
+          return [
+            { source: '/termos-de-uso', destination: '/conformidade-legal', permanent: true },
+            { source: '/politica-privacidade', destination: '/conformidade-legal', permanent: true },
+            { source: '/contato', destination: '/api/wa', permanent: false },
+            { source: '/area-do-associado', destination: '/api/wa', permanent: false },
+          ]
+        },
+      }),
 }
 
 export default nextConfig
