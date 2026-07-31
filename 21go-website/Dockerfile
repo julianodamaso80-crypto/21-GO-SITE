@@ -35,6 +35,12 @@ ENV NODE_ENV=production \
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# ── Mídia cinematográfica do redesign ──
+# Clipes (AV1/H.264 + posters), frames do scroll-scrub e vídeo do presidente
+# agora estão VERSIONADOS em public/media, public/frames e public/frames-mobile.
+# Nenhum download externo é necessário no build (determinístico e offline-safe).
+
 RUN npm run build
 
 # Baixa o Chrome PINADO pelo puppeteer (versao testada e compativel com puppeteer-core).

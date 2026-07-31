@@ -121,12 +121,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       {/* Content + Sidebar */}
       <section className="py-12 md:py-16 bg-[#F7F8FC]">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid lg:grid-cols-[1fr_320px] gap-10">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-10">
             {/* Article content */}
-            <div className="bg-white rounded-2xl border border-[#E8ECF4] shadow-sm p-8 md:p-12">
+            <div className="bg-white rounded-2xl border border-[#E8ECF4] shadow-sm p-5 sm:p-8 md:p-12 min-w-0 overflow-hidden">
               <article
                 className="
-                  max-w-none
+                  max-w-none min-w-0 break-words
                   [&_h2]:font-[var(--font-display)] [&_h2]:text-[1.5rem] [&_h2]:font-bold [&_h2]:text-[#1A2754] [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:pb-3 [&_h2]:border-b [&_h2]:border-[#E8ECF4]
                   [&_h3]:font-[var(--font-display)] [&_h3]:text-[1.2rem] [&_h3]:font-semibold [&_h3]:text-[#1A2754] [&_h3]:mt-8 [&_h3]:mb-3
                   [&_p]:text-[#475569] [&_p]:text-[15px] [&_p]:leading-[1.8] [&_p]:mb-5
@@ -136,7 +136,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   [&_ul_li]:before:content-[''] [&_ul_li]:before:absolute [&_ul_li]:before:left-0 [&_ul_li]:before:top-[10px] [&_ul_li]:before:w-1.5 [&_ul_li]:before:h-1.5 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-[#F2911D]
                   [&_strong]:text-[#1A2754] [&_strong]:font-semibold
                   [&_a]:text-[#293C82] [&_a]:font-medium [&_a]:underline [&_a]:decoration-[#293C82]/30 hover:[&_a]:decoration-[#293C82]
-                  [&_table]:w-full [&_table]:my-6 [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_table]:text-sm
+                  [&_table]:w-full [&_table]:max-w-full [&_table]:block [&_table]:overflow-x-auto [&_table]:my-6 [&_table]:border-collapse [&_table]:rounded-xl [&_table]:text-sm
                   [&_thead]:bg-[#1A2754] [&_th]:text-white [&_th]:font-semibold [&_th]:text-left [&_th]:px-4 [&_th]:py-3
                   [&_td]:px-4 [&_td]:py-3 [&_td]:text-[#475569] [&_td]:border-b [&_td]:border-[#E8ECF4]
                   [&_tr:nth-child(even)]:bg-[#F7F8FC]

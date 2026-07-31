@@ -1,6 +1,2 @@
-.vercel
-
-# Rascunhos gerados pela esteira SEO (BLOG/seo-worker)
-# Aprovados sao movidos pra content/blog/ pelo Publisher (Agente 09).
-content/blog/_drafts/*.mdx
-!content/blog/_drafts/.gitkeep
+# Mídia do redesign (public/media, public/frames, public/frames-mobile) agora é
+# VERSIONADA no git — o build de produção não depende mais de download externo.

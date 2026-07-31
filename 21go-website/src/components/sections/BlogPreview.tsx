@@ -8,7 +8,7 @@ import Link from 'next/link'
 
 const posts = [
   { slug: 'protecao-veicular-vs-seguro', title: 'Proteção Veicular vs Seguro: Qual a Diferença?', excerpt: 'Entenda as vantagens e desvantagens de cada opção para proteger seu veículo no Rio de Janeiro.', tag: 'Guia' },
-  { slug: '7-dicas-evitar-roubo-carro-rj', title: '7 Dicas Para Evitar Roubo de Carro no RJ', excerpt: 'Medidas práticas para reduzir o risco de roubo e furto na cidade do Rio de Janeiro.', tag: 'Segurança' },
+  { slug: '10-truques-ladroes-de-carro-voce-nao-sabe', title: '10 Truques de Ladrão de Carro Que Você Não Sabe', excerpt: 'Como os ladrões agem no RJ e as medidas práticas para reduzir o risco de roubo e furto.', tag: 'Segurança' },
   { slug: 'quanto-custa-protecao-veicular', title: 'Quanto Custa Proteção Veicular em 2026?', excerpt: 'Valores atualizados, comparativo com seguro e como economizar na proteção do seu carro.', tag: 'Preços' },
 ]
 

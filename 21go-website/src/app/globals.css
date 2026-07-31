@@ -172,6 +172,12 @@
 /* ── Base ──────────────────────────────────────────────── */
 
 @layer base {
+  html {
+    /* impede QUALQUER deslocamento horizontal da pagina (responsivo),
+       sem criar scroll container (nao quebra position:sticky) */
+    overflow-x: clip;
+  }
+
   body {
     background: var(--color-bg-white);
     color: var(--color-txt-primary);
