@@ -116,7 +116,7 @@ function PresidentLayer() {
           loading="eager"
           fetchPriority="high"
           decoding="async"
-          className="absolute top-[70px] left-1/2 h-[calc(100%-70px)] w-auto max-w-none -translate-x-1/2 object-contain object-top opacity-95 lg:top-auto lg:bottom-0 lg:left-auto lg:right-[6%] lg:h-[92%] lg:translate-x-0 lg:object-bottom"
+          className="absolute top-[64px] left-1/2 h-[calc(100%-64px)] w-auto max-w-none -translate-x-1/2 object-contain object-top opacity-95 lg:top-auto lg:bottom-0 lg:left-auto lg:right-[6%] lg:h-[92%] lg:translate-x-0 lg:object-bottom"
         />
       </picture>
 
@@ -136,19 +136,19 @@ export function PresidentHero() {
   const isInView = useInView(ref, { once: true })
 
   return (
-    <section ref={ref} className="relative min-h-[100svh] overflow-hidden pt-24 pb-24 bg-[#0c1330]">
+    <section ref={ref} className="relative h-[100svh] min-h-[560px] overflow-hidden pt-16 pb-0 bg-[#0c1330] lg:h-auto lg:min-h-[100svh] lg:pt-24 lg:pb-24">
       <PresidentLayer />
 
       <motion.div
         variants={staggerContainer}
         initial="hidden"
         animate={isInView ? 'visible' : 'hidden'}
-        className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 text-center lg:items-start lg:text-left"
+        className="relative z-10 mx-auto flex h-full w-full max-w-7xl flex-col items-center justify-center px-4 text-center sm:px-6 lg:h-auto lg:items-start lg:justify-start lg:text-left"
       >
         <div className="w-full max-w-2xl">
           {/* Badge */}
           <motion.div variants={fadeInUp}>
-            <span className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.07] backdrop-blur-sm px-5 py-2.5 text-sm font-medium text-white/90">
+            <span className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.07] backdrop-blur-sm px-3.5 py-1.5 text-xs font-medium lg:px-5 lg:py-2.5 lg:text-sm text-white/90">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#10B981] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10B981]" />
@@ -161,7 +161,7 @@ export function PresidentHero() {
           {/* H1 */}
           <motion.h1
             variants={fadeInUp}
-            className="mt-8 font-[var(--font-outfit)] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.12] tracking-tight text-white [text-shadow:0_2px_24px_rgba(8,13,34,0.7)]"
+            className="mt-3 font-[var(--font-outfit)] text-[24px] sm:text-4xl md:text-5xl lg:mt-8 lg:text-6xl font-bold leading-[1.15] tracking-tight text-white [text-shadow:0_2px_24px_rgba(8,13,34,0.7)]"
           >
             A Cada 11 Minutos,
             <span className="block">Um Carro ou uma Moto é <span className="text-gradient-orange">Roubado no Rio</span></span>
@@ -170,14 +170,14 @@ export function PresidentHero() {
           {/* H2 */}
           <motion.p
             variants={fadeInUp}
-            className="mt-6 max-w-xl text-lg text-white/85 md:text-xl font-medium [text-shadow:0_1px_12px_rgba(8,13,34,0.75)] mx-auto lg:mx-0"
+            className="mt-2 max-w-xl text-[15px] text-white/85 md:text-xl lg:mt-6 lg:text-lg font-medium [text-shadow:0_1px_12px_rgba(8,13,34,0.75)] mx-auto lg:mx-0"
           >
             São 90 carros e 39 motos por dia. O seu está protegido?
           </motion.p>
 
           {/* Cobertura nacional */}
-          <motion.div variants={fadeInUp} className="mt-5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#C7D301]/40 bg-[#C7D301]/10 px-4 py-2 text-sm font-semibold text-white">
+          <motion.div variants={fadeInUp} className="mt-2.5 lg:mt-5">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#C7D301]/40 bg-[#C7D301]/10 px-3 py-1 text-xs font-semibold lg:px-4 lg:py-2 lg:text-sm text-white">
               <span aria-hidden="true">🇧🇷</span>
               Atendemos todo o Brasil
             </span>
@@ -186,7 +186,7 @@ export function PresidentHero() {
           {/* Diferenciais — 3 mini-cards */}
           <motion.div
             variants={fadeInUp}
-            className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto lg:mx-0"
+            className="mt-3.5 grid grid-cols-3 gap-1.5 max-w-2xl mx-auto sm:gap-3 lg:mt-8 lg:mx-0"
           >
             {[
               { icon: '🏷️', title: 'Carro de Leilão', desc: 'Pagamos até 80% da FIPE' },
@@ -195,30 +195,30 @@ export function PresidentHero() {
             ].map((item) => (
               <div
                 key={item.title}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-[#0c1330]/45 backdrop-blur-md"
+                className="flex flex-col items-center gap-0.5 px-1.5 py-2 rounded-xl border border-white/10 bg-[#0c1330]/55 backdrop-blur-md text-center lg:flex-row lg:items-center lg:gap-3 lg:px-4 lg:py-3 lg:text-left"
               >
-                <span className="text-lg flex-shrink-0">{item.icon}</span>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-white/90 leading-tight">{item.title}</p>
-                  <p className="text-xs text-white/55">{item.desc}</p>
+                <span className="text-base flex-shrink-0 lg:text-lg">{item.icon}</span>
+                <div className="text-center lg:text-left">
+                  <p className="text-[11px] font-semibold text-white/90 leading-tight lg:text-sm">{item.title}</p>
+                  <p className="text-[9px] leading-tight text-white/55 lg:text-xs">{item.desc}</p>
                 </div>
               </div>
             ))}
           </motion.div>
 
           {/* CTAs */}
-          <motion.div data-cta-section="hero" variants={fadeInUp} className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+          <motion.div data-cta-section="hero" variants={fadeInUp} className="mt-4 flex flex-nowrap items-center justify-center gap-2 lg:mt-10 lg:flex-wrap lg:gap-4 lg:justify-start">
             <Link
               href="/cotacao"
-              className="shimmer-btn relative inline-flex items-center px-9 py-4 rounded-xl bg-[#F2911D] text-white text-base font-semibold transition-all duration-300 animate-glow-pulse hover:bg-[#D67A0F] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(242,145,29,0.5)]"
+              className="shimmer-btn relative inline-flex flex-1 items-center justify-center px-2 py-3 rounded-xl bg-[#F2911D] text-white text-[13px] font-semibold whitespace-nowrap lg:flex-none lg:px-9 lg:py-4 lg:text-base transition-all duration-300 animate-glow-pulse hover:bg-[#D67A0F] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(242,145,29,0.5)]"
             >
               Fazer Simulação Grátis
             </Link>
             <Link
               href="/cotacao"
-              className="inline-flex items-center gap-2.5 px-7 py-4 rounded-xl border border-white/20 bg-white/[0.07] backdrop-blur-sm text-white text-base font-semibold hover:bg-white/[0.12] hover:border-white/30 transition-all duration-300 hover:-translate-y-0.5"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 px-2 py-3 rounded-xl border border-white/20 bg-white/[0.07] backdrop-blur-sm text-white text-[13px] font-semibold whitespace-nowrap lg:flex-none lg:gap-2.5 lg:px-7 lg:py-4 lg:text-base hover:bg-white/[0.12] hover:border-white/30 transition-all duration-300 hover:-translate-y-0.5"
             >
-              <MessageCircle className="h-5 w-5 text-[#25D366]" />
+              <MessageCircle className="h-4 w-4 text-[#25D366] lg:h-5 lg:w-5" />
               Fale no WhatsApp
             </Link>
           </motion.div>
@@ -226,22 +226,22 @@ export function PresidentHero() {
           {/* Trust stats */}
           <motion.div
             variants={fadeInUp}
-            className="mt-14 grid grid-cols-3 gap-8 md:gap-14 max-w-md mx-auto lg:mx-0"
+            className="mt-4 grid grid-cols-3 gap-3 max-w-md mx-auto md:gap-14 lg:mt-14 lg:gap-8 lg:mx-0"
           >
             {[
               { target: 20, suffix: '+', label: 'Anos de Mercado', icon: ShieldCheck },
               { target: 98, suffix: '%', label: 'Aprovação', icon: Users },
               { target: 24, suffix: '/7', label: 'Assistência', icon: Clock },
             ].map((stat, i) => (
-              <div key={stat.label} className="flex flex-col items-center lg:items-start">
-                <stat.icon className="mb-2 h-5 w-5 text-[#C7D301]" />
+              <div key={stat.label} className="flex flex-col items-center text-center lg:items-start lg:text-left">
+                <stat.icon className="mb-1 h-4 w-4 text-[#C7D301] lg:mb-2 lg:h-5 lg:w-5" />
                 <NumberTicker
                   target={stat.target}
                   suffix={stat.suffix}
                   duration={1800 + i * 200}
-                  className="font-[var(--font-outfit)] text-3xl md:text-4xl font-bold text-white"
+                  className="font-[var(--font-outfit)] text-xl md:text-4xl lg:text-3xl font-bold text-white"
                 />
-                <span className="mt-1 text-sm text-white/60">{stat.label}</span>
+                <span className="mt-0.5 text-[10px] leading-tight text-white/60 lg:mt-1 lg:text-sm">{stat.label}</span>
               </div>
             ))}
           </motion.div>
@@ -249,7 +249,7 @@ export function PresidentHero() {
           {/* Scroll indicator */}
           <motion.div
             variants={fadeInUp}
-            className="mt-12 flex flex-col items-center gap-2 lg:items-start"
+            className="mt-12 hidden flex-col items-center gap-2 lg:flex lg:items-start"
           >
             <span className="text-xs text-white/40 tracking-widest uppercase">Explorar</span>
             <div className="relative w-6 h-10 rounded-full border border-white/20 flex items-start justify-center pt-1.5">
