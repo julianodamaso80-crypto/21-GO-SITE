@@ -138,6 +138,21 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Veículo que a 21Go não faz: registro silencioso e ponto final.
+  // Ordem do dono (31/07/2026) — não pode virar lead pra ninguém atender, então
+  // NÃO vai pro PowerCRM e NÃO dispara WhatsApp. Fica só no nosso banco, com
+  // status `excluido`, pra podermos avisar essas pessoas se a 21Go voltar a
+  // aceitar o veículo. Defesa em profundidade: mesmo que outra tela chame este
+  // endpoint com plano EXCLUIDO, o caminho de atendimento não é acionado.
+  if ((body.plano || '').toUpperCase() === 'EXCLUIDO') {
+    console.log(`[lead] veiculo excluido — sem PowerCRM e sem WhatsApp lead=${leadId}`)
+    const supaExcluido = await persistLeadInSupabase({ body, trk, leadId, ctx }).catch((err) => {
+      console.error('[lead] excluido: falha persistir Supabase:', err instanceof Error ? err.message : err)
+      return { ok: false, lead_id: leadId }
+    })
+    return NextResponse.json({ success: true, leadId: supaExcluido.lead_id || leadId, trk, excluded: true })
+  }
+
   // 1) Lead no PowerCRM (mantido — caminho crítico)
   const powercrm = POWERAPI_TOKEN
     ? await createLeadPowerCRM(body, leadId).catch((err) => ({

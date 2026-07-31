@@ -294,6 +294,15 @@ export default function CotacaoPage() {
     return () => { cancelled = true }
   }, [])
 
+  // Veículo que não fazemos: some com o botão flutuante do WhatsApp enquanto
+  // essa tela estiver aberta. Ordem do dono (31/07/2026) — se a 21Go não
+  // protege esse veículo, não pode sobrar nenhum caminho pro cliente puxar
+  // atendimento. O botão mora no layout global, por isso o controle é no body.
+  useEffect(() => {
+    document.body.classList.toggle('sem-whatsapp', excluded)
+    return () => document.body.classList.remove('sem-whatsapp')
+  }, [excluded])
+
   // Carrega modelos quando marca + ano são selecionados (PowerCRM exige cb+cy juntos)
   useEffect(() => {
     if (!fipeMarcaCode || !fipeAnoCode) { setFipeModelos([]); return }
@@ -396,9 +405,11 @@ export default function CotacaoPage() {
         setExcluded(true)
         setStep(2)
 
-        // Salva lead marcado como EXCLUIDO no Supabase + PowerCRM pra Letycia
-        // ver e nao perder o contato. Backend trata `plano: 'EXCLUIDO'`.
-        const tracking = getTrackingData()
+        // Veiculo que nao fazemos NAO vira lead de atendimento (ordem do dono,
+        // 31/07/2026): nada de PowerCRM, nada de WhatsApp, nenhum botao pra
+        // clicar. O contato fica so no nosso banco (o endpoint corta o caminho
+        // de atendimento quando plano === 'EXCLUIDO') pra podermos avisar essa
+        // pessoa se voltarmos a aceitar o veiculo. A tela agradece e encerra.
         fetch(`${API_BASE}/api/vehicle/lead`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -407,29 +418,13 @@ export default function CotacaoPage() {
             whatsapp: form.whatsapp,
             email: form.email || undefined,
             placa: form.placa || '',
-            leilao: form.leilao,
             marca: v.marca,
             modelo: v.modelo,
             ano: v.ano,
             valorFipe: v.fipeValue,
             fipeCode: v.fipeCode,
-            categoria: v.categoria,
-            combustivel: v.combustivel,
             plano: 'EXCLUIDO',
-            carroApp: form.carroApp === 'sim',
-            motoTerceiros: form.danosTerceiros === 'sim',
-            seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
-            powercrmBrandId: data.powercrm?.brandId,
-            powercrmModelId: data.powercrm?.modelId,
-            powercrmYearId: data.powercrm?.yearId,
-            ...tracking.utms,
-            gclid: tracking.clickIds.gclid,
-            fbclid: tracking.clickIds.fbclid,
-            fbp: tracking.clickIds._fbp,
-            fbc: tracking.clickIds._fbc,
           }),
-        }).then(r => r.json()).then(d => {
-          if (d.leadId) setLeadId(d.leadId)
         }).catch(() => {})
         return
       }
