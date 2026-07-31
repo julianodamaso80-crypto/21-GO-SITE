@@ -26,6 +26,10 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
+  // iOS Safari: a barra de endereço encolhe/cresce durante a rolagem e dispara
+  // "resize" — sem isto o ScrollTrigger recalcula o pin no meio do gesto e a
+  // jornada engasga/pula no iPhone.
+  ScrollTrigger.config({ ignoreMobileResize: true })
 }
 
 /* ── Configuração das cenas (frames extraídos dos clipes JÁ gerados) ── */
@@ -177,12 +181,14 @@ export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
       images[g] = img
     }
 
-    /* Fila: 1) esqueleto da cena 1 (1 a cada 6), 2) cena 1 completa,
-       3) demais cenas em ordem. */
+    /* Fila: 1) esqueleto de TODAS as cenas (1 a cada 6) — assim QUALQUER ponto
+       da jornada mostra imagem rapidinho, mesmo em rede lenta de celular;
+       2) cenas completas em ordem. */
     const queue: number[] = []
-    for (let i = 0; i < counts[0]; i += 6) queue.push(i)
-    for (let i = 0; i < counts[0]; i++) queue.push(i)
-    for (let s2 = 1; s2 < scenes.length; s2++) {
+    for (let s2 = 0; s2 < scenes.length; s2++) {
+      for (let i = 0; i < counts[s2]; i += 6) queue.push(offsets[s2] + i)
+    }
+    for (let s2 = 0; s2 < scenes.length; s2++) {
       for (let i = 0; i < counts[s2]; i++) queue.push(offsets[s2] + i)
     }
     let qi = 0
@@ -409,7 +415,7 @@ export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
     <div className="bg-[#0c1330]">
       {/* Loader discreto até a cena 1 estar pronta */}
       {loadStarted && loadedPct < 100 && (
-        <div className="fixed bottom-4 left-4 z-[70] rounded-full border border-white/15 bg-[#0c1330]/80 px-3 py-1 text-[11px] text-white/60 backdrop-blur">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[70] rounded-full border border-white/15 bg-[#0c1330]/80 px-3 py-1 text-[11px] text-white/60 backdrop-blur md:top-auto md:bottom-4 md:left-4 md:translate-x-0">
           carregando cenas… {loadedPct}%
         </div>
       )}
@@ -419,26 +425,25 @@ export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
         <div
           ref={stageRef}
           className="cinematic-stage relative top-0 h-[100svh] w-full overflow-hidden"
-          style={{ perspective: '1200px' }}
         >
           {/* CANVAS FIXADO (via pin do ScrollTrigger) */}
-          <canvas ref={canvasRef} id="cinematic-canvas" className="absolute inset-0 h-full w-full" aria-hidden="true" />
+          <canvas ref={canvasRef} id="cinematic-canvas" className="absolute inset-0 z-0 h-full w-full" aria-hidden="true" />
 
-          {/* Camadas de profundidade (discretas) */}
-          <div className="pointer-events-none absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>
-            <div className="cine-orb-a absolute -top-24 -right-24 h-[420px] w-[420px] rounded-full bg-[#F2911D]/10 blur-[110px]" style={{ transform: 'translateZ(-180px)' }} />
-            <div className="cine-orb-b absolute bottom-0 -left-24 h-[480px] w-[480px] rounded-full bg-[#293C82]/25 blur-[130px]" style={{ transform: 'translateZ(-220px)' }} />
+          {/* Camadas de profundidade (discretas) — SEM translateZ/preserve-3d:
+              no Safari do iPhone o 3D real fazia o texto sumir atrás do canvas. */}
+          <div className="pointer-events-none absolute inset-0 z-[1]">
+            <div className="cine-orb-a absolute -top-24 -right-24 h-[420px] w-[420px] rounded-full bg-[#F2911D]/10 blur-[110px]" />
+            <div className="cine-orb-b absolute bottom-0 -left-24 h-[480px] w-[480px] rounded-full bg-[#293C82]/25 blur-[130px]" />
             <div className="absolute inset-0 shadow-[inset_0_0_220px_40px_rgba(6,10,26,0.65)]" />
           </div>
 
           {/* Textos HTML sincronizados — nunca desenhados no vídeo */}
-          <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-[16svh] md:items-center md:pb-0" style={{ transformStyle: 'preserve-3d' }}>
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-end justify-center pb-[16svh] md:items-center md:pb-0">
             {copies.map((c) => (
               <div
                 key={c.id}
                 id={c.id}
                 className="absolute mx-auto max-w-2xl px-6 text-center opacity-0"
-                style={{ transform: 'translateZ(60px)' }}
               >
                 <h2 className="font-[var(--font-outfit)] text-2xl sm:text-3xl md:text-5xl font-bold leading-tight text-white [text-shadow:0_2px_24px_rgba(6,10,26,0.8)]">
                   {c.title}

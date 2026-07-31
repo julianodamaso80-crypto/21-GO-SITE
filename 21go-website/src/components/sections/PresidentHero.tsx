@@ -89,7 +89,7 @@ function PresidentLayer() {
             // navegador tentar a próxima — não pode derrubar o fallback.
             if ((e.currentTarget as HTMLVideoElement).error) setVideoFailed(true)
           }}
-          className={`absolute inset-0 h-full w-full object-cover object-[62%_center] transition-opacity duration-700 ${videoReady ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute left-0 w-full object-cover object-[62%_center] transition-opacity duration-700 -top-[32%] h-[135%] lg:top-0 lg:h-full ${videoReady ? 'opacity-100' : 'opacity-0'}`}
         >
           {isMobile ? (
             <>
@@ -116,7 +116,7 @@ function PresidentLayer() {
           loading="eager"
           fetchPriority="high"
           decoding="async"
-          className="absolute bottom-0 left-1/2 h-[88%] w-auto max-w-none -translate-x-1/2 object-contain object-bottom opacity-95 lg:left-auto lg:right-[6%] lg:h-[92%] lg:translate-x-0"
+          className="absolute top-[70px] left-1/2 h-[calc(100%-70px)] w-auto max-w-none -translate-x-1/2 object-contain object-top opacity-95 lg:top-auto lg:bottom-0 lg:left-auto lg:right-[6%] lg:h-[92%] lg:translate-x-0 lg:object-bottom"
         />
       </picture>
 
