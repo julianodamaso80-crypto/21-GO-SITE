@@ -142,7 +142,12 @@ export function SceneVideo({ clip, priority = false, className = '', videoClassN
           width={1920}
           height={1080}
           onCanPlay={() => setVideoReady(true)}
-          onError={() => setVideoFailed(true)}
+          onError={(e) => {
+            // Só desiste quando TODAS as <source> falharam (video.error setado):
+            // erro de uma <source> individual não pode matar o fallback
+            // (ex.: Safari sem AV1 precisa cair no MP4 H.264).
+            if ((e.currentTarget as HTMLVideoElement).error) setVideoFailed(true)
+          }}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${videoReady ? 'opacity-100' : 'opacity-0'} ${videoClassName}`}
         >
           {isMobile ? (

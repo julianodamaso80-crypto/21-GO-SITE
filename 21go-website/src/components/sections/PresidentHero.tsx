@@ -33,20 +33,22 @@ function PresidentLayer() {
   const wrapRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [useVideo, setUseVideo] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const [videoReady, setVideoReady] = useState(false)
   const [videoFailed, setVideoFailed] = useState(false)
 
   useEffect(() => {
     // Decisão do proprietário: o gesto do presidente é conteúdo essencial da
-    // marca — o vídeo (mudo, sutil) roda SEMPRE no desktop; só economia de
-    // dados mantém a foto estática. Mobile usa a foto grande (leve).
-    const isDesktop = window.matchMedia('(min-width: 1024px)').matches
+    // marca — o vídeo (mudo, sutil) roda SEMPRE, no desktop E no celular
+    // (celular usa o 720p H.264 de ~196KB, decodificação por hardware).
+    // Só economia de dados mantém a foto estática.
+    setIsMobile(window.matchMedia('(max-width: 1023px)').matches)
     let saveData = false
     try {
       const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection
       saveData = !!conn?.saveData
     } catch { /* noop */ }
-    setUseVideo(isDesktop && !saveData)
+    setUseVideo(!saveData)
   }, [])
 
   /* pausa fora da tela / aba oculta */
@@ -81,16 +83,30 @@ function PresidentLayer() {
           width={1920}
           height={1080}
           onCanPlay={() => setVideoReady(true)}
-          onError={() => setVideoFailed(true)}
-          className={`absolute inset-0 hidden h-full w-full object-cover object-[62%_center] transition-opacity duration-700 lg:block ${videoReady ? 'opacity-100' : 'opacity-0'}`}
+          onError={(e) => {
+            // Só desiste quando TODAS as <source> falharam (video.error setado).
+            // Erro de uma <source> individual borbulha no React antes do
+            // navegador tentar a próxima — não pode derrubar o fallback.
+            if ((e.currentTarget as HTMLVideoElement).error) setVideoFailed(true)
+          }}
+          className={`absolute inset-0 h-full w-full object-cover object-[62%_center] transition-opacity duration-700 ${videoReady ? 'opacity-100' : 'opacity-0'}`}
         >
-          <source src={`${MEDIA_BASE}/clip7-presidente-1080.webm`} type="video/webm" />
-          <source src={`${MEDIA_BASE}/clip7-presidente-1080.mp4`} type="video/mp4" />
+          {isMobile ? (
+            <>
+              <source src={`${MEDIA_BASE}/clip7-presidente-720.mp4`} type="video/mp4" />
+              <source src={`${MEDIA_BASE}/clip7-presidente-1080.webm`} type="video/webm" />
+            </>
+          ) : (
+            <>
+              <source src={`${MEDIA_BASE}/clip7-presidente-1080.webm`} type="video/webm" />
+              <source src={`${MEDIA_BASE}/clip7-presidente-1080.mp4`} type="video/mp4" />
+            </>
+          )}
         </video>
       )}
 
-      {/* Foto original — mobile sempre; desktop enquanto o vídeo não está pronto */}
-      <picture className={videoReady && useVideo ? 'lg:hidden' : ''}>
+      {/* Foto original — visível enquanto o vídeo não está pronto (e como fallback) */}
+      <picture className={videoReady && useVideo && !videoFailed ? 'hidden' : ''}>
         <source srcSet="/images/presidente-900.webp" type="image/webp" />
         <img
           src="/images/presidente-900.png"
