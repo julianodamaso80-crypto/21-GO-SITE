@@ -207,7 +207,9 @@ export function PlansSection() {
           ))}
         </motion.div>
 
-        <div className={`grid grid-cols-1 gap-6 lg:gap-8 items-start ${
+        {/* items-stretch + flex-col: todos os cards com a MESMA altura e botões
+            alinhados na mesma linha (o destaque do VIP não desloca mais o card) */}
+        <div className={`grid grid-cols-1 gap-6 lg:gap-8 items-stretch ${
           plans.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' :
           plans.length === 3 ? 'md:grid-cols-3' :
           'md:grid-cols-2 lg:grid-cols-4'
@@ -217,9 +219,9 @@ export function PlansSection() {
               key={plan.name}
               variants={fadeInUp}
               transition={{ delay: plan.delay }}
-              className={`relative rounded-2xl p-7 border transition-all duration-300 ${
+              className={`relative flex h-full flex-col rounded-2xl p-7 border transition-all duration-300 ${
                 plan.popular
-                  ? 'border-[#F2911D]/50 shadow-xl md:scale-[1.03] bg-white md:-mt-4'
+                  ? 'border-[#F2911D]/50 shadow-xl bg-white'
                   : 'border-[#E8ECF4] bg-white hover:shadow-lg hover:-translate-y-1'
               }`}
             >
@@ -247,7 +249,7 @@ export function PlansSection() {
                 )}
               </div>
 
-              <ul className="space-y-3 mb-7">
+              <ul className="space-y-3 mb-7 flex-1">
                 {plan.features.map((f) => (
                   <li key={f.text} className="flex items-start gap-3">
                     {f.included ? (
