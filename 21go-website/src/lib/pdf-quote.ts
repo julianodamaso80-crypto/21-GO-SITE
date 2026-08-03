@@ -564,10 +564,17 @@ function renderHTML(input: QuotePdfInput): string {
   const refIsCarro =
     referencePlan && !['moto-400', 'moto-1000'].includes(referencePlan.id)
 
-  // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): mensalidade CHEIA do
-  // VIP de referencia + R$ 50, BYD R$ 1.550 fixo. Sem piso, sem gross-up.
+  // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): mensalidade CHEIA da
+  // base + R$ 50, BYD R$ 1.550 fixo. Base = MAIOR entre o VIP de referencia e o
+  // plano escolhido (Basico/Do Seu Jeito pagam o VIP; Premium paga o Premium).
   const isBYD = (input.marca || '').trim().toUpperCase() === 'BYD'
-  const taxa = calcActivation(referencePlan?.monthly || input.mensalidade, isBYD)
+  const selectedMonthly =
+    planosAplicaveis.find((p) => p.id === planoEscolhidoId)?.monthly || input.mensalidade
+  const taxa = calcActivation(
+    referencePlan?.monthly || input.mensalidade,
+    isBYD,
+    selectedMonthly,
+  )
 
   // Determinar tipo (carros / suv / moto / especial) baseado nos planos
   let kind: 'carros' | 'suv' | 'moto' | 'especial' = 'carros'

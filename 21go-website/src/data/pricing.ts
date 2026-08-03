@@ -630,7 +630,7 @@ export const ACTIVATION_FLOOR = 249
 export const MP_INSTALLMENT_12X_SURCHARGE = 0.2211
 
 /**
- * Valor da ativação à vista (pagamento único). É o valor CHEIO: VIP cheio + R$ 50.
+ * Valor da ativação à vista (pagamento único). É o valor CHEIO da base + R$ 50.
  * À vista não é parcelamento, então não leva juros. (REGRA OFICIAL 21Go.)
  */
 export function activationCashPrice(net: number): number {
@@ -639,18 +639,31 @@ export function activationCashPrice(net: number): number {
 }
 
 /**
- * Taxa de ativação (REGRA OFICIAL 21Go — decisão user 2026-06-16):
+ * Taxa de ativação (REGRA OFICIAL 21Go — decisão user 2026-08-03):
  *   - BYD → R$ 1.550 fixo (qualquer modelo)
- *   - demais → mensalidade CHEIA do plano de referência + R$ 50, com PISO de R$ 249
+ *   - demais → mensalidade CHEIA da base + R$ 50, com PISO de R$ 249
  *     (ex: 500 → 550; regular 120 → 170, mas piso eleva pra 249)
  *
- * SEM gross-up. A base é o VIP de referência do veículo (ou o plano de moto, pra
- * motos), não o plano que o cliente clicou. Carro e moto seguem a mesma regra.
+ * A base é o MAIOR entre o VIP de referência do veículo e o plano que o cliente
+ * escolheu. Ou seja: quem escolhe Básico ou Do Seu Jeito paga o VIP + R$ 50
+ * (o VIP é o piso); quem escolhe Premium paga o Premium + R$ 50. SEM gross-up.
+ * Carro e moto seguem a mesma regra.
+ *
+ * @param vipReferenceMonthly mensalidade cheia do VIP de referência (piso da base)
+ * @param selectedMonthly     mensalidade cheia do plano escolhido; omitir quando
+ *                            não há escolha (ex: disparo proativo, que mostra o VIP)
  */
-export function calcActivation(vipReferenceMonthly: number, isBYD: boolean): number {
+export function calcActivation(
+  vipReferenceMonthly: number,
+  isBYD: boolean,
+  selectedMonthly?: number,
+): number {
   if (isBYD) return BYD_ACTIVATION
-  if (!Number.isFinite(vipReferenceMonthly) || vipReferenceMonthly <= 0) return 0
-  return Math.max(vipReferenceMonthly + ACTIVATION_SURCHARGE, ACTIVATION_FLOOR)
+  const vip = Number.isFinite(vipReferenceMonthly) ? vipReferenceMonthly : 0
+  const selected = Number.isFinite(selectedMonthly) ? (selectedMonthly as number) : 0
+  const base = Math.max(vip, selected)
+  if (base <= 0) return 0
+  return Math.max(base + ACTIVATION_SURCHARGE, ACTIVATION_FLOOR)
 }
 
 /**

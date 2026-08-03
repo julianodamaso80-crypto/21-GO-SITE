@@ -460,7 +460,11 @@ export default function CotacaoPage() {
       // trava de 3 veículos/7 dias estava barrando cliente de verdade. Qualquer
       // pessoa simula quantos veículos quiser.
 
-      const reason = getExclusionReason(v.marca, v.modelo, v.ano)
+      // Quem manda é a resposta do servidor (allowlist do PowerCRM, versão por versão). A lista
+      // por nome fica como segunda camada — cobre o caso de o servidor ainda não ter a versão.
+      const reason: ExclusionReason = data.excluded
+        ? (data.reason as ExclusionReason) || 'model'
+        : getExclusionReason(v.marca, v.modelo, v.ano)
       if (reason) {
         setExclusionReason(reason)
         setExcluded(true)
@@ -595,10 +599,11 @@ export default function CotacaoPage() {
   const fipeFormatted = vehicle ? vehicle.fipeValue.toLocaleString('pt-BR') : '0'
 
   // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts):
-  //   - mensalidade CHEIA do plano de referencia + R$ 50 (carro e moto), piso R$ 249
+  //   - mensalidade CHEIA da base + R$ 50 (carro e moto), piso R$ 249
   //   - BYD → R$ 1.550 fixo
   //   - A vista = valor cheio; 12x = valor + juros 22,11% / 12 (nunca sem juros)
-  // SEMPRE VIP de referencia (nao depende do plano que o cliente selecionou).
+  // Base = MAIOR entre o VIP de referencia e o plano escolhido: Basico/Do Seu Jeito
+  // pagam VIP + R$ 50 (VIP e o piso), Premium paga Premium + R$ 50.
   // Ordem de fallback quando nao ha VIP "puro" (moto/suv/especial usam o "VIP" deles).
   const vipOrder: PlanId[] = ['vip', 'suv', 'moto-1000', 'moto-400', 'especial', 'premium', 'do-seu-jeito', 'basico']
   const vipPlan = vipOrder.map((id) => plans.find((p) => p.id === id)).find((p) => !!p) || null
@@ -606,8 +611,9 @@ export default function CotacaoPage() {
   const vipMonthly = (vipPlan?.monthly || 0) + carroAppExtra
     + (form.danosTerceiros === 'sim' && vipIsMoto ? 22 : 0)
   const isBYD = (vehicle?.marca || '').trim().toUpperCase() === 'BYD'
-  const taxaAtivacao = calcActivation(vipMonthly, isBYD)
-  // A vista = valor cheio (VIP + R$50); 12x = valor + juros 22,11% / 12 (nunca sem juros).
+  // `price` = mensalidade cheia do plano selecionado (ja com carroApp/danos a terceiros).
+  const taxaAtivacao = calcActivation(vipMonthly, isBYD, price)
+  // A vista = valor cheio (base + R$50); 12x = valor + juros 22,11% / 12 (nunca sem juros).
   const ativacaoAvista = activationCashPrice(taxaAtivacao)
   const ativacaoParcela12x = activationInstallment12x(taxaAtivacao)
   const today = new Date()

@@ -347,6 +347,8 @@ export function buildQuoteSummaryMessage(input: {
   }
 
   const isBYD = (input.marca || '').toUpperCase().includes('BYD')
+  // Sem plano escolhido aqui: a mensagem mostra o VIP de referência, então a base
+  // da ativação é o próprio VIP (ver calcActivation em pricing.ts).
   const taxa = calcActivation(ref.monthly, isBYD)
   const avista = activationCashPrice(taxa)
   const parcela12 = activationInstallment12x(taxa)
