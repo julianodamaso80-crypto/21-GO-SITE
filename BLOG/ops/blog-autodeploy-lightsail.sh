@@ -47,7 +47,15 @@ if ! docker buildx build -t "$IMG" --load . >> "$LOG" 2>&1; then
   exit 1
 fi
 
-docker stop "$CONTAINER" >/dev/null 2>&1; docker rm "$CONTAINER" >/dev/null 2>&1; docker run -d --name "$CONTAINER" --restart unless-stopped -p 127.0.0.1:3100:3000 --env-file /opt/site21go.env "$IMG" >> "$LOG" 2>&1
+# Recria o container. --env-file aponta pro arquivo CANONICO (/opt/site21go/.env-site):
+# manter uma copia paralela das envs faria o deploy automatico servir configuracao velha
+# sempre que alguem editasse o canonico. Limites de memoria/log iguais aos do run manual.
+docker stop "$CONTAINER" >/dev/null 2>&1
+docker rm "$CONTAINER" >/dev/null 2>&1
+docker run -d --name "$CONTAINER" --restart unless-stopped \
+  --env-file /opt/site21go/.env-site -e PORT=3000 -e NODE_ENV=production \
+  --memory 2g --log-opt max-size=50m --log-opt max-file=3 \
+  -p 127.0.0.1:3100:3000 "$IMG" >> "$LOG" 2>&1
 
 # Confere que o site voltou (nunca deixar cair sem avisar)
 sleep 45
