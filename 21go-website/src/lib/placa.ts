@@ -1,17 +1,21 @@
 /**
  * Validação de placa do formulário de cotação.
  *
- * Filosofia (ordem do dono, 03/08/2026): a placa é OBRIGATÓRIA pra veículo
- * usado — é o que separa cliente de curioso —, mas a validação **não pode
- * travar o negócio**. Então:
+ * REGRA MAIOR (ordem do dono, 03/08/2026): **nunca bloquear placa que existe.**
+ * Perder um cliente real custa infinitamente mais caro que deixar um curioso
+ * entrar. Por isso a única coisa que bloqueia de verdade é o que não pode ser
+ * placa de jeito nenhum: vazia, incompleta ou fora dos dois formatos oficiais.
  *
- *   - formato errado ou placa obviamente inventada  → bloqueia (é digitação
- *     preguiçosa, não cliente de verdade);
- *   - placa bem formada que a base não confirma      → só avisa, deixa seguir.
- *     Base fora do ar, veículo recém-emplacado e placa de outro estado são
- *     casos reais demais pra barrar alguém por isso.
+ * Padrão suspeito (AAA1111, ABC1234, ...) NÃO bloqueia sozinho — placas assim
+ * existem de verdade, são poucas mas existem. O que acontece com elas:
  *
- * Client-safe.
+ *   1. a base do PowerCRM confirma a placa  → segue direto, nem avisa;
+ *   2. a base não confirma                  → pede uma confirmação de 1 toque
+ *      ("é essa mesmo a minha placa") e libera;
+ *   3. a base está fora do ar               → segue, sem atrito nenhum.
+ *
+ * Ou seja: a heurística vira FRICÇÃO pro curioso, nunca PORTA FECHADA pro
+ * cliente. Client-safe.
  */
 
 /** Placa antiga: ABC1234 */
@@ -43,11 +47,14 @@ function isSequential(s: string): boolean {
 }
 
 /**
- * Placas que ninguém digita por engano — são chute pra pular o campo.
- * Deliberadamente conservador: na dúvida deixa passar, porque barrar cliente
- * de verdade custa muito mais caro que deixar um curioso entrar.
+ * Padrão de placa que costuma ser chute pra pular o campo.
+ *
+ * ATENÇÃO: isto é um SINAL, não um veredito. Placas assim existem de verdade
+ * (BBB2222 e ABC1234 são combinações válidas que algum estado já emitiu), então
+ * quem chama NUNCA deve bloquear só por causa disto — ver `validatePlaca` e o
+ * fluxo de confirmação na página de cotação.
  */
-export function isPlacaObviouslyFake(v: string): boolean {
+export function isPlacaSuspeita(v: string): boolean {
   const p = normalizePlaca(v)
   const letras = p.replace(/\d/g, '')
   const digitos = p.replace(/\D/g, '')
@@ -64,19 +71,41 @@ export function isPlacaObviouslyFake(v: string): boolean {
   return false
 }
 
+export type PlacaProblema =
+  /** Não pode ser placa nenhuma — barra e pronto. */
+  | { level: 'block'; msg: string }
+  /** Parece chute, mas pode ser real — pede 1 toque de confirmação, não barra. */
+  | { level: 'confirm'; msg: string }
+
 /**
- * Erro de placa pra exibir no formulário, ou null quando pode seguir.
- * `obrigatoria` é true pra veículo usado e false pra zero km.
+ * Problema da placa, ou null quando pode seguir.
+ *
+ * @param obrigatoria  true pra veículo usado, false pra zero km
+ * @param jaConfirmada base confirmou a placa OU o cliente disse que é a dele —
+ *                     nesse caso o padrão suspeito é ignorado por completo
  */
-export function validatePlaca(v: string, obrigatoria: boolean): string | null {
+export function validatePlaca(
+  v: string,
+  obrigatoria: boolean,
+  jaConfirmada = false,
+): PlacaProblema | null {
   const p = normalizePlaca(v)
 
   if (!p) {
-    return obrigatoria ? 'Informe a placa do veículo' : null
+    return obrigatoria ? { level: 'block', msg: 'Informe a placa do veículo' } : null
   }
-  if (p.length < 7) return 'Placa incompleta — são 7 caracteres (ex: RIO2A18)'
-  if (!isPlacaFormatValid(p)) return 'Placa inválida. Use o formato ABC1D23 ou ABC1234'
-  if (isPlacaObviouslyFake(p)) return 'Essa placa não parece real. Digite a placa do seu veículo'
+  if (p.length < 7) {
+    return { level: 'block', msg: 'Placa incompleta — são 7 caracteres (ex: RIO2A18)' }
+  }
+  if (!isPlacaFormatValid(p)) {
+    return { level: 'block', msg: 'Placa inválida. Use o formato ABC1D23 ou ABC1234' }
+  }
+  if (!jaConfirmada && isPlacaSuspeita(p)) {
+    return {
+      level: 'confirm',
+      msg: 'Essa placa parece um exemplo. Se for mesmo a do seu veículo, é só confirmar.',
+    }
+  }
 
   return null
 }

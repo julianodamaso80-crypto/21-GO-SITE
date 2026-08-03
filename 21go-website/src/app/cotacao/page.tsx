@@ -33,7 +33,7 @@ import {
 } from '@/data/pricing'
 import { getExclusionReason, type ExclusionReason } from '@/data/vehicle-exclusions'
 import { buildContratarMessage } from '@/lib/quote-message'
-import { normalizePlaca, validatePlaca } from '@/lib/placa'
+import { isPlacaFormatValid, normalizePlaca, validatePlaca } from '@/lib/placa'
 
 /* ─── Types ─── */
 interface FormData {
@@ -196,9 +196,25 @@ export default function CotacaoPage() {
     ano?: string
   }>({ status: 'idle' })
 
+  // Cliente afirmou que a placa de padrão estranho é a dele mesmo. Guardado por
+  // placa: se ele editar o campo depois, a confirmação não vale mais.
+  const [placaConfirmada, setPlacaConfirmada] = useState('')
+
+  // Placa que a base do PowerCRM reconheceu OU que o cliente confirmou na mão:
+  // nos dois casos o padrão suspeito deixa de importar. É o que garante que
+  // ninguém com placa de verdade fique travado aqui.
+  const placaLiberada =
+    plateCheck.status === 'found' || placaConfirmada === normalizePlaca(form.placa)
+  const placaPedeConfirmacao =
+    form.condicao === 'usado'
+    && !placaLiberada
+    && validatePlaca(form.placa, true, false)?.level === 'confirm'
+
   useEffect(() => {
     const p = normalizePlaca(form.placa)
-    if (form.condicao !== 'usado' || validatePlaca(p, true)) {
+    // Consulta toda placa bem formada — inclusive as de padrão suspeito, porque
+    // é a base que decide se elas são reais.
+    if (form.condicao !== 'usado' || p.length !== 7 || !isPlacaFormatValid(p)) {
       setPlateCheck({ status: 'idle' })
       return
     }
@@ -264,9 +280,10 @@ export default function CotacaoPage() {
     if (!fipeAnoCode) e.fipeAno = 'Escolha o ano'
     if (!fipeModeloCode) e.fipeModelo = 'Escolha o modelo'
     // Placa: obrigatória em veículo usado, dispensada no zero km (ainda não tem).
-    // Placa que a base não confirmou passa — o bloqueio é só formato/placa fake.
-    const placaErr = validatePlaca(form.placa, form.condicao === 'usado')
-    if (placaErr) e.placa = placaErr
+    // Placa que a base não confirmou passa. O único bloqueio real é formato —
+    // padrão suspeito só pede o toque de confirmação (level 'confirm').
+    const placaProb = validatePlaca(form.placa, form.condicao === 'usado', placaLiberada)
+    if (placaProb) e.placa = placaProb.msg
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -956,6 +973,27 @@ export default function CotacaoPage() {
                           mono
                           disabled={loading}
                         />
+                        {/* Padrão estranho: NUNCA barra. Um toque e o cliente segue.
+                            Existe só pra dar trabalho pra quem inventa placa. */}
+                        {placaPedeConfirmacao && (
+                          <div className="mt-2 ml-1 flex flex-wrap items-center gap-2">
+                            {!errors.placa && (
+                              <p className="text-xs text-[#F2911D] font-medium">
+                                Essa placa parece um exemplo. É mesmo a do seu veículo?
+                              </p>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPlacaConfirmada(normalizePlaca(form.placa))
+                                setErrors(prev => ({ ...prev, placa: '' }))
+                              }}
+                              className="px-3 py-1.5 rounded-full border-2 border-[#293C82] text-[#293C82] text-xs font-bold hover:bg-[#293C82]/10 transition-colors"
+                            >
+                              Sim, é a minha placa
+                            </button>
+                          </div>
+                        )}
                         {!errors.placa && plateCheck.status === 'checking' && (
                           <p className="mt-1.5 ml-4 text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
                             <Loader2 className="w-3 h-3 animate-spin" /> Conferindo a placa...
@@ -968,8 +1006,9 @@ export default function CotacaoPage() {
                             {plateCheck.ano ? ` ${plateCheck.ano}` : ''}
                           </p>
                         )}
-                        {/* Aviso, não bloqueio: pode ser carro novo na base ou consulta fora do ar */}
-                        {!errors.placa && plateCheck.status === 'notfound' && (
+                        {/* Aviso, não bloqueio: pode ser carro novo na base ou consulta fora do ar.
+                            Escondido quando já estamos pedindo a confirmação — um recado só. */}
+                        {!errors.placa && !placaPedeConfirmacao && plateCheck.status === 'notfound' && (
                           <p className="mt-1.5 ml-4 text-xs text-[#F2911D] font-medium">
                             Não localizamos essa placa. Confira se digitou certo — se estiver correta, pode seguir normalmente.
                           </p>

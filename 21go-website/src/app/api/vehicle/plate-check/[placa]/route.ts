@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isPlacaFormatValid, isPlacaObviouslyFake, normalizePlaca } from '@/lib/placa'
+import { isPlacaFormatValid, normalizePlaca } from '@/lib/placa'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -55,7 +55,9 @@ export async function GET(
   const { placa } = await params
   const p = normalizePlaca(placa)
 
-  if (p.length !== 7 || !isPlacaFormatValid(p) || isPlacaObviouslyFake(p)) {
+  // Só o formato barra a consulta. Placa de padrão suspeito (AAA1111) é
+  // consultada igual — se a base confirmar, ela é REAL e o front libera na hora.
+  if (p.length !== 7 || !isPlacaFormatValid(p)) {
     return NextResponse.json({ status: 'invalid' } satisfies PlateCheckResult)
   }
   if (!POWERAPI_TOKEN) {
