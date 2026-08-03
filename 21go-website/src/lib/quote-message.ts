@@ -96,6 +96,8 @@ export interface QuoteMessageInput {
   /** Vazio = cliente não informou. */
   placa?: string
   tipo: 'Carro' | 'Moto'
+  /** Zero km não tem placa ainda — a mensagem diz isso em vez de "não informada". */
+  condicao: 'zero' | 'usado'
   veiculo: string
   /** Já formatado em pt-BR, sem o "R$". */
   fipeFormatted: string
@@ -132,10 +134,18 @@ export function buildContratarMessage(input: QuoteMessageInput): string {
 
   const linhasVeiculo = [
     `Tipo: ${input.tipo}`,
+    `Condição: ${input.condicao === 'zero' ? 'Zero km' : 'Usado'}`,
     `Veículo: ${input.veiculo}`,
-    `Placa: ${input.placa ? input.placa : 'não informada'}`,
+    `Placa: ${
+      input.placa
+        ? input.placa
+        : input.condicao === 'zero'
+          ? 'ainda não tem (zero km)'
+          : 'não informada'
+    }`,
     `FIPE: R$ ${input.fipeFormatted}`,
-    `Leilão/remarcado: ${origemLabel}`,
+    // Zero km nunca é leilão/remarcado — a pergunta nem aparece pra ele.
+    input.condicao === 'zero' ? null : `Leilão/remarcado: ${origemLabel}`,
     `Carro de aplicativo: ${input.carroApp ? 'Sim (Uber/99)' : 'Não'}`,
     input.danosTerceiros !== null
       ? `Danos a Terceiros: ${input.danosTerceiros ? 'Sim (+R$ 22/mês)' : 'Não'}`

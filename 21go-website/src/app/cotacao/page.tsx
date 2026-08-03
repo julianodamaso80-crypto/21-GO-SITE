@@ -33,12 +33,15 @@ import {
 } from '@/data/pricing'
 import { getExclusionReason, type ExclusionReason } from '@/data/vehicle-exclusions'
 import { buildContratarMessage } from '@/lib/quote-message'
+import { normalizePlaca, validatePlaca } from '@/lib/placa'
 
 /* ─── Types ─── */
 interface FormData {
   nome: string
   whatsapp: string
   email: string
+  /** '' = ainda não escolheu. Zero km dispensa placa; usado exige. */
+  condicao: '' | 'zero' | 'usado'
   placa: string
   leilao: 'nao' | 'leilao' | 'remarcado'
   carroApp: 'nao' | 'sim'
@@ -168,6 +171,7 @@ export default function CotacaoPage() {
     nome: '',
     whatsapp: '',
     email: '',
+    condicao: '',
     placa: '',
     leilao: 'nao',
     carroApp: 'nao',
@@ -181,6 +185,42 @@ export default function CotacaoPage() {
     setErrors(prev => ({ ...prev, [field]: '' }))
     if (field === 'placa') setApiError('')
   }, [])
+
+  // Confirmação da placa na base do PowerCRM enquanto o cliente digita.
+  // 'notfound' NUNCA bloqueia o avanço (ordem do dono): só avisa. Serve pra
+  // pegar dedo trocado e pra desanimar quem inventa placa, não pra barrar
+  // veículo recém-emplacado ou consulta que o PowerCRM não respondeu.
+  const [plateCheck, setPlateCheck] = useState<{
+    status: 'idle' | 'checking' | 'found' | 'notfound' | 'unknown'
+    marca?: string
+    ano?: string
+  }>({ status: 'idle' })
+
+  useEffect(() => {
+    const p = normalizePlaca(form.placa)
+    if (form.condicao !== 'usado' || validatePlaca(p, true)) {
+      setPlateCheck({ status: 'idle' })
+      return
+    }
+    let cancelled = false
+    setPlateCheck({ status: 'checking' })
+    const t = setTimeout(() => {
+      fetch(`${API_BASE}/api/vehicle/plate-check/${p}`)
+        .then(r => r.json())
+        .then((d: { status: string; marca?: string; ano?: string }) => {
+          if (cancelled) return
+          setPlateCheck(
+            d.status === 'found'
+              ? { status: 'found', marca: d.marca, ano: d.ano }
+              : d.status === 'notfound'
+                ? { status: 'notfound' }
+                : { status: 'unknown' },
+          )
+        })
+        .catch(() => { if (!cancelled) setPlateCheck({ status: 'unknown' }) })
+    }, 600)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [form.placa, form.condicao])
 
   // Lead tracking (backend CRM cuida de follow-up + PDF + Bull queue)
   const [leadId, setLeadId] = useState<string | null>(null)
@@ -218,14 +258,15 @@ export default function CotacaoPage() {
     if (!form.nome.trim()) e.nome = 'Informe seu nome'
     const whatsErr = isValidWhatsApp(form.whatsapp)
     if (whatsErr) e.whatsapp = whatsErr
-    // Tipo → Marca → Ano → Modelo são obrigatórios; placa é opcional.
+    if (!form.condicao) e.condicao = 'Diga se o veículo é zero km ou usado'
+    // Tipo → Marca → Ano → Modelo são obrigatórios.
     if (!fipeMarcaCode) e.fipeMarca = 'Escolha a marca'
     if (!fipeAnoCode) e.fipeAno = 'Escolha o ano'
     if (!fipeModeloCode) e.fipeModelo = 'Escolha o modelo'
-    // Placa, se preenchida, precisa ter 7 chars; se vazia, ok.
-    if (form.placa && form.placa.length > 0 && form.placa.length < 7) {
-      e.placa = 'Placa incompleta (deixe em branco se não souber)'
-    }
+    // Placa: obrigatória em veículo usado, dispensada no zero km (ainda não tem).
+    // Placa que a base não confirmou passa — o bloqueio é só formato/placa fake.
+    const placaErr = validatePlaca(form.placa, form.condicao === 'usado')
+    if (placaErr) e.placa = placaErr
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -604,6 +645,7 @@ export default function CotacaoPage() {
         email: form.email.trim() || undefined,
         placa: form.placa.trim() || undefined,
         tipo: fipeKind === 'motos' ? 'Moto' : 'Carro',
+        condicao: form.condicao === 'zero' ? 'zero' : 'usado',
         veiculo: vehicleLabel,
         fipeFormatted,
         leilao: form.leilao,
@@ -772,6 +814,40 @@ export default function CotacaoPage() {
                       disabled={loading}
                     />
                   </div>
+                  {/* Zero km ou usado — define se a placa vai ser exigida */}
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1A2754] mb-2">O veículo é zero km ou usado?</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        { value: 'zero', label: 'Zero km', sub: 'ainda sem placa' },
+                        { value: 'usado', label: 'Usado', sub: 'já tem placa' },
+                      ] as const).map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          disabled={loading}
+                          onClick={() => {
+                            set('condicao', opt.value)
+                            // Zero km não tem placa nem passa por leilão/remarcado.
+                            if (opt.value === 'zero') {
+                              set('placa', '')
+                              set('leilao', 'nao')
+                            }
+                          }}
+                          className={`py-3 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 disabled:opacity-50 ${
+                            form.condicao === opt.value
+                              ? 'border-[#293C82] bg-[#293C82]/10 text-[#293C82] shadow-sm'
+                              : 'border-[#D1DFFA] bg-[#F7F8FC] text-[#64748B] hover:border-[#293C82]/40'
+                          }`}
+                        >
+                          {opt.label}
+                          <span className="block text-[11px] font-medium opacity-70">{opt.sub}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {errors.condicao && <p className="mt-1.5 ml-1 text-xs text-[#EF4444] font-medium">{errors.condicao}</p>}
+                  </div>
+
                   <div className="space-y-4 rounded-2xl border-2 border-[#D1DFFA] bg-[#F7F8FC]/60 p-4 sm:p-5">
                     <label className="block text-sm font-semibold text-[#1A2754]">Dados do veículo</label>
 
@@ -867,26 +943,49 @@ export default function CotacaoPage() {
                       }}
                     />
 
-                    {/* Placa OPCIONAL — não bloqueia cotação */}
-                    <div>
-                      <PillInput
-                        label="Placa do veículo (opcional)"
-                        name="placa"
-                        value={form.placa}
-                        error={errors.placa}
-                        onChange={v => set('placa', maskPlaca(v))}
-                        placeholder="ABC1D23 — deixe em branco se não souber"
-                        mono
-                        disabled={loading}
-                      />
-                    </div>
+                    {/* Placa: obrigatória no usado, nem aparece no zero km */}
+                    {form.condicao === 'usado' && (
+                      <div>
+                        <PillInput
+                          label="Placa do veículo"
+                          name="placa"
+                          value={form.placa}
+                          error={errors.placa}
+                          onChange={v => set('placa', maskPlaca(v))}
+                          placeholder="RIO2A18"
+                          mono
+                          disabled={loading}
+                        />
+                        {!errors.placa && plateCheck.status === 'checking' && (
+                          <p className="mt-1.5 ml-4 text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Conferindo a placa...
+                          </p>
+                        )}
+                        {!errors.placa && plateCheck.status === 'found' && (
+                          <p className="mt-1.5 ml-4 text-xs text-[#10B981] font-semibold flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5" />
+                            Placa confirmada{plateCheck.marca ? `: ${plateCheck.marca}` : ''}
+                            {plateCheck.ano ? ` ${plateCheck.ano}` : ''}
+                          </p>
+                        )}
+                        {/* Aviso, não bloqueio: pode ser carro novo na base ou consulta fora do ar */}
+                        {!errors.placa && plateCheck.status === 'notfound' && (
+                          <p className="mt-1.5 ml-4 text-xs text-[#F2911D] font-medium">
+                            Não localizamos essa placa. Confira se digitou certo — se estiver correta, pode seguir normalmente.
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     <p className="text-[11px] text-[#94A3B8] leading-snug pt-1">
-                      Valor estimado pela tabela FIPE. O consultor confirma o valor final com a placa real.
+                      {form.condicao === 'zero'
+                        ? 'Veículo zero km não precisa de placa agora. O consultor cadastra a placa assim que você emplacar.'
+                        : 'Valor estimado pela tabela FIPE. O consultor confirma o valor final com a placa real.'}
                     </p>
                   </div>
 
-                  {/* Leilão / Remarcado */}
+                  {/* Leilão / Remarcado — não faz sentido pra zero km */}
+                  {form.condicao !== 'zero' && (
                   <div>
                     <label className="block text-sm font-semibold text-[#1A2754] mb-2">Veículo de leilão ou remarcado?</label>
                     <div className="grid grid-cols-3 gap-3">
@@ -916,6 +1015,7 @@ export default function CotacaoPage() {
                       </p>
                     )}
                   </div>
+                  )}
 
                   {/* Carro de aplicativo */}
                   <div>
@@ -1150,7 +1250,7 @@ export default function CotacaoPage() {
                     setExcluded(false)
                     setVehicle(null)
                     setPlans([])
-                    setForm({ nome: '', whatsapp: '', email: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' })
+                    setForm({ nome: '', whatsapp: '', email: '', condicao: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' })
                   }}
                   className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#1A2754] transition-colors"
                 >
@@ -1380,7 +1480,7 @@ export default function CotacaoPage() {
                   className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#1A2754] transition-colors">
                   <ArrowLeft className="w-4 h-4" /> Editar dados
                 </button>
-                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setFipeMarcaCode(''); setFipeMarcaText(''); setFipeModeloCode(''); setFipeModeloText(''); setFipeModeloCodFipe(''); setFipeAnoCode(''); whatsappClicked.current = false }}
+                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', condicao: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setFipeMarcaCode(''); setFipeMarcaText(''); setFipeModeloCode(''); setFipeModeloText(''); setFipeModeloCodFipe(''); setFipeAnoCode(''); whatsappClicked.current = false }}
                   className="text-sm text-[#293C82] hover:text-[#3D72DE] transition-colors">
                   Nova simulação
                 </button>
