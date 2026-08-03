@@ -299,7 +299,10 @@ Termine com "## Em resumo" (bullets) + "## Perguntas frequentes" + CTA final.`;
       if (!c) continue;
       const clean = c.toLowerCase().replace(/[.!?]+$/, '').trim();
       const wordCount = clean.split(/\s+/).length;
-      if (wordCount < 1 || wordCount > 6) continue;
+      // Teto 8, nao 6: o Agente 01 enriquece a keyword com " no rio de janeiro"
+      // (4 palavras), entao "vender moto financiada no rio de janeiro" tem 7 e era
+      // descartada — junto com praticamente toda keyword-alvo, sobrando so as genericas.
+      if (wordCount < 1 || wordCount > 8) continue;
       if (seen.has(clean)) continue;
       // guard 2.4 do Reviewer: keywords nao podem repetir o title do frontmatter
       if (seoTitleNorm.includes(clean) && clean.split(/\s+/).length > 4) continue;
