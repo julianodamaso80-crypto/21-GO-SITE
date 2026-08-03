@@ -32,6 +32,7 @@ import {
   activationInstallment12x,
 } from '@/data/pricing'
 import { getExclusionReason, type ExclusionReason } from '@/data/vehicle-exclusions'
+import { buildContratarMessage } from '@/lib/quote-message'
 
 /* ─── Types ─── */
 interface FormData {
@@ -185,6 +186,15 @@ export default function CotacaoPage() {
   const [leadId, setLeadId] = useState<string | null>(null)
   const whatsappClicked = useRef(false)
 
+  // Semente da variação da mensagem de contratação (ver quote-message.ts).
+  // Sorteada só no client, depois da hidratação, pra não gerar mismatch de SSR.
+  // Enquanto não existe leadId, é ela que faz dois clientes mandarem textos
+  // diferentes pro mesmo número — que é o ponto todo do anti-ban.
+  const [msgSeed, setMsgSeed] = useState('')
+  useEffect(() => {
+    setMsgSeed(`${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`)
+  }, [])
+
   // Helper: notify WhatsApp click to API (legado + backend/CRM com envio imediato de PDF)
   const notifyWhatsAppClick = useCallback(() => {
     whatsappClicked.current = true
@@ -294,14 +304,7 @@ export default function CotacaoPage() {
     return () => { cancelled = true }
   }, [])
 
-  // Veículo que não fazemos: some com o botão flutuante do WhatsApp enquanto
-  // essa tela estiver aberta. Ordem do dono (31/07/2026) — se a 21Go não
-  // protege esse veículo, não pode sobrar nenhum caminho pro cliente puxar
-  // atendimento. O botão mora no layout global, por isso o controle é no body.
-  useEffect(() => {
-    document.body.classList.toggle('sem-whatsapp', excluded)
-    return () => document.body.classList.remove('sem-whatsapp')
-  }, [excluded])
+  // (o toggle `sem-whatsapp` saiu junto com o botão flutuante — 03/08/2026)
 
   // Carrega modelos quando marca + ano são selecionados (PowerCRM exige cb+cy juntos)
   useEffect(() => {
@@ -584,8 +587,50 @@ export default function CotacaoPage() {
 
   // ── CTA de contratação (reaproveitado em vários pontos do resultado) ──
   // Mesmo link/rastreamento em todos os botões "Quero contratar".
+  //
+  // A mensagem sai VARIADA (quote-message.ts) e com o contexto completo da
+  // simulação: tudo que o cliente marcou (leilão, carro de app, danos a
+  // terceiros, adesivo, seguro atual) + a lista inteira de planos que ele viu
+  // na tela, marcando qual escolheu. A consultora não precisa perguntar de
+  // novo o que o site já sabe.
+  const planMonthlyOf = (p: QuotePlan) => {
+    const pIsMoto = p.id === 'moto-400' || p.id === 'moto-1000'
+    return p.monthly + carroAppExtra + (form.danosTerceiros === 'sim' && pIsMoto ? 22 : 0)
+  }
   const contratarHref = selectedPlan && vehicle
-    ? `/api/wa?text=${encodeURIComponent(`Olá! Fiz uma simulação no site.\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.email ? `\nE-mail: ${form.email}` : ''}\nPlaca: ${form.placa}${form.leilao !== 'nao' ? `\nOrigem: ${form.leilao === 'leilao' ? 'Leilão' : 'Remarcado'}` : ''}${form.carroApp === 'sim' ? `\nCarro de aplicativo: Sim (Uber/99)` : ''}${motoTerceirosExtra > 0 ? `\nDanos a Terceiros (moto): Sim (+R$ 22/mês)` : ''}${form.temSeguro === 'sim' ? `\nSeguro/proteção atual: ${form.nomeSeguro.trim() || 'Sim (não informado)'}` : ''}\nVeículo: ${vehicleLabel}\nFIPE: R$ ${fipeFormatted}\nPlano: ${selectedPlan.name}\nMensalidade: R$ ${priceFormatted}/mês\nAtivação: R$ ${formatPrice(ativacaoAvista)} à vista no cartão ou 12x de R$ ${formatPrice(ativacaoParcela12x)}\nQuero contratar!`)}`
+    ? `/api/wa?text=${encodeURIComponent(buildContratarMessage({
+        nome: form.nome,
+        whatsapp: form.whatsapp,
+        email: form.email.trim() || undefined,
+        placa: form.placa.trim() || undefined,
+        tipo: fipeKind === 'motos' ? 'Moto' : 'Carro',
+        veiculo: vehicleLabel,
+        fipeFormatted,
+        leilao: form.leilao,
+        carroApp: form.carroApp === 'sim',
+        // Só é opção real em plano de moto — em carro nem aparece na tela.
+        danosTerceiros: selIsMoto ? form.danosTerceiros === 'sim' : null,
+        seguroAtual: form.temSeguro === 'sim'
+          ? (form.nomeSeguro.trim() || 'Sim (não informou qual)')
+          : null,
+        adesivo: isMoto
+          ? null
+          : {
+              aceito: stickerAccepted,
+              percentual: stickerPct,
+              valorFormatted: stickerPriceFormatted,
+            },
+        planos: plans.map((p, idx) => ({
+          name: p.name,
+          monthlyFormatted: formatPrice(planMonthlyOf(p)),
+          selected: idx === selectedPlanIdx,
+        })),
+        planoEscolhido: selectedPlan.name,
+        mensalidadeFormatted: priceFormatted,
+        ativacaoAvistaFormatted: formatPrice(ativacaoAvista),
+        ativacao12xFormatted: formatPrice(ativacaoParcela12x),
+        seed: leadId || msgSeed,
+      }))}`
     : '#'
   const handleContratarClick = () => {
     if (!selectedPlan) return

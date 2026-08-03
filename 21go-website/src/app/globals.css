@@ -288,9 +288,5 @@ main > div > section:not(:first-of-type) {
   contain-intrinsic-size: auto 900px;
 }
 
-/* Tela "não fazemos esse veículo": nenhum caminho pro cliente puxar atendimento.
-   O botão flutuante do WhatsApp mora no layout global, então a página de cotação
-   marca o body enquanto essa tela estiver na frente. */
-body.sem-whatsapp a[aria-label="Fale conosco pelo WhatsApp"] {
-  display: none;
-}
+/* O botão flutuante do WhatsApp foi removido do layout (03/08/2026) — a regra
+   `body.sem-whatsapp` que o escondia na tela de veículo excluído saiu junto. */

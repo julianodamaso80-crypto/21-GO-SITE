@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import { WhatsAppButton } from '@/components/ui/WhatsAppButton'
 import { GTMProvider } from '@/components/GTMProvider'
 import { MetaPixelScripts } from '@/components/MetaPixelScripts'
 import { GoogleAdsConversionScripts } from '@/components/GoogleAdsConversionScripts'
@@ -66,7 +65,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           <main>{children}</main>
           <Footer />
-          <WhatsAppButton />
+          {/* Botão flutuante do WhatsApp removido (ordem do dono, 03/08/2026):
+              o único caminho pro atendimento é a simulação em /cotacao. */}
           <MobileCTA />
         </SmoothScrollProvider>
       </body>
