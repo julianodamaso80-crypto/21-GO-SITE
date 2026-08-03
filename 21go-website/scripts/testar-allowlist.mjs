@@ -35,3 +35,18 @@ test('id em texto funciona — o front manda string', () => {
 test('a lista tem tamanho de gente grande (extracao vazia quebraria a cotacao inteira)', () => {
   assert.ok(ALLOWLIST_TAMANHO > 4000, `allowlist com so ${ALLOWLIST_TAMANHO} versoes`)
 })
+
+/**
+ * Nomes reais medidos no `POST /api/plans/` em 03/08/2026. "ROUBO E FURTO + Ass 24h +
+ * Monitoramento" e a armadilha: contem "Monitoramento" no fim e comeca com "Roubo e Furto",
+ * e nao vale como protecao pro site.
+ */
+test('so plano de protecao de verdade conta', async () => {
+  const { ePlanoDeProtecao } = await import('../src/lib/powercrm-planos.regras.ts')
+  for (const nome of ['BÁSICO', 'Do Seu Jeito', 'VIP', 'PREMIUM', 'VIP SUV', 'VIP ESPECIAIS', 'VIP MOTOS (MOTOS ATÉ 1.000 CC)']) {
+    assert.equal(ePlanoDeProtecao(nome), true, nome)
+  }
+  for (const nome of ['Monitoramento', 'Monitoramento 24h Moto', 'Monitoramento VEÍCULOS PESADOS', 'ROUBO E FURTO + Ass 24h + Monitoramento', 'ROUBO E FURTO + ass 24h + Monitoramento', '']) {
+    assert.equal(ePlanoDeProtecao(nome), false, nome)
+  }
+})

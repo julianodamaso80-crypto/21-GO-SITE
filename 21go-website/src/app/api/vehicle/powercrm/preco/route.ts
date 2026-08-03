@@ -4,6 +4,7 @@ import { lookupFipeDirect } from '@/lib/fipe-direct'
 import { getApplicablePlans, isLeilaoOrigin, type QuotePlan } from '@/data/pricing'
 import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
 import { isYearTooOld } from '@/data/vehicle-exclusions'
+import { temProtecaoNoPowerAoVivo } from '@/lib/powercrm-planos'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -56,32 +57,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'ano inválido' }, { status: 200 })
   }
 
-  // 0) Quem decide se fazemos o veículo é o PowerCRM, versão por versão. Se a versão não está em
-  //    nenhuma tabela de proteção, o consultor também não consegue cotar lá — então o site não
-  //    pode mostrar preço. Decidido no servidor de propósito: é a camada que o cliente não burla.
-  //    Vale antes do FIPE pra não gastar consulta externa com veículo que não vai ser cotado.
-  const temPlano = planoNoPowerCrm(modelId)
-  const motivoExclusao = isYearTooOld(yearStr) ? 'year' : temPlano === false ? 'model' : null
-  if (motivoExclusao) {
-    return NextResponse.json({
-      success: true,
-      excluded: true,
-      reason: motivoExclusao,
-      vehicle: {
-        marca: brandText,
-        modelo: modelText,
-        ano: yearStr,
-        fipeValue: null,
-        fipeCode: codFipe || null,
-        categoria: tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL',
-        combustivel: null,
-      },
-      powercrm: { brandId: Number(brandId), modelId: Number(modelId), yearId: null },
-      plans: [],
-    })
-  }
-
-  // 1) Pega ano-modelo (mdlYr) detalhado do PowerCRM — necessário pra criar lead
+  // 1) Pega ano-modelo (mdlYr) detalhado do PowerCRM — necessário pra criar lead e pra
+  //    perguntar ao Power quais planos ele daria pra esse veículo
   let mdlYr: number | undefined
   let combustivel: string | undefined
   try {
@@ -97,7 +74,34 @@ export async function POST(req: NextRequest) {
     // segue — mdlYr é opcional
   }
 
-  // 2) Pega valor FIPE da Parallelum (fonte de verdade do VALOR — PowerCRM não devolve)
+  // 2) Quem decide se fazemos o veículo é o PowerCRM. Perguntamos a ele primeiro (é a resposta
+  //    que o consultor veria) e só caímos na allowlist extraída quando a API não responde.
+  //    Fica no servidor de propósito — é a camada que o cliente não burla — e antes do FIPE,
+  //    pra não gastar consulta externa com veículo que não vai ser cotado.
+  const anoVelhoDemais = isYearTooOld(yearStr)
+  const aoVivo = anoVelhoDemais ? null : await temProtecaoNoPowerAoVivo(modelId, mdlYr)
+  const temPlano = aoVivo !== null ? aoVivo : planoNoPowerCrm(modelId)
+  const motivoExclusao = anoVelhoDemais ? 'year' : temPlano === false ? 'model' : null
+  if (motivoExclusao) {
+    return NextResponse.json({
+      success: true,
+      excluded: true,
+      reason: motivoExclusao,
+      vehicle: {
+        marca: brandText,
+        modelo: modelText,
+        ano: yearStr,
+        fipeValue: null,
+        fipeCode: codFipe || null,
+        categoria: tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL',
+        combustivel: combustivel || null,
+      },
+      powercrm: { brandId: Number(brandId), modelId: Number(modelId), yearId: mdlYr || null },
+      plans: [],
+    })
+  }
+
+  // 3) Pega valor FIPE da Parallelum (fonte de verdade do VALOR — PowerCRM não devolve)
   const direct = await lookupFipeDirect({
     brand: brandText,
     model: modelText,
