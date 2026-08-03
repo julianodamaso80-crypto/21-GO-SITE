@@ -88,6 +88,26 @@ const BASE_SEEDS: Array<{ seed: string; category: KeywordCategory }> = [
   { seed: 'cnh suspensa', category: 'educativo' },
   { seed: 'tabela fipe', category: 'educativo' },
   { seed: 'sinistro de veiculo', category: 'educativo' },
+  // ---- BYD / eletrico (2 artigos/dia, decisao do dono em 2026-08-03) ----
+  // Medido na API: o volume esta na DOR, nao no nome do carro. "byd dolphin preco"
+  // e intent de quem vai COMPRAR o carro (dificuldade alta, nao vira lead nosso);
+  // ja "bateria byd" tem 5.400/mes com dificuldade 0, e "seguro de carro eletrico e
+  // mais caro" e exatamente a dor que a protecao patrimonial resolve.
+  { seed: 'bateria byd', category: 'byd' },
+  { seed: 'seguro byd', category: 'byd' },
+  { seed: 'seguro carro eletrico', category: 'byd' },
+  { seed: 'manutencao carro eletrico', category: 'byd' },
+  { seed: 'revisao byd', category: 'byd' },
+  { seed: 'garantia byd', category: 'byd' },
+  { seed: 'byd dolphin', category: 'byd' },
+  { seed: 'byd song plus', category: 'byd' },
+  { seed: 'byd seal', category: 'byd' },
+  { seed: 'byd king', category: 'byd' },
+  { seed: 'byd yuan plus', category: 'byd' },
+  { seed: 'carro eletrico', category: 'byd' },
+  { seed: 'recarga carro eletrico', category: 'byd' },
+  { seed: 'autonomia carro eletrico', category: 'byd' },
+  { seed: 'desvalorizacao carro eletrico', category: 'byd' },
 ];
 
 /**
@@ -203,8 +223,23 @@ interface Output {
   errors: string[];
 }
 
+/**
+ * Cluster BYD (decisao do dono em 2026-08-03): 2 artigos/dia mirando dono de BYD.
+ *
+ * O criterio e a MARCA/eletrificacao, entao vem antes das outras regras — senao
+ * "byd dolphin" cairia em 'carros' e disputaria o slot do conteudo tradicional.
+ */
+function isByd(keyword: string): boolean {
+  const k = normalize(keyword);
+  if (/\bbyd\b/.test(k)) return true;
+  if (/\b(dolphin|seal|song plus|song pro|yuan plus|yuan pro|han|tan|king|shark|blade)\b/.test(k)) return true;
+  if (/\bcarro[s]? eletrico[s]?\b|\beletrico[s]?\b|\bhibrido[s]?\b|\bev\b/.test(k)) return true;
+  return false;
+}
+
 function classify(keyword: string, fallback: KeywordCategory = 'educativo'): KeywordCategory {
   const k = keyword.toLowerCase();
+  if (isByd(keyword)) return 'byd';
   if (/\b(moto|motos|motociclista|motoboy|motoqueiro)\b/.test(k)) return 'motos';
   if (/\b(frota|frotas|delivery|aplicativo|uber|99|ifood)\b/.test(k)) return 'frotas';
   if (/\b(carro|carros|automovel|automoveis|veiculo|veiculos|sedan|suv|hatch)\b/.test(k)) return 'carros';
@@ -386,9 +421,16 @@ export const agent01: Agent<Input, Output> = {
         log.debug({ kw: c.keyword }, 'geografia de fora — descartada');
         continue;
       }
-      // Se nao tem RJ, ENRIQUECE com " no rio de janeiro" (mantém a regra geo, aproveita demanda real)
+
       let finalKw = c.keyword;
-      if (!hasRjModifier(finalKw)) {
+      // BYD e a UNICA categoria sem trava geografica (decisao do dono em 2026-08-03).
+      // Ninguem pesquisa "bateria byd rj": forcar o sufixo mataria os 5.400 buscas/mes
+      // e o artigo nao ranquearia pra ninguem. BYD e nicho e a 21Go atende o Brasil
+      // inteiro, entao dono de BYD em qualquer estado e lead valido.
+      // Ver [[project_21go_atende_brasil_inteiro]].
+      if (c.category === 'byd') {
+        // segue nacional, sem enrich
+      } else if (!hasRjModifier(finalKw)) {
         finalKw = enrichRj(finalKw);
         enriched++;
       }

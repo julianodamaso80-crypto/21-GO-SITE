@@ -4,7 +4,8 @@
 import { query, queryOne, exec } from '../pg.js';
 import { config } from '../../config.js';
 
-export type KeywordCategory = 'carros' | 'motos' | 'frotas' | 'educativo';
+/** 'byd' = cluster de carro eletrico/BYD (migration 231, 2026-08-03). */
+export type KeywordCategory = 'carros' | 'motos' | 'frotas' | 'educativo' | 'byd';
 export type KeywordSource = 'dataforseo' | 'gsc' | 'trends' | 'manual' | 'internal';
 export type KeywordIntent = 'informational' | 'navigational' | 'commercial' | 'transactional' | 'unknown';
 export type KeywordStatus = 'pending' | 'approved' | 'rejected' | 'used' | 'out_of_scope';

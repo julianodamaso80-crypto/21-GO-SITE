@@ -132,6 +132,48 @@ Todo artigo conecta com o servico 21Go. Educativo puro abstrato e PROIBIDO.
 
 SAIDA: APENAS o corpo do artigo em Markdown (sem frontmatter — sistema adiciona).`;
 
+/**
+ * Bloco extra pro cluster BYD (2 artigos/dia, decisao do dono em 2026-08-03).
+ *
+ * O objetivo e captar dono de BYD/eletrico. O que muda em relacao ao artigo padrao:
+ * o publico ja comprou o carro e a dor e o CUSTO DE PROTEGER (bateria cara, seguradora
+ * que recusa ou cobra caro em eletrico chines), nao a duvida de qual carro comprar.
+ * Sem recorte no Rio: a busca por BYD e nacional e a 21Go atende o Brasil inteiro.
+ */
+const BLOCO_BYD = `
+==================================================================
+ESTE ARTIGO E DO CLUSTER BYD / CARRO ELETRICO. REGRAS ADICIONAIS:
+==================================================================
+
+[PUBLICO] Escreva pra quem JA TEM o carro eletrico. Nunca escreva como resenha ou
+comparativo de compra. A pessoa ja passou pelo caixa — a duvida dela agora e como
+proteger um carro que a seguradora trata como problema.
+
+[DOR CENTRAL] Escolha UMA e desenvolva de verdade:
+- bateria: custo de reposicao, o que a garantia de fabrica cobre e o que NAO cobre
+- seguro tradicional: recusa, sobrepreco, franquia alta, perda total facil
+- pecas importadas e fila de oficina credenciada
+- roubo/furto e o que acontece com um eletrico sem rastreio
+- granizo, alagamento (o Brasil todo tem), colisao
+- desvalorizacao acelerada e o efeito disso na hora de repor o bem
+
+[GEOGRAFIA] NAO force "no Rio de Janeiro" no titulo nem no texto. Este cluster e
+NACIONAL. Se citar cidade, que seja como exemplo dentro de um caso real, nunca como
+recorte do artigo.
+
+[HONESTIDADE — critico] A 21Go analisa cada caso. Portanto:
+- NUNCA escreva que a 21Go "cobre a bateria", "cobre o BYD" ou qualquer promessa de
+  cobertura. Escreva que o veiculo eletrico PODE ser aceito mediante analise.
+- NUNCA cite valor de mensalidade, taxa de ativacao ou percentual. Quem informa preco
+  e o consultor, na cotacao.
+- NUNCA invente politica de montadora. Se citar garantia de fabrica, diga "consulte o
+  manual do seu modelo" ou cite a fonte.
+
+[CTA] O leitor tem um carro caro e uma duvida cara. Os CTAs devem oferecer a CONVERSA,
+nao o preco: "descubra se o seu {modelo} pode ser aceito na 21Go — [faca uma cotacao](/cotacao)".
+Cite o modelo especifico (Dolphin, Song Plus, Seal, King, Yuan Plus) quando o briefing trouxer.
+`;
+
 interface Input {
   topic: TopicRow;
   briefing: BriefingRow;
@@ -241,7 +283,7 @@ Termine com "## Em resumo" (bullets) + "## Perguntas frequentes" + CTA final.`;
 
     const r = await complete({
       tier: 'main',
-      system: SYSTEM_PROMPT,
+      system: topic.category === 'byd' ? SYSTEM_PROMPT + BLOCO_BYD : SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMsg }],
       max_tokens: 2800,
       temperature: 0.6,
@@ -258,6 +300,7 @@ Termine com "## Em resumo" (bullets) + "## Perguntas frequentes" + CTA final.`;
       motos: 'Motos',
       frotas: 'Frotas',
       educativo: 'Educativo',
+      byd: 'Carros Elétricos',
     }[topic.category] ?? 'Geral';
 
     // Keywords frontmatter: termos curtos (NAO duplica o titulo completo).

@@ -54,8 +54,20 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   // - Pra cada slot vazio, pega briefing dessa categoria
   // - Apos 3 slots, processa bonus ate `limit` total
   // ============================================================
-  type Slot = 'carros' | 'motos' | 'frotas';
-  const SLOTS_OBRIGATORIOS: Slot[] = ['carros', 'motos', 'frotas'];
+  type Slot = 'carros' | 'motos' | 'frotas' | 'byd';
+  /**
+   * Slots com QUANTIDADE. BYD tem 2 vagas proprias (decisao do dono em 2026-08-03):
+   * o objetivo e captar dono de BYD, que e um publico com dor especifica (bateria cara,
+   * seguradora que recusa ou cobra caro em eletrico chines) e ticket alto.
+   * Os 3 slots tradicionais continuam intactos — BYD nao tira espaco deles.
+   */
+  const SLOTS_DIARIOS: Array<{ cat: Slot; qtd: number }> = [
+    { cat: 'carros', qtd: 1 },
+    { cat: 'motos', qtd: 1 },
+    { cat: 'frotas', qtd: 1 },
+    { cat: 'byd', qtd: 2 },
+  ];
+  const SLOTS_OBRIGATORIOS: Slot[] = SLOTS_DIARIOS.map((s) => s.cat);
 
   // Conta artigos por categoria criados hoje
   const todayRows = await query<{ category: string; count: number }>(
@@ -69,9 +81,14 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   for (const r of todayRows) articlesHoje[r.category] = r.count;
   log.info({ articles_hoje: articlesHoje }, 'check slots diarios');
 
-  // Slots que ainda precisam ser preenchidos
-  const slotsFaltando = SLOTS_OBRIGATORIOS.filter((s) => (articlesHoje[s] ?? 0) === 0);
-  log.info({ slots_faltando: slotsFaltando }, 'slots obrigatorios pendentes');
+  // Quanto falta de cada categoria pra fechar a cota do dia
+  const faltaPorSlot = new Map<Slot, number>();
+  for (const s of SLOTS_DIARIOS) {
+    const falta = Math.max(0, s.qtd - (articlesHoje[s.cat] ?? 0));
+    if (falta > 0) faltaPorSlot.set(s.cat, falta);
+  }
+  const slotsFaltando = [...faltaPorSlot.keys()];
+  log.info({ falta_por_slot: Object.fromEntries(faltaPorSlot) }, 'slots obrigatorios pendentes');
 
   // ============================================================
   // REFILL AUTOMATICO (Sprint 6 — decisao user 2026-05-25)
@@ -83,7 +100,7 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
      FROM seo.briefings b
      JOIN seo.topics t ON t.id = b.topic_id
      LEFT JOIN seo.articles a ON a.briefing_id = b.id
-     WHERE a.id IS NULL AND t.category IN ('carros','motos','frotas')
+     WHERE a.id IS NULL AND t.category IN ('carros','motos','frotas','byd')
      GROUP BY t.category`,
   );
   const stockMap: Record<string, number> = {};
@@ -92,8 +109,12 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   // Um unico refill por execucao (antes eram 3 — um por categoria — e os 3 rodavam
   // o Agente 01 inteiro pra devolver 0 keywords novas, 95 vezes em 30 dias).
   // O Agente 01 ja pesquisa as 3 categorias numa passada so.
-  const REFILL_THRESHOLD = 2;
-  const catsSemEstoque = SLOTS_OBRIGATORIOS.filter((c) => (stockMap[c] ?? 0) < REFILL_THRESHOLD);
+  // Threshold proporcional a cota: BYD consome 2/dia, entao precisa de estoque maior
+  // pra nao secar antes do proximo research semanal.
+  const catsSemEstoque = SLOTS_DIARIOS
+    .filter((s) => (stockMap[s.cat] ?? 0) < s.qtd * 2)
+    .map((s) => s.cat);
+  const REFILL_THRESHOLD = 2; // mantido no log pra referencia
   if (catsSemEstoque.length > 0) {
     log.warn({ categorias: catsSemEstoque, estoque: stockMap, threshold: REFILL_THRESHOLD }, 'estoque baixo — 1 refill consolidado');
     try {
@@ -137,13 +158,19 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
 
   const briefingsToProcess: Array<{ briefing: BriefingRow; topic: TopicRow; slot: string }> = [];
 
-  // 1. Preenche slots obrigatorios primeiro
-  for (const slot of slotsFaltando) {
-    const candidatos = briefsByCategory[slot];
-    if (candidatos && candidatos.length > 0) {
-      briefingsToProcess.push({ ...candidatos.shift()!, slot });
-    } else {
-      log.warn({ slot }, `ATENCAO: slot obrigatorio '${slot}' sem briefing disponivel — rodar /runs/weekly pra gerar`);
+  // 1. Preenche slots obrigatorios primeiro (respeitando a cota de cada categoria)
+  for (const [slot, falta] of faltaPorSlot) {
+    const candidatos = briefsByCategory[slot] ?? [];
+    for (let i = 0; i < falta; i++) {
+      const c = candidatos.shift();
+      if (!c) {
+        log.warn(
+          { slot, falta_ainda: falta - i },
+          `ATENCAO: slot obrigatorio '${slot}' sem briefing disponivel — rodar /runs/weekly pra gerar`,
+        );
+        break;
+      }
+      briefingsToProcess.push({ ...c, slot });
     }
   }
 

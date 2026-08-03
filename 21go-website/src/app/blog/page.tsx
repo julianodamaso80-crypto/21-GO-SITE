@@ -16,6 +16,16 @@ const categoryColors: Record<string, string> = {
   Tecnologia: 'bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20',
   Comparativo: 'bg-[#F2911D]/10 text-[#F2911D] border-[#F2911D]/20',
   Geral: 'bg-[#64748B]/10 text-[#64748B] border-[#64748B]/20',
+  // Categorias que a esteira SEO gera — sem elas os 3 clusters principais (88 posts)
+  // caiam todos no cinza de "Geral". Paleta da marca: azul #293C82, laranja #F2911D,
+  // verde #C7D301.
+  Carros: 'bg-[#293C82]/10 text-[#293C82] border-[#293C82]/20',
+  Motos: 'bg-[#F2911D]/10 text-[#F2911D] border-[#F2911D]/20',
+  Frotas: 'bg-[#293C82]/10 text-[#1F2E63] border-[#293C82]/30',
+  Educativo: 'bg-[#64748B]/10 text-[#64748B] border-[#64748B]/20',
+  // O verde da marca puro (#C7D301) nao tem contraste suficiente como texto em fundo
+  // claro — o fundo/borda usam a cor da marca e o texto usa a versao escurecida.
+  'Carros Elétricos': 'bg-[#C7D301]/15 text-[#6B7300] border-[#C7D301]/40',
 }
 
 /**
