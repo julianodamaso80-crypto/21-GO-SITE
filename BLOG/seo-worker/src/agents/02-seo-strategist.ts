@@ -82,6 +82,10 @@ export const agent02: Agent<Input, Output> = {
     // 2) Pergunta ao LLM se vale virar artigo + titulo proposto
     let llmDecision: LlmDecision;
     let llmCost: number | null = null;
+    // 1 retry com temperatura 0: o Gemini Flash devolve JSON quebrado de vez em quando
+    // ("Unterminated string", "Expected double-quoted property name") e a keyword era
+    // descartada como PENDENTE, perdendo a pauta.
+    for (let tentativa = 1; ; tentativa++) {
     try {
       const r = await complete({
         tier: 'main',
@@ -108,15 +112,21 @@ Avalie e retorne JSON:
           },
         ],
         max_tokens: 800,
-        temperature: 0.3,
+        temperature: tentativa === 1 ? 0.3 : 0,
       });
       llmCost = r.cost_usd;
       llmDecision = parseJson(r.text);
+      break;
     } catch (e) {
-      log.error({ err: (e as Error).message, kw: k.keyword }, 'LLM falhou');
+      if (tentativa === 1) {
+        log.warn({ err: (e as Error).message, kw: k.keyword }, 'LLM devolveu JSON invalido — repetindo com temperature 0');
+        continue;
+      }
+      log.error({ err: (e as Error).message, kw: k.keyword }, 'LLM falhou nas 2 tentativas');
       return {
-        output: { topic_id: null, decision: 'PENDENTE', reason: `LLM erro: ${(e as Error).message}`, llm_cost_usd: null },
+        output: { topic_id: null, decision: 'PENDENTE', reason: `LLM erro: ${(e as Error).message}`, llm_cost_usd: llmCost },
       };
+    }
     }
 
     if (!llmDecision.approve) {

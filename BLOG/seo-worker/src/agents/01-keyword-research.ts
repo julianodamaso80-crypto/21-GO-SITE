@@ -157,6 +157,29 @@ function isBrandSearch(keyword: string): boolean {
 }
 
 /**
+ * Geografia de FORA da area de conteudo. Enriquecer essas com " no rio de janeiro"
+ * gera aberracao tipo "roubo de carro em sp no rio de janeiro" — que chegou a ser
+ * enviada pro estrategista. Melhor descartar.
+ */
+const OUTRAS_GEOGRAFIAS = [
+  'sp', 'sao paulo', 'são paulo', 'campinas', 'santos', 'guarulhos', 'osasco',
+  'bh', 'belo horizonte', 'minas gerais', 'mg', 'contagem', 'uberlandia',
+  'curitiba', 'parana', 'paraná', 'pr', 'londrina',
+  'porto alegre', 'rs', 'rio grande do sul', 'canoas',
+  'salvador', 'bahia', 'ba', 'recife', 'pernambuco', 'pe', 'fortaleza', 'ceara', 'ceará',
+  'brasilia', 'brasília', 'df', 'goiania', 'goiânia', 'goias', 'goiás',
+  'manaus', 'belem', 'belém', 'vitoria', 'vitória', 'espirito santo', 'espírito santo',
+  'florianopolis', 'florianópolis', 'santa catarina', 'sc', 'joinville', 'blumenau',
+  'natal', 'joao pessoa', 'joão pessoa', 'maceio', 'maceió', 'aracaju', 'teresina',
+  'campo grande ms', 'cuiaba', 'cuiabá', 'mato grosso',
+];
+
+function temOutraGeografia(keyword: string): boolean {
+  const norm = normalize(keyword);
+  return OUTRAS_GEOGRAFIAS.some((g) => new RegExp(`\\b${normalize(g).replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`).test(norm));
+}
+
+/**
  * Enriquece com modificador RJ — se já tem, retorna como está; senão sufixa " no rio de janeiro".
  * Usado pra aproveitar queries reais do GSC que vieram sem geo mas têm intent comercial/informativo.
  */
@@ -355,6 +378,12 @@ export const agent01: Agent<Input, Output> = {
       if (isCompetitorBrand(c.keyword)) {
         skippedNoRj++;
         log.debug({ kw: c.keyword }, 'marca de concorrente — descartada');
+        continue;
+      }
+      // Keyword de outra praca ("roubo de carro em sp") nao vira "... no rio de janeiro"
+      if (!hasRjModifier(c.keyword) && temOutraGeografia(c.keyword)) {
+        skipped++;
+        log.debug({ kw: c.keyword }, 'geografia de fora — descartada');
         continue;
       }
       // Se nao tem RJ, ENRIQUECE com " no rio de janeiro" (mantém a regra geo, aproveita demanda real)
