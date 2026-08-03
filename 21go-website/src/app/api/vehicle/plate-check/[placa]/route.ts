@@ -37,6 +37,17 @@ interface PowerPlatesResp {
   year?: string
 }
 
+/**
+ * O `brand` do PowerCRM vem cru, com marca e modelo grudados e às vezes uma
+ * letra solta na frente ("I TOYOTA HILUXSW4 SRV4X4"). Como isso aparece pro
+ * cliente logo abaixo do campo, corta a letra solta e encurta pra caber.
+ */
+function prettyBrand(raw: string): string {
+  const clean = raw.trim().replace(/^[A-Z]\s+/i, '').replace(/\s+/g, ' ')
+  const words = clean.split(' ')
+  return words.length > 3 ? words.slice(0, 3).join(' ') : clean
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ placa: string }> },
@@ -69,7 +80,7 @@ export async function GET(
       const data = (await res.json().catch(() => null)) as PowerPlatesResp | null
       result =
         data?.mensagem === 'ok' && data.brand
-          ? { status: 'found', marca: data.brand, ano: data.year?.match(/(\d{4})/g)?.pop() }
+          ? { status: 'found', marca: prettyBrand(data.brand), ano: data.year?.match(/(\d{4})/g)?.pop() }
           : { status: 'notfound' }
     }
   } catch {
