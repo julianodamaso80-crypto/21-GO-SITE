@@ -321,9 +321,17 @@ export const agent01: Agent<Input, Output> = {
 
         // Rotacao: nunca usadas primeiro, depois as menos recentes. Teto por execucao
         // pra nao estourar o budget do DataForSEO com um pool grande.
-        const seedsDaVez = [...BASE_SEEDS]
-          .sort((a, b) => (usadaEm.get(a.seed.toLowerCase().trim()) ?? 0) - (usadaEm.get(b.seed.toLowerCase().trim()) ?? 0))
-          .slice(0, SEEDS_POR_EXECUCAO);
+        const porMenosRecente = (a: { seed: string }, b: { seed: string }) =>
+          (usadaEm.get(a.seed.toLowerCase().trim()) ?? 0) - (usadaEm.get(b.seed.toLowerCase().trim()) ?? 0);
+
+        // BYD tem vagas RESERVADAS na rotacao: com 48 seeds e 6 por execucao, o cluster
+        // passaria varias rodadas sem ser pesquisado — e ele precisa alimentar 2
+        // artigos/dia. Sem reserva, o slot obrigatorio de BYD fica sem briefing.
+        const SEEDS_BYD_RESERVADAS = 2;
+        const seedsByd = BASE_SEEDS.filter((s) => s.category === 'byd').sort(porMenosRecente).slice(0, SEEDS_BYD_RESERVADAS);
+        const seedsOutras = BASE_SEEDS.filter((s) => s.category !== 'byd').sort(porMenosRecente)
+          .slice(0, Math.max(0, SEEDS_POR_EXECUCAO - seedsByd.length));
+        const seedsDaVez = [...seedsByd, ...seedsOutras];
 
         log.info({
           pool: BASE_SEEDS.length,
@@ -389,13 +397,21 @@ export const agent01: Agent<Input, Output> = {
       }
     }
 
+    // Intercala por categoria antes de aplicar o limite. Em FIFO puro, as primeiras
+    // seeds da rotacao comiam a cota inteira: numa rodada de limit=40, "tabela fipe"
+    // sozinha levou as 40 vagas e as seeds de BYD — que rodaram na mesma execucao —
+    // nao inseriram NENHUMA keyword. BYD entra com peso 2 porque tem cota de 2
+    // artigos/dia contra 1 das demais.
+    const PESO: Partial<Record<KeywordCategory, number>> = { byd: 2 };
+    const ordenado = intercalarPorCategoria(collected, PESO);
+
     let inserted = 0;
     let skipped = 0;
     let skippedNoRj = 0;
     let enriched = 0;
     let skippedConhecidas = 0;
     const seen = new Set<string>();
-    for (const c of collected) {
+    for (const c of ordenado) {
       if (inserted >= limit) break;
       const violation = checkScope(c.keyword);
       if (violation) {
@@ -478,6 +494,40 @@ export const agent01: Agent<Input, Output> = {
     };
   },
 };
+
+/**
+ * Round-robin por categoria: distribui as vagas do `limit` entre as categorias em vez
+ * de entregar tudo pra quem chegou primeiro na lista. `peso` permite dar mais vagas a
+ * uma categoria por volta (BYD usa 2, porque publica 2 artigos/dia).
+ */
+function intercalarPorCategoria<T extends { category: KeywordCategory }>(
+  items: T[],
+  peso: Partial<Record<KeywordCategory, number>> = {},
+): T[] {
+  const buckets = new Map<KeywordCategory, T[]>();
+  for (const it of items) {
+    const b = buckets.get(it.category);
+    if (b) b.push(it);
+    else buckets.set(it.category, [it]);
+  }
+  const out: T[] = [];
+  let restante = items.length;
+  while (restante > 0) {
+    let mexeu = false;
+    for (const [cat, arr] of buckets) {
+      const n = peso[cat] ?? 1;
+      for (let i = 0; i < n; i++) {
+        const it = arr.shift();
+        if (!it) break;
+        out.push(it);
+        restante--;
+        mexeu = true;
+      }
+    }
+    if (!mexeu) break;
+  }
+  return out;
+}
 
 function mapIntent(raw: string | null | undefined): 'informational' | 'navigational' | 'commercial' | 'transactional' | 'unknown' {
   if (!raw) return 'unknown';
