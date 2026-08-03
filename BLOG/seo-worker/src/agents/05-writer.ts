@@ -266,9 +266,28 @@ Termine com "## Em resumo" (bullets) + "## Perguntas frequentes" + CTA final.`;
     // Filtro: cada keyword tem 1-6 palavras, sem pontuacao final, em lowercase.
     const slugTokens = slug.replace(/-/g, ' ');
     const seoTitleNorm = briefing.seo_title.toLowerCase().trim();
+
+    // A keyword de busca REAL (a query que originou a pauta) e o termo mais valioso aqui.
+    // topic.title e o titulo proposto pelo LLM — quase sempre longo demais pro filtro de
+    // 6 palavras, e era por isso que o frontmatter caia nas genericas.
+    let mainKeyword: string | null = null;
+    if (!ctx.dry_run && topic.main_keyword_id) {
+      try {
+        const { queryOne } = await import('../db/pg.js');
+        const row = await queryOne<{ keyword: string }>(
+          `SELECT keyword FROM seo.keywords WHERE id = $1`,
+          [topic.main_keyword_id],
+        );
+        mainKeyword = row?.keyword ?? null;
+      } catch (e) {
+        log.warn({ err: (e as Error).message }, 'nao consegui ler a keyword-alvo — seguindo sem');
+      }
+    }
+
     const rawCandidates = [
-      topic.title,                       // keyword-alvo do artigo
+      mainKeyword,                       // keyword de busca real (ex: "carro rm no rio de janeiro")
       ...(topic.secondary_keywords ?? []),
+      topic.title,
       slugTokens,
       topic.category, // ex: 'frotas'
       'protecao patrimonial veicular',
