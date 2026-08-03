@@ -16,7 +16,9 @@ import { agent05 } from '../agents/05-writer.js';
 import { agent06 } from '../agents/06-legal-reviewer.js';
 import { agent07 } from '../agents/07-onpage-seo.js';
 import { agent08 } from '../agents/08-design-repurpose.js';
+import { agent14 } from '../agents/14-content-updater.js';
 import { queuePublish } from '../queue.js';
+import { alertOps } from '../lib/alert.js';
 import { config } from '../config.js';
 
 const log = child('worker:write');
@@ -31,6 +33,8 @@ interface WorkerResult {
   drafts_created: number;
   drafts_approved: number;
   drafts_rejected: number;
+  /** Artigos existentes enriquecidos pelo Agente 14 quando nao havia pauta nova. */
+  refreshes_applied: number;
   total_cost_usd: number;
   errors: string[];
 }
@@ -85,21 +89,22 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   const stockMap: Record<string, number> = {};
   for (const r of stockByCategory) stockMap[r.category] = r.n;
 
+  // Um unico refill por execucao (antes eram 3 — um por categoria — e os 3 rodavam
+  // o Agente 01 inteiro pra devolver 0 keywords novas, 95 vezes em 30 dias).
+  // O Agente 01 ja pesquisa as 3 categorias numa passada so.
   const REFILL_THRESHOLD = 2;
-  for (const cat of SLOTS_OBRIGATORIOS) {
-    const stock = stockMap[cat] ?? 0;
-    if (stock < REFILL_THRESHOLD) {
-      log.warn({ category: cat, stock, threshold: REFILL_THRESHOLD }, 'estoque baixo — enfileirando refill');
-      try {
-        const { queueResearch } = await import('../queue.js');
-        await queueResearch.add('refill-focused', {
-          focus_category: cat,
-          limit: 5,
-          triggered_by: `refill:${cat}`,
-        });
-      } catch (e) {
-        log.error({ err: (e as Error).message, cat }, 'refill enqueue falhou');
-      }
+  const catsSemEstoque = SLOTS_OBRIGATORIOS.filter((c) => (stockMap[c] ?? 0) < REFILL_THRESHOLD);
+  if (catsSemEstoque.length > 0) {
+    log.warn({ categorias: catsSemEstoque, estoque: stockMap, threshold: REFILL_THRESHOLD }, 'estoque baixo — 1 refill consolidado');
+    try {
+      const { queueResearch } = await import('../queue.js');
+      await queueResearch.add(
+        'refill-consolidado',
+        { limit: 20, triggered_by: `refill:${catsSemEstoque.join('+')}` },
+        { jobId: `refill-${new Date().toISOString().slice(0, 10)}` }, // 1x por dia, idempotente
+      );
+    } catch (e) {
+      log.error({ err: (e as Error).message }, 'refill enqueue falhou');
     }
   }
 
@@ -250,13 +255,51 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
     }
   }
 
+  // ============================================================
+  // SLOT DE REFRESH (correcao 2026-08-03)
+  // Sobrou slot sem pauta NOVA? Em vez de ficar o dia inteiro sem produzir nada
+  // (ou pior, gerar artigo canibal), o Agente 14 enriquece um artigo que ja
+  // ranqueia e republica com last_updated. Volume mantido, zero canibalizacao.
+  // ============================================================
+  let refreshes = 0;
+  const slotsVazios = Math.max(0, limit - briefingsToProcess.length);
+  if (slotsVazios > 0 && !dry_run) {
+    log.info({ slots_vazios: slotsVazios }, 'sem pauta nova — acionando refresh de artigos existentes');
+    try {
+      const r14 = await withRun(
+        { agent_id: '14-content-updater', triggered_by: 'worker:write', input: { limit: slotsVazios } },
+        async () => {
+          const res = await agent14.run({ limit: slotsVazios }, ctx);
+          total_cost += res.output.total_cost_usd ?? 0;
+          return { result: res, finish: { output: res.output, llm_cost_usd: res.output.total_cost_usd ?? 0 } };
+        },
+      );
+      refreshes = r14.output.applied;
+      if (r14.output.errors.length) errors.push(...r14.output.errors.map((e) => `14: ${e}`));
+    } catch (e) {
+      errors.push(`14 refresh: ${(e as Error).message}`);
+      log.error({ err: (e as Error).message }, 'slot de refresh falhou');
+    }
+  }
+
   const result: WorkerResult = {
     drafts_created: drafts,
     drafts_approved: approved,
     drafts_rejected: rejected,
+    refreshes_applied: refreshes,
     total_cost_usd: Number(total_cost.toFixed(6)),
     errors,
   };
+
+  // Producao zero = falha silenciosa. Alerta ativo (foi assim que passamos 30 dias parados).
+  if (!dry_run && drafts === 0 && refreshes === 0) {
+    await alertOps(
+      'producao-zero',
+      `nenhum conteudo produzido hoje (0 artigos novos, 0 refresh). Briefings disponiveis: ${briefs.length}. Slots pendentes: ${slotsFaltando.join(', ') || 'nenhum'}.`,
+      { briefings_disponiveis: briefs.length, slots_faltando: slotsFaltando, errors },
+    ).catch((e) => log.error({ err: (e as Error).message }, 'alerta falhou'));
+  }
+
   log.info(result, 'job concluido');
   return result;
 }

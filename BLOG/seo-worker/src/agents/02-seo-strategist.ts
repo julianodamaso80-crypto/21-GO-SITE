@@ -30,6 +30,10 @@ interface Output {
   decision: TopicDecision;
   reason: string;
   llm_cost_usd: number | null;
+  /** Artigo alvo quando a decisao e ATUALIZAR_ARTIGO_EXISTENTE (o worker roteia pro Agente 14). */
+  target_article_id?: string;
+  /** Titulo que o LLM propos — vira o "angulo novo" absorvido pelo artigo existente. */
+  proposed_title?: string;
 }
 
 const PILLAR_PAGES: Record<string, string> = {
@@ -177,7 +181,16 @@ Avalie e retorne JSON:
       await setStatus(k.id, 'rejected', reason);
     }
 
-    return { output: { topic_id: topic.id, decision, reason, llm_cost_usd: llmCost } };
+    return {
+      output: {
+        topic_id: topic.id,
+        decision,
+        reason,
+        llm_cost_usd: llmCost,
+        target_article_id: targetArticleId,
+        proposed_title: llmDecision.proposed_title,
+      },
+    };
   },
 };
 

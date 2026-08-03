@@ -261,10 +261,13 @@ Termine com "## Em resumo" (bullets) + "## Perguntas frequentes" + CTA final.`;
     }[topic.category] ?? 'Geral';
 
     // Keywords frontmatter: termos curtos (NAO duplica o titulo completo).
-    // Prioriza: main_keyword da topic + secondary_keywords + slug tokens.
+    // A keyword-ALVO vem primeiro — antes caia direto nas genericas quando o topic
+    // nao tinha secondary_keywords, e o post saia com "educativo, protecao veicular".
     // Filtro: cada keyword tem 1-6 palavras, sem pontuacao final, em lowercase.
     const slugTokens = slug.replace(/-/g, ' ');
+    const seoTitleNorm = briefing.seo_title.toLowerCase().trim();
     const rawCandidates = [
+      topic.title,                       // keyword-alvo do artigo
       ...(topic.secondary_keywords ?? []),
       slugTokens,
       topic.category, // ex: 'frotas'
@@ -279,6 +282,8 @@ Termine com "## Em resumo" (bullets) + "## Perguntas frequentes" + CTA final.`;
       const wordCount = clean.split(/\s+/).length;
       if (wordCount < 1 || wordCount > 6) continue;
       if (seen.has(clean)) continue;
+      // guard 2.4 do Reviewer: keywords nao podem repetir o title do frontmatter
+      if (seoTitleNorm.includes(clean) && clean.split(/\s+/).length > 4) continue;
       seen.add(clean);
       keywords.push(clean);
       if (keywords.length >= 6) break;
@@ -292,7 +297,7 @@ Termine com "## Em resumo" (bullets) + "## Perguntas frequentes" + CTA final.`;
 
     const frontmatter: ArticleFrontmatter = {
       title: briefing.seo_title,
-      description: truncate(briefing.h1, 160),
+      description: buildMetaDescription(body, briefing.h1),
       date: new Date().toISOString().slice(0, 10),
       author: '21Go',
       category: categoryDisplay,
@@ -386,6 +391,40 @@ function stripFrontmatterIfAny(text: string): string {
 
 function truncate(s: string, n: number): string {
   if (s.length <= n) return s;
-  return s.slice(0, n - 1).trim() + '…';
+  // corta na ultima palavra inteira pra nao deixar termo picado na SERP
+  const cut = s.slice(0, n - 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > n * 0.6 ? cut.slice(0, lastSpace) : cut).trim() + '…';
+}
+
+/**
+ * Meta description de verdade (150-160 chars).
+ *
+ * Antes era `truncate(briefing.h1, 160)` — ou seja, o H1 repetido no lugar da
+ * description, o que desperdicava a linha de venda da SERP. Agora usa o TL;DR
+ * (resposta direta que o proprio Writer ja escreve pro AI Overview) e cai no H1
+ * so se o artigo vier sem TL;DR.
+ */
+function buildMetaDescription(body: string, h1Fallback: string): string {
+  const tldr = /\*\*TL;DR:?\*\*\s*(.+?)(?:\n|$)/i.exec(body);
+  const raw = tldr?.[1]?.trim();
+  if (raw && raw.length >= 60) {
+    return truncate(stripMarkdown(raw), 158);
+  }
+  // fallback 1: primeiro paragrafo com corpo util
+  const firstPara = body
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .find((p) => p.length > 80 && !p.startsWith('#') && !p.startsWith('>') && !p.startsWith('|'));
+  if (firstPara) return truncate(stripMarkdown(firstPara), 158);
+  return truncate(h1Fallback, 158);
+}
+
+function stripMarkdown(s: string): string {
+  return s
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')  // links
+    .replace(/[*_`>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 

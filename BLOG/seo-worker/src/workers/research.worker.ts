@@ -8,6 +8,7 @@ import type { Job } from 'bullmq';
 import { child } from '../lib/logger.js';
 import { withRun } from '../db/repositories/agent-runs.js';
 import { listPending } from '../db/repositories/keywords.js';
+import { insertRecommendation } from '../db/repositories/indexing.js';
 import { agent01 } from '../agents/01-keyword-research.js';
 import { agent02 } from '../agents/02-seo-strategist.js';
 import { agent04 } from '../agents/04-briefing.js';
@@ -27,6 +28,8 @@ interface WorkerResult {
   keywords_inserted: number;
   topics_approved: number;
   briefings_created: number;
+  /** Pautas duplicadas roteadas pro Agente 14 (refresh) em vez de virar artigo canibal. */
+  refresh_queued: number;
   total_cost_usd: number;
   errors: string[];
 }
@@ -59,6 +62,7 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
     : allPending.slice(0, limit);
   log.info({ focus: job.data.focus_category, total_pending: allPending.length, will_process: pendingKws.length }, 'keywords pra strategist');
   const approvedTopicIds: string[] = [];
+  let refreshQueued = 0;
 
   for (const kw of pendingKws) {
     try {
@@ -77,8 +81,35 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
           };
         },
       );
-      if ((r.output.decision === 'APROVAR_ARTIGO_NOVO' || r.output.decision === 'ATUALIZAR_ARTIGO_EXISTENTE') && r.output.topic_id) {
+
+      // ===== Roteamento por decisao (correcao 2026-08-03) =====
+      // ANTES: APROVAR e ATUALIZAR caiam os dois no Agente 04 (briefing) -> Writer criava
+      // artigo NOVO com slug "-2". Resultado: 105 dos 113 artigos nasceram de topics que o
+      // proprio sistema marcou como duplicados (ex: 11 posts quase iguais sobre "remarcado").
+      // AGORA: ATUALIZAR vira recomendacao no artigo que ja ranqueia; o Agente 14 absorve
+      // o angulo novo como secao e republica. So APROVAR_ARTIGO_NOVO gera artigo novo.
+      if (r.output.decision === 'APROVAR_ARTIGO_NOVO' && r.output.topic_id) {
         approvedTopicIds.push(r.output.topic_id);
+      } else if (r.output.decision === 'ATUALIZAR_ARTIGO_EXISTENTE' && r.output.target_article_id && !dry_run) {
+        try {
+          await insertRecommendation({
+            type: 'expand_content',
+            article_id: r.output.target_article_id,
+            priority: 3,
+            recommendation: r.output.proposed_title ?? kw.keyword,
+            reason: `pauta duplicada absorvida em vez de virar artigo canibal — ${r.output.reason}`,
+            data: {
+              angle: r.output.proposed_title ?? kw.keyword,
+              new_keyword: kw.keyword,
+              topic_id: r.output.topic_id,
+              source: 'agent:02',
+            },
+          });
+          refreshQueued++;
+          log.info({ kw: kw.keyword, target: r.output.target_article_id }, 'duplicada -> refresh do artigo existente');
+        } catch (e) {
+          errors.push(`02 rec kw=${kw.keyword}: ${(e as Error).message}`);
+        }
       }
     } catch (e) {
       errors.push(`02 kw=${kw.keyword}: ${(e as Error).message}`);
@@ -121,6 +152,7 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
     keywords_inserted: keywordsResult.output.inserted,
     topics_approved: approvedTopicIds.length,
     briefings_created: briefings,
+    refresh_queued: refreshQueued,
     total_cost_usd: Number(total_cost.toFixed(6)),
     errors,
   };

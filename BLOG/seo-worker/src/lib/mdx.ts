@@ -14,6 +14,11 @@ export interface ArticleFrontmatter {
   category: string;      // 'Carros' | 'Motos' | 'Frotas' | 'Educativo'
   keywords: string[];
   image: string;         // path absoluto, ex: '/blog/<slug>.jpg' ou '/blog/default.jpg'
+  /**
+   * Data do ultimo refresh (Agente 14). O site le como `last_updated` e usa em
+   * `dateModified` do Article schema + selo "Atualizado em" — sinal de freshness.
+   */
+  last_updated?: string;
 }
 
 export function buildMdx(frontmatter: ArticleFrontmatter, body: string): string {
