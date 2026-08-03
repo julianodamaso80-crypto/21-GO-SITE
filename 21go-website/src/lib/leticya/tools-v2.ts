@@ -3,6 +3,7 @@ import 'server-only'
 import { z } from 'zod'
 import { tool } from 'ai'
 import { leticyaDb } from './db'
+import { getAllRelevantPlans, calcActivation, isLeilaoOrigin, formatPrice } from '@/data/pricing'
 
 /**
  * Tools v2 da Leticya — destiladas dos padrões reais observados em 263 conversas.
@@ -114,18 +115,34 @@ export const checkRejectedTool = tool({
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. simulateDiscount — calcula desconto contextual + REGISTRA cotação
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Perfil do lead = só CONTEXTO da conversa (fica registrado pra auditoria e
+ * orienta o tom do agente). NÃO define mais o valor da ativação.
+ *
+ * Antes cada perfil trazia um valor fixo (R$ 150 a R$ 300) e o `activation_full`
+ * era R$ 419,91 chumbado — ambos fora da tabela oficial e da regra revogada de
+ * junho/2026. Agora a ativação sai de `calcActivation` (pricing.ts), a mesma
+ * fonte da cotação do site e do PDF: max(plano escolhido, VIP) + R$ 50, piso
+ * R$ 249, BYD R$ 1.550 fixo. Ver [feedback_pricing_source_of_truth].
+ */
 const PROFILES = {
-  sem_boleto_sem_urgencia: { activation: 300, label: 'sem boleto, sem urgência' },
-  sem_boleto_fecha_hoje: { activation: 250, label: 'sem boleto, fechando hoje' },
-  com_boleto: { activation: 200, label: 'com boleto antigo da concorrência' },
-  com_boleto_fecha_hoje: { activation: 150, label: 'com boleto + fecha hoje' },
-  fipe_alta: { activation: 250, label: 'lead premium (FIPE > R$ 80k)' },
-  so_rastreador: { activation: 190, label: 'só rastreador (isenta ativação)' },
+  sem_boleto_sem_urgencia: { label: 'sem boleto, sem urgência' },
+  sem_boleto_fecha_hoje: { label: 'sem boleto, fechando hoje' },
+  com_boleto: { label: 'com boleto antigo da concorrência' },
+  com_boleto_fecha_hoje: { label: 'com boleto + fecha hoje' },
+  fipe_alta: { label: 'lead premium (FIPE > R$ 80k)' },
+  so_rastreador: { label: 'só rastreador' },
 } as const
+
+/** Ordem do plano de referência (piso da base da ativação) — igual à da cotação. */
+const VIP_REFERENCE_ORDER = [
+  'vip', 'suv', 'moto-1000', 'moto-400', 'especial',
+  'premium', 'do-seu-jeito', 'basico',
+] as const
 
 export const simulateDiscountTool = tool({
   description:
-    'Calcula desconto contextual para a ativação com base no perfil do lead. Registra a cotação em ai.lead_quotes pra auditoria. NÃO envia mensagem — só retorna valor sugerido pro agente usar na conversa.',
+    'Calcula a ativação oficial (tabela 21Go) pro plano do lead e registra a cotação em ai.lead_quotes pra auditoria. O valor NUNCA é negociado pela IA — sai de calcActivation. NÃO envia mensagem, só retorna o valor pro agente usar na conversa.',
   inputSchema: z.object({
     contact_id: z.string().describe('UUID do contato'),
     conversation_id: z.string().nullable().optional(),
@@ -133,6 +150,13 @@ export const simulateDiscountTool = tool({
       .enum(['basico', 'do-seu-jeito', 'vip', 'premium', 'suv', 'moto-400', 'moto-1000', 'especial']),
     fipe_value: z.number().positive(),
     monthly_brl: z.number().positive().describe('Valor mensal calculado por getPlanPrice'),
+    // Dados do veículo — usados pra achar o VIP de referência e detectar BYD.
+    marca: z.string().nullable().optional(),
+    modelo: z.string().nullable().optional(),
+    categoria: z.string().nullable().optional(),
+    combustivel: z.string().nullable().optional(),
+    cilindrada: z.number().nullable().optional(),
+    leilao: z.string().nullable().optional().describe("'nao' | 'leilao' | 'remarcado'"),
     profile: z.enum([
       'sem_boleto_sem_urgencia',
       'sem_boleto_fecha_hoje',
@@ -153,6 +177,21 @@ export const simulateDiscountTool = tool({
   execute: async (i) => {
     const p = PROFILES[i.profile]
     const validUntil = new Date(Date.now() + i.valid_hours * 3600_000).toISOString()
+
+    // Ativação pela REGRA OFICIAL (mesma fonte da cotação do site e do PDF):
+    // base = max(plano escolhido, VIP de referência) + R$ 50, piso 249, BYD 1.550.
+    const plans = getAllRelevantPlans(
+      i.fipe_value,
+      i.categoria ?? undefined,
+      i.combustivel ?? undefined,
+      i.cilindrada ?? undefined,
+      i.modelo ?? undefined,
+      isLeilaoOrigin(i.leilao ?? undefined),
+    )
+    const vipPlan = VIP_REFERENCE_ORDER.map((id) => plans.find((pl) => pl.id === id)).find((pl) => !!pl)
+    const isBYD = (i.marca || '').trim().toUpperCase().includes('BYD')
+    const activation = calcActivation(vipPlan?.monthly || i.monthly_brl, isBYD, i.monthly_brl)
+
     const db = leticyaDb()
     const { data, error } = await db
       .schema('ai')
@@ -164,8 +203,8 @@ export const simulateDiscountTool = tool({
         plan_id: i.plan_id,
         fipe_value_brl: i.fipe_value,
         monthly_brl: i.monthly_brl,
-        activation_full_brl: 419.91,
-        activation_offer_brl: p.activation,
+        activation_full_brl: activation,
+        activation_offer_brl: activation,
         tracker_included: i.profile !== 'so_rastreador',
         profile_used: i.profile,
         valid_until: validUntil,
@@ -178,11 +217,11 @@ export const simulateDiscountTool = tool({
     return {
       ok: true,
       quote_id: data.id,
-      activation_offer_brl: p.activation,
+      activation_offer_brl: activation,
       monthly_brl: i.monthly_brl,
       profile_label: p.label,
       valid_until: validUntil,
-      suggested_phrasing: `consegui aq no sistema R$ ${p.activation},00 ${i.profile === 'so_rastreador' ? 'só com o rastreador, ativação isenta' : 'incluindo rastreador'}. mensal fica R$ ${i.monthly_brl.toFixed(2).replace('.', ',')}. e se eu conseguir fechamos hoje?`,
+      suggested_phrasing: `a ativação fica R$ ${formatPrice(activation)} ${i.profile === 'so_rastreador' ? 'só com o rastreador' : 'incluindo rastreador'}. mensal R$ ${formatPrice(i.monthly_brl)}. fechamos hoje?`,
     }
   },
 })
