@@ -42,6 +42,12 @@ interface PowerPlatesResp {
  * letra solta na frente ("I TOYOTA HILUXSW4 SRV4X4"). Como isso aparece pro
  * cliente logo abaixo do campo, corta a letra solta e encurta pra caber.
  */
+/** Ano só quando é ano de verdade — o PowerCRM às vezes devolve "0000". */
+function parseAno(raw: string | undefined): string | undefined {
+  const ano = raw?.match(/(\d{4})/g)?.pop()
+  return ano && /^(19|20)\d{2}$/.test(ano) ? ano : undefined
+}
+
 function prettyBrand(raw: string): string {
   const clean = raw.trim().replace(/^[A-Z]\s+/i, '').replace(/\s+/g, ' ')
   const words = clean.split(' ')
@@ -82,7 +88,7 @@ export async function GET(
       const data = (await res.json().catch(() => null)) as PowerPlatesResp | null
       result =
         data?.mensagem === 'ok' && data.brand
-          ? { status: 'found', marca: prettyBrand(data.brand), ano: data.year?.match(/(\d{4})/g)?.pop() }
+          ? { status: 'found', marca: prettyBrand(data.brand), ano: parseAno(data.year) }
           : { status: 'notfound' }
     }
   } catch {
