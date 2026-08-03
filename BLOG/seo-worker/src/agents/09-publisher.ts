@@ -110,10 +110,10 @@ export const agent09: Agent<Input, Output> = {
         articleId: a.id, commit_sha: commitResult.commit_sha.slice(0, 7), branch: config.GITHUB_BRANCH_BASE,
       }, 'commit DIRETO na master — sem PR (modo auto-publish)');
 
-      // Dispara rebuild EasyPanel via SSH (best-effort — se SSH falha, ignora; cron de recheck pega depois)
-      void triggerEasyPanelRebuild().catch((e) => {
-        log.warn({ err: (e as Error).message }, 'rebuild EasyPanel via SSH falhou (nao bloqueante)');
-      });
+      // Sinaliza que ha commit novo pra publicar. O rebuild em si e feito por
+      // /root/blog-autodeploy.sh (cron no droplet), que detecta commit em
+      // 21go-website/ e reconstroi o servico social-21go_site.
+      await notifyDeployHook(a.slug);
 
       return {
         output: {
@@ -132,31 +132,34 @@ export const agent09: Agent<Input, Output> = {
 };
 
 /**
- * Dispara rebuild do site no EasyPanel via SSH + docker.
- * Best-effort: se falhar, cron de 15 em 15 minutos retenta detectar URL live e disparar 10-12.
+ * Avisa que ha conteudo novo pra publicar.
  *
- * Requer chave SSH em ~/.ssh/claude_21go autorizada em root@167.71.31.77.
- * Executa: 1) git pull no /etc/easypanel/projects/social-21go/site/code
- *          2) docker buildx build (multi-stage)
- *          3) docker service update --force --image easypanel/social-21go/site:latest social-21go_site
+ * A versao anterior chamava spawn('ssh', ...) com a chave privada do laptop do dev
+ * ('C:/Users/damas/.ssh/claude_21go') hardcoded como default. O container nao tem
+ * binario ssh, entao o spawn falhava com ENOENT — e como ENOENT chega pelo evento
+ * 'error' do ChildProcess (nao pela promise), o .catch() nao pegava e o processo
+ * inteiro morria. Na pratica: TODA publicacao derrubava o worker.
+ *
+ * Agora e só um webhook opcional, com erro contido. O rebuild de verdade fica com
+ * /root/blog-autodeploy.sh (cron no droplet), que nao precisa de credencial dentro
+ * do container e roda mesmo que este aviso falhe.
  */
-async function triggerEasyPanelRebuild(): Promise<void> {
-  const { spawn } = await import('child_process');
-  const sshKey = process.env.EASYPANEL_SSH_KEY ?? 'C:/Users/damas/.ssh/claude_21go';
-  const sshHost = process.env.EASYPANEL_HOST ?? 'root@167.71.31.77';
-  const remoteCmd = `cd /etc/easypanel/projects/social-21go/site/code && git pull origin master && cd 21go-website && docker buildx build -t easypanel/social-21go/site:latest --load . && docker service update --force --image easypanel/social-21go/site:latest social-21go_site`;
-
-  log.info({ host: sshHost }, 'disparando rebuild EasyPanel via SSH (background)');
-
-  // Dispara sem aguardar (fire-and-forget — vai demorar 5-10min)
-  const child = spawn('ssh', [
-    '-i', sshKey,
-    '-o', 'StrictHostKeyChecking=no',
-    '-o', 'ConnectTimeout=10',
-    sshHost,
-    remoteCmd,
-  ], { detached: true, stdio: 'ignore' });
-  child.unref();
-  log.info({ pid: child.pid }, 'SSH rebuild disparado em background');
+async function notifyDeployHook(slug: string): Promise<void> {
+  const hook = process.env.DEPLOY_WEBHOOK_URL;
+  if (!hook) {
+    log.info({ slug }, 'commit feito — rebuild fica com o cron blog-autodeploy do droplet');
+    return;
+  }
+  try {
+    const res = await fetch(hook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'blog-publish', slug }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    log.info({ slug, status: res.status }, 'deploy hook avisado');
+  } catch (e) {
+    log.warn({ err: (e as Error).message, slug }, 'deploy hook falhou (nao bloqueante)');
+  }
 }
 
