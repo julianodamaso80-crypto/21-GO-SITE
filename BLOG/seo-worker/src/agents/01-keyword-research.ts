@@ -38,51 +38,56 @@ const log = child('agent:01-keyword-research');
 const SEEDS_POR_EXECUCAO = 6;
 const JANELA_ROTACAO_DIAS = 30;
 
+/**
+ * IMPORTANTE — seeds precisam ser CURTAS (head terms que existem de verdade no
+ * indice do DataForSEO). Seeds longas e especificas do tipo
+ * "protecao veicular carro financiado rj" retornam ZERO sugestoes e cobram igual
+ * (USD 0.012 por chamada). Medido em 2026-08-03:
+ *   "protecao veicular carro financiado rj" -> 0 items
+ *   "protecao veicular"                     -> 224 items
+ * O recorte geografico nao vai na seed: o enrichRj() adiciona "no rio de janeiro"
+ * depois, em cima da demanda real que o DFS devolveu.
+ */
 const BASE_SEEDS: Array<{ seed: string; category: KeywordCategory }> = [
   // ---- carros ----
-  { seed: 'protecao veicular carro rio de janeiro', category: 'carros' },
-  { seed: 'protecao veicular suv rio de janeiro', category: 'carros' },
-  { seed: 'protecao veicular carro financiado rj', category: 'carros' },
-  { seed: 'protecao veicular carro seminovo rio de janeiro', category: 'carros' },
-  { seed: 'protecao veicular carro de aplicativo rj', category: 'carros' },
-  { seed: 'protecao veicular carro eletrico rio de janeiro', category: 'carros' },
-  { seed: 'protecao veicular picape rj', category: 'carros' },
-  { seed: 'protecao veicular carro antigo rio de janeiro', category: 'carros' },
-  { seed: 'protecao veicular hatch rio de janeiro', category: 'carros' },
-  { seed: 'protecao veicular sedan rj', category: 'carros' },
-  { seed: 'protecao veicular carro zero km rio de janeiro', category: 'carros' },
+  { seed: 'protecao veicular', category: 'carros' },
+  { seed: 'protecao veicular carro', category: 'carros' },
+  { seed: 'carro financiado', category: 'carros' },
+  { seed: 'carro de aplicativo', category: 'carros' },
+  { seed: 'carro seminovo', category: 'carros' },
+  { seed: 'carro eletrico', category: 'carros' },
+  { seed: 'suv', category: 'carros' },
+  { seed: 'picape', category: 'carros' },
   // ---- motos ----
-  { seed: 'protecao veicular moto rio de janeiro', category: 'motos' },
-  { seed: 'protecao moto entregador rj', category: 'motos' },
-  { seed: 'protecao veicular moto financiada rio de janeiro', category: 'motos' },
-  { seed: 'protecao veicular scooter rio de janeiro', category: 'motos' },
-  { seed: 'protecao veicular moto alta cilindrada rj', category: 'motos' },
-  { seed: 'protecao veicular moto usada rio de janeiro', category: 'motos' },
-  { seed: 'protecao moto delivery rio de janeiro', category: 'motos' },
+  { seed: 'protecao veicular moto', category: 'motos' },
+  { seed: 'seguro moto', category: 'motos' },
+  { seed: 'moto delivery', category: 'motos' },
+  { seed: 'motoboy', category: 'motos' },
+  { seed: 'moto financiada', category: 'motos' },
+  { seed: 'scooter', category: 'motos' },
   // ---- frotas (nunca caminhao) — 1 frota/dia obrigatoria ----
-  { seed: 'protecao frota delivery rio de janeiro', category: 'frotas' },
-  { seed: 'protecao frota motos rj ifood 99', category: 'frotas' },
-  { seed: 'protecao frota empresas rio de janeiro', category: 'frotas' },
-  { seed: 'protecao frota carros locadora rj', category: 'frotas' },
-  { seed: 'protecao frota vans rio de janeiro', category: 'frotas' },
-  { seed: 'protecao frota pequena empresa rj', category: 'frotas' },
-  { seed: 'protecao frota veiculos comerciais rio de janeiro', category: 'frotas' },
-  { seed: 'protecao frota representante comercial rj', category: 'frotas' },
-  // ---- educativo: transito/regulatorio do RJ ----
-  // O GSC ja mostrou demanda real aqui ("isencao de ipva rj", "licenciamento 2026 rj")
-  // em temas que o blog nao cobria — e onde ainda ha pauta genuinamente nova.
-  { seed: 'ipva rj isencao', category: 'educativo' },
-  { seed: 'licenciamento veiculo rj', category: 'educativo' },
-  { seed: 'detran rj vistoria veicular', category: 'educativo' },
-  { seed: 'multas de transito rio de janeiro', category: 'educativo' },
-  { seed: 'roubo de carro rio de janeiro estatisticas', category: 'educativo' },
-  { seed: 'chassi remarcado rj', category: 'educativo' },
-  { seed: 'leilao de carro rio de janeiro', category: 'educativo' },
-  { seed: 'transferencia de veiculo rj', category: 'educativo' },
-  { seed: 'diferenca seguro e protecao veicular rj', category: 'educativo' },
-  { seed: 'rastreador veicular rio de janeiro', category: 'educativo' },
-  { seed: 'documento crlv digital rj', category: 'educativo' },
-  { seed: 'cnh suspensa rio de janeiro', category: 'educativo' },
+  { seed: 'protecao de frota', category: 'frotas' },
+  { seed: 'frota de veiculos', category: 'frotas' },
+  { seed: 'gestao de frota', category: 'frotas' },
+  { seed: 'seguro de frota', category: 'frotas' },
+  { seed: 'locadora de veiculos', category: 'frotas' },
+  // ---- educativo: transito/regulatorio ----
+  // O GSC mostrou demanda real aqui ("isencao de ipva rj", "licenciamento 2026 rj")
+  // em temas que o blog nao cobre — e onde ainda ha pauta genuinamente nova.
+  { seed: 'ipva', category: 'educativo' },
+  { seed: 'licenciamento de veiculo', category: 'educativo' },
+  { seed: 'detran rj', category: 'educativo' },
+  { seed: 'vistoria veicular', category: 'educativo' },
+  { seed: 'multa de transito', category: 'educativo' },
+  { seed: 'roubo de carro', category: 'educativo' },
+  { seed: 'chassi remarcado', category: 'educativo' },
+  { seed: 'leilao de carro', category: 'educativo' },
+  { seed: 'transferencia de veiculo', category: 'educativo' },
+  { seed: 'rastreador veicular', category: 'educativo' },
+  { seed: 'crlv digital', category: 'educativo' },
+  { seed: 'cnh suspensa', category: 'educativo' },
+  { seed: 'tabela fipe', category: 'educativo' },
+  { seed: 'sinistro de veiculo', category: 'educativo' },
 ];
 
 /**
@@ -111,6 +116,34 @@ function hasRjModifier(keyword: string): boolean {
     const n = normalize(loc);
     return new RegExp(`\\b${n.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`).test(norm);
   });
+}
+
+/**
+ * Marca de CONCORRENTE. Com seeds curtas o DataForSEO devolve muita associacao rival
+ * ("star protecao veicular", "protefort protecao veicular"): trafego de quem procura
+ * outra empresa, que nao converte e nao merece artigo.
+ *
+ * Heuristica conservadora: so dispara quando a keyword TERMINA em "protecao veicular"
+ * (padrao de razao social) e o que vem antes nao e um qualificador generico.
+ */
+const QUALIFICADORES_GENERICOS = new Set([
+  'melhor', 'melhores', 'qual', 'quais', 'quanto', 'custa', 'custo', 'valor', 'valores',
+  'preco', 'precos', 'como', 'funciona', 'que', 'oque', 'sobre', 'tipos', 'tipo',
+  'associacao', 'associacoes', 'empresa', 'empresas', 'contratar', 'vale', 'pena',
+  'barata', 'barato', 'mensalidade', 'cotacao', 'simulacao', 'plano', 'planos',
+  'carro', 'carros', 'moto', 'motos', 'frota', 'frotas', 'suv', 'picape', 'veiculo', 'veiculos',
+  'rj', 'rio', 'janeiro', 'niteroi', 'nova', 'iguacu', 'caxias', 'duque',
+  'e', 'de', 'da', 'do', 'a', 'o', 'em', 'no', 'na', 'para', 'com', 'uma', 'um',
+  'seguro', 'seguradora', 'diferenca', 'entre', 'vantagens', 'desvantagens', 'reclame', 'aqui',
+  'confiavel', 'boa', 'bom', 'top', 'lista', 'ranking', '2024', '2025', '2026',
+]);
+
+function isCompetitorBrand(keyword: string): boolean {
+  const n = normalize(keyword).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!/protecao veicular$/.test(n)) return false;
+  const antes = n.replace(/\s*protecao veicular$/, '').trim();
+  if (!antes) return false;                       // a propria expressao generica
+  return antes.split(/\s+/).some((t) => !QUALIFICADORES_GENERICOS.has(t));
 }
 
 /** Brand search — query buscando a marca 21Go diretamente. Não vira blog. */
@@ -295,6 +328,12 @@ export const agent01: Agent<Input, Output> = {
       if (isBrandSearch(c.keyword)) {
         skippedNoRj++;
         log.debug({ kw: c.keyword }, 'brand-search — descartada');
+        continue;
+      }
+      // Marca de concorrente ("star protecao veicular") tambem nao vira pauta
+      if (isCompetitorBrand(c.keyword)) {
+        skippedNoRj++;
+        log.debug({ kw: c.keyword }, 'marca de concorrente — descartada');
         continue;
       }
       // Se nao tem RJ, ENRIQUECE com " no rio de janeiro" (mantém a regra geo, aproveita demanda real)
