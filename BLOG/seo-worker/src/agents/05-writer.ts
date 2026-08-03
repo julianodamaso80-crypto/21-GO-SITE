@@ -78,6 +78,16 @@ Sistema injeta automatic. links pra artigos relacionados pos-processamento.
 [V] CONEXAO COM PROTECAO VEICULAR:
 Todo artigo conecta com o servico 21Go. Educativo puro abstrato e PROIBIDO.
 
+[P] NUNCA CITE NUMERO DE BENEFICIO DE PLANO SEM DIZER O PLANO:
+Reboque, carro reserva, taxi, terceiros e afins MUDAM por plano (o reboque vai de 200km
+no Basico a 1.200km no Premium). Escrever "a 21Go cobre 400km de guincho" e enganoso pra
+quem tem o Basico.
+- ERRADO: "o guincho da 21Go cobre ate 400km"
+- CERTO:  "o reboque varia conforme o plano — [veja a comparacao](/protecao-veicular)"
+- CERTO:  "no plano Premium o reboque chega a 1.200km"
+Se nao souber a qual plano o numero pertence, NAO cite o numero: mande o leitor pra
+/protecao-veicular ou /cotacao.
+
 [X] NUNCA USAR:
 - "cobertura garantida" / "indenizacao garantida"
 - "aprovacao automatica" (so em negativa: "Nao existe aprovacao automatica" — ok)

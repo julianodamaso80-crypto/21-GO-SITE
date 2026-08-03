@@ -134,6 +134,27 @@ export const agent06: Agent<Input, Output> = {
       log.warn({ articleId: a.id }, 'aviso: link pra /faq ausente (recomendado)');
     }
 
+    // 2.3.1 — Numero de beneficio de plano sem dizer o plano.
+    // Reboque, carro reserva e taxi MUDAM por plano (reboque vai de 200km no Basico a
+    // 1.200km no Premium). Um artigo afirmando "a 21Go cobre 400km de guincho" — numero
+    // real, mas do plano Jeito — engana quem tem o Basico e vira reclamacao.
+    // Exige que a frase qualifique o plano ou remeta a comparacao.
+    const PLANO_MENCIONADO = /\b(b[aá]sico|jeito|vip|premium|conforme o plano|varia (conforme|por|de acordo com) o plano|depende do plano|cada plano)\b/i;
+    // So vale quando o numero esta falando de um BENEFICIO nosso. Sem esse recorte o
+    // guard barraria "autonomia de 400km", que e vocabulario normal de carro eletrico.
+    const CONTEXTO_BENEFICIO = /\b(reboque|guincho|carro reserva|t[aá]xi|assist[eê]ncia|cobre|cobertura|inclu[ií]|oferece)\b/i;
+    const frasesComBeneficio = bodyOnly
+      .split(/(?<=[.!?])\s+|\n/)
+      .filter((f) => CONTEXTO_BENEFICIO.test(f))
+      .filter((f) => /\b\d{2,4}\s*km\b/i.test(f) || /\b\d{1,2}\s*dias?\b/i.test(f));
+    const frasesSemPlano = frasesComBeneficio.filter((f) => !PLANO_MENCIONADO.test(f));
+    if (frasesSemPlano.length > 0) {
+      hardMatches.push({
+        pattern: `beneficio-sem-plano: "${frasesSemPlano[0]!.trim().slice(0, 90)}"`,
+        reason: 'cita numero de beneficio (reboque/carro reserva) sem dizer a qual plano pertence',
+      });
+    }
+
     // 2.4 — Keywords frontmatter NAO duplica o title
     const fmMatch = /^---\n([\s\S]+?)\n---/.exec(mdx);
     if (fmMatch) {
