@@ -161,7 +161,10 @@ ${parsed.content.slice(0, 9000)}
 
 Retorne JSON conforme as instrucoes do sistema.`,
             }],
-            max_tokens: 1200,
+            // 2400: a secao tem 180-260 palavras e vai dentro de um campo JSON com \n
+            // escapado — com 1200 o modelo truncava no meio da string e o parse morria
+            // com "Unterminated string in JSON".
+            max_tokens: 2400,
             temperature: 0.5,
             timeout_ms: 150_000,
           });
@@ -342,5 +345,23 @@ function insertSection(body: string, section: string): string {
 
 function parseJsonLoose(text: string): unknown {
   const cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '');
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    // Resgate: se o JSON veio truncado, ainda da pra aproveitar os campos completos
+    // em vez de descartar a chamada inteira.
+    const campo = (nome: string): string | undefined => {
+      const m = new RegExp(`"${nome}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`).exec(cleaned);
+      return m?.[1]?.replace(/\\n/g, '\n').replace(/\\"/g, '"');
+    };
+    const secao = campo('new_section_markdown');
+    if (!secao) throw e;
+    return {
+      skip: /"skip"\s*:\s*true/.test(cleaned),
+      reason: campo('reason') ?? 'json truncado — campos resgatados',
+      new_section_markdown: secao,
+      new_title: campo('new_title'),
+      new_description: campo('new_description'),
+    };
+  }
 }
