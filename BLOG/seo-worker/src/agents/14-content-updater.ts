@@ -120,9 +120,11 @@ export const agent14: Agent<Input, Output> = {
       try {
         const article = await getById(rec.article_id);
         if (!article) throw new Error('article nao encontrado');
-        if (!article.mdx_content) throw new Error('article sem mdx_content (gerado antes da persistencia em banco)');
 
-        const parsed = parseMdx(article.mdx_content);
+        const mdxAtual = await ensureMdxContent(article);
+        if (!mdxAtual) throw new Error('sem MDX no banco nem no repositorio — artigo orfao');
+
+        const parsed = parseMdx(mdxAtual);
         const isRefresh = TYPES_REFRESH.includes(rec.type);
 
         let newContent = parsed.content;
@@ -224,7 +226,7 @@ Retorne JSON com new_title e new_description.`,
           [rec.article_id],
         );
         const nextVersion = versions.reduce((m, v) => Math.max(m, v.version), 0) + 1;
-        await saveVersion(rec.article_id, nextVersion, article.mdx_content, 'agent:14-content-updater', `update: ${rec.type}`);
+        await saveVersion(rec.article_id, nextVersion, mdxAtual, 'agent:14-content-updater', `update: ${rec.type}`);
 
         const wordCount = newContent.split(/\s+/).filter(Boolean).length;
         await updateArticle(rec.article_id, {
@@ -276,6 +278,34 @@ Retorne JSON com new_title e new_description.`,
     };
   },
 };
+
+/**
+ * Garante o MDX do artigo.
+ *
+ * Os 60 posts legados importados e os gerados antes da persistencia em banco tem
+ * mdx_content NULL — o Agente 14 morria neles com "article sem mdx_content" e nunca
+ * conseguia atualizar justamente os posts mais antigos (que sao os que mais precisam
+ * de refresh). Busca no repositorio e grava de volta, entao acontece uma vez por artigo.
+ */
+async function ensureMdxContent(article: { id: string; slug: string; mdx_path?: string | null; mdx_content: string | null }): Promise<string | null> {
+  if (article.mdx_content) return article.mdx_content;
+
+  const path = article.mdx_path ?? `21go-website/content/blog/${article.slug}.mdx`;
+  try {
+    const { getFileContent } = await import('../integrations/github.js');
+    const raw = await getFileContent(path);
+    if (!raw) {
+      log.warn({ articleId: article.id, path }, 'MDX nao encontrado no repositorio');
+      return null;
+    }
+    await updateArticle(article.id, { mdx_content: raw, mdx_path: path });
+    log.info({ articleId: article.id, path, bytes: raw.length }, 'mdx_content hidratado do repositorio');
+    return raw;
+  } catch (e) {
+    log.warn({ err: (e as Error).message, articleId: article.id }, 'falha ao hidratar mdx_content');
+    return null;
+  }
+}
 
 /** Insere a secao nova antes de "## Em resumo" / "## Perguntas frequentes" / "## Fontes". */
 function insertSection(body: string, section: string): string {

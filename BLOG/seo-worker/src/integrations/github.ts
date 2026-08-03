@@ -92,6 +92,26 @@ export async function commitFile(input: CommitFileInput): Promise<CommitResult> 
   }
 }
 
+/**
+ * Le o conteudo de um arquivo do repo. Usado pra "hidratar" artigos antigos:
+ * os 60 posts legados (e os gerados antes da persistencia em banco) tem
+ * seo.articles.mdx_content NULL, e sem o texto o Agente 14 nao consegue atualizar.
+ * Retorna null se o arquivo nao existe.
+ */
+export async function getFileContent(path: string, branch?: string): Promise<string | null> {
+  const { owner, repo } = parseRepo();
+  const ref = branch ?? config.GITHUB_BRANCH_BASE;
+  try {
+    const { data } = await client().rest.repos.getContent({ owner, repo, path, ref });
+    if (Array.isArray(data) || data.type !== 'file' || !('content' in data)) return null;
+    return Buffer.from(data.content, 'base64').toString('utf8');
+  } catch (e) {
+    const status = (e as { status?: number }).status;
+    if (status === 404) return null;
+    throw e;
+  }
+}
+
 /** Move arquivo (rename) — usado quando rascunho vira publicacao. */
 export async function moveFile(input: { from: string; to: string; message: string; branch?: string }): Promise<{ commit_sha: string }> {
   const { owner, repo } = parseRepo();

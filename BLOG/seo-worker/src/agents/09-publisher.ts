@@ -24,6 +24,7 @@
 import type { Agent } from './_types.js';
 import type { ArticleRow } from '../db/repositories/articles.js';
 import { updateArticle, saveVersion } from '../db/repositories/articles.js';
+import { query } from '../db/pg.js';
 import { commitFile } from '../integrations/github.js';
 import { config } from '../config.js';
 import { child } from '../lib/logger.js';
@@ -97,7 +98,16 @@ export const agent09: Agent<Input, Output> = {
 
       // Salva versao + atualiza article direto pra 'published'
       // (cron de 15min vai verificar URL live e disparar Agentes 10-12 de indexacao)
-      await saveVersion(a.id, 1, mdx, 'agent:09-publisher', `commit direto na master ${commitResult.commit_sha.slice(0, 7)}`);
+      //
+      // A versao era fixa em 1: na primeira republicacao de um artigo (Agente 14 ->
+      // Publisher) estourava unique constraint article_versions_article_id_version_key
+      // e a publicacao inteira falhava. Agora calcula a proxima.
+      const versoes = await query<{ version: number }>(
+        `SELECT version FROM seo.article_versions WHERE article_id=$1`,
+        [a.id],
+      );
+      const proximaVersao = versoes.reduce((m, v) => Math.max(m, v.version), 0) + 1;
+      await saveVersion(a.id, proximaVersao, mdx, 'agent:09-publisher', `commit direto na master ${commitResult.commit_sha.slice(0, 7)}`);
       await updateArticle(a.id, {
         status: 'awaiting_pr_merge', // mantem awaiting_pr_merge pra cron detectar URL live e disparar indexacao
         mdx_path: targetPath,
