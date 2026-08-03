@@ -14,7 +14,7 @@
  *   - city_swap_risk: true se o titulo so contem cidade + termo generico
  */
 import type { Agent } from './_types.js';
-import { findSimilar, isCannibal, type SimilarityHit } from '../lib/similarity.js';
+import { findSimilar, isCannibal, scoreHits, CANNIBAL_THRESHOLD, type SimilarityHit } from '../lib/similarity.js';
 import { looksLikeCitySwap } from '../lib/scope-guard.js';
 import { slugify } from '../lib/mdx.js';
 import { findBySlug } from '../db/repositories/articles.js';
@@ -22,8 +22,13 @@ import { child } from '../lib/logger.js';
 
 const log = child('agent:03-anti-repetition');
 
-const BLOCK_THRESHOLD = 0.85;
-const WARN_THRESHOLD = 0.70;
+/**
+ * Thresholds sobre o SCORE COMBINADO (semantico normalizado + overlap lexical),
+ * nao mais sobre o cosine cru — o e5 tem piso ~0.874 neste corpus, entao o antigo
+ * BLOCK_THRESHOLD=0.85 marcava 100% das pautas como canibais. Ver lib/similarity.ts.
+ */
+const BLOCK_THRESHOLD = CANNIBAL_THRESHOLD;  // 0.40
+const WARN_THRESHOLD = 0.25;
 
 interface Input {
   title: string;
@@ -55,12 +60,12 @@ export const agent03: Agent<Input, Output> = {
     const probe = `${input.title}. ${input.main_keyword}. categoria: ${input.category}`;
     let hits: SimilarityHit[] = [];
     try {
-      hits = await findSimilar(probe, 10);
+      hits = scoreHits(input.title, await findSimilar(probe, 10));
     } catch (e) {
       log.warn({ err: (e as Error).message }, 'embedding falhou — seguindo sem similarity vetorial');
     }
-    const maxScore = hits[0]?.similarity ?? 0;
-    const similar = hits.filter((h) => h.similarity >= WARN_THRESHOLD).map((h) => h.article_id);
+    const maxScore = hits[0]?.score ?? 0;
+    const similar = hits.filter((h) => (h.score ?? 0) >= WARN_THRESHOLD).map((h) => h.article_id);
     const cannibal = isCannibal(hits, BLOCK_THRESHOLD);
 
     // 3) City swap
