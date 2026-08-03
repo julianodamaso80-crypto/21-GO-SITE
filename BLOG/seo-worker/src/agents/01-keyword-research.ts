@@ -311,10 +311,31 @@ export const agent01: Agent<Input, Output> = {
     }
 
     // 3) Filtro: escopo + brand-search + RJ obrigatorio (com enrich) + upsert
+    //
+    // Keywords que ja existem em estado terminal ('used'/'rejected') sao puladas SEM
+    // consumir o limite. Antes, as ~39 queries do GSC (quase todas ja processadas)
+    // vinham primeiro na lista e comiam a cota inteira, entao as sugestoes ineditas do
+    // DataForSEO — que sao a unica fonte de pauta NOVA — nunca chegavam a ser inseridas.
+    let jaConhecidas = new Set<string>();
+    if (!ctx.dry_run) {
+      try {
+        const { query } = await import('../db/pg.js');
+        const rows = await query<{ keyword_normalized: string }>(
+          `SELECT keyword_normalized FROM seo.keywords
+           WHERE company_id=$1 AND status IN ('used','rejected','out_of_scope')`,
+          [config.COMPANY_ID],
+        );
+        jaConhecidas = new Set(rows.map((r) => r.keyword_normalized));
+      } catch (e) {
+        log.warn({ err: (e as Error).message }, 'nao consegui carregar keywords ja processadas');
+      }
+    }
+
     let inserted = 0;
     let skipped = 0;
     let skippedNoRj = 0;
     let enriched = 0;
+    let skippedConhecidas = 0;
     const seen = new Set<string>();
     for (const c of collected) {
       if (inserted >= limit) break;
@@ -345,6 +366,11 @@ export const agent01: Agent<Input, Output> = {
       const norm = normalize(finalKw);
       if (seen.has(norm)) continue;
       seen.add(norm);
+      // ja processada em rodada anterior — nao gasta cota
+      if (jaConhecidas.has(norm)) {
+        skippedConhecidas++;
+        continue;
+      }
       const enrichedKw = finalKw;
       // override keyword pra que upsert use a versao enriquecida
       c.keyword = enrichedKw;
@@ -372,7 +398,10 @@ export const agent01: Agent<Input, Output> = {
       }
     }
 
-    log.info({ inserted, enriched_rj: enriched, skipped_brand: skippedNoRj, skipped_scope: skipped, sources }, 'agente 01 concluido');
+    log.info({
+      inserted, enriched_rj: enriched, skipped_brand: skippedNoRj,
+      skipped_scope: skipped, skipped_ja_processadas: skippedConhecidas, sources,
+    }, 'agente 01 concluido');
     return {
       output: { inserted, skipped_out_of_scope: skipped, skipped_no_rj: skippedNoRj, sources, errors },
     };
