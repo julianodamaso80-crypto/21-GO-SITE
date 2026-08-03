@@ -9,6 +9,7 @@ import { child } from '../lib/logger.js';
 import { withRun } from '../db/repositories/agent-runs.js';
 import { listPending } from '../db/repositories/keywords.js';
 import { insertRecommendation } from '../db/repositories/indexing.js';
+import { lexicalOverlap } from '../lib/similarity.js';
 import { agent01 } from '../agents/01-keyword-research.js';
 import { agent02 } from '../agents/02-seo-strategist.js';
 import { agent04 } from '../agents/04-briefing.js';
@@ -62,6 +63,7 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
     : allPending.slice(0, limit);
   log.info({ focus: job.data.focus_category, total_pending: allPending.length, will_process: pendingKws.length }, 'keywords pra strategist');
   const approvedTopicIds: string[] = [];
+  const approvedTitles: string[] = [];
   let refreshQueued = 0;
 
   for (const kw of pendingKws) {
@@ -89,6 +91,16 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
       // AGORA: ATUALIZAR vira recomendacao no artigo que ja ranqueia; o Agente 14 absorve
       // o angulo novo como secao e republica. So APROVAR_ARTIGO_NOVO gera artigo novo.
       if (r.output.decision === 'APROVAR_ARTIGO_NOVO' && r.output.topic_id) {
+        // Dedupe INTRA-LOTE: o Agente 03 so compara com artigos que ja existem em
+        // seo.articles. Duas keywords irmas da mesma rodada ("o que e RM no documento"
+        // e "RM no documento do carro") passavam as duas e viravam 2 posts gemeos.
+        const titulo = r.output.proposed_title ?? kw.keyword;
+        const colisao = approvedTitles.find((t) => lexicalOverlap(titulo, t) >= 0.5);
+        if (colisao) {
+          log.info({ kw: kw.keyword, titulo, colide_com: colisao }, 'pauta irma no mesmo lote — adiada');
+          continue;
+        }
+        approvedTitles.push(titulo);
         approvedTopicIds.push(r.output.topic_id);
       } else if (r.output.decision === 'ATUALIZAR_ARTIGO_EXISTENTE' && r.output.target_article_id && !dry_run) {
         try {
