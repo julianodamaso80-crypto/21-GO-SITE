@@ -26,19 +26,63 @@ const log = child('agent:01-keyword-research');
 /**
  * BASE_SEEDS — insumo SO pra expandir no DataForSEO. NAO sao inseridas em seo.keywords.
  * Todas com modificador RJ pra forcar o DFS a retornar variacoes geograficas.
+ *
+ * Por que o pool e grande (2026-08-03): eram 8 seeds fixas e um cache de 7 dias.
+ * Depois da primeira semana, TODA execucao dava cache hit em todas elas e o DFS
+ * devolvia 0 keywords novas. Como o GSC so mostra queries onde o site JA aparece
+ * (serve pra refresh, nao pra descoberta), o pipeline de pauta NOVA secou.
+ *
+ * Agora o pool cobre ~7 semanas sem repetir seed, com rotacao por menos-recente-uso
+ * (janela de 30 dias) e um teto por execucao pra segurar o custo do DataForSEO.
  */
+const SEEDS_POR_EXECUCAO = 6;
+const JANELA_ROTACAO_DIAS = 30;
+
 const BASE_SEEDS: Array<{ seed: string; category: KeywordCategory }> = [
-  // carros (RJ)
+  // ---- carros ----
   { seed: 'protecao veicular carro rio de janeiro', category: 'carros' },
   { seed: 'protecao veicular suv rio de janeiro', category: 'carros' },
-  { seed: 'protecao veicular barra da tijuca', category: 'carros' },
-  // motos (RJ)
+  { seed: 'protecao veicular carro financiado rj', category: 'carros' },
+  { seed: 'protecao veicular carro seminovo rio de janeiro', category: 'carros' },
+  { seed: 'protecao veicular carro de aplicativo rj', category: 'carros' },
+  { seed: 'protecao veicular carro eletrico rio de janeiro', category: 'carros' },
+  { seed: 'protecao veicular picape rj', category: 'carros' },
+  { seed: 'protecao veicular carro antigo rio de janeiro', category: 'carros' },
+  { seed: 'protecao veicular hatch rio de janeiro', category: 'carros' },
+  { seed: 'protecao veicular sedan rj', category: 'carros' },
+  { seed: 'protecao veicular carro zero km rio de janeiro', category: 'carros' },
+  // ---- motos ----
   { seed: 'protecao veicular moto rio de janeiro', category: 'motos' },
   { seed: 'protecao moto entregador rj', category: 'motos' },
-  // frotas (RJ) — 1 frota/dia obrigatoria, ver [[feedback_frota_diaria_obrigatoria]]
+  { seed: 'protecao veicular moto financiada rio de janeiro', category: 'motos' },
+  { seed: 'protecao veicular scooter rio de janeiro', category: 'motos' },
+  { seed: 'protecao veicular moto alta cilindrada rj', category: 'motos' },
+  { seed: 'protecao veicular moto usada rio de janeiro', category: 'motos' },
+  { seed: 'protecao moto delivery rio de janeiro', category: 'motos' },
+  // ---- frotas (nunca caminhao) — 1 frota/dia obrigatoria ----
   { seed: 'protecao frota delivery rio de janeiro', category: 'frotas' },
   { seed: 'protecao frota motos rj ifood 99', category: 'frotas' },
   { seed: 'protecao frota empresas rio de janeiro', category: 'frotas' },
+  { seed: 'protecao frota carros locadora rj', category: 'frotas' },
+  { seed: 'protecao frota vans rio de janeiro', category: 'frotas' },
+  { seed: 'protecao frota pequena empresa rj', category: 'frotas' },
+  { seed: 'protecao frota veiculos comerciais rio de janeiro', category: 'frotas' },
+  { seed: 'protecao frota representante comercial rj', category: 'frotas' },
+  // ---- educativo: transito/regulatorio do RJ ----
+  // O GSC ja mostrou demanda real aqui ("isencao de ipva rj", "licenciamento 2026 rj")
+  // em temas que o blog nao cobria — e onde ainda ha pauta genuinamente nova.
+  { seed: 'ipva rj isencao', category: 'educativo' },
+  { seed: 'licenciamento veiculo rj', category: 'educativo' },
+  { seed: 'detran rj vistoria veicular', category: 'educativo' },
+  { seed: 'multas de transito rio de janeiro', category: 'educativo' },
+  { seed: 'roubo de carro rio de janeiro estatisticas', category: 'educativo' },
+  { seed: 'chassi remarcado rj', category: 'educativo' },
+  { seed: 'leilao de carro rio de janeiro', category: 'educativo' },
+  { seed: 'transferencia de veiculo rj', category: 'educativo' },
+  { seed: 'diferenca seguro e protecao veicular rj', category: 'educativo' },
+  { seed: 'rastreador veicular rio de janeiro', category: 'educativo' },
+  { seed: 'documento crlv digital rj', category: 'educativo' },
+  { seed: 'cnh suspensa rio de janeiro', category: 'educativo' },
 ];
 
 /**
@@ -172,26 +216,34 @@ export const agent01: Agent<Input, Output> = {
         const { query } = await import('../db/pg.js');
         const recentCalls = await query<{ endpoint: string; request_body: { keyword?: string }; called_at: string }>(
           `SELECT endpoint, request_body, called_at FROM seo.dataforseo_calls
-           WHERE called_at >= now() - interval '7 days'
+           WHERE called_at >= now() - interval '${JANELA_ROTACAO_DIAS} days'
              AND endpoint LIKE '%keyword_suggestions%'`,
         );
-        const cachedSeeds = new Set<string>();
+        const usadaEm = new Map<string, number>();
         for (const row of recentCalls) {
           const body = row.request_body as Array<{ keyword?: string }> | undefined;
           const seed = body?.[0]?.keyword?.toLowerCase().trim();
-          if (seed) cachedSeeds.add(seed);
+          if (!seed) continue;
+          const t = new Date(row.called_at).getTime();
+          usadaEm.set(seed, Math.max(usadaEm.get(seed) ?? 0, t));
         }
-        log.info({ cached_seeds_7d: cachedSeeds.size, total_seeds: BASE_SEEDS.length }, 'cache DataForSEO check');
+
+        // Rotacao: nunca usadas primeiro, depois as menos recentes. Teto por execucao
+        // pra nao estourar o budget do DataForSEO com um pool grande.
+        const seedsDaVez = [...BASE_SEEDS]
+          .sort((a, b) => (usadaEm.get(a.seed.toLowerCase().trim()) ?? 0) - (usadaEm.get(b.seed.toLowerCase().trim()) ?? 0))
+          .slice(0, SEEDS_POR_EXECUCAO);
+
+        log.info({
+          pool: BASE_SEEDS.length,
+          usadas_na_janela: usadaEm.size,
+          janela_dias: JANELA_ROTACAO_DIAS,
+          seeds_da_vez: seedsDaVez.map((s) => s.seed),
+        }, 'rotacao de seeds DataForSEO');
 
         let cacheHits = 0;
         let cacheMisses = 0;
-        for (const s of BASE_SEEDS) {
-          const seedLower = s.seed.toLowerCase().trim();
-          if (cachedSeeds.has(seedLower)) {
-            cacheHits++;
-            log.debug({ seed: s.seed }, 'cache hit — pulando');
-            continue;
-          }
+        for (const s of seedsDaVez) {
           cacheMisses++;
           try {
             const sug = await dfs.keywordSuggestions(s.seed, 30);
