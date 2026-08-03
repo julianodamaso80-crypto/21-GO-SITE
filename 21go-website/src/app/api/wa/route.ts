@@ -5,10 +5,10 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
- * Redireciona o cliente pro WhatsApp aplicando o rodízio 2:1 e o failover (ver
+ * Redireciona o cliente pro WhatsApp aplicando o rodízio 2:1:1 e o failover (ver
  * whatsapp-rotation.ts). Todo link de contato do site aponta pra cá em vez de
  * apontar pro wa.me direto — é o que garante que os contatos se dividam entre
- * os dois chips e que ninguém seja mandado pra um número derrubado.
+ * os três chips e que ninguém seja mandado pra um número derrubado.
  *
  * Só roda quando o cliente CLICA. O site não dispara mais mensagem sozinho
  * depois da cotação (decisão do dono, 2026-07-29) — contato frio automático era

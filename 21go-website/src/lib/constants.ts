@@ -1,9 +1,11 @@
 /**
  * Números de WhatsApp que recebem os contatos dos sites .site.
  *
- * REGRA DE RODÍZIO (decisão do dono, 2026-07-29): a cada 3 cliques, **2 vão pro
- * 4882 e 1 vai pro 4240**. O objetivo é diluir o volume entre dois chips pra
- * nenhum dos dois cair — estava caindo muito com um número só.
+ * REGRA DE RODÍZIO (decisão do dono, 2026-08-03): a cada 4 cliques, **2 vão pro
+ * 4882, 1 pro 5734 e 1 pro 4824**. O objetivo é diluir o volume entre os chips
+ * pra nenhum deles cair — estava caindo muito com número só.
+ *
+ * O 4240 saiu do rodízio: o chip caiu e não voltou (connectionState "close").
  *
  * A escolha acontece server-side em `/api/wa` (ver whatsapp-rotation.ts). Os
  * links do site apontam pra essa rota, não pro wa.me direto.
@@ -30,10 +32,16 @@ export const WHATSAPP_TARGETS: WhatsAppTarget[] = [
     apiKeyEnv: 'EVOLUTION_API_KEY_4882',
   },
   {
-    number: '5521965774240',
-    instance: '4240',
+    number: '5521998345734',
+    instance: 'site5734',
     share: 1,
-    apiKeyEnv: 'EVOLUTION_API_KEY_4240',
+    apiKeyEnv: 'EVOLUTION_API_KEY_5734',
+  },
+  {
+    number: '5521969454824',
+    instance: 'site4824',
+    share: 1,
+    apiKeyEnv: 'EVOLUTION_API_KEY_4824',
   },
 ]
 

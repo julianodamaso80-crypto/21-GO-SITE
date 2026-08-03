@@ -5,12 +5,12 @@ import { WHATSAPP_TARGETS, type WhatsAppTarget } from './constants'
  * Rodízio dos números de WhatsApp que recebem os contatos do site, com failover
  * automático pro número que estiver no ar.
  *
- * REGRA (decisão do dono, 2026-07-29):
- *  1. Com os dois chips no ar: a cada 3 contatos, 2 caem no 4882 e 1 no 4240.
- *     Fila fixa [4882, 4882, 4240] — não é sorteio, pra proporção não desandar
- *     em volume baixo.
- *  2. Se um cair, TODO o tráfego vai pro que sobrou. O site nunca pode mandar
- *     cliente pra número derrubado.
+ * REGRA (decisão do dono, 2026-08-03):
+ *  1. Com os três chips no ar: a cada 4 contatos, 2 caem no 4882, 1 no 5734 e
+ *     1 no 4824. Fila fixa [4882, 4882, 5734, 4824] — não é sorteio, pra
+ *     proporção não desandar em volume baixo.
+ *  2. Se um cair, o tráfego dele se redistribui entre os que sobraram. O site
+ *     nunca pode mandar cliente pra número derrubado.
  *
  * O estado de cada chip vem da Evolution (`/instance/connectionState/<inst>`),
  * que responde `{"instance":{"state":"open"}}` quando o chip está conectado.
@@ -144,7 +144,7 @@ export async function pickWhatsAppTarget(): Promise<WhatsAppTarget> {
   // Um só no ar: leva tudo, sem rodízio.
   if (online.length === 1) return online[0]
 
-  // Todos no ar: fila com as fatias (2 do 4882, 1 do 4240).
+  // Todos no ar: fila com as fatias (2 do 4882, 1 do 5734, 1 do 4824).
   const queue = online.flatMap((t) =>
     Array.from({ length: Math.max(1, t.share) }, () => t),
   )
