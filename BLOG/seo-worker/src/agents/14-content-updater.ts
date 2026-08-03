@@ -99,14 +99,24 @@ export const agent14: Agent<Input, Output> = {
     const limit = input.limit ?? 3;
     const types = input.only_types ?? [...TYPES_META, ...TYPES_REFRESH];
 
+    // DISTINCT ON (article_id): no maximo 1 recomendacao por artigo por execucao.
+    // Sem isso, um artigo com 3 recomendacoes abertas era reescrito 3 vezes seguidas,
+    // com 3 titulos diferentes e 3 commits — vencia o ultimo, os outros 2 eram
+    // trabalho e custo jogados fora.
     const recs = await query<RecJoined>(
-      `SELECT r.id, r.type, r.article_id, r.data, r.recommendation, r.reason,
-              a.slug AS art_slug, a.status AS art_status
-       FROM seo.recommendations r
-       JOIN seo.articles a ON a.id = r.article_id
-       WHERE r.status='open'
-         AND r.type = ANY($1)
-       ORDER BY r.priority DESC, r.created_at ASC
+      `SELECT * FROM (
+         SELECT DISTINCT ON (r.article_id)
+                r.id, r.type, r.article_id, r.data, r.recommendation, r.reason,
+                r.priority, r.created_at,
+                a.slug AS art_slug, a.status AS art_status
+         FROM seo.recommendations r
+         JOIN seo.articles a ON a.id = r.article_id
+         WHERE r.status='open'
+           AND r.type = ANY($1)
+           AND a.status <> 'archived'
+         ORDER BY r.article_id, r.priority DESC, r.created_at ASC
+       ) t
+       ORDER BY t.priority DESC, t.created_at ASC
        LIMIT $2`,
       [types, limit],
     );
@@ -244,6 +254,17 @@ Retorne JSON com new_title e new_description.`,
           `UPDATE seo.recommendations SET status='applied', applied_at=now() WHERE id=$1`,
           [rec.id],
         );
+        // As demais recomendacoes de title/meta do mesmo artigo perdem o sentido depois
+        // de reescrever o titulo — dispensa pra nao ficar oscilando a cada rodada.
+        if (!isRefresh) {
+          await exec(
+            `UPDATE seo.recommendations
+             SET status='dismissed', applied_at=now(),
+                 data = coalesce(data,'{}'::jsonb) || '{"dismiss_reason":"titulo ja reescrito nesta rodada"}'::jsonb
+             WHERE status='open' AND article_id=$1 AND type = ANY($2) AND id <> $3`,
+            [rec.article_id, TYPES_META, rec.id],
+          );
+        }
         applied++;
 
         // Republica: Publisher commita o MDX atualizado na master
