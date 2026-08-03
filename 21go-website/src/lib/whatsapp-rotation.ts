@@ -58,9 +58,14 @@ async function probe(target: WhatsAppTarget): Promise<TargetHealth> {
 
   const apikey = apiKeyFor(target)
   if (!apikey) {
-    // Sem chave não dá pra afirmar que caiu — trata como no ar pra não tirar um
-    // número do ar por erro de configuração.
-    return { ...base, online: true, state: 'sem-apikey' }
+    // Sem chave não dá pra CONFIRMAR que o chip está conectado, e lead só vai
+    // pra número confirmado no Evolution (regra do dono, 2026-08-03). Fica de
+    // fora do rodízio até a env aparecer — o alerta abaixo é o que denuncia o
+    // erro de configuração.
+    console.warn(
+      `[wa] ${target.number}: env ${target.apiKeyEnv} ausente — fora do rodízio até configurar`,
+    )
+    return { ...base, online: false, state: 'sem-apikey' }
   }
 
   const controller = new AbortController()
@@ -127,10 +132,12 @@ async function getHealth(): Promise<HealthCache> {
 
 /**
  * Devolve o próximo número do rodízio, pulando os que estiverem fora do ar.
+ * Lead só vai pra chip com `state: "open"` confirmado no Evolution.
  *
- * Se TODOS estiverem fora, devolve o primeiro assim mesmo: um link pro chip
- * derrubado ainda é melhor que um site sem botão de WhatsApp, e o console
- * registra o alerta.
+ * Exceção única (decisão do dono, 2026-08-03): se TODOS estiverem fora, devolve
+ * o primeiro assim mesmo. Instância caída no Evolution não quer dizer WhatsApp
+ * morto — o número segue funcionando no celular da consultora, ela só não
+ * recebe pelo sistema. Melhor isso do que site sem botão de contato.
  */
 export async function pickWhatsAppTarget(): Promise<WhatsAppTarget> {
   const { health } = await getHealth()
