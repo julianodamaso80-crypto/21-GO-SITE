@@ -2,17 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import {
   buildExcludedMessage,
+  buildFollowUpMessage,
   buildIncompleteDataMessage,
+  buildPdfCaption,
   buildQuoteSummaryMessage,
   formatPhone,
   getEvolutionInstance,
   isWhatsappConfigured,
   randInt,
+  sendPdfMedia,
   sendPresence,
   sendText,
   sleep,
   type SendResult,
 } from '@/lib/whatsapp'
+import { generateQuotePdf } from '@/lib/pdf-quote'
+import { isStorageConfigured, uploadPdf } from '@/lib/storage'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import {
   upsertLead,
   upsertConversation,
@@ -190,6 +196,17 @@ export async function POST(req: NextRequest) {
         await sendQuotePdfWhatsApp(body, leadId)
       } catch (err) {
         console.error('[lead] Falha envio WhatsApp:', err instanceof Error ? err.message : err)
+      }
+    })()
+  } else if (isByd(body.marca) && process.env.BYD_AUTO_DISPATCH !== 'false') {
+    // Exceção BYD (ordem do dono, 04/08/2026): carro BYD cai no WhatsApp com o
+    // PDF da simulação SEM depender do clique em "Quero contratar". Só BYD —
+    // todas as outras marcas seguem inbound-first (o cliente é quem inicia).
+    ;(async () => {
+      try {
+        await sendBydQuoteWithPdf(body, supaResult.lead_id || leadId, supaResult.ok)
+      } catch (err) {
+        console.error('[lead] BYD: falha envio WhatsApp:', err instanceof Error ? err.message : err)
       }
     })()
   }
@@ -553,6 +570,154 @@ async function sendQuotePdfWhatsApp(body: LeadInput, leadId: string) {
     message_type: 'text',
     content: text,
   })
+}
+
+/* ───────────────── BYD: cotação com PDF sem esperar o clique ───────────────── */
+
+/** Marca é BYD? Cobre "BYD" e variações do PowerCRM/FIPE ("BYD/…"). */
+function isByd(marca?: string | null): boolean {
+  return (marca || '').trim().toUpperCase().startsWith('BYD')
+}
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://21go.site'
+
+/**
+ * Envia a simulação COM PDF pro cliente BYD, sem depender do clique em "Quero
+ * contratar" (ordem do dono, 04/08/2026). Duas mensagens, com ritmo humano:
+ * texto anunciando o PDF e o documento em seguida.
+ *
+ * A mídia vai como URL sempre que possível — base64 grande faz a Evolution
+ * responder 500 "Connection Closed". Ordem: storage S3/R2 → /api/pdfs/<leadId>
+ * (regenera o PDF a partir do Supabase) → base64 como último recurso.
+ */
+async function sendBydQuoteWithPdf(
+  body: LeadInput,
+  leadId: string,
+  leadPersisted: boolean,
+): Promise<void> {
+  if (!isWhatsappConfigured()) {
+    console.warn('[lead] BYD: WhatsApp não configurado — pulando envio')
+    return
+  }
+
+  // Sem dados completos não existe PDF pra gerar: cai no fluxo de texto, que já
+  // trata o caso com uma mensagem honesta (sem prometer arquivo que não vem).
+  const semDados =
+    !body.marca || !body.modelo || !body.valorFipe || body.valorFipe <= 0 ||
+    !body.plano || !body.valorMensal
+  if (semDados) {
+    console.warn(`[lead] BYD sem dados completos pra PDF lead=${leadId} — envia só texto`)
+    await sendQuotePdfWhatsApp(body, leadId)
+    return
+  }
+
+  const phone = formatPhone(body.whatsapp || '')
+  const jid = phoneToJid(phone)
+  const instance = getEvolutionInstance()
+  const nome = body.nome || ''
+
+  console.log(`[lead] BYD: disparando cotação+PDF lead=${leadId} ${body.marca} ${body.modelo}`)
+
+  // 1) Texto que anuncia o PDF (variado por leadId — anti-ban).
+  const texto = buildFollowUpMessage({
+    nome,
+    marca: body.marca,
+    modelo: body.modelo,
+    placa: body.placa,
+    seed: leadId,
+  })
+  await sendPresence(phone, 'composing', 3000)
+  await sleep(randInt(2500, 4500))
+  const textResult = await sendText(phone, texto)
+  await registerOutboundMessage({
+    result: textResult,
+    jid,
+    instance,
+    leadId,
+    message_type: 'text',
+    content: texto,
+  })
+
+  // 2) PDF da simulação.
+  const filename = `simulacao-21go-${leadId}.pdf`
+  const pdfInput = {
+    nome,
+    whatsapp: body.whatsapp || '',
+    email: body.email ?? null,
+    placa: body.placa ?? null,
+    marca: body.marca!,
+    modelo: body.modelo!,
+    ano: body.ano ?? '',
+    cor: body.cor ?? null,
+    fipe: body.valorFipe!,
+    planoNome: body.plano!,
+    mensalidade: body.valorMensal!,
+    // BYD é elétrico — categoria/combustível mudam a tabela usada no PDF.
+    categoria: body.categoria ?? null,
+    combustivel: body.combustivel ?? null,
+    cilindrada: body.cilindrada ?? null,
+    carroApp: !!body.carroApp,
+    leilao: body.leilao ?? null,
+    seguroAtual: body.seguroAtual ?? null,
+  }
+
+  let media: string | null = null
+  let pdfUrl: string | null = null
+
+  if (isStorageConfigured()) {
+    try {
+      const pdf = await generateQuotePdf(pdfInput)
+      const key = `quotes/${new Date().toISOString().slice(0, 10)}/${leadId}.pdf`
+      const { url } = await uploadPdf(key, pdf, filename)
+      media = url
+      pdfUrl = url
+    } catch (err) {
+      console.warn('[lead] BYD: upload do PDF falhou:', err instanceof Error ? err.message : err)
+    }
+  }
+  if (!media && leadPersisted) {
+    media = `${SITE_URL}/api/pdfs/${leadId}`
+    pdfUrl = media
+  }
+  if (!media) {
+    const pdf = await generateQuotePdf(pdfInput)
+    media = pdf.toString('base64')
+  }
+
+  await sendPresence(phone, 'composing', 2000)
+  await sleep(randInt(2000, 3500))
+  const caption = buildPdfCaption({
+    nome,
+    marca: body.marca,
+    modelo: body.modelo,
+    placa: body.placa,
+    seed: leadId,
+  })
+  const pdfResult = await sendPdfMedia(phone, media, caption, filename)
+  await registerOutboundMessage({
+    result: pdfResult,
+    jid,
+    instance,
+    leadId,
+    message_type: 'document',
+    content: caption,
+    caption,
+    media_url: pdfUrl,
+    media_filename: filename,
+    media_mime_type: 'application/pdf',
+  })
+
+  // Marca no lead pra não reenviar em reprocessamento e pra aparecer no CRM.
+  if (leadPersisted) {
+    try {
+      await supabaseAdmin()
+        .from('leads')
+        .update({ pdf_enviado: true, pdf_enviado_em: new Date().toISOString() })
+        .eq('id', leadId)
+    } catch (err) {
+      console.warn('[lead] BYD: falha marcar pdf_enviado:', err instanceof Error ? err.message : err)
+    }
+  }
 }
 
 async function registerOutboundMessage(args: {
