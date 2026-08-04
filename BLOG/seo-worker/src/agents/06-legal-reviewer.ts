@@ -223,28 +223,40 @@ ${mdx.slice(0, 12000)}
 
 Avalie e retorne JSON conforme as instrucoes do sistema.`;
 
-    const r = await complete({
-      tier: 'main',
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMsg }],
-      max_tokens: 1500,
-      temperature: 0.2,
-      timeout_ms: 120_000,
-    });
-
     interface LlmReview {
       decision: ReviewStatus;
       notes: string;
       specific_fixes?: string[];
     }
-    let review: LlmReview;
-    try {
-      const cleaned = r.text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '');
-      review = JSON.parse(cleaned);
-    } catch (e) {
-      log.error({ err: (e as Error).message, text: r.text.slice(0, 200) }, 'LLM retornou JSON invalido');
-      throw new Error(`LegalReviewer JSON invalido: ${(e as Error).message}`);
+
+    // 1 retry com temperature 0: o Gemini Flash devolve JSON truncado de vez em quando
+    // e, sem retry, a excecao subia e derrubava o artigo INTEIRO no worker — texto
+    // pronto e aprovavel perdido por uma resposta malformada do juiz.
+    let review: LlmReview | null = null;
+    let r: Awaited<ReturnType<typeof complete>> | null = null;
+    for (let tentativa = 1; tentativa <= 2; tentativa++) {
+      r = await complete({
+        tier: 'main',
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMsg }],
+        max_tokens: 1500,
+        temperature: tentativa === 1 ? 0.2 : 0,
+        timeout_ms: 120_000,
+      });
+      try {
+        const cleaned = r.text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '');
+        review = JSON.parse(cleaned) as LlmReview;
+        break;
+      } catch (e) {
+        if (tentativa === 1) {
+          log.warn({ err: (e as Error).message, text: r.text.slice(0, 120) }, 'judge devolveu JSON invalido — repetindo com temperature 0');
+          continue;
+        }
+        log.error({ err: (e as Error).message, text: r.text.slice(0, 200) }, 'LLM retornou JSON invalido nas 2 tentativas');
+        throw new Error(`LegalReviewer JSON invalido: ${(e as Error).message}`);
+      }
     }
+    if (!review || !r) throw new Error('LegalReviewer nao produziu decisao');
     if (!['APROVADO', 'APROVADO_COM_AJUSTES', 'REPROVADO'].includes(review.decision)) {
       throw new Error(`LegalReviewer decision invalida: ${review.decision}`);
     }
