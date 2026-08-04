@@ -70,16 +70,21 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   const SLOTS_OBRIGATORIOS: Slot[] = SLOTS_DIARIOS.map((s) => s.cat);
 
   // Conta artigos por categoria criados hoje
-  // status <> 'archived' e essencial: artigo REPROVADO pelo Reviewer vai pra archived e
-  // NAO foi publicado. Contando ele, o slot do dia era dado como cumprido por um texto
-  // que foi pro lixo — num dia com reprovacoes, a esteira simplesmente produzia menos e
-  // ninguem via. Foi o que aconteceu em 04/08: 5 reprovados "preencheram" os slots.
+  // Conta so o que REALMENTE vai ao ar. Nao basta excluir 'archived': artigo reprovado
+  // pelo Reviewer fica em status='in_review' e um draft que morreu antes da revisao fica
+  // em 'draft' — nenhum dos dois foi publicado, mas ambos ocupavam o slot do dia. O
+  // efeito era a esteira "cumprir" a cota com texto que ninguem le: em 04/08 o slot de
+  // BYD foi dado como fechado com 1 artigo publicado e 1 reprovado.
   const todayRows = await query<{ category: string; count: number }>(
     `SELECT category, count(*)::int AS count
      FROM seo.articles
      WHERE company_id='company-21go'
-       AND status <> 'archived'
        AND created_at >= (CURRENT_DATE AT TIME ZONE 'America/Sao_Paulo')
+       AND status <> 'archived'
+       AND (
+         status IN ('awaiting_pr_merge', 'published')
+         OR review_status IN ('APROVADO', 'APROVADO_COM_AJUSTES')
+       )
      GROUP BY category`,
   );
   const articlesHoje: Record<string, number> = {};
