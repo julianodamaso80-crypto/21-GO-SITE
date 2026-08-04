@@ -3,7 +3,6 @@
 import { motion, useInView } from 'framer-motion'
 import { useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import {
   Briefcase,
   TrendingUp,
@@ -100,9 +99,6 @@ const testimonials = [
 ]
 
 export default function SejaConsultorPage() {
-  // OCULTO 2026-07: recrutamento de consultores pausado. Remover o redirect abaixo pra reativar a página.
-  redirect('/')
-
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
   const [modalOpen, setModalOpen] = useState(false)
