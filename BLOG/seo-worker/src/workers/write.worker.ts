@@ -70,10 +70,15 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   const SLOTS_OBRIGATORIOS: Slot[] = SLOTS_DIARIOS.map((s) => s.cat);
 
   // Conta artigos por categoria criados hoje
+  // status <> 'archived' e essencial: artigo REPROVADO pelo Reviewer vai pra archived e
+  // NAO foi publicado. Contando ele, o slot do dia era dado como cumprido por um texto
+  // que foi pro lixo — num dia com reprovacoes, a esteira simplesmente produzia menos e
+  // ninguem via. Foi o que aconteceu em 04/08: 5 reprovados "preencheram" os slots.
   const todayRows = await query<{ category: string; count: number }>(
     `SELECT category, count(*)::int AS count
      FROM seo.articles
      WHERE company_id='company-21go'
+       AND status <> 'archived'
        AND created_at >= (CURRENT_DATE AT TIME ZONE 'America/Sao_Paulo')
      GROUP BY category`,
   );
