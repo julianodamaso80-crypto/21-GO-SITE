@@ -248,10 +248,54 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
         },
       );
 
+      // ===== Reescrita dirigida quando o Reviewer reprova =====
+      // Antes, REPROVADO = pauta no lixo. Como o Reviewer diz exatamente o que violou,
+      // vale uma segunda tentativa com as violacoes no prompt: temas como "garantia de
+      // bateria" puxam frase proibida ("cobre tudo") com naturalidade e o briefing era
+      // queimado por uma frase, nao pelo assunto. Uma reescrita so — se falhar de novo,
+      // e problema do tema e nao da redacao.
       if (r06.output.review_status === 'REPROVADO') {
-        rejected++;
-        log.warn({ articleId: article.id, notes: r06.output.review_notes }, 'reprovado pelo reviewer');
-        continue;
+        const violacoes = r06.output.hard_block_matches.length
+          ? r06.output.hard_block_matches.map((m) => `${m.reason} (${m.pattern})`)
+          : [r06.output.review_notes];
+        log.warn({ articleId: article.id, violacoes }, 'reprovado — tentando reescrita dirigida');
+
+        // Solta o briefing e arquiva a versao ruim antes de reescrever. Precisa ser SQL
+        // direto: o patch dinamico do updateArticle ignora campos undefined, entao nao
+        // consegue gravar briefing_id = NULL — e sem soltar o briefing o slug novo
+        // colidiria com o antigo.
+        await query(
+          `UPDATE seo.articles SET briefing_id = NULL, status='archived', archived_at=now() WHERE id = $1`,
+          [article.id],
+        );
+
+        const r05b = await withRun(
+          { agent_id: '05-writer', triggered_by: 'retry:06', input: { briefing_id: item.briefing.id, retry: true } },
+          async () => {
+            const res = await agent05.run({ topic: item.topic, briefing: item.briefing, correcoes: violacoes }, ctx);
+            total_cost += res.output.llm_cost_usd ?? 0;
+            return { result: res, finish: { output: res.output, llm_cost_usd: res.output.llm_cost_usd ?? 0 } };
+          },
+        );
+        if (!r05b.output.article_id) { rejected++; continue; }
+        const article2 = await getArticleById(r05b.output.article_id);
+        if (!article2) { rejected++; continue; }
+
+        const r06b = await withRun(
+          { agent_id: '06-legal-reviewer', triggered_by: 'retry:05', input: { article_id: article2.id } },
+          async () => {
+            const res = await agent06.run({ article: article2 }, ctx);
+            total_cost += res.output.llm_cost_usd ?? 0;
+            return { result: res, finish: { output: res.output, llm_cost_usd: res.output.llm_cost_usd ?? 0 } };
+          },
+        );
+        if (r06b.output.review_status === 'REPROVADO') {
+          rejected++;
+          log.warn({ articleId: article2.id, notes: r06b.output.review_notes }, 'reprovado tambem na reescrita — pauta descartada');
+          continue;
+        }
+        log.info({ articleId: article2.id, slug: article2.slug }, 'reescrita dirigida aprovada');
+        article = article2;
       }
       approved++;
 

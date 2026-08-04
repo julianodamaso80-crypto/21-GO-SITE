@@ -187,6 +187,13 @@ Cite o modelo especifico (Dolphin, Song Plus, Seal, King, Yuan Plus) quando o br
 interface Input {
   topic: TopicRow;
   briefing: BriefingRow;
+  /**
+   * Violacoes apontadas pelo Reviewer numa tentativa anterior. Quando presentes, o
+   * Writer reescreve o artigo corrigindo exatamente esses pontos em vez de a pauta
+   * ser descartada — temas como "garantia de bateria" puxam frases proibidas
+   * ("cobre tudo") com naturalidade e queimavam o briefing.
+   */
+  correcoes?: string[];
 }
 
 interface Output {
@@ -281,6 +288,18 @@ DADOS UNICOS DA BASE (use no MINIMO 3 desses no artigo — citacao obrigatoria c
 ==================================================================
 ${dataSourcesText}
 
+${input.correcoes?.length ? `
+==================================================================
+!! ESTA E UMA REESCRITA. A versao anterior foi REPROVADA por:
+${input.correcoes.map((c) => `  - ${c}`).join('\n')}
+
+Corrija EXATAMENTE esses pontos. Se o problema foi uma expressao proibida, nao tente
+contornar com sinonimo: reescreva a frase de forma honesta (ex: em vez de "a garantia
+cobre tudo", escreva "a garantia de fabrica cobre os itens previstos em contrato —
+consulte o manual do seu modelo"). Se o problema foi tamanho, entregue o texto completo
+dentro da faixa pedida.
+==================================================================
+` : ''}
 ==================================================================
 INSTRUCAO FINAL:
 ESCREVA o corpo do artigo em Markdown puro, 1300-1500 palavras (alvo 1400).
