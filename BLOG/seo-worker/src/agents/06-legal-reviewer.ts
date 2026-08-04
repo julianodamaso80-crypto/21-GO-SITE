@@ -22,15 +22,20 @@ const log = child('agent:06-legal-reviewer');
 // Patterns que dependem de contexto (ex: "aprovação automática", "sem análise"
 // podem aparecer NEGADOS em frase honesta "NAO existe aprovacao automatica") sao
 // deixados pro LLM judge avaliar — evitam falso-positivo.
+/**
+ * `\b` em JS so reconhece [A-Za-z0-9_], entao qualquer padrao que comece ou termine em
+ * caractere acentuado nunca casa: `/\bé seguro\b/` jamais disparou em 173 artigos.
+ * Aqui os limites usam lookaround Unicode com flag `u`.
+ */
 const FORBIDDEN_PHRASES: Array<{ pattern: RegExp; reason: string }> = [
-  { pattern: /\bcobertura garantida\b/i, reason: 'promessa de cobertura sem analise' },
-  { pattern: /\bindeniza[cç][ãa]o garantida\b/i, reason: 'promessa de indenizacao' },
-  { pattern: /\bcobre tudo\b/i, reason: 'absoluto sem ressalva' },
-  { pattern: /\bprotege qualquer ve[ií]culo\b/i, reason: 'absoluto sem ressalva' },
-  { pattern: /\bigual (a |ao |o |um )?seguro\b/i, reason: 'confusao com seguro tradicional' },
-  { pattern: /\btipo (um )?seguro\b/i, reason: 'confusao com seguro tradicional' },
-  // /\b[ée] seguro\b/i pegava "associacao e seguro" como falso positivo — refinado pra "é seguro" so com acento.
-  { pattern: /\bé seguro\b/i, reason: 'confusao com seguro tradicional' },
+  { pattern: /(?<![\p{L}\p{N}])cobertura garantida(?![\p{L}\p{N}])/iu, reason: 'promessa de cobertura sem analise' },
+  { pattern: /(?<![\p{L}\p{N}])indeniza[cç][ãa]o garantida(?![\p{L}\p{N}])/iu, reason: 'promessa de indenizacao' },
+  { pattern: /(?<![\p{L}\p{N}])cobre tudo(?![\p{L}\p{N}])/iu, reason: 'absoluto sem ressalva' },
+  { pattern: /(?<![\p{L}\p{N}])protege qualquer ve[ií]culo(?![\p{L}\p{N}])/iu, reason: 'absoluto sem ressalva' },
+  { pattern: /(?<![\p{L}\p{N}])igual (a |ao |o |um )?seguro(?![\p{L}\p{N}])/iu, reason: 'confusao com seguro tradicional' },
+  { pattern: /(?<![\p{L}\p{N}])tipo (um )?seguro(?![\p{L}\p{N}])/iu, reason: 'confusao com seguro tradicional' },
+  // "e seguro" sem acento pegava "associacao e seguro" como falso positivo — so com acento.
+  { pattern: /(?<![\p{L}\p{N}])é seguro(?![\p{L}\p{N}])/iu, reason: 'confusao com seguro tradicional' },
 ];
 
 interface Input {
@@ -80,9 +85,32 @@ export const agent06: Agent<Input, Output> = {
     const mdx = a.mdx_content;
 
     // ===== 1) Hard-block regex (frases proibidas + escopo) =====
+    //
+    // "e igual a seguro" tem um uso LEGITIMO e frequente: a pergunta do FAQ
+    // ("A protecao veicular e igual a seguro de moto?"), que o artigo responde negando —
+    // exatamente o esclarecimento que queremos fazer. Bloquear isso queimava a pauta de
+    // um artigo correto. Quando o match esta numa pergunta ou vem seguido de negacao,
+    // deixamos a decisao pro LLM judge, que le o contexto.
+    const ehPerguntaOuNegacao = (texto: string, idx: number): boolean => {
+      const trecho = texto.slice(Math.max(0, idx - 120), idx + 200);
+      const linha = texto.slice(texto.lastIndexOf('\n', idx) + 1, texto.indexOf('\n', idx) === -1 ? undefined : texto.indexOf('\n', idx));
+      if (/\?/.test(linha)) return true;                                  // pergunta (FAQ)
+      if (/^#{1,6}\s/.test(linha.trim())) return true;                    // heading
+      return /\b(n[ãa]o\s+[ée]|n[ãa]o\s+se\s+confunde|diferente\s+de|ao\s+contr[áa]rio)\b/i.test(trecho);
+    };
+
     const hardMatches: Array<{ pattern: string; reason: string }> = [];
     for (const f of FORBIDDEN_PHRASES) {
-      if (f.pattern.test(mdx)) hardMatches.push({ pattern: f.pattern.source, reason: f.reason });
+      const re = new RegExp(f.pattern.source, f.pattern.flags.includes('g') ? f.pattern.flags : f.pattern.flags + 'g');
+      let m: RegExpExecArray | null;
+      let bloqueou = false;
+      while ((m = re.exec(mdx)) !== null) {
+        const contextual = /igual|tipo|[ée] seguro/i.test(f.pattern.source);
+        if (contextual && ehPerguntaOuNegacao(mdx, m.index)) continue;   // FAQ/negacao: LLM decide
+        bloqueou = true;
+        break;
+      }
+      if (bloqueou) hardMatches.push({ pattern: f.pattern.source, reason: f.reason });
     }
 
     // Escopo

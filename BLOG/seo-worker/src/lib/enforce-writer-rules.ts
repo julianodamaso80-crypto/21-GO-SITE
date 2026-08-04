@@ -12,14 +12,23 @@
  * Retorna o MDX corrigido + lista de mudancas aplicadas (pra logar).
  */
 
+/**
+ * ATENCAO AO \b: em JavaScript, `\b` so enxerga [A-Za-z0-9_]. Como "ô" nao e word
+ * character ASCII, `/\b[ôo]nibus\b/` NUNCA casou "ônibus" — casava so "onibus" sem
+ * acento. Na pratica o pos-processador deixava passar a palavra acentuada, o artigo
+ * chegava ao Reviewer com "ônibus" e era reprovado por escopo, queimando a pauta.
+ *
+ * A correcao usa lookarounds com classes Unicode (\p{L}) e flag `u`, que respeitam
+ * acentos e continuam evitando match dentro de palavra maior ("microônibus" nao casa).
+ */
 const FORBIDDEN_VEHICLES = [
-  { pattern: /\bcaminh(?:ão|oes|ao|ões)\b/gi, replacement: 'carro de carga leve' },
-  { pattern: /\bcarretas?\b/gi, replacement: 'utilitario' },
-  { pattern: /\bbitrem\b/gi, replacement: 'utilitario' },
-  { pattern: /\bcavalo mec[aâ]nico\b/gi, replacement: 'utilitario' },
-  { pattern: /\b[ôo]nibus\b/gi, replacement: 'van' },
-  { pattern: /\bfrete pesado\b/gi, replacement: 'entrega' },
-  { pattern: /\btransportadora\b/gi, replacement: 'empresa de entrega' },
+  { pattern: /(?<![\p{L}\p{N}])caminh(?:ão|ões|ao|oes)(?![\p{L}\p{N}])/giu, replacement: 'carro de carga leve' },
+  { pattern: /(?<![\p{L}\p{N}])carretas?(?![\p{L}\p{N}])/giu, replacement: 'utilitario' },
+  { pattern: /(?<![\p{L}\p{N}])bitre(?:m|ns)(?![\p{L}\p{N}])/giu, replacement: 'utilitario' },
+  { pattern: /(?<![\p{L}\p{N}])cavalo mec[aâ]nico(?![\p{L}\p{N}])/giu, replacement: 'utilitario' },
+  { pattern: /(?<![\p{L}\p{N}])(?:micro-?)?[ôo]nibus(?![\p{L}\p{N}])/giu, replacement: 'van' },
+  { pattern: /(?<![\p{L}\p{N}])frete pesado(?![\p{L}\p{N}])/giu, replacement: 'entrega' },
+  { pattern: /(?<![\p{L}\p{N}])transportadoras?(?![\p{L}\p{N}])/giu, replacement: 'empresa de entrega' },
 ];
 
 const ENFORCED_SECTION_HEADING = '## Como a proteção veicular 21Go funciona';
@@ -44,9 +53,18 @@ export function enforceWriterRules(mdx: string): EnforceResult {
   let body = mdx;
 
   // 1) Remove menções a veiculos pesados (substitui pra evitar escopo violado)
+  //
+  // NAO usar f.pattern.test() aqui: os regex tem flag /g e sao constantes de modulo,
+  // entao o lastIndex sobrevive entre chamadas. Como o Writer chama esta funcao duas
+  // vezes (antes e depois do internal-linker), na segunda passada — que e a versao
+  // salva no banco — o test() retomava do lastIndex anterior, retornava false e a
+  // substituicao era pulada. Foi assim que um artigo com "onibus" chegou ao Reviewer
+  // e queimou a pauta. O replace() com /g sempre varre do inicio, entao comparar o
+  // antes/depois e suficiente e imune ao estado.
   for (const f of FORBIDDEN_VEHICLES) {
-    if (f.pattern.test(body)) {
-      body = body.replace(f.pattern, f.replacement);
+    const substituido = body.replace(f.pattern, f.replacement);
+    if (substituido !== body) {
+      body = substituido;
       changes.push(`substituido veiculo-pesado por '${f.replacement}'`);
     }
   }
