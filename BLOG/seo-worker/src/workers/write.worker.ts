@@ -184,10 +184,22 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
     }
   }
 
-  // 2. Preenche bonus ate atingir `limit` total
+  // 2. Preenche bonus ate atingir `limit` total, com TETO POR CATEGORIA.
+  //
+  // Sem o teto, o bonus ia todo pra categoria que por acaso tinha estoque: em 05/08 o
+  // dia fechou com 7 artigos de BYD (cota 2) e ZERO de carros, e tres deles disputavam
+  // a mesma pergunta ("onde carregar meu eletrico"). Um dia monotematico e justamente
+  // a canibalizacao que a esteira deveria evitar.
   const remaining = Math.max(0, limit - briefingsToProcess.length);
   if (remaining > 0) {
-    // Junta todos os briefings restantes (qualquer categoria) em FIFO
+    const cotaDe = new Map(SLOTS_DIARIOS.map((s) => [s.cat as string, s.qtd]));
+    // teto = cota do dia + 1 (categoria sem cota propria, como 'educativo', pode 1)
+    const tetoDe = (cat: string) => (cotaDe.get(cat) ?? 0) + 1;
+    const jaPlanejado = new Map<string, number>();
+    for (const p of briefingsToProcess) {
+      jaPlanejado.set(p.topic.category, (jaPlanejado.get(p.topic.category) ?? 0) + (articlesHoje[p.topic.category] ?? 0) + 1);
+    }
+
     const remainingBriefs: Array<{ briefing: BriefingRow; topic: TopicRow }> = [];
     for (const cat of Object.keys(briefsByCategory)) {
       remainingBriefs.push(...(briefsByCategory[cat] ?? []));
@@ -195,8 +207,22 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
     remainingBriefs.sort((a, b) =>
       new Date(a.briefing.created_at).getTime() - new Date(b.briefing.created_at).getTime(),
     );
-    for (const r of remainingBriefs.slice(0, remaining)) {
+
+    let adicionados = 0;
+    for (const r of remainingBriefs) {
+      if (adicionados >= remaining) break;
+      const cat = r.topic.category;
+      const totalCat = (jaPlanejado.get(cat) ?? articlesHoje[cat] ?? 0);
+      if (totalCat >= tetoDe(cat)) {
+        log.debug({ categoria: cat, total: totalCat, teto: tetoDe(cat) }, 'bonus recusado — teto da categoria');
+        continue;
+      }
+      jaPlanejado.set(cat, totalCat + 1);
       briefingsToProcess.push({ ...r, slot: 'bonus' });
+      adicionados++;
+    }
+    if (adicionados < remaining) {
+      log.info({ pedido: remaining, adicionado: adicionados }, 'bonus limitado pelo teto por categoria');
     }
   }
 
