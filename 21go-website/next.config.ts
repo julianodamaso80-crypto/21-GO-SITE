@@ -55,6 +55,15 @@ const BLOG_CONSOLIDACOES = [
     destination: '/blog/veiculo-remarcado-o-que-e-tem-protecao',
     permanent: true,
   })),
+  // recarga de eletrico (05/08): dois artigos do mesmo dia respondiam a mesma pergunta
+  // ("onde carregar meu eletrico"). Mantido o que fala de BYD, que e o publico-alvo.
+  [
+    'mapa-de-pontos-de-recarga-para-carros-eletricos-onde-carregar',
+  ].map((slug) => ({
+    source: `/blog/${slug}`,
+    destination: '/blog/apps-para-encontrar-pontos-de-recarga-byd-guia-completo-2',
+    permanent: true,
+  })),
 )
 
 const nextConfig: NextConfig = {
