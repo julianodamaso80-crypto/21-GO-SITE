@@ -99,22 +99,34 @@ Gere o briefing COMPLETO em JSON (sem markdown):
   "image_suggestion": "string descrevendo a imagem destacada"
 }`;
 
+    // 1 retry com temperature 0 e mais espaco de saida. O briefing e o JSON mais longo
+    // da esteira (outline + FAQs + links) e o Gemini Flash trunca com frequencia: numa
+    // rodada de 05/08, 3 dos 4 topicos aprovados morreram em "Unterminated string in
+    // JSON" e viraram pauta perdida — 75% do trabalho de pesquisa jogado fora.
     let llmCost: number | null = null;
-    let briefing: LlmBriefing;
-    try {
-      const r = await complete({
-        tier: 'main',
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userMsg }],
-        max_tokens: 2500,
-        temperature: 0.4,
-      });
-      llmCost = r.cost_usd;
-      briefing = parseJson(r.text);
-    } catch (e) {
-      log.error({ err: (e as Error).message, topic: t.id }, 'briefing LLM falhou');
-      throw e;
+    let briefing: LlmBriefing | null = null;
+    for (let tentativa = 1; tentativa <= 2; tentativa++) {
+      try {
+        const r = await complete({
+          tier: 'main',
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userMsg }],
+          max_tokens: tentativa === 1 ? 2500 : 3500,
+          temperature: tentativa === 1 ? 0.4 : 0,
+        });
+        llmCost = r.cost_usd;
+        briefing = parseJson(r.text);
+        break;
+      } catch (e) {
+        if (tentativa === 1) {
+          log.warn({ err: (e as Error).message, topic: t.id }, 'briefing com JSON invalido — repetindo com temperature 0');
+          continue;
+        }
+        log.error({ err: (e as Error).message, topic: t.id }, 'briefing LLM falhou nas 2 tentativas');
+        throw e;
+      }
     }
+    if (!briefing) throw new Error('briefing nao produzido');
 
     if (ctx.dry_run) {
       log.info({ topic: t.id, title: briefing.seo_title }, 'DRY-RUN — briefing nao gravado');
