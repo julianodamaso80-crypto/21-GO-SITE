@@ -64,6 +64,8 @@ interface VehicleData {
 interface FipeItem {
   code: string
   name: string
+  /** Código FIPE da versão — vem do `back` do PowerCRM e amarra o valor. */
+  codFipe?: string | null
 }
 
 /* ─── API Config ─── */
@@ -186,15 +188,28 @@ export default function CotacaoPage() {
     if (field === 'placa') setApiError('')
   }, [])
 
-  // Confirmação da placa na base do PowerCRM enquanto o cliente digita.
-  // 'notfound' NUNCA bloqueia o avanço (ordem do dono): só avisa. Serve pra
-  // pegar dedo trocado e pra desanimar quem inventa placa, não pra barrar
-  // veículo recém-emplacado ou consulta que o PowerCRM não respondeu.
-  const [plateCheck, setPlateCheck] = useState<{
-    status: 'idle' | 'checking' | 'found' | 'notfound' | 'unknown'
-    marca?: string
-    ano?: string
+  // Identificação do veículo pela placa (PowerCRM → DENATRAN).
+  //
+  // Diferente do antigo plate-check, que só confirmava que a placa existia,
+  // isto devolve os MESMOS IDs que os dropdowns produzem (marca, ano, modelo)
+  // — então o formulário se preenche sozinho e o cliente não escolhe nada.
+  // 'found'    → versão fechada, nada mais a perguntar
+  // 'partial'  → sabemos marca e ano; falta o cliente confirmar a versão
+  // 'notfound' → base respondeu e não achou; abre o modo manual, nunca trava
+  // 'unknown'  → consulta fora do ar; abre o modo manual, sem alarde
+  const [plateId, setPlateId] = useState<{
+    status: 'idle' | 'checking' | 'found' | 'partial' | 'notfound' | 'unknown'
+    label?: string
+    cor?: string
   }>({ status: 'idle' })
+
+  // Versões prováveis do veículo quando a placa não fechou uma só. Lista curta
+  // (2-5 itens) filtrada pelo nome que veio do DENATRAN. `null` = usa a lista
+  // completa da marca+ano, que é o que o "ver todos os modelos" faz.
+  const [plateCandidates, setPlateCandidates] = useState<FipeItem[] | null>(null)
+
+  // Cliente pediu pra escolher o veículo na mão, mesmo tendo dado a placa.
+  const [manualVehicle, setManualVehicle] = useState(false)
 
   // Cliente afirmou que a placa de padrão estranho é a dele mesmo. Guardado por
   // placa: se ele editar o campo depois, a confirmação não vale mais.
@@ -204,37 +219,93 @@ export default function CotacaoPage() {
   // nos dois casos o padrão suspeito deixa de importar. É o que garante que
   // ninguém com placa de verdade fique travado aqui.
   const placaLiberada =
-    plateCheck.status === 'found' || placaConfirmada === normalizePlaca(form.placa)
+    plateId.status === 'found'
+    || plateId.status === 'partial'
+    || placaConfirmada === normalizePlaca(form.placa)
   const placaPedeConfirmacao =
     form.condicao === 'usado'
     && !placaLiberada
     && validatePlaca(form.placa, true, false)?.level === 'confirm'
+
+  /**
+   * A placa só assume o formulário quando de fato amarrou o veículo na tabela
+   * do PowerCRM. Tem placa que o DENATRAN devolve sem marca (o "GOLF 2.0" de
+   * 2003 é um caso real): aí sabemos o carro mas não os IDs, e o cliente
+   * escolhe na mão — com o que identificamos mostrado ali do lado.
+   */
+  const placaResolveu =
+    plateId.status === 'found'
+    || (plateId.status === 'partial' && !!fipeMarcaCode && !!fipeAnoCode)
+  /** Zero km não tem placa; e quem pediu pra escolher na mão também vê os selects. */
+  const modoManual =
+    form.condicao === 'zero'
+    || manualVehicle
+    || plateId.status === 'notfound'
+    || plateId.status === 'unknown'
+    || (plateId.status === 'partial' && !placaResolveu)
+  const veiculoPelaPlaca = !modoManual && placaResolveu
 
   useEffect(() => {
     const p = normalizePlaca(form.placa)
     // Consulta toda placa bem formada — inclusive as de padrão suspeito, porque
     // é a base que decide se elas são reais.
     if (form.condicao !== 'usado' || p.length !== 7 || !isPlacaFormatValid(p)) {
-      setPlateCheck({ status: 'idle' })
+      setPlateId({ status: 'idle' })
+      setPlateCandidates(null)
       return
     }
     let cancelled = false
-    setPlateCheck({ status: 'checking' })
+    setPlateId({ status: 'checking' })
+    setManualVehicle(false)
     const t = setTimeout(() => {
-      fetch(`${API_BASE}/api/vehicle/plate-check/${p}`)
+      fetch(`${API_BASE}/api/vehicle/plate-identify/${p}`)
         .then(r => r.json())
-        .then((d: { status: string; marca?: string; ano?: string }) => {
+        .then((d: {
+          status: string
+          label?: string
+          cor?: string
+          tipo?: 'carro' | 'moto'
+          brandId?: string
+          brandText?: string
+          year?: string
+          modelId?: string
+          modelText?: string
+          codFipe?: string
+          candidates?: { code: string; name: string; codFipe: string | null }[]
+        }) => {
           if (cancelled) return
-          setPlateCheck(
-            d.status === 'found'
-              ? { status: 'found', marca: d.marca, ano: d.ano }
-              : d.status === 'notfound'
-                ? { status: 'notfound' }
-                : { status: 'unknown' },
+          if (d.status !== 'found' && d.status !== 'partial') {
+            setPlateId({ status: d.status === 'notfound' ? 'notfound' : 'unknown' })
+            setPlateCandidates(null)
+            // Limpa o que uma placa anterior tinha preenchido: deixar Chevrolet
+            // 2019 na tela depois de trocar de placa confunde mais que ajuda.
+            setFipeMarcaCode('')
+            setFipeMarcaText('')
+            setFipeAnoCode('')
+            setFipeModeloCode('')
+            setFipeModeloText('')
+            setFipeModeloCodFipe('')
+            return
+          }
+          // Preenche exatamente os mesmos estados que os dropdowns preencheriam,
+          // pra que o cálculo de preço siga pelo caminho único de sempre.
+          if (d.tipo) setFipeKind(d.tipo === 'moto' ? 'motos' : 'carros')
+          if (d.brandId) setFipeMarcaCode(d.brandId)
+          if (d.brandText) setFipeMarcaText(d.brandText)
+          if (d.year) setFipeAnoCode(d.year)
+          setFipeModeloCode(d.modelId || '')
+          setFipeModeloText(d.modelText || '')
+          setFipeModeloCodFipe(d.codFipe || '')
+          setPlateCandidates(
+            d.status === 'partial' && d.candidates?.length
+              ? d.candidates.map(c => ({ code: c.code, name: c.name, codFipe: c.codFipe }))
+              : null,
           )
+          setPlateId({ status: d.status, label: d.label, cor: d.cor })
+          setErrors(prev => ({ ...prev, fipeMarca: '', fipeAno: '', fipeModelo: '', placa: '' }))
         })
-        .catch(() => { if (!cancelled) setPlateCheck({ status: 'unknown' }) })
-    }, 600)
+        .catch(() => { if (!cancelled) setPlateId({ status: 'unknown' }) })
+    }, 700)
     return () => { cancelled = true; clearTimeout(t) }
   }, [form.placa, form.condicao])
 
@@ -275,10 +346,17 @@ export default function CotacaoPage() {
     const whatsErr = isValidWhatsApp(form.whatsapp)
     if (whatsErr) e.whatsapp = whatsErr
     if (!form.condicao) e.condicao = 'Diga se o veículo é zero km ou usado'
-    // Tipo → Marca → Ano → Modelo são obrigatórios.
-    if (!fipeMarcaCode) e.fipeMarca = 'Escolha a marca'
-    if (!fipeAnoCode) e.fipeAno = 'Escolha o ano'
-    if (!fipeModeloCode) e.fipeModelo = 'Escolha o modelo'
+    // Identificado pela placa: marca e ano já vieram prontos, só a versão pode
+    // faltar. No modo manual continuam valendo os três selects.
+    if (plateId.status === 'checking') {
+      e.placa = 'Só um instante, estamos identificando seu veículo...'
+    } else if (veiculoPelaPlaca) {
+      if (!fipeModeloCode) e.fipeModelo = 'Confirme a versão do seu veículo'
+    } else {
+      if (!fipeMarcaCode) e.fipeMarca = 'Escolha a marca'
+      if (!fipeAnoCode) e.fipeAno = 'Escolha o ano'
+      if (!fipeModeloCode) e.fipeModelo = 'Escolha o modelo'
+    }
     // Placa: obrigatória em veículo usado, dispensada no zero km (ainda não tem).
     // Placa que a base não confirmou passa. O único bloqueio real é formato —
     // padrão suspeito só pede o toque de confirmação (level 'confirm').
@@ -806,37 +884,6 @@ export default function CotacaoPage() {
 
               <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-5 sm:p-8 md:p-10">
                 <div className="space-y-5">
-                  <PillInput
-                    label="Nome completo"
-                    name="nome"
-                    value={form.nome}
-                    error={errors.nome}
-                    onChange={v => set('nome', v)}
-                    placeholder="Seu nome completo"
-                    disabled={loading}
-                  />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <PillInput
-                      label="WhatsApp"
-                      name="whatsapp"
-                      value={form.whatsapp}
-                      error={errors.whatsapp}
-                      onChange={v => set('whatsapp', maskPhone(v))}
-                      placeholder="(21) 99999-9999"
-                      icon={<MessageCircle className="w-4 h-4 text-[#25D366]" />}
-                      disabled={loading}
-                    />
-                    <PillInput
-                      label="E-mail (opcional)"
-                      name="email"
-                      type="email"
-                      value={form.email}
-                      onChange={v => set('email', v)}
-                      placeholder="seu@email.com"
-                      icon={<Mail className="w-4 h-4 text-[#94A3B8]" />}
-                      disabled={loading}
-                    />
-                  </div>
                   {/* Zero km ou usado — define se a placa vai ser exigida */}
                   <div>
                     <label className="block text-sm font-semibold text-[#1A2754] mb-2">O veículo é zero km ou usado?</label>
@@ -871,8 +918,151 @@ export default function CotacaoPage() {
                     {errors.condicao && <p className="mt-1.5 ml-1 text-xs text-[#EF4444] font-medium">{errors.condicao}</p>}
                   </div>
 
+                  {/* Só faz sentido depois de saber se tem placa — senão o quadro abre vazio */}
+                  {form.condicao && (
                   <div className="space-y-4 rounded-2xl border-2 border-[#D1DFFA] bg-[#F7F8FC]/60 p-4 sm:p-5">
                     <label className="block text-sm font-semibold text-[#1A2754]">Dados do veículo</label>
+
+                    {/* ── Placa PRIMEIRO: é ela que identifica o veículo sozinha ── */}
+                    {form.condicao === 'usado' && (
+                      <div>
+                        <PillInput
+                          label="Placa do veículo"
+                          name="placa"
+                          value={form.placa}
+                          error={errors.placa}
+                          onChange={v => set('placa', maskPlaca(v))}
+                          placeholder="RIO2A18"
+                          mono
+                          disabled={loading}
+                        />
+                        {/* Padrão estranho: NUNCA barra. Um toque e o cliente segue.
+                            Existe só pra dar trabalho pra quem inventa placa. */}
+                        {placaPedeConfirmacao && (
+                          <div className="mt-2 ml-1 flex flex-wrap items-center gap-2">
+                            {!errors.placa && (
+                              <p className="text-xs text-[#F2911D] font-medium">
+                                Essa placa parece um exemplo. É mesmo a do seu veículo?
+                              </p>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPlacaConfirmada(normalizePlaca(form.placa))
+                                setErrors(prev => ({ ...prev, placa: '' }))
+                              }}
+                              className="px-3 py-1.5 rounded-full border-2 border-[#293C82] text-[#293C82] text-xs font-bold hover:bg-[#293C82]/10 transition-colors"
+                            >
+                              Sim, é a minha placa
+                            </button>
+                          </div>
+                        )}
+                        {plateId.status === 'checking' && (
+                          <p className="mt-2 ml-4 text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Buscando seu veículo na base nacional...
+                          </p>
+                        )}
+                        {/* Aviso, não bloqueio: pode ser carro novo na base ou consulta fora
+                            do ar. Nos dois casos o cliente escolhe o veículo logo abaixo. */}
+                        {!errors.placa && !placaPedeConfirmacao && plateId.status === 'notfound' && (
+                          <p className="mt-2 ml-4 text-xs text-[#F2911D] font-medium">
+                            Não localizamos essa placa. Confira se digitou certo — se estiver
+                            correta, é só escolher o veículo abaixo que a simulação sai igual.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── Veículo achado pela placa: o cliente só confere ── */}
+                    {veiculoPelaPlaca && (
+                      <div className="rounded-2xl border-2 border-[#10B981]/40 bg-[#F0FDF4] p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#10B981]/10 flex items-center justify-center flex-shrink-0">
+                            <Car className="w-5 h-5 text-[#10B981]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-[#10B981] mb-0.5">
+                              Veículo identificado
+                            </p>
+                            <p className="font-semibold text-[#1A2754] text-sm leading-snug">
+                              {plateId.label}
+                            </p>
+                            {plateId.status === 'found' && fipeModeloText && (
+                              <p className="text-xs text-[#64748B] mt-0.5">{fipeModeloText}</p>
+                            )}
+                            {plateId.cor && (
+                              <p className="text-[11px] text-[#94A3B8] mt-0.5">{plateId.cor}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Placa achada mas sem versão fechada: a lista já vem curta,
+                            filtrada pelo nome do modelo. Quem escolhe é sempre o cliente —
+                            versão chutada é valor FIPE errado. */}
+                        {plateId.status === 'partial' && (
+                          <div className="mt-4">
+                            <FipeSelect
+                              label="Confirme a versão do seu veículo"
+                              value={fipeModeloCode}
+                              options={plateCandidates || fipeModelos}
+                              loading={!plateCandidates && fipeLoadingModelos}
+                              disabled={loading}
+                              error={errors.fipeModelo}
+                              placeholder="Selecione a versão"
+                              onChange={code => {
+                                setFipeModeloCode(code)
+                                const hit = (plateCandidates || fipeModelos).find(m => m.code === code)
+                                setFipeModeloText(hit?.name || '')
+                                setFipeModeloCodFipe(hit?.codFipe || '')
+                                setErrors(prev => ({ ...prev, fipeModelo: '' }))
+                              }}
+                            />
+                            {plateCandidates && (
+                              <button
+                                type="button"
+                                onClick={() => setPlateCandidates(null)}
+                                className="mt-2 ml-1 text-xs font-semibold text-[#293C82] hover:underline"
+                              >
+                                Não achei o meu — ver todos os modelos
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setManualVehicle(true)
+                            setPlateCandidates(null)
+                            setFipeMarcaCode('')
+                            setFipeMarcaText('')
+                            setFipeAnoCode('')
+                            setFipeModeloCode('')
+                            setFipeModeloText('')
+                            setFipeModeloCodFipe('')
+                          }}
+                          className="mt-3 text-xs text-[#64748B] hover:text-[#1A2754] underline"
+                        >
+                          Não é esse veículo? Escolher na mão
+                        </button>
+                      </div>
+                    )}
+
+                    {/* ── Modo manual: zero km, placa não achada, ou o cliente pediu ── */}
+                    {modoManual && (
+                    <>
+                    {/* Achamos o veículo, mas sem os IDs da tabela: mostramos o que
+                        sabemos e o cliente fecha a escolha. */}
+                    {plateId.label && plateId.status === 'partial' && (
+                      <div className="flex items-start gap-2.5 rounded-xl bg-[#EFF6FF] border border-[#293C82]/20 p-3">
+                        <Search className="w-4 h-4 text-[#293C82] flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-[#1A2754] leading-snug">
+                          Encontramos <span className="font-semibold">{plateId.label}</span> na
+                          placa, mas não deu pra fechar a versão. Confirme os dados abaixo.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Tipo do veículo — dropdown com setinha */}
                     <FipeSelect
@@ -966,60 +1156,7 @@ export default function CotacaoPage() {
                       }}
                     />
 
-                    {/* Placa: obrigatória no usado, nem aparece no zero km */}
-                    {form.condicao === 'usado' && (
-                      <div>
-                        <PillInput
-                          label="Placa do veículo"
-                          name="placa"
-                          value={form.placa}
-                          error={errors.placa}
-                          onChange={v => set('placa', maskPlaca(v))}
-                          placeholder="RIO2A18"
-                          mono
-                          disabled={loading}
-                        />
-                        {/* Padrão estranho: NUNCA barra. Um toque e o cliente segue.
-                            Existe só pra dar trabalho pra quem inventa placa. */}
-                        {placaPedeConfirmacao && (
-                          <div className="mt-2 ml-1 flex flex-wrap items-center gap-2">
-                            {!errors.placa && (
-                              <p className="text-xs text-[#F2911D] font-medium">
-                                Essa placa parece um exemplo. É mesmo a do seu veículo?
-                              </p>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPlacaConfirmada(normalizePlaca(form.placa))
-                                setErrors(prev => ({ ...prev, placa: '' }))
-                              }}
-                              className="px-3 py-1.5 rounded-full border-2 border-[#293C82] text-[#293C82] text-xs font-bold hover:bg-[#293C82]/10 transition-colors"
-                            >
-                              Sim, é a minha placa
-                            </button>
-                          </div>
-                        )}
-                        {!errors.placa && plateCheck.status === 'checking' && (
-                          <p className="mt-1.5 ml-4 text-xs text-[#94A3B8] font-medium flex items-center gap-1.5">
-                            <Loader2 className="w-3 h-3 animate-spin" /> Conferindo a placa...
-                          </p>
-                        )}
-                        {!errors.placa && plateCheck.status === 'found' && (
-                          <p className="mt-1.5 ml-4 text-xs text-[#10B981] font-semibold flex items-center gap-1.5">
-                            <Check className="w-3.5 h-3.5" />
-                            Placa confirmada{plateCheck.marca ? `: ${plateCheck.marca}` : ''}
-                            {plateCheck.ano ? ` ${plateCheck.ano}` : ''}
-                          </p>
-                        )}
-                        {/* Aviso, não bloqueio: pode ser carro novo na base ou consulta fora do ar.
-                            Escondido quando já estamos pedindo a confirmação — um recado só. */}
-                        {!errors.placa && !placaPedeConfirmacao && plateCheck.status === 'notfound' && (
-                          <p className="mt-1.5 ml-4 text-xs text-[#F2911D] font-medium">
-                            Não localizamos essa placa. Confira se digitou certo — se estiver correta, pode seguir normalmente.
-                          </p>
-                        )}
-                      </div>
+                    </>
                     )}
 
                     <p className="text-[11px] text-[#94A3B8] leading-snug pt-1">
@@ -1027,6 +1164,40 @@ export default function CotacaoPage() {
                         ? 'Veículo zero km não precisa de placa agora. O consultor cadastra a placa assim que você emplacar.'
                         : 'Valor estimado pela tabela FIPE. O consultor confirma o valor final com a placa real.'}
                     </p>
+                  </div>
+                  )}
+
+                  {/* Contato — depois do veículo: a placa é que abre a conversa */}
+                  <PillInput
+                    label="Nome completo"
+                    name="nome"
+                    value={form.nome}
+                    error={errors.nome}
+                    onChange={v => set('nome', v)}
+                    placeholder="Seu nome completo"
+                    disabled={loading}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <PillInput
+                      label="WhatsApp"
+                      name="whatsapp"
+                      value={form.whatsapp}
+                      error={errors.whatsapp}
+                      onChange={v => set('whatsapp', maskPhone(v))}
+                      placeholder="(21) 99999-9999"
+                      icon={<MessageCircle className="w-4 h-4 text-[#25D366]" />}
+                      disabled={loading}
+                    />
+                    <PillInput
+                      label="E-mail (opcional)"
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={v => set('email', v)}
+                      placeholder="seu@email.com"
+                      icon={<Mail className="w-4 h-4 text-[#94A3B8]" />}
+                      disabled={loading}
+                    />
                   </div>
 
                   {/* Leilão / Remarcado — não faz sentido pra zero km */}
@@ -1296,6 +1467,10 @@ export default function CotacaoPage() {
                     setVehicle(null)
                     setPlans([])
                     setForm({ nome: '', whatsapp: '', email: '', condicao: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' })
+                    setPlateId({ status: 'idle' })
+                    setPlateCandidates(null)
+                    setManualVehicle(false)
+                    setPlacaConfirmada('')
                   }}
                   className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#1A2754] transition-colors"
                 >
@@ -1525,7 +1700,7 @@ export default function CotacaoPage() {
                   className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#1A2754] transition-colors">
                   <ArrowLeft className="w-4 h-4" /> Editar dados
                 </button>
-                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', condicao: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setFipeMarcaCode(''); setFipeMarcaText(''); setFipeModeloCode(''); setFipeModeloText(''); setFipeModeloCodFipe(''); setFipeAnoCode(''); whatsappClicked.current = false }}
+                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', condicao: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setFipeMarcaCode(''); setFipeMarcaText(''); setFipeModeloCode(''); setFipeModeloText(''); setFipeModeloCodFipe(''); setFipeAnoCode(''); setPlateId({ status: 'idle' }); setPlateCandidates(null); setManualVehicle(false); setPlacaConfirmada(''); whatsappClicked.current = false }}
                   className="text-sm text-[#293C82] hover:text-[#3D72DE] transition-colors">
                   Nova simulação
                 </button>
