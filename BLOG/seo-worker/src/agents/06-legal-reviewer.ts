@@ -168,12 +168,15 @@ export const agent06: Agent<Input, Output> = {
     // real, mas do plano Jeito — engana quem tem o Basico e vira reclamacao.
     // Exige que a frase qualifique o plano ou remeta a comparacao.
     const PLANO_MENCIONADO = /\b(b[aá]sico|jeito|vip|premium|conforme o plano|varia (conforme|por|de acordo com) o plano|depende do plano|cada plano)\b/i;
-    // So vale quando o numero esta falando de um BENEFICIO nosso. Sem esse recorte o
-    // guard barraria "autonomia de 400km", que e vocabulario normal de carro eletrico.
-    const CONTEXTO_BENEFICIO = /\b(reboque|guincho|carro reserva|t[aá]xi|assist[eê]ncia|cobre|cobertura|inclu[ií]|oferece)\b/i;
+    // So vale quando o numero fala de um SERVICO NOSSO, nomeado. Verbos genericos
+    // ("cobre", "inclui", "oferece") estavam no gatilho e geravam falso positivo em
+    // frase sobre a garantia de FABRICA do carro — "a garantia cobre motor e bateria
+    // por 8 anos ou 150.000 km" nao e beneficio de plano da 21Go, e barrar isso
+    // queimava pauta boa do cluster BYD. Tambem nao pode pegar "autonomia de 400km".
+    const SERVICO_NOSSO = /\b(reboque|guincho|carro reserva|ve[ií]culo reserva|t[aá]xi|assist[eê]ncia 24)\b/i;
     const frasesComBeneficio = bodyOnly
       .split(/(?<=[.!?])\s+|\n/)
-      .filter((f) => CONTEXTO_BENEFICIO.test(f))
+      .filter((f) => SERVICO_NOSSO.test(f))
       .filter((f) => /\b\d{2,4}\s*km\b/i.test(f) || /\b\d{1,2}\s*dias?\b/i.test(f));
     const frasesSemPlano = frasesComBeneficio.filter((f) => !PLANO_MENCIONADO.test(f));
     if (frasesSemPlano.length > 0) {
