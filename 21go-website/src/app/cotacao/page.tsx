@@ -31,7 +31,6 @@ import {
   activationCashPrice,
   activationInstallment12x,
 } from '@/data/pricing'
-import { getExclusionReason, type ExclusionReason } from '@/data/vehicle-exclusions'
 import { buildContratarMessage } from '@/lib/quote-message'
 import { isPlacaFormatValid, normalizePlaca, validatePlaca } from '@/lib/placa'
 
@@ -133,11 +132,9 @@ export default function CotacaoPage() {
   const [vehicle, setVehicle] = useState<VehicleData | null>(null)
   const [plans, setPlans] = useState<QuotePlan[]>([])
 
-  // Excluded vehicle state — `model` = modelo na lista de exclusao;
-  // `year` = ano-modelo abaixo do corte minimo. Em ambos os casos mostramos
-  // tela de agradecimento e salvamos o contato pra acionar quando aceitarmos.
+  // Veiculo sem plano no PowerCRM — o unico motivo que dispensa cliente desde 06/08/2026.
+  // Mostramos tela de agradecimento e salvamos o contato pra acionar quando aceitarmos.
   const [excluded, setExcluded] = useState(false)
-  const [exclusionReason, setExclusionReason] = useState<Exclude<ExclusionReason, null>>('model')
 
   // Adesivo toggle
   const [stickerAccepted, setStickerAccepted] = useState(true)
@@ -146,7 +143,7 @@ export default function CotacaoPage() {
   // ou quando o veículo não retorna FIPE confiável. Cliente é direcionado
   // pro WhatsApp da consultora com dados pré-preenchidos, via /api/wa (rodízio).
   const [requiresHumanSupport, setRequiresHumanSupport] = useState(false)
-  const [humanSupportReason, setHumanSupportReason] = useState<'fipe_indisponivel' | 'consulta_falhou' | 'manual'>('consulta_falhou')
+  const [humanSupportReason, setHumanSupportReason] = useState<'fipe_indisponivel' | 'consulta_falhou' | 'manual' | 'elegibilidade_indisponivel'>('consulta_falhou')
   // Rate-limit: bloqueia após 3 veículos distintos por 7 dias (anti-consultor concorrente).
   // No 4º, abre pop-up com WhatsApp em vez de mostrar a simulação.
 
@@ -467,7 +464,7 @@ export default function CotacaoPage() {
    * Supabase e mostramos a tela de atendimento humano com botão WhatsApp.
    * NUNCA inventamos valor FIPE — cliente fala direto com a consultora.
    */
-  function triggerHumanSupport(reason: 'fipe_indisponivel' | 'consulta_falhou' | 'manual') {
+  function triggerHumanSupport(reason: 'fipe_indisponivel' | 'consulta_falhou' | 'manual' | 'elegibilidade_indisponivel') {
     setHumanSupportReason(reason)
     setRequiresHumanSupport(true)
     setLoading(false)
@@ -524,7 +521,11 @@ export default function CotacaoPage() {
 
       if (!data.success) {
         if (data.requires_human_support) {
-          triggerHumanSupport('fipe_indisponivel')
+          // 'elegibilidade_indisponivel' = o Power não respondeu se cobre o veículo. Vai pro
+          // consultor, nunca pra tela de "não fazemos" — só o Power pode dizer isso.
+          triggerHumanSupport(
+            data.reason === 'elegibilidade_indisponivel' ? 'elegibilidade_indisponivel' : 'fipe_indisponivel',
+          )
           return
         }
         setApiError(data.error || 'Não foi possível consultar a FIPE. Tente novamente.')
@@ -538,13 +539,11 @@ export default function CotacaoPage() {
       // trava de 3 veículos/7 dias estava barrando cliente de verdade. Qualquer
       // pessoa simula quantos veículos quiser.
 
-      // Quem manda é a resposta do servidor (allowlist do PowerCRM, versão por versão). A lista
-      // por nome fica como segunda camada — cobre o caso de o servidor ainda não ter a versão.
-      const reason: ExclusionReason = data.excluded
-        ? (data.reason as ExclusionReason) || 'model'
-        : getExclusionReason(v.marca, v.modelo, v.ano)
-      if (reason) {
-        setExclusionReason(reason)
+      // Quem manda é o PowerCRM, versão por versão, respondido no servidor — e só ele. Saíram
+      // daqui em 06/08/2026 a lista de modelos escrita por nome e o corte de ano: as duas
+      // rodavam DEPOIS de o Power já ter aprovado o veículo, então a única coisa que podiam
+      // fazer era virar um "faz" em "não faz" e derrubar venda.
+      if (data.excluded) {
         setExcluded(true)
         setStep(2)
 
@@ -1360,6 +1359,8 @@ export default function CotacaoPage() {
                         <p className="text-[#64748B] text-sm mt-1">
                           {humanSupportReason === 'fipe_indisponivel'
                             ? 'Identificamos seu veículo, mas a tabela FIPE não retornou o valor agora. Nosso consultor vai conferir e te passar a cotação personalizada na hora.'
+                            : humanSupportReason === 'elegibilidade_indisponivel'
+                            ? 'Identificamos seu veículo, mas nosso sistema de cotação não respondeu agora. Nosso consultor confere a cobertura e te passa os valores na hora.'
                             : 'Não conseguimos consultar a sua placa automaticamente. Fale com nosso consultor agora pra fazer sua simulação personalizada.'}
                         </p>
                       </div>
@@ -1451,7 +1452,7 @@ export default function CotacaoPage() {
                   Infelizmente, no momento, <span className="font-semibold text-[#1A2754]">não estamos aceitando esse veículo</span> para proteção.
                 </p>
                 <p className="text-[#64748B] text-sm mb-8 leading-relaxed">
-                  Mas <span className="font-semibold text-[#10B981]">guardamos o seu contato com cuidado</span>. Assim que voltarmos a aceitar esse {exclusionReason === 'year' ? 'ano' : 'modelo'}, nós entraremos em contato com você para apresentar a melhor proposta.
+                  Mas <span className="font-semibold text-[#10B981]">guardamos o seu contato com cuidado</span>. Assim que voltarmos a aceitar esse veículo, nós entraremos em contato com você para apresentar a melhor proposta.
                 </p>
 
                 <div className="bg-[#F0FDF4] border border-[#10B981]/20 rounded-2xl p-4 mb-6 text-left">

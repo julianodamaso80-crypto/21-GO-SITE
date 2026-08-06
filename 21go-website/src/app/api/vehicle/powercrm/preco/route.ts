@@ -3,8 +3,8 @@ import { listYearsPowerCrm } from '@/lib/powercrm-lookup'
 import { lookupFipeDirect } from '@/lib/fipe-direct'
 import { getApplicablePlans, isLeilaoOrigin, type QuotePlan } from '@/data/pricing'
 import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
-import { isYearTooOld } from '@/data/vehicle-exclusions'
 import { temProtecaoNoPowerAoVivo } from '@/lib/powercrm-planos'
+import { decidirElegibilidade } from '@/lib/elegibilidade.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -74,14 +74,31 @@ export async function POST(req: NextRequest) {
     // segue — mdlYr é opcional
   }
 
-  // 2) Quem decide se fazemos o veículo é o PowerCRM. Perguntamos a ele primeiro (é a resposta
-  //    que o consultor veria) e só caímos na allowlist extraída quando a API não responde.
-  //    Fica no servidor de propósito — é a camada que o cliente não burla — e antes do FIPE,
-  //    pra não gastar consulta externa com veículo que não vai ser cotado.
-  const anoVelhoDemais = isYearTooOld(yearStr)
-  const aoVivo = anoVelhoDemais ? null : await temProtecaoNoPowerAoVivo(modelId, mdlYr)
-  const temPlano = aoVivo !== null ? aoVivo : planoNoPowerCrm(modelId)
-  const motivoExclusao = anoVelhoDemais ? 'year' : temPlano === false ? 'model' : null
+  // 2) Quem decide se fazemos o veículo é o PowerCRM, e SÓ ele. Perguntamos ao vivo (é a mesma
+  //    resposta que o consultor vê na cotação dele). Fica no servidor de propósito — é a camada
+  //    que o cliente não burla — e antes do FIPE, pra não gastar consulta externa à toa.
+  //
+  //    Regra de 06/08/2026 (ordem do dono, depois de perder venda com veículo que fazemos):
+  //    "não fazemos esse veículo" só sai da boca do site quando o Power CONFIRMA que não dá
+  //    plano. Se o Power não respondeu, o cliente vai pro consultor — nunca é dispensado.
+  //    A allowlist extraída virou só desempate: ela envelhece (em 3 dias já bloqueava o BYD
+  //    Dolphin Mini, que o Power cota), então não pode mais dispensar cliente sozinha.
+  const veredicto = decidirElegibilidade({
+    powerAoVivo: await temProtecaoNoPowerAoVivo(modelId, mdlYr),
+    allowlist: planoNoPowerCrm(modelId),
+  })
+
+  if (veredicto.acao === 'consultor') {
+    return NextResponse.json({
+      success: false,
+      requires_human_support: true,
+      reason: veredicto.motivo,
+      error: 'Não conseguimos confirmar a cobertura desse veículo agora — fale com nossa consultora',
+      meta: { brandId, brandText, modelId, modelText, year: yearStr, mdlYr },
+    })
+  }
+
+  const motivoExclusao = veredicto.acao === 'nao_fazemos' ? veredicto.motivo : null
   if (motivoExclusao) {
     return NextResponse.json({
       success: true,
