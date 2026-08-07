@@ -16,7 +16,8 @@ import { ArrowRight, ShieldCheck, Scale, Building2, MessageSquare, ChevronDown }
  * modelo. So entra aqui o que a 21Go pode comprovar.
  */
 export const metadata: Metadata = {
-  title: 'A 21Go é confiável? Tempo de mercado, regras e como cobrar | 21Go',
+  // O layout ja aplica o template '%s | 21Go'
+  title: 'A 21Go é confiável? Tempo de mercado, regras e como cobrar',
   description:
     'Resposta direta sobre a 21Go: mais de 20 anos de mercado no Rio, modelo de associação regulado pela LC 213/2025, ouvidoria e canal de denúncia abertos. Entenda o que cobrimos e o que não cobrimos antes de decidir.',
   alternates: { canonical: 'https://21go.site/a-21go-e-confiavel' },

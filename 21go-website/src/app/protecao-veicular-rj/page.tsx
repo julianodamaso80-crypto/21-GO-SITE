@@ -14,7 +14,8 @@ import { ArrowRight, ShieldCheck, MapPin, Clock, Check, ChevronDown } from 'luci
  * para disputar essa busca com o dominio certo.
  */
 export const metadata: Metadata = {
-  title: 'Proteção Veicular RJ: Preço, Cobertura e Como Contratar | 21Go',
+  // O layout ja aplica o template '%s | 21Go'
+  title: 'Proteção Veicular RJ: Preço, Cobertura e Como Contratar',
   description:
     'Proteção veicular no Rio de Janeiro com 20+ anos de mercado. Sem análise de perfil, sem consulta ao SPC. Carro a partir de R$106,50/mês, moto a partir de R$77,50/mês. Simule com a placa em 30 segundos.',
   alternates: { canonical: 'https://21go.site/protecao-veicular-rj' },

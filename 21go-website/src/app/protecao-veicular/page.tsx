@@ -22,7 +22,8 @@ import {
  * so de quem ja conhecia a 21Go, e quando a busca de marca oscilou o trafego caiu junto.
  */
 export const metadata: Metadata = {
-  title: 'Proteção Veicular: O Que É, Quanto Custa e Como Funciona | 21Go',
+  // O layout ja aplica o template '%s | 21Go' — repetir aqui gerava 'Proteção Veicular ... | 21Go | 21Go'
+  title: 'Proteção Veicular: O Que É, Quanto Custa e Como Funciona',
   description:
     'Proteção veicular é a alternativa ao seguro para quem tem perfil recusado ou preço alto. Sem análise de perfil, sem consulta ao SPC. Carro a partir de R$106,50/mês e moto a partir de R$77,50/mês. Simule em 30 segundos.',
   alternates: { canonical: 'https://21go.site/protecao-veicular' },
@@ -159,9 +160,13 @@ function FeatureCell({ value }: { value: boolean | string }) {
 }
 
 /**
- * Schema para o Google entender a pagina sem precisar adivinhar pelo texto: FAQPage alimenta o
- * bloco de perguntas na SERP e e a fonte que o AI Overview costuma citar; Service descreve o
- * que a 21Go faz, para quem e por quanto.
+ * Schema para o Google entender a pagina sem precisar adivinhar pelo texto.
+ *
+ * Sobre o FAQPage: o `ArticleSchema` do blog o removeu em 25/05/2026, porque o Google tirou o
+ * rich result de FAQ da SERP — e para o BLOG a decisao continua certa. Aqui ele volta por
+ * outro motivo: o alvo nao e o rich result, e ser CITADO por AI Overview, ChatGPT e Perplexity,
+ * que leem pergunta-e-resposta estruturada. Hoje, nas buscas do nicho, quem eles citam e a
+ * Mapfre e o Reclame Aqui. Nao custa rich result nenhum manter — ja nao havia.
  */
 function schemaDaPagina() {
   return {

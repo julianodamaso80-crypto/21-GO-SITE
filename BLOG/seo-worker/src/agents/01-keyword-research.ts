@@ -66,6 +66,19 @@ const BASE_SEEDS: Array<{ seed: string; category: KeywordCategory }> = [
   { seed: 'batida de carro', category: 'carros' },
   { seed: 'carro alagado', category: 'carros' },
   { seed: 'granizo carro', category: 'carros' },
+  // ---- decisao de compra (07/08/2026) ----
+  // Medido com DataForSEO: o site ranqueava 11 palavras e 10 eram o proprio nome da empresa.
+  // O dinheiro do nicho esta em quem ainda esta ESCOLHENDO — "associacao de protecao veicular"
+  // (1.000/mes, dificuldade 11), "melhor protecao veicular" (480/mes), "diferenca entre seguro
+  // e protecao veicular" (880/mes, dificuldade ZERO). Sao buscas de quem vai contratar e ainda
+  // nao sabe de quem, que e exatamente onde a 21Go tem 20 anos de argumento e nao aparecia.
+  //
+  // Seed de marca concorrente ("star protecao veicular", 12.100/mes) fica de FORA de proposito:
+  // o volume e alto, mas quem digita isso quer o telefone da Star, nao trocar de associacao.
+  { seed: 'associacao de protecao veicular', category: 'carros' },
+  { seed: 'melhor protecao veicular', category: 'carros' },
+  { seed: 'protecao veicular ou seguro', category: 'carros' },
+  { seed: 'protecao veicular vale a pena', category: 'carros' },
   // ---- motos ----
   { seed: 'protecao veicular moto', category: 'motos' },
   { seed: 'seguro moto', category: 'motos' },
