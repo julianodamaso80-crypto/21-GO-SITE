@@ -30,9 +30,15 @@ export async function GET(req: NextRequest) {
   const doProprioSite = /^https?:\/\/(www\.)?(21go\.site|21goconsultoraleticya\.site|localhost)/i.test(referer)
   if (!text && doProprioSite) {
     console.warn(`[wa] link sem contexto vindo de ${referer} — mandando pra cotação`)
-    const res = NextResponse.redirect(new URL('/cotacao', req.nextUrl.origin), 302)
-    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
-    return res
+    // Location relativo de propósito: atrás do proxy o origin interno é
+    // 0.0.0.0:3000 e um redirect absoluto mandaria o cliente pro nada.
+    return new NextResponse(null, {
+      status: 302,
+      headers: {
+        Location: '/cotacao',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    })
   }
 
   const target = await pickWhatsAppTarget()
