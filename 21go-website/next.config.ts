@@ -68,6 +68,9 @@ const BLOG_CONSOLIDACOES = [
 
 const nextConfig: NextConfig = {
   output: isPreviewExport ? 'export' : 'standalone',
+  // `pg` fala TCP/TLS direto e nao pode ser empacotado pelo bundler — e o plano B de gravacao
+  // de lead quando a API REST do Supabase cai (ver src/lib/supabase-direto.ts).
+  serverExternalPackages: ['pg'],
   ...(isPreviewExport && process.env.BASE_PATH
     ? { basePath: process.env.BASE_PATH }
     : {}),

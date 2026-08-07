@@ -1,5 +1,6 @@
 import 'server-only'
 import { supabaseAdmin } from './supabase-admin'
+import { gravacaoDiretaConfigurada, upsertLeadDireto } from './supabase-direto'
 
 /**
  * Helpers idempotentes pra orquestrar lead + conversation + message no Supabase.
@@ -177,7 +178,27 @@ export async function upsertLead(input: UpsertLeadInput): Promise<{ id: string; 
     .select('id, created_at, updated_at')
     .single()
 
-  if (error) throw new Error(`upsertLead falhou: ${error.message}`)
+  if (error) {
+    // Plano B: a API REST cai quando o banco fica ocupado (o CRM sincroniza 159 mil
+    // negociacoes do Power no mesmo banco), mas o Postgres continua de pe. Em 05/08/2026
+    // isso apagou 4 horas de leads do nosso registro. Antes de desistir do cliente,
+    // tentamos gravar direto no banco. Ver src/lib/supabase-direto.ts.
+    if (gravacaoDiretaConfigurada()) {
+      try {
+        const id = await upsertLeadDireto(row as Record<string, unknown>)
+        if (id) {
+          console.warn(`[lead] REST falhou (${error.message}) — gravado direto no banco`)
+          return { id, created: true }
+        }
+      } catch (err) {
+        console.error(
+          '[lead] gravacao direta tambem falhou:',
+          err instanceof Error ? err.message : err,
+        )
+      }
+    }
+    throw new Error(`upsertLead falhou: ${error.message}`)
+  }
 
   const created =
     !!data?.created_at && !!data?.updated_at && data.created_at === data.updated_at
