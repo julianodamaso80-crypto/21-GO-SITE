@@ -48,29 +48,39 @@ const JANELA_ROTACAO_DIAS = 30;
  * O recorte geografico nao vai na seed: o enrichRj() adiciona "no rio de janeiro"
  * depois, em cima da demanda real que o DFS devolveu.
  */
+// Medido em 07/08: de 45 keywords vindas de seeds de MODELO ("byd yuan plus") e de
+// PRODUTO ("motoboy", "scooter"), 41 foram rejeitadas pelo estrategista — e com razao:
+// vinham "byd yuan plus preco", "ficha tecnica", "bag de motoboy", "bau de motoboy".
+// Quem busca isso quer comprar o carro ou o acessorio, nao proteger o que ja tem.
+// O pool passa a privilegiar seeds de DOR, que foi o que sempre rendeu pauta boa
+// ("bateria byd" 5.400/mes dif 0, "seguro de carro eletrico e mais caro").
 const BASE_SEEDS: Array<{ seed: string; category: KeywordCategory }> = [
   // ---- carros ----
   { seed: 'protecao veicular', category: 'carros' },
   { seed: 'protecao veicular carro', category: 'carros' },
   { seed: 'carro financiado', category: 'carros' },
   { seed: 'carro de aplicativo', category: 'carros' },
-  { seed: 'carro seminovo', category: 'carros' },
-  { seed: 'carro eletrico', category: 'carros' },
-  { seed: 'suv', category: 'carros' },
-  { seed: 'picape', category: 'carros' },
+  { seed: 'carro roubado', category: 'carros' },
+  { seed: 'furto de carro', category: 'carros' },
+  { seed: 'perda total do veiculo', category: 'carros' },
+  { seed: 'batida de carro', category: 'carros' },
+  { seed: 'carro alagado', category: 'carros' },
+  { seed: 'granizo carro', category: 'carros' },
   // ---- motos ----
   { seed: 'protecao veicular moto', category: 'motos' },
   { seed: 'seguro moto', category: 'motos' },
   { seed: 'moto delivery', category: 'motos' },
-  { seed: 'motoboy', category: 'motos' },
   { seed: 'moto financiada', category: 'motos' },
-  { seed: 'scooter', category: 'motos' },
+  { seed: 'roubo de moto', category: 'motos' },
+  { seed: 'moto roubada', category: 'motos' },
+  { seed: 'queda de moto', category: 'motos' },
   // ---- frotas (nunca caminhao) — 1 frota/dia obrigatoria ----
   { seed: 'protecao de frota', category: 'frotas' },
   { seed: 'frota de veiculos', category: 'frotas' },
   { seed: 'gestao de frota', category: 'frotas' },
   { seed: 'seguro de frota', category: 'frotas' },
-  { seed: 'locadora de veiculos', category: 'frotas' },
+  { seed: 'custo de frota', category: 'frotas' },
+  { seed: 'frota de motos', category: 'frotas' },
   // ---- educativo: transito/regulatorio ----
   // O GSC mostrou demanda real aqui ("isencao de ipva rj", "licenciamento 2026 rj")
   // em temas que o blog nao cobre — e onde ainda ha pauta genuinamente nova.
@@ -93,21 +103,22 @@ const BASE_SEEDS: Array<{ seed: string; category: KeywordCategory }> = [
   // e intent de quem vai COMPRAR o carro (dificuldade alta, nao vira lead nosso);
   // ja "bateria byd" tem 5.400/mes com dificuldade 0, e "seguro de carro eletrico e
   // mais caro" e exatamente a dor que a protecao patrimonial resolve.
+  // Seeds de DOR rendem; seeds de MODELO ("byd dolphin", "byd seal", "byd yuan plus")
+  // rendiam so "preco/ficha tecnica/usado" e eram rejeitadas em bloco. Saíram do pool.
   { seed: 'bateria byd', category: 'byd' },
   { seed: 'seguro byd', category: 'byd' },
   { seed: 'seguro carro eletrico', category: 'byd' },
   { seed: 'manutencao carro eletrico', category: 'byd' },
   { seed: 'revisao byd', category: 'byd' },
   { seed: 'garantia byd', category: 'byd' },
-  { seed: 'byd dolphin', category: 'byd' },
-  { seed: 'byd song plus', category: 'byd' },
-  { seed: 'byd seal', category: 'byd' },
-  { seed: 'byd king', category: 'byd' },
-  { seed: 'byd yuan plus', category: 'byd' },
-  { seed: 'carro eletrico', category: 'byd' },
+  { seed: 'conserto carro eletrico', category: 'byd' },
+  { seed: 'oficina carro eletrico', category: 'byd' },
+  { seed: 'roubo carro eletrico', category: 'byd' },
+  { seed: 'bateria carro eletrico', category: 'byd' },
   { seed: 'recarga carro eletrico', category: 'byd' },
-  { seed: 'autonomia carro eletrico', category: 'byd' },
   { seed: 'desvalorizacao carro eletrico', category: 'byd' },
+  { seed: 'perda total carro eletrico', category: 'byd' },
+  { seed: 'carro hibrido manutencao', category: 'byd' },
 ];
 
 /**
