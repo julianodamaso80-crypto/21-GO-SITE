@@ -4,7 +4,8 @@ import { Instagram, Facebook, Linkedin } from 'lucide-react'
 
 const links = {
   Proteção: [
-    { label: 'Planos', href: '/protecao-veicular' },
+    { label: 'O que é proteção veicular', href: '/protecao-veicular' },
+    { label: 'Proteção veicular no RJ', href: '/protecao-veicular-rj' },
     { label: 'Simulação', href: '/cotacao' },
     { label: 'Benefícios', href: '/protecao-veicular#coberturas' },
   ],

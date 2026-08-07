@@ -12,10 +12,27 @@ import {
   ChevronDown,
 } from 'lucide-react'
 
+/**
+ * Pagina do termo principal do mercado.
+ *
+ * "protecao veicular" tem 14.800 buscas/mes no Brasil e dificuldade 19 — baixa (DataForSEO,
+ * 06/08/2026). O site nao aparecia para ela: o title era "8 Planos pra Proteger Seu Carro,
+ * Moto ou SUV", que nao contem o termo que a pessoa digita. Medido no mesmo dia, o dominio
+ * ranqueava 11 palavras no total e 10 eram o proprio nome da empresa — ou seja, o site vivia
+ * so de quem ja conhecia a 21Go, e quando a busca de marca oscilou o trafego caiu junto.
+ */
 export const metadata: Metadata = {
-  title: '8 Planos pra Proteger Seu Carro, Moto ou SUV | 21Go',
+  title: 'Proteção Veicular: O Que É, Quanto Custa e Como Funciona | 21Go',
   description:
-    'Carros a partir de R$106,50/mês, motos a partir de R$77,50/mês. Sem análise de perfil, sem burocracia. Veja qual plano cabe no seu bolso em 30 segundos.',
+    'Proteção veicular é a alternativa ao seguro para quem tem perfil recusado ou preço alto. Sem análise de perfil, sem consulta ao SPC. Carro a partir de R$106,50/mês e moto a partir de R$77,50/mês. Simule em 30 segundos.',
+  alternates: { canonical: 'https://21go.site/protecao-veicular' },
+  openGraph: {
+    title: 'Proteção Veicular: O Que É, Quanto Custa e Como Funciona',
+    description:
+      'Entenda como funciona a proteção veicular por mutualismo, quanto custa e quando ela vale mais que o seguro tradicional.',
+    url: 'https://21go.site/protecao-veicular',
+    type: 'article',
+  },
 }
 
 const mutualSteps = [
@@ -72,7 +89,38 @@ const vsSeguro = [
   { item: 'Cancelamento', seguro: 'Multa proporcional', go21: 'Sem multa' },
 ]
 
+/**
+ * Resposta direta, no topo da pagina e em uma frase so.
+ *
+ * E o formato que o AI Overview do Google, o ChatGPT e o Perplexity conseguem citar: pergunta
+ * explicita + resposta objetiva logo abaixo, sem rodeio de marketing no meio. Sem isto a IA
+ * cita quem explicou melhor — hoje, nas buscas do nicho, quem aparece e a Mapfre e o
+ * Reclame Aqui, nao a 21Go.
+ */
+const RESPOSTA_DIRETA =
+  'Proteção veicular é um sistema de mutualismo em que os associados contribuem com uma mensalidade para um fundo comum, usado para cobrir roubo, furto, colisão e incêndio dos veículos do grupo. Não é seguro: quem administra é uma associação, não uma seguradora, e por isso não há análise de perfil nem consulta ao SPC. Na 21Go, a mensalidade parte de R$77,50 para motos e R$106,50 para carros, calculada pela faixa de valor FIPE do veículo.'
+
 const planFAQ = [
+  {
+    q: 'O que é proteção veicular?',
+    a: 'É a proteção do seu veículo por mutualismo: um grupo de associados contribui todo mês para um fundo comum, e esse fundo cobre roubo, furto, colisão e incêndio de quem sofrer um evento. Quanto mais associados, menor o rateio para cada um. A 21Go opera assim há mais de 20 anos no Rio de Janeiro.',
+  },
+  {
+    q: 'Qual a diferença entre seguro e proteção veicular?',
+    a: 'O seguro é vendido por seguradora regulada pela SUSEP, cobra prêmio calculado por análise de perfil (idade, onde mora, histórico) e pode recusar o cliente. A proteção veicular é oferecida por associação, funciona por rateio entre os associados e não faz análise de perfil nem consulta ao SPC — por isso costuma atender quem o seguro recusou ou cobrou caro demais. A cobertura no dia a dia é parecida; o que muda é quem administra e como o preço é formado.',
+  },
+  {
+    q: 'Proteção veicular é confiável? É regulamentada?',
+    a: 'Sim. A atividade das associações de proteção veicular foi reconhecida em lei — a Lei Complementar 213/2025 regulamenta a proteção patrimonial mutualista no Brasil. O que muda em relação ao seguro é o modelo: associação e rateio, não apólice e seguradora. Vale conferir tempo de mercado, sede física e reputação da associação antes de contratar.',
+  },
+  {
+    q: 'O que a proteção veicular cobre?',
+    a: 'Na 21Go: roubo e furto, colisão, incêndio proveniente de colisão, danos a terceiros (de R$5.000 a R$100.000 conforme o plano), assistência 24h com reboque de 200 km a 1.200 km, carro reserva, vidros e monitoramento. O que cada plano inclui está na tabela comparativa desta página.',
+  },
+  {
+    q: 'Quanto custa a proteção veicular?',
+    a: 'O valor depende da faixa de valor FIPE do veículo e do plano. Na 21Go começa em R$77,50/mês para motos e R$106,50/mês para carros. A simulação no site devolve o valor exato do seu veículo em cerca de 30 segundos, só com a placa.',
+  },
   {
     q: 'Quais são os planos disponíveis?',
     a: 'Para carros: Básico, Do Seu Jeito (personalizável), VIP (mais escolhido) e Premium. Para SUVs/pick-ups temos plano específico. Para motos: VIP até 400cc e VIP 450-1000cc. Para elétricos ou veículos acima de R$150 mil: Veículos Especiais.',
@@ -110,9 +158,56 @@ function FeatureCell({ value }: { value: boolean | string }) {
   )
 }
 
+/**
+ * Schema para o Google entender a pagina sem precisar adivinhar pelo texto: FAQPage alimenta o
+ * bloco de perguntas na SERP e e a fonte que o AI Overview costuma citar; Service descreve o
+ * que a 21Go faz, para quem e por quanto.
+ */
+function schemaDaPagina() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'FAQPage',
+        mainEntity: planFAQ.map((item) => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: { '@type': 'Answer', text: item.a },
+        })),
+      },
+      {
+        '@type': 'Service',
+        name: 'Proteção Veicular 21Go',
+        serviceType: 'Proteção veicular por mutualismo',
+        description: RESPOSTA_DIRETA,
+        areaServed: { '@type': 'Country', name: 'Brasil' },
+        provider: {
+          '@type': 'Organization',
+          name: '21Go Proteção Veicular',
+          url: 'https://21go.site',
+          areaServed: 'BR',
+        },
+        offers: {
+          '@type': 'AggregateOffer',
+          priceCurrency: 'BRL',
+          lowPrice: '77.50',
+          highPrice: '499.00',
+          offerCount: planFAQ.length,
+          url: 'https://21go.site/cotacao',
+        },
+      },
+    ],
+  }
+}
+
 export default function ProtecaoVeicularPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaDaPagina()) }}
+      />
+
       {/* Hero */}
       <section className="pt-32 pb-16 bg-gradient-to-b from-[#1A2754] via-[#1F3068] to-[#293C82] relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
@@ -124,11 +219,28 @@ export default function ProtecaoVeicularPage() {
             Planos de Proteção
           </span>
           <h1 className="font-[var(--font-display)] text-4xl md:text-5xl font-bold text-white mb-5">
-            Planos de Proteção Veicular 21Go
+            Proteção Veicular: o que é, quanto custa e como funciona
           </h1>
           <p className="text-lg text-white/50 max-w-2xl mx-auto">
             Proteção completa para seu veículo a partir de R$77,50/mês. Sem análise de perfil, sem burocracia.
           </p>
+        </div>
+      </section>
+
+      {/* Resposta direta — primeira coisa da pagina, para leitor e para IA (ver RESPOSTA_DIRETA) */}
+      <section className="py-12 bg-white">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="rounded-2xl border border-[#E8ECF4] bg-[#F7F8FC] p-6 sm:p-8">
+            <h2 className="font-[var(--font-display)] text-xl font-bold text-[#1A2754] mb-3">
+              O que é proteção veicular?
+            </h2>
+            <p className="text-[15px] text-[#475569] leading-relaxed">{RESPOSTA_DIRETA}</p>
+            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#64748B]">
+              <span><strong className="text-[#1A2754]">Não é seguro</strong> — é associação, por rateio</span>
+              <span><strong className="text-[#1A2754]">Sem análise de perfil</strong> nem consulta ao SPC</span>
+              <span><strong className="text-[#1A2754]">20+ anos</strong> no Rio de Janeiro</span>
+            </div>
+          </div>
         </div>
       </section>
 
