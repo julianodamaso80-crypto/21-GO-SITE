@@ -18,8 +18,9 @@ import {
   Users,
   Check,
 } from 'lucide-react'
+import { WhatsAppGate } from '@/components/ui/WhatsAppGate'
 
-const fadeInUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } }
+const fadeInUp ={ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } }
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }
 
 const steps = [
@@ -84,17 +85,16 @@ export default function IndiquePage() {
           </motion.p>
 
           <motion.div variants={fadeInUp}>
-            <a
-              href="/api/wa?text=Ol%C3%A1!%20Quero%20meu%20link%20de%20indica%C3%A7%C3%A3o%20do%20programa%20Member%20Get%20Member.%20Meu%20nome%3A%20"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-track-origin="indique_topo"
-              data-track-button-text="Quero meu link (topo)"
+            <WhatsAppGate
+              assunto="Olá! Quero meu link de indicação do programa Member Get Member."
+              origin="indique_topo"
+              leadOrigem="site_indicacao"
+              titulo="Quero meu link de indicação"
               className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold rounded-full shadow-lg shadow-[#F2911D]/20 hover:shadow-xl hover:shadow-[#F2911D]/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <MessageCircle className="w-5 h-5" />
               Quero Meu Link de Indicação
-            </a>
+            </WhatsAppGate>
           </motion.div>
         </motion.div>
       </section>
@@ -209,17 +209,16 @@ export default function IndiquePage() {
           <p className="text-lg text-white/50 mb-8">
             Entre em contato pelo WhatsApp e solicite seu link exclusivo de indicação.
           </p>
-          <a
-            href="/api/wa?text=Ol%C3%A1!%20Quero%20meu%20link%20de%20indica%C3%A7%C3%A3o.%20Meu%20nome%3A%20"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-track-origin="indique_fim"
-            data-track-button-text="Quero meu link (CTA final)"
+          <WhatsAppGate
+            assunto="Olá! Quero meu link de indicação."
+            origin="indique_fim"
+            leadOrigem="site_indicacao"
+            titulo="Quero meu link de indicação"
             className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold rounded-full shadow-lg shadow-[#F2911D]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <MessageCircle className="w-5 h-5" />
             Quero Meu Link
-          </a>
+          </WhatsAppGate>
         </div>
       </section>
     </>

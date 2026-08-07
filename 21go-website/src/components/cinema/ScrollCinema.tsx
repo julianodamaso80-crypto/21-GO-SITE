@@ -404,7 +404,7 @@ export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
           ))}
           <div className="flex justify-center gap-4">
             <Link href="/cotacao" className="px-8 py-4 rounded-xl bg-[#F2911D] font-semibold">Simular agora</Link>
-            <a href="/api/wa" className="px-8 py-4 rounded-xl border border-white/20 font-semibold">Falar com a 21Go</a>
+            <Link href="/cotacao" className="px-8 py-4 rounded-xl border border-white/20 font-semibold">Ver planos e valores</Link>
           </div>
         </div>
       </div>
@@ -454,9 +454,9 @@ export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
                     <Link href="/cotacao" className="inline-flex items-center rounded-xl bg-[#F2911D] px-7 py-3.5 text-sm md:text-base font-semibold text-white hover:bg-[#D67A0F] transition-colors">
                       Fazer minha cotação
                     </Link>
-                    <a href="/api/wa" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl border border-white/25 bg-white/10 px-7 py-3.5 text-sm md:text-base font-semibold text-white backdrop-blur hover:bg-white/15 transition-colors">
-                      Falar no WhatsApp
-                    </a>
+                    <Link href="/cotacao" className="inline-flex items-center rounded-xl border border-white/25 bg-white/10 px-7 py-3.5 text-sm md:text-base font-semibold text-white backdrop-blur hover:bg-white/15 transition-colors">
+                      Ver planos e valores
+                    </Link>
                   </div>
                 )}
 
@@ -479,9 +479,9 @@ export function ScrollCinema({ variant = 'full' }: ScrollCinemaProps) {
                       <Link href="/cotacao" className="inline-flex items-center rounded-xl bg-[#F2911D] px-8 py-4 text-base font-semibold text-white hover:bg-[#D67A0F] transition-colors">
                         Simular agora
                       </Link>
-                      <a href="/api/wa" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-xl border border-white/25 bg-white/10 px-8 py-4 text-base font-semibold text-white backdrop-blur hover:bg-white/15 transition-colors">
-                        Falar com a 21Go
-                      </a>
+                      <Link href="/cotacao" className="inline-flex items-center rounded-xl border border-white/25 bg-white/10 px-8 py-4 text-base font-semibold text-white backdrop-blur hover:bg-white/15 transition-colors">
+                        Ver planos e valores
+                      </Link>
                     </div>
                   </div>
                 )}

@@ -93,8 +93,11 @@ const nextConfig: NextConfig = {
           return [
             { source: '/termos-de-uso', destination: '/conformidade-legal', permanent: true },
             { source: '/politica-privacidade', destination: '/conformidade-legal', permanent: true },
-            { source: '/contato', destination: '/api/wa', permanent: false },
-            { source: '/area-do-associado', destination: '/api/wa', permanent: false },
+            // Nada de mandar direto pro WhatsApp (ordem do dono, 07/08/2026):
+            // esses dois redirects despejavam gente anônima no chip. Agora caem
+            // em páginas com formulário — o contato só abre depois de preenchido.
+            { source: '/contato', destination: '/cotacao', permanent: false },
+            { source: '/area-do-associado', destination: '/faq', permanent: false },
             ...BLOG_CONSOLIDACOES,
           ]
         },

@@ -16,7 +16,6 @@ import Link from 'next/link'
 import { SceneVideo } from '@/components/cinema/SceneVideo'
 import { useSceneReveal } from '@/components/cinema/useCinema'
 import { CLIPS } from '@/lib/media'
-import { whatsappLink } from '@/lib/constants'
 
 export function MensagemPresidente() {
   const { sectionRef, contentRef } = useSceneReveal()
@@ -58,15 +57,15 @@ export function MensagemPresidente() {
               >
                 Fazer Simulação Grátis <ArrowRight className="h-4 w-4" />
               </Link>
-              <a
-                href={whatsappLink('Olá! Tenho uma dúvida sobre proteção veicular.')}
-                target="_blank"
-                rel="noopener noreferrer"
+              {/* Sem atalho pro WhatsApp aqui (ordem do dono, 07/08/2026): o
+                  contato só sai depois da simulação preenchida. */}
+              <Link
+                href="/faq"
                 className="inline-flex items-center gap-2.5 px-7 py-4 rounded-xl border border-white/20 bg-white/[0.07] backdrop-blur-sm text-white text-base font-semibold hover:bg-white/[0.12] transition-all duration-300 hover:-translate-y-0.5"
               >
                 <MessageCircle className="h-5 w-5 text-[#25D366]" />
-                Fale no WhatsApp
-              </a>
+                Tirar minhas dúvidas
+              </Link>
             </div>
           </div>
 

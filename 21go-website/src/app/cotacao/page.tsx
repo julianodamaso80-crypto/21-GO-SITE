@@ -233,14 +233,21 @@ export default function CotacaoPage() {
   const placaResolveu =
     plateId.status === 'found'
     || (plateId.status === 'partial' && !!fipeMarcaCode && !!fipeAnoCode)
-  /** Zero km não tem placa; e quem pediu pra escolher na mão também vê os selects. */
-  const modoManual =
-    form.condicao === 'zero'
-    || manualVehicle
-    || plateId.status === 'notfound'
-    || plateId.status === 'unknown'
-    || (plateId.status === 'partial' && !placaResolveu)
-  const veiculoPelaPlaca = !modoManual && placaResolveu
+  /**
+   * A placa é um ATALHO, não um requisito (ordem do dono, 07/08/2026). Achou o
+   * veículo → o formulário se preenche sozinho. Não achou, veio errada, ficou
+   * vazia ou a consulta caiu → o cliente escolhe marca/ano/modelo na mão e a
+   * simulação sai igual. Por isso o padrão é o modo manual: só saímos dele
+   * quando a placa realmente amarrou o veículo na tabela do PowerCRM.
+   */
+  const veiculoPelaPlaca = form.condicao === 'usado' && !manualVehicle && placaResolveu
+  const modoManual = !veiculoPelaPlaca && plateId.status !== 'checking'
+
+  /**
+   * Placa que vai pro PowerCRM/lead. Placa fora dos dois formatos oficiais é
+   * lixo de digitação: não trava o cliente, mas também não suja o cadastro.
+   */
+  const placaParaEnvio = isPlacaFormatValid(form.placa) ? normalizePlaca(form.placa) : ''
 
   useEffect(() => {
     const p = normalizePlaca(form.placa)
@@ -255,7 +262,11 @@ export default function CotacaoPage() {
     setPlateId({ status: 'checking' })
     setManualVehicle(false)
     const t = setTimeout(() => {
-      fetch(`${API_BASE}/api/vehicle/plate-identify/${p}`)
+      // Timeout curto: consulta de placa que pendura deixaria o cliente preso em
+      // "Buscando...". Estourou, vira 'unknown' e ele escolhe o veículo na mão.
+      const ctrl = new AbortController()
+      const abortTimer = setTimeout(() => ctrl.abort(), 12000)
+      fetch(`${API_BASE}/api/vehicle/plate-identify/${p}`, { signal: ctrl.signal })
         .then(r => r.json())
         .then((d: {
           status: string
@@ -302,6 +313,7 @@ export default function CotacaoPage() {
           setErrors(prev => ({ ...prev, fipeMarca: '', fipeAno: '', fipeModelo: '', placa: '' }))
         })
         .catch(() => { if (!cancelled) setPlateId({ status: 'unknown' }) })
+        .finally(() => clearTimeout(abortTimer))
     }, 700)
     return () => { cancelled = true; clearTimeout(t) }
   }, [form.placa, form.condicao])
@@ -354,11 +366,10 @@ export default function CotacaoPage() {
       if (!fipeAnoCode) e.fipeAno = 'Escolha o ano'
       if (!fipeModeloCode) e.fipeModelo = 'Escolha o modelo'
     }
-    // Placa: obrigatória em veículo usado, dispensada no zero km (ainda não tem).
-    // Placa que a base não confirmou passa. O único bloqueio real é formato —
-    // padrão suspeito só pede o toque de confirmação (level 'confirm').
-    const placaProb = validatePlaca(form.placa, form.condicao === 'usado', placaLiberada)
-    if (placaProb) e.placa = placaProb.msg
+    // PLACA NÃO BLOQUEIA NADA (ordem do dono, 07/08/2026). Vazia, errada,
+    // não encontrada ou de padrão suspeito: em todos os casos o cliente segue
+    // pelos selects de marca/ano/modelo, que é o que de fato calcula o valor.
+    // Lead com placa é melhor; lead sem placa continua sendo lead.
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -478,7 +489,7 @@ export default function CotacaoPage() {
         nome: form.nome,
         whatsapp: form.whatsapp,
         email: form.email || undefined,
-        placa: form.placa,
+        placa: placaParaEnvio,
         leilao: form.leilao,
         carroApp: form.carroApp === 'sim',
         motoTerceiros: form.danosTerceiros === 'sim',
@@ -559,7 +570,7 @@ export default function CotacaoPage() {
             nome: form.nome,
             whatsapp: form.whatsapp,
             email: form.email || undefined,
-            placa: form.placa || '',
+            placa: placaParaEnvio,
             marca: v.marca,
             modelo: v.modelo,
             ano: v.ano,
@@ -615,7 +626,7 @@ export default function CotacaoPage() {
           nome: form.nome,
           whatsapp: form.whatsapp,
           email: form.email || undefined,
-          placa: form.placa || '',
+          placa: placaParaEnvio,
           leilao: form.leilao,
           marca: v.marca,
           modelo: v.modelo,
@@ -743,7 +754,7 @@ export default function CotacaoPage() {
         nome: form.nome,
         whatsapp: form.whatsapp,
         email: form.email.trim() || undefined,
-        placa: form.placa.trim() || undefined,
+        placa: placaParaEnvio || undefined,
         tipo: fipeKind === 'motos' ? 'Moto' : 'Carro',
         condicao: form.condicao === 'zero' ? 'zero' : 'usado',
         veiculo: vehicleLabel,
@@ -926,7 +937,7 @@ export default function CotacaoPage() {
                     {form.condicao === 'usado' && (
                       <div>
                         <PillInput
-                          label="Placa do veículo"
+                          label="Placa do veículo (opcional)"
                           name="placa"
                           value={form.placa}
                           error={errors.placa}
@@ -935,6 +946,18 @@ export default function CotacaoPage() {
                           mono
                           disabled={loading}
                         />
+                        <p className="mt-1.5 ml-1 text-[11px] text-[#94A3B8] leading-snug">
+                          Com a placa a gente já acha seu veículo. Não lembra ou não achamos?
+                          Você escolhe marca, ano e modelo aqui embaixo e a simulação sai igual.
+                        </p>
+                        {/* Digitou errado: avisa e segue. Nunca trava — o valor
+                            vem dos selects, não da placa. */}
+                        {form.placa.trim().length > 0 && !isPlacaFormatValid(form.placa) && (
+                          <p className="mt-2 ml-1 text-xs text-[#F2911D] font-medium">
+                            Confira a placa (formato ABC1D23 ou ABC1234). Pode seguir sem ela
+                            também — é só escolher o veículo abaixo.
+                          </p>
+                        )}
                         {/* Padrão estranho: NUNCA barra. Um toque e o cliente segue.
                             Existe só pra dar trabalho pra quem inventa placa. */}
                         {placaPedeConfirmacao && (
@@ -1333,7 +1356,9 @@ export default function CotacaoPage() {
                       <p className="text-[#DC2626]/70 mt-1">
                         Verifique a placa ou{' '}
                         <a
-                          href="/api/wa?text=Olá! Preciso de ajuda com uma simulação."
+                          href={`/api/wa?text=${encodeURIComponent(
+                            `Olá! Preciso de ajuda com uma simulação no site.${form.nome ? `\nNome: ${form.nome}` : ''}${form.whatsapp ? `\nWhatsApp: ${form.whatsapp}` : ''}${placaParaEnvio ? `\nPlaca: ${placaParaEnvio}` : ''}`,
+                          )}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           data-track-origin="cotacao_erro_placa"
@@ -1368,7 +1393,7 @@ export default function CotacaoPage() {
 
                     <a
                       href={`/api/wa?text=${encodeURIComponent(
-                        `Olá! Tentei fazer uma simulação no site e não consegui. Pode me ajudar?\n\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${form.placa ? `\nPlaca: ${form.placa}` : ''}${form.email ? `\nE-mail: ${form.email}` : ''}`,
+                        `Olá! Tentei fazer uma simulação no site e não consegui. Pode me ajudar?\n\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${placaParaEnvio ? `\nPlaca: ${placaParaEnvio}` : ''}${form.email ? `\nE-mail: ${form.email}` : ''}`,
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"

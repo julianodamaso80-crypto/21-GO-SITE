@@ -40,6 +40,17 @@ function buildMessage(data: {
 
 export async function POST(request: NextRequest) {
   try {
+    // Follow-up é mensagem fria: sai pro cliente sem ele ter pedido nada.
+    // DESLIGADO desde 07/08/2026 (ordem do dono) — nos sites .site quem inicia
+    // a conversa é sempre o cliente, clicando em "Quero contratar". A rota
+    // continua aqui pra religar por env, mas não dispara nada por padrão.
+    if (process.env.WHATSAPP_AUTO_DISPATCH !== 'true') {
+      console.warn('[followup] bloqueado — WHATSAPP_AUTO_DISPATCH desligado')
+      return NextResponse.json(
+        { success: false, error: 'auto_dispatch_disabled' },
+        { status: 403 },
+      )
+    }
     if (!EVOLUTION_API_KEY) {
       return NextResponse.json({ success: false, error: 'Evolution API not configured' }, { status: 500 })
     }

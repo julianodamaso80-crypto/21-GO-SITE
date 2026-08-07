@@ -198,10 +198,11 @@ export async function POST(req: NextRequest) {
         console.error('[lead] Falha envio WhatsApp:', err instanceof Error ? err.message : err)
       }
     })()
-  } else if (isByd(body.marca) && process.env.BYD_AUTO_DISPATCH !== 'false') {
-    // Exceção BYD (ordem do dono, 04/08/2026): carro BYD cai no WhatsApp com o
-    // PDF da simulação SEM depender do clique em "Quero contratar". Só BYD —
-    // todas as outras marcas seguem inbound-first (o cliente é quem inicia).
+  } else if (isByd(body.marca) && process.env.BYD_AUTO_DISPATCH === 'true') {
+    // Exceção BYD: cotação com PDF sem esperar o clique. DESLIGADA por padrão
+    // desde 07/08/2026 — ordem do dono: nos dois sites .site nenhuma mensagem
+    // sai sem o cliente ter clicado em "Quero contratar". Pra religar só o BYD,
+    // defina BYD_AUTO_DISPATCH=true no ambiente.
     ;(async () => {
       try {
         await sendBydQuoteWithPdf(body, supaResult.lead_id || leadId, supaResult.ok)

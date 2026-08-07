@@ -7,6 +7,13 @@ const NOTIFY_NUMBER = process.env.NOTIFY_NUMBER || '5521969454824'
 
 export async function POST(request: NextRequest) {
   try {
+    // Aviso interno de lead abandonado. Cai no MESMO número que atende cliente,
+    // então virava ruído no WhatsApp da consultora. Desligado por padrão desde
+    // 07/08/2026 — religa com LEAD_ABANDONED_NOTIFY=true (de preferência
+    // apontando NOTIFY_NUMBER pra um número que não seja de atendimento).
+    if (process.env.LEAD_ABANDONED_NOTIFY !== 'true') {
+      return NextResponse.json({ success: false, error: 'notify_disabled' }, { status: 403 })
+    }
     if (!EVOLUTION_API_KEY) {
       return NextResponse.json({ success: false, error: 'Evolution API not configured' }, { status: 500 })
     }

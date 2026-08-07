@@ -17,8 +17,25 @@ export const dynamic = 'force-dynamic'
  * GET /api/wa?text=<mensagem opcional ja decodificada>
  */
 export async function GET(req: NextRequest) {
-  const target = await pickWhatsAppTarget()
   const text = req.nextUrl.searchParams.get('text')
+
+  // Trava de segurança (07/08/2026): clique vindo de dentro do site SEM
+  // mensagem montada significa link solto de CTA — exatamente o que enchia os
+  // chips de contato anônimo. Esse caso vai pra cotação: o cliente preenche o
+  // formulário e aí sim a conversa abre, já identificada.
+  //
+  // Link colado no PDF/WhatsApp (sem Referer nosso) continua abrindo direto —
+  // ali do outro lado já tem um lead que preencheu tudo.
+  const referer = req.headers.get('referer') || ''
+  const doProprioSite = /^https?:\/\/(www\.)?(21go\.site|21goconsultoraleticya\.site|localhost)/i.test(referer)
+  if (!text && doProprioSite) {
+    console.warn(`[wa] link sem contexto vindo de ${referer} — mandando pra cotação`)
+    const res = NextResponse.redirect(new URL('/cotacao', req.nextUrl.origin), 302)
+    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+    return res
+  }
+
+  const target = await pickWhatsAppTarget()
 
   // Monta a query na mão: URLSearchParams codifica espaço como "+" (formato de
   // formulário) e o WhatsApp mostra o "+" literal na mensagem pré-preenchida.
