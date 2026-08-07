@@ -111,7 +111,10 @@ Gere o briefing COMPLETO em JSON (sem markdown):
           tier: 'main',
           system: SYSTEM_PROMPT,
           messages: [{ role: 'user', content: userMsg }],
-          max_tokens: tentativa === 1 ? 2500 : 3500,
+          // 4000/5500: com 2500/3500 o JSON ainda truncava por volta da posicao 990
+          // (outline + FAQs + links internos + notas juridicas nao cabiam). O corte e
+          // por espaco, nao por criatividade — por isso a 2a tentativa so aumenta o teto.
+          max_tokens: tentativa === 1 ? 4000 : 5500,
           temperature: tentativa === 1 ? 0.4 : 0,
         });
         llmCost = r.cost_usd;
