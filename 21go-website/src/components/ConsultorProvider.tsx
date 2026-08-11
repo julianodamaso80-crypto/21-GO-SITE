@@ -16,8 +16,18 @@ import { ROTAS_RESERVADAS } from '@/lib/rotas-reservadas'
  *
  * O rewrite do middleware nao mexe na URL do navegador: quem entrou em
  * `/julianodamaso/cotacao` continua vendo esse endereco na barra, mesmo o
- * servidor tendo renderizado `/cotacao`. Entao o slug ja esta no pathname, de
- * graca, sem tornar nada dinamico.
+ * servidor tendo renderizado `/cotacao`. Entao o slug ja esta na URL, de graca,
+ * sem tornar nada dinamico.
+ *
+ * ⚠️ Mas ele NAO esta no `usePathname()`. Medido em producao (11/08/2026):
+ * com a pagina prerenderizada e o rewrite do middleware, `usePathname()`
+ * devolve a rota RENDERIZADA (`/`), nao a que o visitante ve (`/testeqa`) —
+ * `window.location.pathname` dizia `/testeqa` e o logo continuava apontando pra
+ * `/` mesmo 3s depois de hidratar. Em `next dev` o mesmo codigo funcionava,
+ * porque la nao ha prerender: foi um bug que so existia em producao.
+ *
+ * Por isso a fonte e `window.location.pathname`, com `usePathname()` servindo
+ * so de gatilho pra reavaliar em navegacao client-side.
  *
  * O que ISTO nao cobre e o `noindex` — esse nao pode depender de hidratacao,
  * senao o Googlebot indexa antes. Ele e resolvido no middleware, via header
@@ -41,13 +51,20 @@ export function slugDoPathname(pathname: string): string | null {
 }
 
 export function ConsultorProvider({ children }: { children: React.ReactNode }) {
+  // Gatilho, nao fonte: muda a cada navegacao client-side e faz o efeito abaixo
+  // reavaliar a URL de verdade.
   const pathname = usePathname()
-  const slug = slugDoPathname(pathname || '/')
+  const [slug, setSlug] = useState<string | null>(null)
   const [consultor, setConsultor] = useState<ConsultorAtual | null>(null)
 
-  // Nome e WhatsApp so sao necessarios pros botoes de contato. O prefixo dos
-  // links (que e a regra critica) depende so do slug e ja vale no primeiro
-  // render, sem esperar esta busca.
+  // Roda depois da hidratacao — o HTML prerenderizado e o mesmo pra todo mundo,
+  // entao ler a URL no primeiro render quebraria a hidratacao.
+  useEffect(() => {
+    setSlug(slugDoPathname(window.location.pathname))
+  }, [pathname])
+
+  // Nome e WhatsApp so sao necessarios pros botoes de contato — o prefixo dos
+  // links, que e a regra critica, depende so do slug e nao espera esta busca.
   useEffect(() => {
     if (!slug) {
       setConsultor(null)
