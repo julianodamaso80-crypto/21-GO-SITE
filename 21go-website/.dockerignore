@@ -36,6 +36,10 @@ Thumbs.db
 
 # Coisas que não precisam ir pro Docker daemon do Easypanel
 scripts
+# ...menos o verificador dos sites de consultor: ele roda no `prebuild`, então
+# precisa existir DENTRO da imagem. Sem esta exceção o build quebra com
+# "Cannot find module '/app/scripts/verificar-consultor.mjs'".
+!scripts/verificar-consultor.mjs
 supabase
 tmp_test_*.json
 *.mp4
