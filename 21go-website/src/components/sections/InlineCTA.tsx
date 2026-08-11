@@ -3,7 +3,7 @@
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { fadeInUp } from '@/lib/motion'
-import Link from 'next/link'
+import Link from '@/components/Link'
 
 interface InlineCTAProps {
   text: string

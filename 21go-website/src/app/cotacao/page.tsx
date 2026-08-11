@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { trackCotacaoInicio, trackCotacaoCompleta, trackPedidoOrcamento, trackPageView, getTrackingData } from '@/lib/tracking'
+import { useConsultor } from '@/components/ConsultorProvider'
 import {
   ArrowRight,
   ArrowLeft,
@@ -121,6 +122,9 @@ const STEPS = [
 
 /* ─── Component ─── */
 export default function CotacaoPage() {
+  // Num site de consultor (21go.com.br/julianodamaso) a venda e dele: o lead
+  // nasce no Power dele e o botao de contato abre o WhatsApp dele.
+  const consultor = useConsultor()
   const [step, setStep] = useState(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [selectedPlanIdx, setSelectedPlanIdx] = useState(0)
@@ -489,6 +493,7 @@ export default function CotacaoPage() {
         nome: form.nome,
         whatsapp: form.whatsapp,
         email: form.email || undefined,
+        consultorSlug: consultor?.slug ?? null,
         placa: placaParaEnvio,
         leilao: form.leilao,
         carroApp: form.carroApp === 'sim',
@@ -570,6 +575,7 @@ export default function CotacaoPage() {
             nome: form.nome,
             whatsapp: form.whatsapp,
             email: form.email || undefined,
+            consultorSlug: consultor?.slug ?? null,
             placa: placaParaEnvio,
             marca: v.marca,
             modelo: v.modelo,
@@ -626,6 +632,7 @@ export default function CotacaoPage() {
           nome: form.nome,
           whatsapp: form.whatsapp,
           email: form.email || undefined,
+          consultorSlug: consultor?.slug ?? null,
           placa: placaParaEnvio,
           leilao: form.leilao,
           marca: v.marca,
@@ -783,7 +790,7 @@ export default function CotacaoPage() {
         ativacaoAvistaFormatted: formatPrice(ativacaoAvista),
         ativacao12xFormatted: formatPrice(ativacaoParcela12x),
         seed: leadId || msgSeed,
-      }))}`
+      }))}${consultor ? `&c=${consultor.slug}` : ''}`
     : '#'
   const handleContratarClick = () => {
     if (!selectedPlan) return
@@ -1356,7 +1363,7 @@ export default function CotacaoPage() {
                       <p className="text-[#DC2626]/70 mt-1">
                         Verifique a placa ou{' '}
                         <a
-                          href={`/api/wa?text=${encodeURIComponent(
+                          href={`${consultor ? `/api/wa?c=${consultor.slug}&text=` : '/api/wa?text='}${encodeURIComponent(
                             `Olá! Preciso de ajuda com uma simulação no site.${form.nome ? `\nNome: ${form.nome}` : ''}${form.whatsapp ? `\nWhatsApp: ${form.whatsapp}` : ''}${placaParaEnvio ? `\nPlaca: ${placaParaEnvio}` : ''}`,
                           )}`}
                           target="_blank"
@@ -1392,7 +1399,7 @@ export default function CotacaoPage() {
                     </div>
 
                     <a
-                      href={`/api/wa?text=${encodeURIComponent(
+                      href={`${consultor ? `/api/wa?c=${consultor.slug}&text=` : '/api/wa?text='}${encodeURIComponent(
                         `Olá! Tentei fazer uma simulação no site e não consegui. Pode me ajudar?\n\nNome: ${form.nome}\nWhatsApp: ${form.whatsapp}${placaParaEnvio ? `\nPlaca: ${placaParaEnvio}` : ''}${form.email ? `\nE-mail: ${form.email}` : ''}`,
                       )}`}
                       target="_blank"

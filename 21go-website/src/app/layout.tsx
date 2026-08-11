@@ -11,6 +11,7 @@ import { CtaTracker } from '@/components/tracking/CtaTracker'
 import { SchemaOrg } from '@/components/seo/SchemaOrg'
 import SmoothScrollProvider from '@/components/SmoothScrollProvider'
 import MobileCTA from '@/components/MobileCTA'
+import { ConsultorProvider } from '@/components/ConsultorProvider'
 
 /* Inter = fallback oficial (Google Fonts) do manual de marca 21Go v1.0 abr/2026 */
 /* Pesos cobrindo: Light(300), Regular(400), Medium(500), Bold(700), Heavy/ExtraBold(800) */
@@ -61,14 +62,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <WhatsAppTracker />
         <CtaTracker />
         <SchemaOrg />
-        <SmoothScrollProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-          {/* Botão flutuante do WhatsApp removido (ordem do dono, 03/08/2026):
-              o único caminho pro atendimento é a simulação em /cotacao. */}
-          <MobileCTA />
-        </SmoothScrollProvider>
+        {/* Envolve tudo: num site de consultor (/julianodamaso) é o que faz
+            todo <Link> carregar o slug junto e o visitante nunca escorregar
+            pra home da 21Go. Fora dele, não faz nada. */}
+        <ConsultorProvider>
+          <SmoothScrollProvider>
+            <Header />
+            <main>{children}</main>
+            <Footer />
+            {/* Botão flutuante do WhatsApp removido (ordem do dono, 03/08/2026):
+                o único caminho pro atendimento é a simulação em /cotacao. */}
+            <MobileCTA />
+          </SmoothScrollProvider>
+        </ConsultorProvider>
       </body>
     </html>
   )

@@ -12,7 +12,7 @@
  */
 
 import { MessageCircle, ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import Link from '@/components/Link'
 import { SceneVideo } from '@/components/cinema/SceneVideo'
 import { useSceneReveal } from '@/components/cinema/useCinema'
 import { CLIPS } from '@/lib/media'

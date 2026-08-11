@@ -4,7 +4,7 @@ import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { Gift, Users, Trophy } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
-import Link from 'next/link'
+import Link from '@/components/Link'
 
 const tiers = [
   { count: '1', discount: '10%', icon: Users, label: 'indicação' },

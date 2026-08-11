@@ -2,7 +2,7 @@
 
 import { motion, useInView } from 'framer-motion'
 import { useRef, useState, useCallback } from 'react'
-import Link from 'next/link'
+import Link from '@/components/Link'
 import {
   Briefcase,
   TrendingUp,

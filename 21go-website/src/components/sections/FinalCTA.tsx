@@ -9,7 +9,7 @@ import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { ShieldCheck, MessageCircle } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
-import Link from 'next/link'
+import Link from '@/components/Link'
 import { SceneVideo } from '@/components/cinema/SceneVideo'
 import { CLIPS } from '@/lib/media'
 

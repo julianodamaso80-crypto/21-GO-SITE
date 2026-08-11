@@ -10,7 +10,7 @@
  *  - Vistoria pelo app + Aprovação em 48h (4 passos)
  */
 
-import Link from 'next/link'
+import Link from '@/components/Link'
 import { Radar, Truck, Camera, ArrowRight } from 'lucide-react'
 import { SceneVideo } from '@/components/cinema/SceneVideo'
 import { useSceneParallax, useSceneReveal } from '@/components/cinema/useCinema'

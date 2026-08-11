@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/Link'
 import { type ReactNode, type ButtonHTMLAttributes } from 'react';
 
 type Variant = 'primary' | 'cta' | 'secondary' | 'ghost';

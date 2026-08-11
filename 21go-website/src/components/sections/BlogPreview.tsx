@@ -4,7 +4,7 @@ import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
-import Link from 'next/link'
+import Link from '@/components/Link'
 
 const posts = [
   { slug: 'protecao-veicular-vs-seguro', title: 'Proteção Veicular vs Seguro: Qual a Diferença?', excerpt: 'Entenda as vantagens e desvantagens de cada opção para proteger seu veículo no Rio de Janeiro.', tag: 'Guia' },

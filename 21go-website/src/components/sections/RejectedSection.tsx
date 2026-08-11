@@ -4,7 +4,7 @@ import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { Car, Smartphone, UserX, Clock, Bike, MapPin, ArrowRight } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
-import Link from 'next/link'
+import Link from '@/components/Link'
 
 const bigCards = [
   {

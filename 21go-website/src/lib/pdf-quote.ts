@@ -15,6 +15,12 @@ import {
 import { LOGO_21GO_BASE64 } from './assets/logo-base64'
 
 export interface QuotePdfInput {
+  /**
+   * Slug do consultor dono da venda. Sem ele o botao de WhatsApp do PDF aponta
+   * pro rodizio da casa — e o PDF vai NA MAO do cliente do consultor, entao
+   * seria entregar o lead dele pra 21Go depois da cotacao ja feita.
+   */
+  consultorSlug?: string | null
   nome: string
   whatsapp: string
   email?: string | null
@@ -425,6 +431,12 @@ function renderComparisonPage(
     })
     .join('')
 
+  // O PDF vai na mao do cliente e sobrevive a conversa: o botao dele precisa
+  // levar de volta pra quem fez a venda, nao pro rodizio da casa.
+  const linkWhatsApp = input.consultorSlug
+    ? `https://21go.site/api/wa?c=${input.consultorSlug}`
+    : 'https://21go.site/api/wa'
+
   return `
   <div class="page">
 
@@ -436,7 +448,7 @@ function renderComparisonPage(
             : `<span class="brand-text">21Go</span>`
         }
       </div>
-      <a class="wpp-btn" href="https://21go.site/api/wa">
+      <a class="wpp-btn" href="${linkWhatsApp}">
         <span class="wpp-icon">💬</span>
         <span class="wpp-text"><b>WhatsApp do Consultor</b><br/>(21) 96945-4824</span>
       </a>
@@ -501,7 +513,7 @@ function renderComparisonPage(
           <span class="footer-name">Letycia Thayene Nascimento Lima</span>
         </div>
       </div>
-      <a class="wpp-btn small" href="https://21go.site/api/wa">
+      <a class="wpp-btn small" href="${linkWhatsApp}">
         <span class="wpp-icon">💬</span>
         <span class="wpp-text">(21) 96945-4824</span>
       </a>

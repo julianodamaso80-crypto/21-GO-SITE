@@ -5,7 +5,7 @@ import { useRef } from 'react'
 import { ShieldCheck, Clock, Users, MessageCircle, ChevronDown } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { NumberTicker } from '@/components/ui/NumberTicker'
-import Link from 'next/link'
+import Link from '@/components/Link'
 
 export function HeroSection() {
   const ref = useRef(null)

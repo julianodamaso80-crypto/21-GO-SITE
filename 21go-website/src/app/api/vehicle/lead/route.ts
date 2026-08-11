@@ -28,13 +28,43 @@ import {
   type UpsertLeadInput,
 } from '@/lib/supabase-store'
 import { getRequestContext } from '@/lib/request-context'
+import { estaNoAr, resolverConsultor } from '@/lib/consultor'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const POWERCRM_BASE_URL = process.env.POWERCRM_BASE_URL || 'https://api.powercrm.com.br'
 const POWERAPI_TOKEN = process.env.POWERAPI_TOKEN
+/**
+ * O dono do lead quando ninguem mais reivindica: o site da propria 21Go.
+ *
+ * Num site de consultor (`21go.com.br/julianodamaso`) quem manda e o PowerLink
+ * DELE — e o que faz a cotacao ja nascer no nome dele la no Power, em vez de
+ * nascer orfa e ser transferida depois. Ver `powerlinkDoLead` abaixo.
+ */
 const POWERCRM_DEFAULT_SLSMN_NW_ID = process.env.POWERCRM_DEFAULT_SLSMN_NW_ID || 'WDVMKnkq'
+
+/**
+ * De quem e esta venda.
+ *
+ * Cai no default em silencio quando o slug nao existe, esta cancelado ou o banco
+ * nao responde. E a escolha certa: um lead que chega e melhor que um lead que se
+ * perde, e o pior caso aqui e a venda nascer na casa em vez de nascer no
+ * consultor — recuperavel. O contrario (derrubar o formulario porque o lookup
+ * falhou) perde o cliente pra sempre.
+ */
+async function powerlinkDoLead(slug: string | null | undefined): Promise<string> {
+  if (!slug) return POWERCRM_DEFAULT_SLSMN_NW_ID
+
+  const consultor = await resolverConsultor(slug)
+  if (!consultor || !estaNoAr(consultor)) {
+    console.warn(`[lead] slug "${slug}" sem site ativo — lead vai pro powerlink da casa`)
+    return POWERCRM_DEFAULT_SLSMN_NW_ID
+  }
+
+  console.log(`[lead] powerlink de ${consultor.nome} (${slug})`)
+  return consultor.powerlinkId
+}
 const POWERCRM_DEFAULT_LEAD_SOURCE = process.env.POWERCRM_DEFAULT_LEAD_SOURCE || '1584'
 
 interface LeadInput {
@@ -60,6 +90,8 @@ interface LeadInput {
   seguroAtual?: string | null
   cidade?: string | null
   estado?: string | null
+  /** Slug do site de consultor por onde o lead entrou (21go.com.br/<slug>). */
+  consultorSlug?: string | null
   // Tracking
   utm_source?: string | null
   utm_medium?: string | null
@@ -428,7 +460,7 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
     email: body.email || undefined,
     plts: placa || undefined,
     leadSource: Number(POWERCRM_DEFAULT_LEAD_SOURCE),
-    slsmnNwId: POWERCRM_DEFAULT_SLSMN_NW_ID,
+    slsmnNwId: await powerlinkDoLead(body.consultorSlug),
   }
   if (pcVehicle?.chassi) addPayload.chassi = pcVehicle.chassi
   if (mdl) addPayload.mdl = mdl
@@ -643,6 +675,7 @@ async function sendBydQuoteWithPdf(
   // 2) PDF da simulação.
   const filename = `simulacao-21go-${leadId}.pdf`
   const pdfInput = {
+    consultorSlug: body.consultorSlug ?? null,
     nome,
     whatsapp: body.whatsapp || '',
     email: body.email ?? null,

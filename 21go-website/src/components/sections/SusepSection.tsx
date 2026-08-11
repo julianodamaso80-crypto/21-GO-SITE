@@ -4,7 +4,7 @@ import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { ShieldCheck, Check, AlertTriangle } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
-import Link from 'next/link'
+import Link from '@/components/Link'
 
 const benefits = [
   'Seus recursos estão protegidos por lei',

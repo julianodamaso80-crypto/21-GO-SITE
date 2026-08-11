@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import Link from 'next/link'
+import Link from '@/components/Link'
 import { MessageCircle, ShieldCheck, ArrowRight, ChevronDown } from 'lucide-react'
 import { WhatsAppGate } from '@/components/ui/WhatsAppGate'
 

@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import Link from 'next/link'
+import Link from '@/components/Link'
 import { ArrowRight, ShieldCheck, Scale, Building2, MessageSquare, ChevronDown } from 'lucide-react'
 
 /**

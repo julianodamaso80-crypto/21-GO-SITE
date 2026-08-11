@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ShieldCheck, Clock, Users, MessageCircle, ChevronDown } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { NumberTicker } from '@/components/ui/NumberTicker'
-import Link from 'next/link'
+import Link from '@/components/Link'
 import { MEDIA_BASE } from '@/lib/media'
 
 function prefersStatic(): boolean {

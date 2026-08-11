@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { Calendar, User, Clock, ArrowLeft, ArrowRight, ShieldCheck, RefreshCw, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
+import Link from '@/components/Link'
 import { getPostBySlug, getPostSlugs, getAllPosts } from '@/lib/blog'
 import { notFound } from 'next/navigation'
 import { BlogTracking } from '@/components/tracking/BlogTracking'

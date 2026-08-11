@@ -15,6 +15,7 @@
 
 import { useState } from 'react'
 import { MessageCircle, Loader2, X } from 'lucide-react'
+import { useConsultor } from '@/components/ConsultorProvider'
 import { trackWhatsAppClick } from '@/lib/tracking'
 
 type Props = {
@@ -57,6 +58,8 @@ export function WhatsAppGate({
   children,
 }: Props) {
   const [open, setOpen] = useState(false)
+  // Site de consultor: o contato e dele, nao do rodizio da casa.
+  const consultor = useConsultor()
   const [nome, setNome] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [errors, setErrors] = useState<{ nome?: string; whatsapp?: string }>({})
@@ -76,7 +79,7 @@ export function WhatsAppGate({
     const texto = `${assunto}\n\nNome: ${nome.trim()}\nWhatsApp: ${whatsapp}`
     // window.open PRECISA rodar dentro do gesto do clique, senão o navegador
     // trata como popup e bloqueia.
-    window.open(`/api/wa?text=${encodeURIComponent(texto)}`, '_blank', 'noopener,noreferrer')
+    window.open(`/api/wa?text=${encodeURIComponent(texto)}${consultor ? `&c=${consultor.slug}` : ''}`, '_blank', 'noopener,noreferrer')
 
     trackWhatsAppClick(origin, { buttonText: titulo })
 
