@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { esquecerConsultor } from '@/lib/consultor'
-import { cancelarAssinatura, cobrancaEmAberto } from '@/lib/asaas'
+import { cancelarAssinatura, cobrancaEmAberto, saudeDoWebhook } from '@/lib/asaas'
 import { avisar, textoVenceHoje, textoCancelado } from '@/lib/whatsapp-avisos'
 
 export const runtime = 'nodejs'
@@ -23,6 +23,9 @@ export const dynamic = 'force-dynamic'
  */
 
 const DIAS_ATE_CORTAR = 5
+
+/** Pra onde vai o alerta quando a cobranca para de funcionar. */
+const DONO = '5521992208062'
 
 interface Linha {
   slug: string
@@ -79,8 +82,26 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.log('[cron sites]', JSON.stringify(relatorio))
-  return NextResponse.json(relatorio)
+  // A checagem que impede a falha silenciosa: webhook parado = nenhum pagamento
+  // e reconhecido, e o sistema inteiro fica "quieto" como se estivesse tudo bem.
+  const saude = await saudeDoWebhook().catch((err) => ({
+    ok: false,
+    motivo: `não consegui checar o webhook: ${(err as Error).message}`,
+  }))
+
+  if (!saude.ok) {
+    console.error('[cron sites] WEBHOOK COM PROBLEMA:', saude.motivo)
+    await avisar(
+      DONO,
+      `⚠️ 21Go — atenção no Asaas\n\n${saude.motivo}.\n\n` +
+        `Enquanto isso, pagamento de site de consultor não sobe site sozinho. ` +
+        `Conserto: recriar o webhook (isso zera a penalização).`,
+    ).catch(() => {})
+  }
+
+  const saida = { ...relatorio, webhook: saude.ok ? 'ok' : saude.motivo }
+  console.log('[cron sites]', JSON.stringify(saida))
+  return NextResponse.json(saida)
 }
 
 async function avisarVencimento(s: Linha): Promise<void> {

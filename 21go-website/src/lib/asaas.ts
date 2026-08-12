@@ -150,3 +150,37 @@ export async function cobrancaEmAberto(
 export async function cancelarAssinatura(assinaturaId: string): Promise<void> {
   await chamar(`/subscriptions/${encodeURIComponent(assinaturaId)}`, { method: 'DELETE' })
 }
+
+/**
+ * O webhook esta entregando?
+ *
+ * ⚠️ Isto existe por um incidente real (12/08/2026). Um unico 401 — de uma
+ * janela em que o token do painel e o do servidor divergiam — deixou o webhook
+ * com `penalizedRequestsCount: 1`, e como o envio e SEQUENCIAL a fila inteira
+ * parou atras dele. O sintoma foi cruel: nao chegava evento nenhum E nao havia
+ * tentativa nos logs, entao do nosso lado parecia simplesmente "nada aconteceu".
+ * Nada avisou; so descobrimos pelo e-mail que o Asaas mandou pro dono.
+ *
+ * Com a cobranca rodando sozinha, esse silencio pararia todo o faturamento sem
+ * ninguem perceber. Por isso o cron diario confere e grita.
+ */
+export async function saudeDoWebhook(): Promise<{
+  ok: boolean
+  motivo: string | null
+}> {
+  const r = await chamar<{
+    data?: { url?: string; enabled?: boolean; interrupted?: boolean; penalizedRequestsCount?: number }[]
+  }>('/webhooks', { method: 'GET' })
+
+  const nosso = (r.data || []).find((w) => (w.url || '').includes('/api/webhooks/asaas'))
+  if (!nosso) return { ok: false, motivo: 'o webhook do site sumiu do Asaas' }
+  if (!nosso.enabled) return { ok: false, motivo: 'o webhook está desativado' }
+  if (nosso.interrupted) return { ok: false, motivo: 'a fila do webhook foi INTERROMPIDA' }
+  if ((nosso.penalizedRequestsCount ?? 0) > 0) {
+    return {
+      ok: false,
+      motivo: `o webhook tem ${nosso.penalizedRequestsCount} entrega(s) penalizada(s) — a fila trava atrás delas`,
+    }
+  }
+  return { ok: true, motivo: null }
+}
