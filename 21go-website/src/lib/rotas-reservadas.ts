@@ -25,6 +25,7 @@ export const ROTAS_RESERVADAS = new Set([
   'preview-scroll-3d',
   'protecao-veicular',
   'protecao-veicular-rj',
+  'quero-site',
   'seja-consultor',
   'sobre',
   // Geradas por rota (robots.ts / sitemap.ts), nao por pasta.
