@@ -17,9 +17,15 @@ import 'server-only'
  * pode depender de um WhatsApp estar de pe.
  */
 
-const URL_BASE = process.env.EVOLUTION_API_URL || 'https://evolution.sinistro21go.site'
-const INSTANCIA = process.env.EVOLUTION_INSTANCE_AVISOS || ''
-const CHAVE = process.env.EVOLUTION_API_KEY || ''
+/**
+ * URL e chave PROPRIAS, nao as do `lib/whatsapp.ts`: a instancia de avisos vive
+ * em outra Evolution (`automacoes-evolution-api...`), nao na do site. Herdar a
+ * URL do site mandaria os avisos pro servidor errado com uma chave que nao vale
+ * la — e falharia calado.
+ */
+const URL_BASE = process.env.EVOLUTION_AVISOS_URL || ''
+const INSTANCIA = process.env.EVOLUTION_AVISOS_INSTANCE || ''
+const CHAVE = process.env.EVOLUTION_AVISOS_KEY || ''
 
 export function avisosConfigurados(): boolean {
   return Boolean(URL_BASE && INSTANCIA && CHAVE)
