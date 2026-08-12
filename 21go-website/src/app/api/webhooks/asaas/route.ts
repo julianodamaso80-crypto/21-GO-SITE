@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { esquecerConsultor } from '@/lib/consultor'
-import { avisar, textoSiteNoAr } from '@/lib/whatsapp-avisos'
+import { entregarSeOTestePassar } from '@/lib/entregar-site'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -141,7 +141,7 @@ async function aplicar(tipo: string, assinatura: string): Promise<void> {
   // (merece a mensagem de boas-vindas) ou so a mensalidade de mais um mes.
   const { data: antes } = await supa
     .from('sites_consultor')
-    .select('slug, status, nome, whatsapp')
+    .select('slug, status, nome, whatsapp, powerlink_id')
     .match(alvo)
     .maybeSingle()
 
@@ -163,10 +163,16 @@ async function aplicar(tipo: string, assinatura: string): Promise<void> {
 
   // A primeira vez que sai de "pendente" e a unica que merece aviso: mandar
   // "seu site esta no ar" todo mes, na renovacao, seria spam.
+  //
+  // ⚠️ E o link NAO sai daqui direto. Ele so pode ser enviado depois de provado
+  // que o lead cai no Power dele — ver `entregarSeOTestePassar`. Se o teste
+  // falhar, o cron diario tenta de novo ate dar certo.
   if (mudanca.status === 'ativo' && antes.status === 'pendente') {
-    await avisar(
-      antes.whatsapp as string,
-      textoSiteNoAr(antes.nome as string, slug),
-    ).catch(() => {})
+    await entregarSeOTestePassar({
+      slug,
+      nome: antes.nome as string,
+      whatsapp: antes.whatsapp as string,
+      powerlinkId: antes.powerlink_id as string,
+    }).catch((err) => console.error('[asaas] teste do powerlink falhou', slug, err))
   }
 }

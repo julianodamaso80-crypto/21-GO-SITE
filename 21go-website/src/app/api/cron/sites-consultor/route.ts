@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { esquecerConsultor } from '@/lib/consultor'
 import { cancelarAssinatura, cobrancaEmAberto, saudeDoWebhook } from '@/lib/asaas'
 import { avisar, textoVenceHoje, textoCancelado } from '@/lib/whatsapp-avisos'
+import { entregarSeOTestePassar } from '@/lib/entregar-site'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -58,7 +59,32 @@ export async function GET(req: NextRequest) {
   }
 
   const linhas = (data || []) as Linha[]
-  const relatorio = { olhados: linhas.length, avisados: 0, cortados: 0, erros: 0 }
+  const relatorio = { olhados: linhas.length, avisados: 0, cortados: 0, erros: 0, entregues: 0 }
+
+  // ─── Quem pagou mas ainda nao recebeu o link ──────────────────────────────
+  // Este e o "arrumar ate cair no Power ideal": enquanto o teste nao passar, o
+  // link nao sai, e todo dia se tenta de novo. Se alguem consertar o PowerLink
+  // no Power, a entrega acontece sozinha no dia seguinte.
+  const { data: aEntregar } = await supa
+    .from('sites_consultor')
+    .select('slug, nome, whatsapp, powerlink_id')
+    .eq('status', 'ativo')
+    .is('link_enviado_em', null)
+
+  for (const s of (aEntregar || []) as { slug: string; nome: string; whatsapp: string; powerlink_id: string }[]) {
+    try {
+      const r = await entregarSeOTestePassar({
+        slug: s.slug,
+        nome: s.nome,
+        whatsapp: s.whatsapp,
+        powerlinkId: s.powerlink_id,
+      })
+      if (r.entregue) relatorio.entregues++
+    } catch (err) {
+      relatorio.erros++
+      console.error('[cron sites] entrega', s.slug, (err as Error).message)
+    }
+  }
 
   for (const s of linhas) {
     if (!s.proximo_vencimento) continue
