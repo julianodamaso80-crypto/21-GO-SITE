@@ -136,14 +136,62 @@ export async function garantirAssinatura(
  */
 export async function cobrancaEmAberto(
   assinaturaId: string,
-): Promise<{ link: string | null; vencimento: string | null }> {
-  const r = await chamar<{ data?: { invoiceUrl?: string; dueDate?: string; status?: string }[] }>(
-    `/subscriptions/${encodeURIComponent(assinaturaId)}/payments`,
-    { method: 'GET' },
-  )
+): Promise<{ id: string | null; link: string | null; vencimento: string | null; status: string | null }> {
+  const r = await chamar<{
+    data?: { id?: string; invoiceUrl?: string; dueDate?: string; status?: string }[]
+  }>(`/subscriptions/${encodeURIComponent(assinaturaId)}/payments`, { method: 'GET' })
+
   const lista = r.data || []
   const aberta = lista.find((p) => p.status === 'PENDING' || p.status === 'OVERDUE') || lista[0]
-  return { link: aberta?.invoiceUrl ?? null, vencimento: aberta?.dueDate ?? null }
+  return {
+    id: aberta?.id ?? null,
+    link: aberta?.invoiceUrl ?? null,
+    vencimento: aberta?.dueDate ?? null,
+    status: aberta?.status ?? null,
+  }
+}
+
+/**
+ * Pix e boleto pra montar o checkout DENTRO do nosso site.
+ *
+ * Regra do dono (12/08/2026): *"o checkout nao pode parecer que e Asaas"*. Por
+ * isso nao mandamos ninguem pro `invoiceUrl` deles — pegamos o QR, o copia-e-
+ * cola e a linha digitavel e desenhamos tudo com a marca 21Go. O consultor paga
+ * sem nunca ver o nome do meio de campo.
+ *
+ * Funciona com `billingType: UNDEFINED` (medido em 12/08/2026): a mesma cobranca
+ * devolve QR de Pix E linha digitavel de boleto, entao ele escolhe na hora sem
+ * a gente ter que decidir por ele na criacao da assinatura.
+ */
+export async function dadosDeCobranca(pagamentoId: string): Promise<{
+  pixCopiaECola: string | null
+  pixQrBase64: string | null
+  boletoLinha: string | null
+}> {
+  const [pix, boleto] = await Promise.all([
+    chamar<{ success?: boolean; payload?: string; encodedImage?: string }>(
+      `/payments/${encodeURIComponent(pagamentoId)}/pixQrCode`,
+      { method: 'GET' },
+    ).catch(() => null),
+    chamar<{ identificationField?: string }>(
+      `/payments/${encodeURIComponent(pagamentoId)}/identificationField`,
+      { method: 'GET' },
+    ).catch(() => null),
+  ])
+
+  return {
+    pixCopiaECola: pix?.payload ?? null,
+    pixQrBase64: pix?.encodedImage ?? null,
+    boletoLinha: boleto?.identificationField ?? null,
+  }
+}
+
+/** O status da cobranca, pra tela saber a hora de virar "pago". */
+export async function statusDaCobranca(pagamentoId: string): Promise<string | null> {
+  const r = await chamar<{ status?: string }>(`/payments/${encodeURIComponent(pagamentoId)}`, {
+    method: 'GET',
+  }).catch(() => null)
+  return r?.status ?? null
 }
 
 /** Cancelamento definitivo: para de gerar cobranca nova. */

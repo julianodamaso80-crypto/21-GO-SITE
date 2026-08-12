@@ -1,9 +1,17 @@
 import type { Metadata } from 'next'
 import { FormularioSite } from './FormularioSite'
+import { estilos } from './estilos'
 
 /**
  * A pagina de venda do site do consultor. Substitui o `crm21go.site/quero-site`,
  * que so juntava pedido pra alguem ligar depois — aqui a venda se fecha sozinha.
+ *
+ * ─── Por que o fundo e escuro ───────────────────────────────────────────────
+ *
+ * Alem do peso visual, resolve um bug real: o Header do site e transparente com
+ * texto BRANCO ate o primeiro scroll. Sobre o fundo claro da versao anterior,
+ * "Planos", "Simulacao" e o resto do menu ficavam ilegiveis. Com o hero escuro,
+ * o header volta a funcionar como foi desenhado.
  */
 
 export const metadata: Metadata = {
@@ -17,34 +25,95 @@ export const metadata: Metadata = {
 
 export default function QueroSitePage() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pt-24 pb-16 px-6 flex flex-col items-center">
-      <div className="w-full max-w-md mb-8 text-center">
-        <h1 className="text-3xl font-bold text-[#1A2754] mb-3">
-          Seu site, seus leads, seu Power
-        </h1>
-        <p className="text-[#64748B]">
-          O mesmo site da 21Go, no seu endereço. Quem cotar por ele cai no seu Power e fala no seu
-          WhatsApp.
-        </p>
-      </div>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: estilos }} />
 
-      <FormularioSite />
+      <div className="qs-palco">
+        {/* Atmosfera: dois halos que respiram, malha de grade e granulado por
+            cima. E o que separa "fundo azul" de "profundidade". */}
+        <div className="qs-halo qs-halo1" aria-hidden />
+        <div className="qs-halo qs-halo2" aria-hidden />
+        <div className="qs-grade" aria-hidden />
+        <div className="qs-grao" aria-hidden />
 
-      <div className="w-full max-w-md mt-8 grid gap-3 text-sm text-[#64748B]">
-        <Item>Seu endereço próprio: 21go.com.br/seunome</Item>
-        <Item>As cotações nascem no seu nome dentro do Power</Item>
-        <Item>Pode fazer tráfego pago apontando pro seu link</Item>
-        <Item>Sem fidelidade — cancela quando quiser</Item>
+        <div className="qs-conteudo">
+          <header className="qs-cabecalho">
+            <span className="qs-pill">
+              <span className="qs-pillPonto" />
+              Exclusivo para consultores 21Go
+            </span>
+
+            <h1 className="qs-titulo">
+              Seu site.
+              <br />
+              Seus leads.
+              <br />
+              <span className="qs-tituloDestaque">Seu Power.</span>
+            </h1>
+
+            <p className="qs-subtitulo">
+              O mesmo site da 21Go, no seu endereço. Quem cotar por ele cai direto no seu Power e
+              fala no seu WhatsApp.
+            </p>
+          </header>
+
+          <div className="qs-palcoForm">
+            {/* O mockup fica ATRAS do formulario, inclinado: da a ideia do
+                produto sem competir com a tarefa de preencher. */}
+            <div className="qs-mockup" aria-hidden>
+              <div className="qs-janela">
+                <div className="qs-barra">
+                  <span className="qs-bolinha" />
+                  <span className="qs-bolinha" />
+                  <span className="qs-bolinha" />
+                  <div className="qs-url">21go.com.br/seunome</div>
+                </div>
+                <div className="qs-tela">
+                  <div className="qs-telaLinha qs-w70" />
+                  <div className="qs-telaLinha qs-w40" />
+                  <div className="qs-telaBloco" />
+                  <div className="qs-telaLinha qs-w55" />
+                </div>
+              </div>
+            </div>
+
+            <FormularioSite />
+          </div>
+
+          <ul className="qs-beneficios">
+            <Beneficio n="01" titulo="Endereço próprio">
+              21go.com.br/seunome, só seu, pra sempre
+            </Beneficio>
+            <Beneficio n="02" titulo="Cotação no seu nome">
+              nasce dentro do seu Power, não na distribuição
+            </Beneficio>
+            <Beneficio n="03" titulo="Tráfego pago liberado">
+              anuncie apontando pro seu link
+            </Beneficio>
+            <Beneficio n="04" titulo="Sem fidelidade">
+              cancela quando quiser, sem multa
+            </Beneficio>
+          </ul>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
-function Item({ children }: { children: React.ReactNode }) {
+function Beneficio({
+  n,
+  titulo,
+  children,
+}: {
+  n: string
+  titulo: string
+  children: React.ReactNode
+}) {
   return (
-    <div className="flex items-start gap-2.5">
-      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#C7D301] flex-shrink-0" />
-      <span>{children}</span>
-    </div>
+    <li className="qs-beneficio">
+      <span className="qs-beneficioN">{n}</span>
+      <strong className="qs-beneficioTitulo">{titulo}</strong>
+      <span className="qs-beneficioTexto">{children}</span>
+    </li>
   )
 }
