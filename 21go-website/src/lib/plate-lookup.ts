@@ -47,6 +47,7 @@ import {
 } from '@/data/pricing'
 import { lookupFipeDirect } from './fipe-direct'
 import { lookupApiBrasilByPlate, isApiBrasilConfigured } from './apibrasil-lookup'
+import { aceitaAno } from './elegibilidade.regras'
 
 const POWERCRM_BASE_URL = process.env.POWERCRM_BASE_URL || 'https://api.powercrm.com.br'
 const POWERAPI_TOKEN = process.env.POWERAPI_TOKEN || ''
@@ -83,6 +84,9 @@ export interface PlateErrorResponse {
   error: string
   /** Sinaliza pro frontend mostrar tela de atendimento humano em vez de erro genérico */
   requires_human_support?: boolean
+  /** Veículo que a 21Go não aceita — não é falha de consulta, não vai pra humano */
+  excluded?: true
+  reason?: 'ano'
 }
 
 const apiHeaders = {
@@ -455,6 +459,19 @@ export async function lookupPlate(
 
   if (!year) {
     return humanSupportResponse('ano_nao_resolvido', normalized)
+  }
+
+  // Corte de ano (ordem do dono, 12/08/2026): abaixo de 2006 a 21Go não aceita, mesmo com o
+  // Power tendo tabela. Aqui também porque esta rota calcula plano sozinha, sem passar pela
+  // decisão de elegibilidade do /powercrm/preco.
+  if (!aceitaAno(Number(year))) {
+    console.log(`[plate-lookup] EXCLUIDO por ano placa=${normalized} ano=${year}`)
+    return {
+      success: false,
+      excluded: true,
+      reason: 'ano',
+      error: 'No momento não estamos aceitando veículos com ano anterior a 2006.',
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

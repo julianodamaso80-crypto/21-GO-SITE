@@ -555,10 +555,10 @@ export default function CotacaoPage() {
       // trava de 3 veículos/7 dias estava barrando cliente de verdade. Qualquer
       // pessoa simula quantos veículos quiser.
 
-      // Quem manda é o PowerCRM, versão por versão, respondido no servidor — e só ele. Saíram
-      // daqui em 06/08/2026 a lista de modelos escrita por nome e o corte de ano: as duas
-      // rodavam DEPOIS de o Power já ter aprovado o veículo, então a única coisa que podiam
-      // fazer era virar um "faz" em "não faz" e derrubar venda.
+      // Quem manda é o PowerCRM, versão por versão, respondido no servidor — com uma exceção:
+      // o corte de ano em 2006, que voltou em 12/08/2026 e vence o Power (as tabelas dele cotam
+      // até 1998). A lista de modelos escrita por nome continua fora: rodava DEPOIS de o Power
+      // já ter aprovado o veículo, então só podia virar um "faz" em "não faz" e derrubar venda.
       if (data.excluded) {
         setExcluded(true)
         setStep(2)

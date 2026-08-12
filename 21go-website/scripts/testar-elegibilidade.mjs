@@ -12,11 +12,43 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-const { decidirElegibilidade } = await import('../src/lib/elegibilidade.regras.ts')
+const { decidirElegibilidade, ANO_MINIMO, aceitaAno } = await import('../src/lib/elegibilidade.regras.ts')
 
 test('Power confirmou plano — cota', () => {
   assert.deepEqual(
-    decidirElegibilidade({ powerAoVivo: true, allowlist: true }),
+    decidirElegibilidade({ ano: 2020, powerAoVivo: true, allowlist: true }),
+    { acao: 'cotar' },
+  )
+})
+
+test('ano abaixo de 2006 nao passa NEM com o Power dando plano', () => {
+  // Caso real 12/08/2026: Ford Ka GL 1.0i Zetec Rocam 2003 (id 1678) saiu cotado. O Power
+  // devolve BASICO/Do Seu Jeito/VIP/PREMIUM pra ele — a trava do ano e do site, nao do Power.
+  assert.deepEqual(
+    decidirElegibilidade({ ano: 2003, powerAoVivo: true, allowlist: true }),
+    { acao: 'nao_fazemos', motivo: 'ano' },
+  )
+  assert.deepEqual(
+    decidirElegibilidade({ ano: 2005, powerAoVivo: true, allowlist: true }),
+    { acao: 'nao_fazemos', motivo: 'ano' },
+  )
+})
+
+test('2006 e o primeiro ano aceito', () => {
+  assert.equal(ANO_MINIMO, 2006)
+  assert.equal(aceitaAno(2006), true)
+  assert.equal(aceitaAno(2005), false)
+  assert.deepEqual(
+    decidirElegibilidade({ ano: 2006, powerAoVivo: true, allowlist: true }),
+    { acao: 'cotar' },
+  )
+})
+
+test('ano que nao deu pra resolver nao dispensa cliente no escuro', () => {
+  assert.equal(aceitaAno(null), true)
+  assert.equal(aceitaAno(Number.NaN), true)
+  assert.deepEqual(
+    decidirElegibilidade({ ano: null, powerAoVivo: true, allowlist: true }),
     { acao: 'cotar' },
   )
 })
@@ -24,38 +56,38 @@ test('Power confirmou plano — cota', () => {
 test('Power confirmou plano mas a allowlist esta velha — o Power vence, cota', () => {
   // Caso real: BYD Dolphin Mini (id 12717) cotava no Power e a allowlist de 3 dias bloqueava.
   assert.deepEqual(
-    decidirElegibilidade({ powerAoVivo: true, allowlist: false }),
+    decidirElegibilidade({ ano: 2020, powerAoVivo: true, allowlist: false }),
     { acao: 'cotar' },
   )
 })
 
 test('Power confirmou que NAO ha plano — ai sim dispensa', () => {
   assert.deepEqual(
-    decidirElegibilidade({ powerAoVivo: false, allowlist: true }),
+    decidirElegibilidade({ ano: 2020, powerAoVivo: false, allowlist: true }),
     { acao: 'nao_fazemos', motivo: 'model' },
   )
 })
 
 test('Power mudo + suspeita da allowlist — consultor, NUNCA "nao fazemos"', () => {
-  const r = decidirElegibilidade({ powerAoVivo: null, allowlist: false })
+  const r = decidirElegibilidade({ ano: 2020, powerAoVivo: null, allowlist: false })
   assert.equal(r.acao, 'consultor')
   assert.notEqual(r.acao, 'nao_fazemos')
 })
 
 test('Power mudo sem suspeita — cota (API que pisca nao pode derrubar venda)', () => {
   assert.deepEqual(
-    decidirElegibilidade({ powerAoVivo: null, allowlist: true }),
+    decidirElegibilidade({ ano: 2020, powerAoVivo: null, allowlist: true }),
     { acao: 'cotar' },
   )
   assert.deepEqual(
-    decidirElegibilidade({ powerAoVivo: null, allowlist: null }),
+    decidirElegibilidade({ ano: 2020, powerAoVivo: null, allowlist: null }),
     { acao: 'cotar' },
   )
 })
 
 test('nenhuma combinacao dispensa cliente sem o Power ter dito "nao"', () => {
   for (const allowlist of [true, false, null]) {
-    const r = decidirElegibilidade({ powerAoVivo: null, allowlist })
+    const r = decidirElegibilidade({ ano: 2020, powerAoVivo: null, allowlist })
     assert.notEqual(r.acao, 'nao_fazemos', `allowlist=${allowlist} dispensou cliente no escuro`)
   }
 })

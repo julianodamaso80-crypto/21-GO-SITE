@@ -4,7 +4,7 @@ import { lookupFipeDirect } from '@/lib/fipe-direct'
 import { getApplicablePlans, isLeilaoOrigin, type QuotePlan } from '@/data/pricing'
 import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
 import { temProtecaoNoPowerAoVivo } from '@/lib/powercrm-planos'
-import { decidirElegibilidade } from '@/lib/elegibilidade.regras'
+import { aceitaAno, decidirElegibilidade } from '@/lib/elegibilidade.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -57,7 +57,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'ano inválido' }, { status: 200 })
   }
 
-  // 1) Pega ano-modelo (mdlYr) detalhado do PowerCRM — necessário pra criar lead e pra
+  // 1) Veículo anterior a 2006 nem chega a ser perguntado ao Power: as tabelas dele cotam até
+  //    1998, mas a 21Go não aceita (ordem do dono, 12/08/2026 — um Ford Ka 2003 saiu cotado).
+  if (!aceitaAno(Number(yearStr))) {
+    return NextResponse.json({
+      success: true,
+      excluded: true,
+      reason: 'ano',
+      vehicle: {
+        marca: brandText,
+        modelo: modelText,
+        ano: yearStr,
+        fipeValue: null,
+        fipeCode: codFipe || null,
+        categoria: tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL',
+        combustivel: null,
+      },
+      powercrm: { brandId: Number(brandId), modelId: Number(modelId), yearId: null },
+      plans: [],
+    })
+  }
+
+  // 2) Pega ano-modelo (mdlYr) detalhado do PowerCRM — necessário pra criar lead e pra
   //    perguntar ao Power quais planos ele daria pra esse veículo
   let mdlYr: number | undefined
   let combustivel: string | undefined
@@ -74,7 +95,7 @@ export async function POST(req: NextRequest) {
     // segue — mdlYr é opcional
   }
 
-  // 2) Quem decide se fazemos o veículo é o PowerCRM, e SÓ ele. Perguntamos ao vivo (é a mesma
+  // 3) Passado o ano, quem decide se fazemos o veículo é o PowerCRM. Perguntamos ao vivo (é a mesma
   //    resposta que o consultor vê na cotação dele). Fica no servidor de propósito — é a camada
   //    que o cliente não burla — e antes do FIPE, pra não gastar consulta externa à toa.
   //
@@ -84,6 +105,7 @@ export async function POST(req: NextRequest) {
   //    A allowlist extraída virou só desempate: ela envelhece (em 3 dias já bloqueava o BYD
   //    Dolphin Mini, que o Power cota), então não pode mais dispensar cliente sozinha.
   const veredicto = decidirElegibilidade({
+    ano: Number(yearStr),
     powerAoVivo: await temProtecaoNoPowerAoVivo(modelId, mdlYr),
     allowlist: planoNoPowerCrm(modelId),
   })
