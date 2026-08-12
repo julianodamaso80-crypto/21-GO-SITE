@@ -10,6 +10,7 @@ import { useRef } from 'react'
 import { ShieldCheck, MessageCircle } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import Link from '@/components/Link'
+import { BotaoFaleWhatsApp } from '@/components/ui/BotaoFaleWhatsApp'
 import { SceneVideo } from '@/components/cinema/SceneVideo'
 import { CLIPS } from '@/lib/media'
 
@@ -55,13 +56,13 @@ export function FinalCTA() {
           >
             Fazer Simulação Grátis
           </Link>
-          <Link
-            href="/cotacao"
+          <BotaoFaleWhatsApp
+            origin="final_cta"
             className="inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-[#10B981] text-white text-base font-semibold hover:bg-[#059669] transition-all duration-200 hover:-translate-y-0.5"
           >
             <MessageCircle className="h-5 w-5" />
             Fale no WhatsApp
-          </Link>
+          </BotaoFaleWhatsApp>
         </motion.div>
       </motion.div>
     </section>

@@ -17,6 +17,7 @@ import { ShieldCheck, Clock, Users, MessageCircle, ChevronDown } from 'lucide-re
 import { fadeInUp, staggerContainer } from '@/lib/motion'
 import { NumberTicker } from '@/components/ui/NumberTicker'
 import Link from '@/components/Link'
+import { BotaoFaleWhatsApp } from '@/components/ui/BotaoFaleWhatsApp'
 import { MEDIA_BASE } from '@/lib/media'
 
 function prefersStatic(): boolean {
@@ -229,13 +230,13 @@ export function PresidentHero() {
             >
               Fazer Simulação Grátis
             </Link>
-            <Link
-              href="/cotacao"
+            <BotaoFaleWhatsApp
+              origin="hero"
               className="inline-flex w-full max-w-[320px] items-center justify-center gap-2.5 px-6 py-[clamp(0.6rem,1.5vh,0.85rem)] text-sm sm:w-auto sm:max-w-none sm:px-7 sm:py-4 sm:text-base rounded-xl border border-white/20 bg-white/[0.07] backdrop-blur-sm text-white font-semibold hover:bg-white/[0.12] hover:border-white/30 transition-all duration-300 hover:-translate-y-0.5"
             >
               <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-[#25D366]" />
               Fale no WhatsApp
-            </Link>
+            </BotaoFaleWhatsApp>
           </motion.div>
 
           {/* Trust stats */}
