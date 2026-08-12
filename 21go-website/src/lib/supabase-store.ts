@@ -78,6 +78,8 @@ export interface UpsertLeadInput {
 
   // Tracking
   origem?: string | null
+  /** Codigo de quem indicou (Member Get Member). */
+  indicado_por?: string | null
   utm_source?: string | null
   utm_medium?: string | null
   utm_campaign?: string | null
@@ -146,6 +148,7 @@ export async function upsertLead(input: UpsertLeadInput): Promise<{ id: string; 
     etapa_funil: input.etapa_funil ?? 'novo',
     status: input.status ?? 'lead',
     origem: input.origem ?? deriveOrigem(input.utm_source, input.utm_medium),
+    indicado_por: input.indicado_por ?? null,
     utm_source: input.utm_source ?? null,
     utm_medium: input.utm_medium ?? null,
     utm_campaign: input.utm_campaign ?? null,
