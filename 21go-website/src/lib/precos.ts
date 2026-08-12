@@ -6,12 +6,15 @@
  * o numero estava escrito em tres arquivos — trocar em dois e esquecer o
  * terceiro faria a pagina anunciar um valor e a cobranca nascer com outro.
  *
- * ⚠️ VALOR DE TESTE ATIVO (12/08/2026): R$ 5 e o MINIMO que o Asaas aceita —
- * medido chamando /subscriptions com 0,50 / 1 / 2 / 3 / 4 (todos recusados) e 5
- * (aceito). Esta assim a pedido do dono, para ele fechar uma contratacao real
- * sem gastar R$ 80. VOLTAR PARA 80 quando ele avisar que terminou o teste.
+ * Ja foi baixado pra R$ 5 uma vez (12/08/2026), que e o MINIMO que o Asaas
+ * aceita — medido chamando /subscriptions com 0,50 / 1 / 2 / 3 / 4 (todos
+ * recusados) e 5 (aceito). Fica registrado aqui caso precise de novo.
+ *
+ * ⚠️ Trocar este numero muda o que as assinaturas NOVAS cobram. As que ja
+ * existem no Asaas seguem no valor com que nasceram — pra mudar uma delas e
+ * preciso editar a assinatura la, nao adianta so mexer aqui.
  */
-export const MENSALIDADE = 5
+export const MENSALIDADE = 80
 
-/** O que estava valendo antes do teste, para nao depender da memoria de ninguem. */
-export const MENSALIDADE_OFICIAL = 80
+/** O minimo que o Asaas aceita, se um dia precisar baixar pra testar de novo. */
+export const MENSALIDADE_MINIMA_ASAAS = 5
