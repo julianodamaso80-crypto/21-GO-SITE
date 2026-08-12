@@ -125,16 +125,25 @@ export async function garantirAssinatura(
 }
 
 /**
- * O link que o consultor abre pra pagar. Vem da primeira cobranca da
- * assinatura, nao da assinatura — `invoiceUrl` e a fatura, que ja mostra boleto
- * e Pix na mesma tela.
+ * A cobranca em aberto da assinatura: o link pra pagar e a data que ela vence.
+ *
+ * ⚠️ O vencimento tem que sair DAQUI, nunca do `nextDueDate` da assinatura.
+ * Medido em 12/08/2026: assinatura criada com vencimento 15/08 ja nasce com
+ * `nextDueDate = 15/09`, porque esse campo aponta pro proximo ciclo a gerar, e
+ * nao pra cobranca que esta em aberto. Guardar o da assinatura faria o corte
+ * por inadimplencia contar os 5 dias a partir do mes seguinte — ou seja, o
+ * caloteiro ficaria um mes inteiro no ar de graca.
  */
-export async function linkDaPrimeiraCobranca(assinaturaId: string): Promise<string | null> {
-  const r = await chamar<{ data?: { invoiceUrl?: string; dueDate?: string }[] }>(
+export async function cobrancaEmAberto(
+  assinaturaId: string,
+): Promise<{ link: string | null; vencimento: string | null }> {
+  const r = await chamar<{ data?: { invoiceUrl?: string; dueDate?: string; status?: string }[] }>(
     `/subscriptions/${encodeURIComponent(assinaturaId)}/payments`,
     { method: 'GET' },
   )
-  return r.data?.[0]?.invoiceUrl ?? null
+  const lista = r.data || []
+  const aberta = lista.find((p) => p.status === 'PENDING' || p.status === 'OVERDUE') || lista[0]
+  return { link: aberta?.invoiceUrl ?? null, vencimento: aberta?.dueDate ?? null }
 }
 
 /** Cancelamento definitivo: para de gerar cobranca nova. */

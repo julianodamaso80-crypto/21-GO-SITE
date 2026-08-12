@@ -52,13 +52,24 @@ function varrer(dir) {
      *
      * `/api/...` fica de fora: aponta pros nossos endpoints, que ja tratam o
      * consultor pelo parametro `?c=`.
+     *
+     * `data-sai-do-slug` e a saida deliberada, e existe um caso real: a tela de
+     * site indisponivel. Se o link dela fosse prefixado, mandaria o visitante de
+     * volta pro slug que acabou de nao existir — um loop. Quem usa o marcador
+     * esta dizendo "aqui sair do site do consultor e o certo", e isso fica no
+     * proprio JSX, na cara de quem for ler depois.
      */
     if (!caminho.endsWith('.tsx')) continue
-    for (const m of fonte.matchAll(/<a\s[^>]*?href=["'](\/(?!api\/)[^"']*)["']/gs)) {
+    for (const m of fonte.matchAll(/<a\s([^>]*)>/gs)) {
+      const atributos = m[1]
+      if (atributos.includes('data-sai-do-slug')) continue
+      const href = atributos.match(/href=["'](\/(?!api\/)[^"']*)["']/)
+      if (!href) continue
       falhas.push(
-        `${caminho.replace(RAIZ, '')} tem <a href="${m[1]}"> cru.\n` +
-          `    Use: <Link href="${m[1]}"> (de '@/components/Link')\n` +
-          `    (um <a> comum nao prefixa o slug e vaza o visitante do site do consultor)`,
+        `${caminho.replace(RAIZ, '')} tem <a href="${href[1]}"> cru.\n` +
+          `    Use: <Link href="${href[1]}"> (de '@/components/Link')\n` +
+          `    (um <a> comum nao prefixa o slug e vaza o visitante do site do consultor)\n` +
+          `    Se sair do slug for MESMO o certo aqui, marque com data-sai-do-slug`,
       )
     }
   }

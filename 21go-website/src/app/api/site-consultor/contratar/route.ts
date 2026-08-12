@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { esquecerConsultor } from '@/lib/consultor'
 import { ROTAS_RESERVADAS } from '@/lib/rotas-reservadas'
 import { buscarConsultorNoPower, mesmoTelefone, soDigitos } from '@/lib/power-consultor'
-import { garantirCliente, garantirAssinatura, linkDaPrimeiraCobranca } from '@/lib/asaas'
+import { garantirCliente, garantirAssinatura, cobrancaEmAberto } from '@/lib/asaas'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -94,14 +94,14 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (existente && existente.status !== 'cancelado') {
-    const link = existente.asaas_subscription_id
-      ? await linkDaPrimeiraCobranca(existente.asaas_subscription_id).catch(() => null)
+    const cobranca = existente.asaas_subscription_id
+      ? await cobrancaEmAberto(existente.asaas_subscription_id).catch(() => null)
       : null
     return NextResponse.json({
       jaTemSite: true,
       slug: existente.slug,
       status: existente.status,
-      linkPagamento: link,
+      linkPagamento: cobranca?.link ?? null,
     })
   }
 
@@ -121,8 +121,12 @@ export async function POST(req: NextRequest) {
     })
     const assinatura = await garantirAssinatura(cliente.id, slug)
     assinaturaId = assinatura.id
-    vencimento = assinatura.nextDueDate
-    linkPagamento = await linkDaPrimeiraCobranca(assinatura.id).catch(() => null)
+
+    // O vencimento que vale e o da COBRANCA em aberto, nao o da assinatura —
+    // ver o aviso em `cobrancaEmAberto`. E o que o corte de 5 dias conta.
+    const cobranca = await cobrancaEmAberto(assinatura.id).catch(() => null)
+    vencimento = cobranca?.vencimento || assinatura.nextDueDate
+    linkPagamento = cobranca?.link ?? null
 
     // ─── So grava depois que a cobranca existe ───────────────────────────────
     // Se gravasse antes, uma falha no Asaas deixaria um site "pendente" sem
@@ -138,7 +142,7 @@ export async function POST(req: NextRequest) {
       asaas_customer_id: cliente.id,
       asaas_subscription_id: assinatura.id,
       status: 'pendente',
-      proximo_vencimento: assinatura.nextDueDate,
+      proximo_vencimento: vencimento,
     })
 
     if (error) {

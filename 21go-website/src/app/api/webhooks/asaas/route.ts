@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { esquecerConsultor } from '@/lib/consultor'
+import { avisar, textoSiteNoAr } from '@/lib/whatsapp-avisos'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -136,20 +137,36 @@ async function aplicar(tipo: string, assinatura: string): Promise<void> {
       return
   }
 
-  const { data } = await supa
+  // Le o estado ANTES do update: e ele que diz se esta e a primeira ativacao
+  // (merece a mensagem de boas-vindas) ou so a mensalidade de mais um mes.
+  const { data: antes } = await supa
     .from('sites_consultor')
-    .update(mudanca)
+    .select('slug, status, nome, whatsapp')
     .match(alvo)
-    .select('slug')
+    .maybeSingle()
 
-  const slug = data?.[0]?.slug as string | undefined
-  if (!slug) {
-    console.warn(`[asaas] ${tipo}: nenhuma assinatura ${assinatura} nos sites`)
+  if (!antes) {
+    // Esperado: a conta do Asaas e compartilhada com outros produtos, entao
+    // chega aqui evento de cobranca que nao tem nada a ver com site.
+    console.log(`[asaas] ${tipo}: assinatura ${assinatura} não é de site, ignorando`)
     return
   }
+
+  const { data } = await supa.from('sites_consultor').update(mudanca).match(alvo).select('slug')
+  const slug = data?.[0]?.slug as string | undefined
+  if (!slug) return
 
   // O lookup tem cache de 5 min. Sem isto, um site pago continuaria fora do ar
   // (ou um cancelado continuaria no ar) por ate cinco minutos.
   esquecerConsultor(slug)
   console.log(`[asaas] ${tipo} -> ${slug} agora e "${mudanca.status}"`)
+
+  // A primeira vez que sai de "pendente" e a unica que merece aviso: mandar
+  // "seu site esta no ar" todo mes, na renovacao, seria spam.
+  if (mudanca.status === 'ativo' && antes.status === 'pendente') {
+    await avisar(
+      antes.whatsapp as string,
+      textoSiteNoAr(antes.nome as string, slug),
+    ).catch(() => {})
+  }
 }

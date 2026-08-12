@@ -56,11 +56,13 @@ export function ConsultorProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [slug, setSlug] = useState<string | null>(null)
   const [consultor, setConsultor] = useState<ConsultorAtual | null>(null)
+  const [foraDoAr, setForaDoAr] = useState(false)
 
   // Roda depois da hidratacao — o HTML prerenderizado e o mesmo pra todo mundo,
   // entao ler a URL no primeiro render quebraria a hidratacao.
   useEffect(() => {
     setSlug(slugDoPathname(window.location.pathname))
+    setForaDoAr(false)
   }, [pathname])
 
   // Nome e WhatsApp so sao necessarios pros botoes de contato — o prefixo dos
@@ -72,8 +74,17 @@ export function ConsultorProvider({ children }: { children: React.ReactNode }) {
     }
     let vivo = true
     fetch(`/api/consultor/${slug}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
+      .then(async (r) => {
+        if (!vivo) return
+        // 404 aqui e slug que nao existe OU site cortado por falta de pagamento.
+        // Sem este ramo, `/qualquercoisa` serviria a home da 21Go como se fosse
+        // o site de alguem — e o site de um cancelado continuaria no ar.
+        if (r.status === 404) {
+          setForaDoAr(true)
+          return
+        }
+        if (!r.ok) return
+        const d = await r.json()
         if (vivo && d?.slug) setConsultor(d as ConsultorAtual)
       })
       .catch(() => {})
@@ -87,7 +98,38 @@ export function ConsultorProvider({ children }: { children: React.ReactNode }) {
     ? { slug, nome: consultor?.nome ?? '', whatsapp: consultor?.whatsapp ?? '' }
     : null
 
+  if (foraDoAr) return <SiteIndisponivel />
+
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>
+}
+
+/**
+ * O que aparece em `21go.com.br/algumacoisa` quando esse "algumacoisa" nao e o
+ * site de ninguem — nunca existiu, ou saiu do ar por falta de pagamento.
+ *
+ * Nao diz qual dos dois: se dissesse "cancelado por falta de pagamento", quem
+ * abrisse o link antigo de um consultor ficaria sabendo que ele nao pagou.
+ * Manda pra 21Go, que e o que interessa pra quem chegou aqui querendo cotar.
+ */
+function SiteIndisponivel() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6 bg-[#F8FAFC]">
+      <div className="max-w-md text-center">
+        <h1 className="text-2xl font-bold text-[#1A2754] mb-3">Esta página não está disponível</h1>
+        <p className="text-[#64748B] mb-8">
+          O endereço que você abriu não está mais no ar. Mas a 21Go continua aqui — se você quer
+          proteger seu carro ou sua moto, é só simular.
+        </p>
+        <a
+          href="/cotacao"
+          data-sai-do-slug
+          className="inline-flex items-center justify-center h-12 px-8 rounded-lg bg-[#F2911D] text-white font-semibold hover:bg-[#D67A0F] transition"
+        >
+          Fazer minha simulação
+        </a>
+      </div>
+    </div>
+  )
 }
 
 export function useConsultor(): ConsultorAtual | null {
