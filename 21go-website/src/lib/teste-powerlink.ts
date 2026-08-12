@@ -32,8 +32,24 @@ import 'server-only'
 const BASE = process.env.POWERCRM_BASE_URL || 'https://api.powercrm.com.br'
 const TOKEN = process.env.POWERAPI_TOKEN
 
-/** Telefone obviamente falso: ninguem vai ligar pra este numero por engano. */
-const TELEFONE_FALSO = '21999999999'
+/**
+ * Um telefone DIFERENTE por consultor — e isto nao e detalhe.
+ *
+ * ⚠️ Medido em 12/08/2026: o Power agrupa cotacoes pelo TELEFONE. Dois testes
+ * com o mesmo numero cairam na MESMA negociacao (`lEjYxnal2x` nos dois), e o
+ * segundo teste acabou lendo a negociacao criada pelo primeiro — ou seja,
+ * conferindo a atribuicao do consultor errado. Com um numero fixo, o teste de
+ * quem contratasse depois daria veredito sobre quem contratou antes.
+ *
+ * O numero sai do slug, entao e estavel (reteste do mesmo consultor reaproveita
+ * a mesma negociacao, em vez de encher o funil dele) e unico entre consultores.
+ */
+function telefoneDeTeste(slug: string): string {
+  let h = 0
+  for (const c of slug) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  // 21 9 + 8 digitos: formato de celular valido, e o Power exige que pareca um.
+  return '219' + String(h % 100_000_000).padStart(8, '0')
+}
 
 export interface ResultadoTeste {
   ok: boolean
@@ -91,7 +107,7 @@ export async function testarPowerlink(dados: {
         // Grita que e teste: esta cotacao nao tem como ser apagada e vai ficar
         // no funil dele. Quem bater o olho tem que saber na hora que nao e lead.
         name: `TESTE 21GO NAO ATENDER (${dados.slug})`,
-        phone: TELEFONE_FALSO,
+        phone: telefoneDeTeste(dados.slug),
         slsmnNwId: dados.powerlinkId,
       }),
       signal: AbortSignal.timeout(30_000),
