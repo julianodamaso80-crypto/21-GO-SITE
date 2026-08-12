@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { FormularioSite } from './FormularioSite'
 import { estilos } from './estilos'
+import { MENSALIDADE } from '@/lib/precos'
 
 /**
  * A pagina de venda do site do consultor. Substitui o `crm21go.site/quero-site`,
@@ -16,8 +17,7 @@ import { estilos } from './estilos'
 
 export const metadata: Metadata = {
   title: 'Seu site da 21Go',
-  description:
-    'Tenha um site da 21Go no seu nome, com seus leads caindo direto no seu Power. R$ 80 por mês.',
+  description: `Tenha um site da 21Go no seu nome, com seus leads caindo direto no seu Power e CRM. R$ ${MENSALIDADE} por mês.`,
   // Pagina de venda pra consultor, nao pra cliente final: nao disputa busca com
   // o site principal nem com os sites dos consultores.
   robots: { index: false, follow: false },
@@ -58,7 +58,7 @@ export default function QueroSitePage() {
 
             <div className="qs-precoHero">
               <span className="qs-precoHeroCifra">R$</span>
-              <span className="qs-precoHeroValor">80</span>
+              <span className="qs-precoHeroValor">{MENSALIDADE}</span>
               <span className="qs-precoHeroMes">
                 por mês
                 <em>sem fidelidade</em>

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { Check, Loader2, ArrowRight, Copy, QrCode, Barcode, ShieldCheck, AlertCircle } from 'lucide-react'
+import { MENSALIDADE } from '@/lib/precos'
 
 /**
  * Contratacao do site do consultor, em formato quiz: uma pergunta por tela.
@@ -17,7 +18,6 @@ import { Check, Loader2, ArrowRight, Copy, QrCode, Barcode, ShieldCheck, AlertCi
  * pagamento e onde a venda morre.
  */
 
-const MENSALIDADE = 80
 const TOTAL_PASSOS = 4
 
 type Achado = {

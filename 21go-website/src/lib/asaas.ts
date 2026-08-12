@@ -11,8 +11,10 @@ import 'server-only'
 const BASE = 'https://api.asaas.com/v3'
 const KEY = process.env.ASAAS_API_KEY
 
-/** R$ 80,00/mes. Um lugar so — o formulario e a assinatura leem daqui. */
-export const MENSALIDADE = 80
+// O preco mora em `lib/precos.ts` (o formulario, que e client, tambem le de la
+// e nao pode importar deste arquivo por causa do `server-only`).
+export { MENSALIDADE } from './precos'
+import { MENSALIDADE } from './precos'
 
 export interface ClienteAsaas {
   id: string
