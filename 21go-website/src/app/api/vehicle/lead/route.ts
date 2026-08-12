@@ -29,6 +29,11 @@ import {
 } from '@/lib/supabase-store'
 import { getRequestContext } from '@/lib/request-context'
 import { estaNoAr, resolverConsultor } from '@/lib/consultor'
+import { acharIndicador, marcarUso } from '@/lib/indicacao'
+import { avisar, textoLeadIndicado } from '@/lib/whatsapp-avisos'
+
+/** Pra onde vai o aviso de lead indicado quando nao ha consultor dono do site. */
+const DONO_WHATSAPP = '5521992208062'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -253,12 +258,67 @@ export async function POST(req: NextRequest) {
     })()
   }
 
+  // ─── Lead indicado: avisa quem vai atender ────────────────────────────────
+  // O Power NAO carrega essa informacao (testado 12/08/2026: `noteContract` nao
+  // volta na leitura e os `utm*` sao ignorados no /quotation/add). Sem este
+  // aviso, quem indicou some entre o clique e o atendimento.
+  //
+  // Fora do await de proposito: o cliente ja esperou o Power: nao deve esperar
+  // tambem o WhatsApp de um aviso que nao e pra ele.
+  if (body.indicadoPor) {
+    void avisarIndicacao({
+      codigo: body.indicadoPor,
+      leadNome: body.nome,
+      leadWhatsapp: body.whatsapp,
+      consultorSlug: body.consultorSlug ?? null,
+    }).catch((err) => console.error('[lead] aviso de indicação falhou:', err))
+  }
+
   return NextResponse.json({
     success: true,
     leadId: supaResult.lead_id || leadId,
     trk,
     powercrm,
   })
+}
+
+/**
+ * Manda o aviso pra quem vai atender o lead indicado.
+ *
+ * Vai pro consultor dono do site; se o lead entrou pelo site da casa, vai pro
+ * dono. Quem recebe e sempre quem tem a conversa na mao.
+ */
+async function avisarIndicacao(dados: {
+  codigo: string
+  leadNome: string
+  leadWhatsapp: string
+  consultorSlug: string | null
+}): Promise<void> {
+  const indicador = await acharIndicador(dados.codigo)
+  if (!indicador) {
+    // Codigo que nao existe: alguem editou a URL, ou o link e de antes da
+    // tabela. Nao e erro do cliente, entao nao vira falha — so registro.
+    console.warn(`[lead] indicação "${dados.codigo}" não existe`)
+    return
+  }
+
+  let destino = DONO_WHATSAPP
+  if (dados.consultorSlug) {
+    const consultor = await resolverConsultor(dados.consultorSlug)
+    if (consultor && estaNoAr(consultor)) destino = consultor.whatsapp
+  }
+
+  await avisar(
+    destino,
+    textoLeadIndicado({
+      leadNome: dados.leadNome,
+      leadWhatsapp: dados.leadWhatsapp,
+      indicadorNome: indicador.nome,
+      indicadorWhatsapp: indicador.whatsapp,
+    }),
+  )
+
+  await marcarUso(dados.codigo)
 }
 
 /* ───────────────── Supabase ───────────────── */

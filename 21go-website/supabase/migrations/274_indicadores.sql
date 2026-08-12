@@ -37,9 +37,10 @@ CREATE INDEX IF NOT EXISTS ix_indicadores_consultor
 -- ─── o elo no lead ──────────────────────────────────────────────────────────
 -- Guarda o CODIGO (e nao o id) porque e o que viaja na URL e no cookie: se um
 -- dia o codigo for digitado errado, da pra ver o valor cru que chegou.
-ALTER TABLE public.lead_attribution
+-- A tabela e `leads` (o tipo TS se chama LeadAttributionRow, mas a tabela nao).
+ALTER TABLE public.leads
   ADD COLUMN IF NOT EXISTS indicado_por text;
 
-CREATE INDEX IF NOT EXISTS ix_lead_attribution_indicado_por
-  ON public.lead_attribution(indicado_por)
+CREATE INDEX IF NOT EXISTS ix_leads_indicado_por
+  ON public.leads(indicado_por)
   WHERE indicado_por IS NOT NULL;

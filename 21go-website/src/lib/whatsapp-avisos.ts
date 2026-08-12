@@ -90,6 +90,38 @@ export function textoVenceHoje(nome: string, slug: string, link: string | null):
 }
 
 /**
+ * Avisa que entrou um lead INDICADO.
+ *
+ * Existe porque o Power nao aceita essa informacao por API: testado em
+ * 12/08/2026, `noteContract` nao volta na leitura e os campos `utm*` sao
+ * ignorados no `/quotation/add` (o Power so os preenche quando a cotacao nasce
+ * pelo hotlink dele). Sem este aviso, quem indicou some entre o clique e o
+ * atendimento, e o consultor atende sem saber que tem um nome conhecido pra
+ * citar na abordagem.
+ *
+ * So dispara em lead COM indicacao — mandar em todo lead viraria spam e poria o
+ * numero em risco por volume.
+ */
+export function textoLeadIndicado(dados: {
+  leadNome: string
+  leadWhatsapp: string
+  indicadorNome: string
+  indicadorWhatsapp: string
+}): string {
+  const fone = (w: string) => {
+    const d = w.replace(/\D/g, '').replace(/^55/, '')
+    return d.length >= 10 ? `(${d.slice(0, 2)}) ${d.slice(2, -4)}-${d.slice(-4)}` : w
+  }
+  return (
+    `🔔 *Lead indicado no seu site*\n\n` +
+    `*${dados.leadNome}* acabou de fazer uma cotação.\n` +
+    `${fone(dados.leadWhatsapp)}\n\n` +
+    `Quem indicou: *${dados.indicadorNome}* — ${fone(dados.indicadorWhatsapp)}\n\n` +
+    `Vale citar na conversa: quem chega por indicação já vem com confiança.`
+  )
+}
+
+/**
  * O tom aqui foi pedido pelo dono: educado, sem cobrança agressiva, e deixando
  * a porta aberta. Consultor que sai hoje volta depois.
  */
