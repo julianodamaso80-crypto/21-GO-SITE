@@ -117,6 +117,38 @@ export function captureUtms(): UtmParams {
   return utms
 }
 
+/**
+ * Quem indicou (`?ind=` na URL) — Member Get Member.
+ *
+ * Guardado igual aos UTMs porque o problema e o mesmo: o amigo entra pelo link
+ * da Maria, olha os planos, pensa, e so preenche a cotacao dez minutos depois,
+ * em outra pagina. Se o codigo ficasse so na URL da primeira visita, a Maria
+ * perdia o desconto por causa de um clique em "Planos".
+ *
+ * Nao sobrescreve com vazio: navegar pra qualquer pagina sem `?ind=` nao pode
+ * apagar quem trouxe a pessoa.
+ */
+export function captureIndicacao(): string | null {
+  if (typeof window === 'undefined') return null
+
+  const codigo = new URLSearchParams(window.location.search).get('ind')
+  if (codigo && /^[a-z0-9]{4,12}$/i.test(codigo)) {
+    const limpo = codigo.toLowerCase()
+    setCookie('_21go_ind', limpo)
+    try { localStorage.setItem('_21go_ind', limpo) } catch {}
+    return limpo
+  }
+
+  return getIndicacao()
+}
+
+/** O código de quem indicou, se houver. */
+export function getIndicacao(): string | null {
+  const raw = getCookie('_21go_ind')
+    || (typeof localStorage !== 'undefined' ? localStorage.getItem('_21go_ind') : null)
+  return raw || null
+}
+
 /** Get stored UTMs from cookie (fallback to localStorage) */
 export function getUtms(): UtmParams {
   const raw = getCookie('_21go_utm')

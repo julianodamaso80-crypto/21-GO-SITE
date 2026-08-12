@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { trackCotacaoInicio, trackCotacaoCompleta, trackPedidoOrcamento, trackPageView, getTrackingData } from '@/lib/tracking'
 import { useConsultor } from '@/components/ConsultorProvider'
+import { getIndicacao } from '@/lib/cookies'
 import {
   ArrowRight,
   ArrowLeft,
@@ -494,6 +495,7 @@ export default function CotacaoPage() {
         whatsapp: form.whatsapp,
         email: form.email || undefined,
         consultorSlug: consultor?.slug ?? null,
+        indicadoPor: getIndicacao(),
         placa: placaParaEnvio,
         leilao: form.leilao,
         carroApp: form.carroApp === 'sim',
@@ -576,6 +578,7 @@ export default function CotacaoPage() {
             whatsapp: form.whatsapp,
             email: form.email || undefined,
             consultorSlug: consultor?.slug ?? null,
+            indicadoPor: getIndicacao(),
             placa: placaParaEnvio,
             marca: v.marca,
             modelo: v.modelo,
@@ -633,6 +636,7 @@ export default function CotacaoPage() {
           whatsapp: form.whatsapp,
           email: form.email || undefined,
           consultorSlug: consultor?.slug ?? null,
+          indicadoPor: getIndicacao(),
           placa: placaParaEnvio,
           leilao: form.leilao,
           marca: v.marca,

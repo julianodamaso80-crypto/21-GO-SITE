@@ -18,7 +18,7 @@ import {
   Users,
   Check,
 } from 'lucide-react'
-import { WhatsAppGate } from '@/components/ui/WhatsAppGate'
+import { GeradorLinkIndicacao } from '@/components/GeradorLinkIndicacao'
 
 const fadeInUp ={ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6 } } }
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }
@@ -85,16 +85,7 @@ export default function IndiquePage() {
           </motion.p>
 
           <motion.div variants={fadeInUp}>
-            <WhatsAppGate
-              assunto="Olá! Quero meu link de indicação do programa Member Get Member."
-              origin="indique_topo"
-              leadOrigem="site_indicacao"
-              titulo="Quero meu link de indicação"
-              className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold rounded-full shadow-lg shadow-[#F2911D]/20 hover:shadow-xl hover:shadow-[#F2911D]/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <MessageCircle className="w-5 h-5" />
-              Quero Meu Link de Indicação
-            </WhatsAppGate>
+            <GeradorLinkIndicacao />
           </motion.div>
         </motion.div>
       </section>
@@ -207,18 +198,9 @@ export default function IndiquePage() {
             Pronto para indicar?
           </h2>
           <p className="text-lg text-white/50 mb-8">
-            Entre em contato pelo WhatsApp e solicite seu link exclusivo de indicação.
+            Gere seu link exclusivo agora e comece a indicar.
           </p>
-          <WhatsAppGate
-            assunto="Olá! Quero meu link de indicação."
-            origin="indique_fim"
-            leadOrigem="site_indicacao"
-            titulo="Quero meu link de indicação"
-            className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold rounded-full shadow-lg shadow-[#F2911D]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            <MessageCircle className="w-5 h-5" />
-            Quero Meu Link
-          </WhatsAppGate>
+          <GeradorLinkIndicacao />
         </div>
       </section>
     </>

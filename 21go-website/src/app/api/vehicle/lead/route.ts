@@ -92,6 +92,14 @@ interface LeadInput {
   estado?: string | null
   /** Slug do site de consultor por onde o lead entrou (21go.com.br/<slug>). */
   consultorSlug?: string | null
+  /**
+   * Codigo de quem indicou (Member Get Member).
+   *
+   * Independente do `consultorSlug` de proposito: o slug decide em qual Power o
+   * lead nasce, este decide quem ganha o desconto de 10%. A Maria indicar pelo
+   * site do consultor dela nao tira o lead dele.
+   */
+  indicadoPor?: string | null
   // Tracking
   utm_source?: string | null
   utm_medium?: string | null
@@ -296,6 +304,10 @@ async function persistLeadInSupabase(args: {
     carro_app: !!body.carroApp,
     leilao: body.leilao ?? null,
     seguro_atual: body.seguroAtual ?? null,
+
+    // Quem indicou. Guardado como veio (codigo cru): se um dia chegar um codigo
+    // que nao existe, da pra ver o valor errado em vez de perder a pista.
+    indicado_por: body.indicadoPor?.trim().toLowerCase() || null,
 
     utm_source: body.utm_source ?? null,
     utm_medium: body.utm_medium ?? null,

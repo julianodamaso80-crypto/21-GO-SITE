@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import Script from 'next/script'
-import { captureClickIds, captureUtms } from '@/lib/cookies'
+import { captureClickIds, captureUtms, captureIndicacao } from '@/lib/cookies'
 import { trackPageView } from '@/lib/tracking'
 
 // GTM ID é público (vai pro HTML em texto claro) — fallback hardcoded é seguro.
@@ -23,6 +23,9 @@ export function GTMProvider() {
     // Capture click IDs and UTMs from URL on first load
     captureClickIds()
     captureUtms()
+    // Quem indicou (?ind=). Junto dos UTMs porque tem a mesma natureza: chega
+    // na primeira visita e precisa sobreviver ate a pessoa preencher a cotação.
+    captureIndicacao()
 
     // Track initial page view
     trackPageView()
