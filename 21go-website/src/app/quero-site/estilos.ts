@@ -454,10 +454,55 @@ header:not(.qs-cabecalho), footer:not(.qs-rodape) { display: none !important; }
 .qs-beneficioTitulo { display: block; font-size: .95rem; font-weight: 700; margin-bottom: .25rem }
 .qs-beneficioTexto { color: var(--tinta-fraca); font-size: .84rem; line-height: 1.5 }
 
+/* ─── celular ───────────────────────────────────────────────────────────────
+ * O padding do topo cai de 7rem pra 2.5rem porque nesta pagina NAO ha header:
+ * o espaco existia pra nao passar por baixo do menu, e sem ele vira so um
+ * buraco que empurra o preco pra fora da primeira tela.
+ *
+ * O mockup 3D sai: em tela estreita ele fica atras do cartao sem ser lido como
+ * "um site", e ainda por cima e o elemento mais caro de compor da pagina. */
 @media (max-width: 640px) {
-  .qs-palco { padding: 5.5rem 1rem 3.5rem }
-  .qs-cartao { padding: 1.6rem }
+  .qs-palco { padding: 2.5rem 1rem 3rem }
   .qs-mockup { display: none }
+
+  .qs-titulo { font-size: clamp(2.1rem, 11vw, 3rem) }
+  .qs-subtitulo { font-size: .96rem; margin-top: 1.1rem }
+  .qs-cabecalho { margin-bottom: 2.2rem }
+
+  .qs-precoHero { margin-top: 1.4rem; padding: .6rem 1.1rem }
+  .qs-precoHeroValor { font-size: 2rem }
+
+  .qs-cartao { padding: 1.5rem 1.2rem; border-radius: 1.2rem }
+  .qs-h2 { font-size: 1.35rem }
+
+  /* Alvos de toque: 3.4rem ja passa dos 44px recomendados, mas os campos
+     precisam de fonte >= 16px, senao o iOS DA ZOOM sozinho ao focar e o
+     visitante perde o enquadramento da pagina no meio do quiz. */
+  .qs-input, .qs-slugInput { font-size: 16px }
+
+  /* "21go.com.br/" come quase um terco da largura util num 360px. Encolhendo a
+     etiqueta, sobra espaco pra ele ver o proprio endereco enquanto digita. */
+  .qs-slugPrefixo { padding-left: .8rem; font-size: .76rem }
+  .qs-slugInput { font-size: 16px }
+
+  .qs-qr { width: 9.5rem; height: 9.5rem }
+  .qs-valor { font-size: 2.8rem }
+  .qs-linha { font-size: .72rem }
+  .qs-aba { font-size: .82rem }
+  .qs-abaDica { display: none }
+
+  .qs-beneficios { margin-top: 2.5rem; border-radius: 1rem }
+  .qs-beneficio { padding: 1.2rem 1.1rem }
+}
+
+/* Telas bem estreitas (360px e abaixo): so o que ainda aperta. */
+@media (max-width: 380px) {
+  .qs-palco { padding: 2rem .85rem 2.5rem }
+  .qs-cartao { padding: 1.3rem 1rem }
+  .qs-titulo { font-size: 1.95rem }
+  .qs-pill { font-size: .68rem; padding: .35rem .75rem .35rem .5rem }
+  .qs-qr { width: 8.5rem; height: 8.5rem }
+  .qs-slugPrefixo { font-size: .7rem; padding-left: .65rem }
 }
 
 /* Quem pediu menos movimento recebe a pagina parada, nao quebrada. */
