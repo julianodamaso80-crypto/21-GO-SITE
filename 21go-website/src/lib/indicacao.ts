@@ -25,6 +25,12 @@ export interface Indicador {
   nome: string
   whatsapp: string
   consultorSlug: string | null
+  /**
+   * `true` so na primeira vez. E o que separa "entrou gente nova no Indique e
+   * Ganhe" de "a mesma pessoa abriu a pagina de novo" — sem isso, o dono do
+   * site levaria um aviso a cada vez que alguem reabrisse o proprio link.
+   */
+  novo: boolean
 }
 
 /**
@@ -68,6 +74,7 @@ export async function garantirIndicador(dados: {
       nome: existente.nome as string,
       whatsapp: existente.whatsapp as string,
       consultorSlug: (existente.consultor_slug as string) ?? null,
+      novo: false,
     }
   }
 
@@ -83,7 +90,13 @@ export async function garantirIndicador(dados: {
     })
 
     if (!error) {
-      return { codigo, nome: dados.nome, whatsapp: dados.whatsapp, consultorSlug: dados.consultorSlug ?? null }
+      return {
+        codigo,
+        nome: dados.nome,
+        whatsapp: dados.whatsapp,
+        consultorSlug: dados.consultorSlug ?? null,
+        novo: true,
+      }
     }
     // 23505 no WHATSAPP significa que ela se cadastrou entre a leitura e o
     // insert (dois cliques rapidos). Busca de novo em vez de criar duplicata.
@@ -99,6 +112,7 @@ export async function garantirIndicador(dados: {
           nome: data.nome as string,
           whatsapp: data.whatsapp as string,
           consultorSlug: (data.consultor_slug as string) ?? null,
+          novo: false,
         }
       }
       // Chegou aqui: o conflito foi no CODIGO, nao no whatsapp. Sorteia outro.
@@ -124,6 +138,7 @@ export async function acharIndicador(codigo: string): Promise<Indicador | null> 
     nome: data.nome as string,
     whatsapp: data.whatsapp as string,
     consultorSlug: (data.consultor_slug as string) ?? null,
+    novo: false,
   }
 }
 

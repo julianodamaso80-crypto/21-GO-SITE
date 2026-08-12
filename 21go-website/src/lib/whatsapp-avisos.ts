@@ -90,6 +90,30 @@ export function textoVenceHoje(nome: string, slug: string, link: string | null):
 }
 
 /**
+ * Avisa que alguem entrou no Indique e Ganhe pelo site.
+ *
+ * So na PRIMEIRA vez de cada pessoa: quem reabre a pagina pra pegar o proprio
+ * link de novo nao pode gerar aviso repetido.
+ */
+export function textoNovoIndicador(dados: {
+  nome: string
+  whatsapp: string
+  link: string
+}): string {
+  const fone = (w: string) => {
+    const d = w.replace(/\D/g, '').replace(/^55/, '')
+    return d.length >= 10 ? `(${d.slice(0, 2)}) ${d.slice(2, -4)}-${d.slice(-4)}` : w
+  }
+  return (
+    `🎁 *Novo no Indique e Ganhe*\n\n` +
+    `*${dados.nome}* acabou de pegar o link de indicação no seu site.\n` +
+    `${fone(dados.whatsapp)}\n\n` +
+    `Link dele(a): ${dados.link}\n\n` +
+    `Quando alguém fechar por esse link, eu te aviso na hora.`
+  )
+}
+
+/**
  * Avisa que entrou um lead INDICADO.
  *
  * Existe porque o Power nao aceita essa informacao por API: testado em

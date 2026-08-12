@@ -63,7 +63,10 @@ export function GeradorLinkIndicacao({ className = '' }: { className?: string })
   if (link) {
     return (
       <div className={`w-full max-w-lg mx-auto text-left ${className}`}>
-        <div className="rounded-2xl border border-[#C7D301]/30 bg-[#C7D301]/5 p-6">
+        {/* Branco solido, igual ao formulario: este cartao vive sobre o hero
+            AZUL ESCURO do /indique, e com fundo translucido o texto (#1A2754)
+            ficava azul-escuro sobre azul-escuro — ilegivel. */}
+        <div className="rounded-2xl border border-[#C7D301]/40 bg-white p-6 shadow-xl">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-9 h-9 rounded-full bg-[#C7D301] flex items-center justify-center flex-shrink-0">
               <Gift className="w-4.5 h-4.5 text-[#1A2000]" />
