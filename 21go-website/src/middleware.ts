@@ -26,6 +26,21 @@ const FORMATO_SLUG = /^[a-z0-9]{3,40}$/
 
 export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl
+
+  /**
+   * `meusite.21go.com.br` e a porta de entrada da VENDA do site — o endereco que
+   * o consultor recebe no grupo, no lugar do antigo `crm21go.site/quero-site`.
+   *
+   * Serve `/quero-site` em qualquer caminho de proposito: quem digita o endereco
+   * de cabeca erra ("/meusite", "/quero"), e mandar essa pessoa pra um 404
+   * perderia uma venda por um detalhe de digitacao. Vem antes da logica de slug
+   * pra que `meusite.../qualquercoisa` nunca seja lido como site de consultor.
+   */
+  if (req.headers.get('host')?.startsWith('meusite.')) {
+    if (pathname === '/quero-site') return NextResponse.next()
+    return NextResponse.rewrite(new URL(`/quero-site${search}`, req.url))
+  }
+
   const segmentos = pathname.split('/').filter(Boolean)
   const primeiro = segmentos[0]
 
