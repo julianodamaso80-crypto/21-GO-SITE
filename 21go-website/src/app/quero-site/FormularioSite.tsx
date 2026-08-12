@@ -70,7 +70,7 @@ export function FormularioSite() {
       const d = (await r.json()) as Achado & { erro?: string }
       if (!r.ok) throw new Error(d.erro || 'não consegui verificar agora')
       if (!d.encontrado) {
-        setErro('não achei esse e-mail no Power. Confira se é o mesmo do seu cadastro.')
+        setErro('não achei esse e-mail no Power e CRM. Confira se é o mesmo do seu cadastro.')
         return
       }
       setAchado(d)
@@ -163,9 +163,9 @@ export function FormularioSite() {
         <Selo tipo="alerta">
           <AlertCircle size={22} />
         </Selo>
-        <h2 className="qs-h2">Falta seu telefone no Power</h2>
+        <h2 className="qs-h2">Falta seu telefone no Power e CRM</h2>
         <p className="qs-p">
-          Achei seu cadastro ({achado.nome}), mas está sem telefone — e é por ele que eu confirmo
+          Achei seu cadastro ({achado.nome}), mas está sem telefone no Power e CRM — e é por ele que eu confirmo
           que o site é seu. Peça pra 21Go cadastrar seu WhatsApp e volte aqui.
         </p>
       </Cartao>
@@ -186,8 +186,8 @@ export function FormularioSite() {
             <strong className="qs-mono">21go.com.br/{contratado.slug}</strong>.
           </p>
           <div className="qs-nota">
-            Estou conferindo se as cotações do seu site caem certinho no seu Power. Assim que
-            confirmar, te mando o link no WhatsApp pronto pra divulgar.
+            Estou conferindo se as cotações do seu site caem certinho no seu Power e CRM. Assim
+            que confirmar, te mando o link no WhatsApp pronto pra divulgar.
           </div>
         </Cartao>
       )
@@ -286,8 +286,8 @@ export function FormularioSite() {
       {passo === 1 && (
         <form onSubmit={verificar} className="qs-passo" key="p1">
           <span className="qs-etiqueta">Pergunta 1 de {TOTAL_PASSOS}</span>
-          <h2 className="qs-h2">Qual seu e-mail no Power?</h2>
-          <p className="qs-p">É por ele que eu encontro seu cadastro de consultor.</p>
+          <h2 className="qs-h2">Qual seu e-mail no Power e CRM?</h2>
+          <p className="qs-p">É por ele que eu encontro seu cadastro de consultor no Power e CRM.</p>
           <input
             className="qs-input"
             type="email"
@@ -318,14 +318,14 @@ export function FormularioSite() {
               <Check size={16} strokeWidth={3} />
             </div>
             <div>
-              <span className="qs-acheiLabel">Achei no Power</span>
+              <span className="qs-acheiLabel">Achei no Power e CRM</span>
               <strong className="qs-acheiNome">{achado.nome}</strong>
               <span className="qs-acheiFone">{achado.telefone}</span>
             </div>
           </div>
           <h2 className="qs-h2">Confirma seu WhatsApp?</h2>
           <p className="qs-p">
-            Digite completo — tem que ser o mesmo do Power. É pra onde seus leads vão chegar.
+            Digite completo — tem que ser o mesmo do Power e CRM. É pra onde seus leads vão chegar.
           </p>
           <input
             className="qs-input"

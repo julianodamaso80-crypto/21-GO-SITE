@@ -48,13 +48,22 @@ export default function QueroSitePage() {
               <br />
               Seus leads.
               <br />
-              <span className="qs-tituloDestaque">Seu Power.</span>
+              <span className="qs-tituloDestaque">Seu Power e CRM.</span>
             </h1>
 
             <p className="qs-subtitulo">
               O mesmo site da 21Go, no seu endereço. Quem cotar por ele cai direto no seu Power e
-              fala no seu WhatsApp.
+              CRM, e fala no seu WhatsApp.
             </p>
+
+            <div className="qs-precoHero">
+              <span className="qs-precoHeroCifra">R$</span>
+              <span className="qs-precoHeroValor">80</span>
+              <span className="qs-precoHeroMes">
+                por mês
+                <em>sem fidelidade</em>
+              </span>
+            </div>
           </header>
 
           <div className="qs-palcoForm">
@@ -85,7 +94,7 @@ export default function QueroSitePage() {
               21go.com.br/seunome, só seu, pra sempre
             </Beneficio>
             <Beneficio n="02" titulo="Cotação no seu nome">
-              nasce dentro do seu Power, não na distribuição
+              nasce dentro do seu Power e CRM, não na distribuição
             </Beneficio>
             <Beneficio n="03" titulo="Tráfego pago liberado">
               anuncie apontando pro seu link

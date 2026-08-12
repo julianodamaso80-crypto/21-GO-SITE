@@ -9,6 +9,23 @@
  * verde #C7D301.
  */
 export const estilos = `
+/*
+ * Sem menu e sem rodape nesta pagina.
+ *
+ * Toda opcao da navegacao aqui e um caminho pra pessoa sair antes de fechar —
+ * "Planos", "Blog", "Cotar Agora" competem com a unica coisa que esta pagina
+ * tem pra fazer. Pagina de contratacao nao tem saida lateral, so o quiz.
+ *
+ * Escondido por CSS e nao por layout proprio porque o Header e o Footer moram
+ * no layout raiz: tira-los de la exigiria mover os dois pra um route group e
+ * mexer em TODAS as outras rotas. Este bloco so existe enquanto esta pagina
+ * esta na tela, entao nao vaza pro resto do site.
+ */
+/* O :not() existe porque o hero desta pagina TAMBEM e um header, e o seletor
+   nao pode depender de o Header do site ser filho direto do body (ele fica
+   dentro do SmoothScrollProvider). */
+header:not(.qs-cabecalho), footer:not(.qs-rodape) { display: none !important; }
+
 .qs-palco {
   --azul: #293C82;
   --azul-claro: #4A63B8;
@@ -112,6 +129,32 @@ export const estilos = `
 @keyframes qs-sobe {
   from { opacity: 0; transform: translateY(1.4rem) }
   to   { opacity: 1; transform: none }
+}
+
+/* O preco no alto: quem chega aqui quer saber quanto custa antes de comecar a
+   responder. Esconder isso ate o fim do quiz so gera desistencia no ultimo passo. */
+.qs-precoHero {
+  display: inline-flex; align-items: baseline; gap: .35rem;
+  margin-top: 1.8rem; padding: .7rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  backdrop-filter: blur(8px);
+  animation: qs-sobe .8s cubic-bezier(.2,.7,.3,1) .22s both;
+}
+.qs-precoHeroCifra { color: var(--tinta-fraca); font-size: 1rem; font-weight: 600 }
+.qs-precoHeroValor {
+  font-size: 2.3rem; font-weight: 800; line-height: 1; letter-spacing: -.03em;
+  background: linear-gradient(100deg, var(--laranja), var(--verde));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.qs-precoHeroMes {
+  display: flex; flex-direction: column; align-items: flex-start;
+  margin-left: .2rem; color: var(--tinta-fraca); font-size: .9rem; line-height: 1.15;
+}
+.qs-precoHeroMes em {
+  font-style: normal; font-size: .68rem; font-weight: 700;
+  color: var(--verde); text-transform: uppercase; letter-spacing: .06em;
 }
 
 /* ─── mockup 3d atras do formulario ─────────────────────────────────────── */
