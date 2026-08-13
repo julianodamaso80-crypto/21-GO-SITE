@@ -43,7 +43,27 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
     if (!el) return
 
     let desistiu = false
-    const eventos = ['pointerdown', 'touchstart', 'keydown'] as const
+    /**
+     * Tudo que o visitante possa fazer conta como deixa pra ligar o som: mover o
+     * mouse, rolar, tocar, teclar. O navegador só libera áudio depois de um
+     * gesto reconhecido (toque/clique/tecla), mas tentar no `mousemove` e no
+     * `scroll` também é de graça — quando ele recusa, o vídeo segue mudo e a
+     * próxima tentativa vem no gesto seguinte.
+     */
+    const eventos = [
+      'pointerdown',
+      'pointerup',
+      'click',
+      'touchstart',
+      'touchend',
+      'touchmove',
+      'keydown',
+      'mousemove',
+      'wheel',
+      'scroll',
+    ] as const
+
+    let tentando = false
 
     function ligarSom(e: Event) {
       // Toque NO botão de som é decisão explícita — quem trata é o `alternarSom`.
@@ -55,19 +75,30 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
       // em outra coisa na página.
       const v = videoRef.current
       if (!v || desistiu || desligadoPeloVisitante.current) return soltar()
+      if (tentando) return
+
+      tentando = true
+      const onde = v.currentTime
       v.muted = false
-      v.currentTime = 0
       v.play()
-        .then(() => setComSom(true))
+        .then(() => {
+          tentando = false
+          v.currentTime = 0 // ouvir do começo, não do meio da frase
+          setComSom(true)
+          soltar() // conseguiu — só aqui é que para de tentar
+        })
         .catch(() => {
+          // Navegador ainda não aceitou (foi um `mousemove`, um `scroll`...).
+          // Volta pro mudo e espera o próximo evento tentar de novo.
+          tentando = false
           v.muted = true
+          v.currentTime = onde
           v.play().catch(() => {})
         })
-      soltar()
     }
 
     function soltar() {
-      for (const ev of eventos) document.removeEventListener(ev, ligarSom)
+      for (const ev of eventos) window.removeEventListener(ev, ligarSom, true)
     }
 
     el.muted = false
@@ -77,7 +108,11 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
         el.muted = true
         setComSom(false)
         el.play().catch(() => {})
-        for (const ev of eventos) document.addEventListener(ev, ligarSom, { passive: true })
+        // `capture` pra ouvir o evento na descida, antes que qualquer componente
+        // do meio do caminho o interrompa.
+        for (const ev of eventos) {
+          window.addEventListener(ev, ligarSom, { passive: true, capture: true })
+        }
       })
 
     return () => {
