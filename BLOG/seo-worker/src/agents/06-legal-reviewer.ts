@@ -191,13 +191,14 @@ export const agent06: Agent<Input, Output> = {
     // 18-20/20, mas TABELA em 1/20 e apenas 47% dos H2 eram perguntas. Sao justamente os
     // dois sinais que decidem citacao: LLM extrai tabela inteira, e H2-pergunta e o que
     // casa com a query. O prompt ja pedia os dois — pedir nao bastou, entao vira guard.
-    // A tabela AINDA NAO e hard-block de proposito: 19 dos 20 ultimos publicados nao
-    // tinham nenhuma, entao ligar a trava hoje reprovaria quase todo lote e apostaria a
-    // producao inteira na reescrita. Primeiro o prompt reforcado precisa provar que
-    // entrega tabela na 1a tentativa; ai isto vira hard-block como trava de regressao.
+    // Hard-block validado em 08/08: com o bloco [TAB] no prompt, o primeiro artigo ja
+    // saiu com tabela de 4x4 na 1a tentativa. Agora a trava impede a regressao.
     const temTabela = /\n\|.*\|.*\n\|[\s:-]*\|/.test(bodyOnly);
     if (!temTabela) {
-      log.warn({ articleId: a.id, slug: a.slug }, 'GEO: artigo sem tabela comparativa (ainda nao bloqueia)');
+      hardMatches.push({
+        pattern: 'sem-tabela',
+        reason: 'artigo precisa de 1 tabela markdown comparativa (formato que IA cita mais)',
+      });
     }
 
     const H2_FIXOS = /^##\s*(em resumo|perguntas frequentes|fontes consultadas)/i;
@@ -211,6 +212,27 @@ export const agent06: Agent<Input, Output> = {
         pattern: `h2-perguntas=${h2Perguntas.length}/${h2s.length}`,
         reason: 'a maioria dos H2 precisa ser pergunta real terminada em "?" (padrao Atomic Answer)',
       });
+    }
+
+    // H2 repetido dentro do mesmo artigo. O primeiro lote com o prompt novo trouxe
+    // "Como funciona a protecao veicular para carro financiado?" e "Como funciona a
+    // protecao veicular para carros financiados?" no MESMO texto — duas secoes
+    // respondendo a mesma pergunta diluem o artigo e confundem quem extrai trecho.
+    const normalizaH2 = (h: string) => h.replace(/^##\s+/, '').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9\s]/g, '').replace(/s\b/g, '').replace(/\s+/g, ' ').trim();
+    const vistos = new Map<string, string>();
+    for (const h of h2s) {
+      const chave = normalizaH2(h);
+      const anterior = vistos.get(chave);
+      if (anterior) {
+        hardMatches.push({
+          pattern: `h2-duplicado: "${h.trim().slice(0, 60)}"`,
+          reason: 'dois H2 fazem a mesma pergunta — unifique as secoes',
+        });
+        break;
+      }
+      vistos.set(chave, h);
     }
 
     // 2.4 — Keywords frontmatter NAO duplica o title

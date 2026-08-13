@@ -31,7 +31,9 @@ const FORBIDDEN_VEHICLES = [
   { pattern: /(?<![\p{L}\p{N}])transportadoras?(?![\p{L}\p{N}])/giu, replacement: 'empresa de entrega' },
 ];
 
-const ENFORCED_SECTION_HEADING = '## Como a proteção veicular 21Go funciona';
+// Pergunta, nao afirmacao: este bloco entra em quase todo artigo e, sendo declarativo,
+// derrubava sozinho a taxa de H2-pergunta que o guard de GEO mede.
+const ENFORCED_SECTION_HEADING = '## Como funciona a proteção veicular da 21Go?';
 const ENFORCED_SECTION_BODY = [
   '',
   ENFORCED_SECTION_HEADING,
