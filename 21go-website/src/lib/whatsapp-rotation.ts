@@ -140,6 +140,11 @@ async function getHealth(): Promise<HealthCache> {
  * recebe pelo sistema. Melhor isso do que site sem botão de contato.
  */
 export async function pickWhatsAppTarget(): Promise<WhatsAppTarget> {
+  // Alvo único: não há escolha a fazer, então não se consulta a Evolution. Isso
+  // tira do caminho do clique a única dependência externa que podia atrasar ou
+  // falhar — o cliente vai pro WhatsApp mesmo com a Evolution fora do ar.
+  if (WHATSAPP_TARGETS.length === 1) return WHATSAPP_TARGETS[0]
+
   const { health } = await getHealth()
   const online = WHATSAPP_TARGETS.filter((t) => health.get(t.number)?.online !== false)
 

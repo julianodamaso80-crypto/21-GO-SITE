@@ -1,14 +1,14 @@
 /**
  * Números de WhatsApp que recebem os contatos dos sites .site.
  *
- * REGRA DE RODÍZIO (decisão do dono, 2026-08-03): a cada 4 cliques, **2 vão pro
- * 4882, 1 pro 5734 e 1 pro 4824**. O objetivo é diluir o volume entre os chips
- * pra nenhum deles cair — estava caindo muito com número só.
+ * NÚMERO ÚNICO (decisão do dono, 2026-08-13): **todo contato vai pro 4882**. O
+ * rodízio 2:1:1 saiu porque partia os leads entre chips que o dono não
+ * acompanha — na prática ele enxergava 1 de cada 3 cliques em "Quero
+ * contratar" e achava que o botão tinha parado.
  *
- * O 4240 saiu do rodízio: o chip caiu e não voltou (connectionState "close").
- *
- * A escolha acontece server-side em `/api/wa` (ver whatsapp-rotation.ts). Os
- * links do site apontam pra essa rota, não pro wa.me direto.
+ * Um número só = mais volume por chip. É o risco aceito conscientemente; se o
+ * 4882 começar a cair, o caminho de volta é reinserir alvos nesta lista (o
+ * rodízio em whatsapp-rotation.ts continua funcionando com N alvos).
  */
 export interface WhatsAppTarget {
   /** Número no formato E.164 sem "+" (o que o wa.me espera). */
@@ -28,26 +28,14 @@ export const WHATSAPP_TARGETS: WhatsAppTarget[] = [
   {
     number: '5521980214882',
     instance: 'disparo_xHH2aIEs_site21go',
-    share: 2,
+    share: 1,
     apiKeyEnv: 'EVOLUTION_API_KEY_4882',
-  },
-  {
-    number: '5521998345734',
-    instance: 'site5734',
-    share: 1,
-    apiKeyEnv: 'EVOLUTION_API_KEY_5734',
-  },
-  {
-    number: '5521969454824',
-    instance: 'site4824',
-    share: 1,
-    apiKeyEnv: 'EVOLUTION_API_KEY_4824',
   },
 ]
 
 /**
  * Número usado quando não dá pra passar pelo rodízio (ex: link dentro do PDF
- * renderizado, fallback de erro). É o que tem a maior fatia do ciclo.
+ * renderizado, fallback de erro). Com um alvo só, é o mesmo de sempre.
  */
 export const WHATSAPP_NUMBER = WHATSAPP_TARGETS[0].number
 

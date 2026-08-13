@@ -808,18 +808,33 @@ export default function CotacaoPage() {
     })
     notifyWhatsAppClick()
   }
-  // Botão "Quero contratar" — usado no topo do card de preço, após os benefícios
-  // e no rodapé. Todos abrem o WhatsApp com o mesmo resumo pré-montado.
+  // Botão "Quero contratar" — repetido ao longo do resultado pra que o cliente
+  // nunca precise rolar de volta pra agir. Todos abrem o mesmo WhatsApp com o
+  // resumo pré-montado; o que muda é a cor, pra cada ponto da página chamar
+  // atenção de um jeito. Só as três cores da marca (laranja, verde, azul).
+  const CTA_VARIANTS = {
+    laranja:
+      'bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white shadow-lg shadow-[#F2911D]/25 hover:shadow-xl hover:shadow-[#F2911D]/35',
+    verde:
+      'bg-[#C7D301] text-[#1A2754] shadow-lg shadow-[#C7D301]/30 hover:bg-[#D4E016] hover:shadow-xl hover:shadow-[#C7D301]/40',
+    azul:
+      'bg-[#293C82] text-white shadow-lg shadow-[#293C82]/25 hover:bg-[#31489C] hover:shadow-xl hover:shadow-[#293C82]/35',
+    contorno:
+      'bg-white text-[#F2911D] border-2 border-[#F2911D] hover:bg-[#FFF7ED]',
+  } as const
   const ContratarCTA = ({
     label,
     sub,
     wrapClass,
-    variant = 'solid',
+    variant = 'laranja',
+    pulse = false,
   }: {
     label: string
     sub?: string
     wrapClass?: string
-    variant?: 'solid' | 'outline'
+    variant?: keyof typeof CTA_VARIANTS
+    /** Respiro sutil no CTA principal — chama o olho sem virar pisca-pisca. */
+    pulse?: boolean
   }) => (
     <div className={wrapClass}>
       <a
@@ -829,13 +844,12 @@ export default function CotacaoPage() {
         data-track-origin="cotacao_resultado"
         data-track-button-text="Contratar pelo WhatsApp"
         onClick={handleContratarClick}
-        className={
-          variant === 'solid'
-            ? 'flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-bold text-base rounded-full shadow-lg shadow-[#F2911D]/20 hover:shadow-xl hover:shadow-[#F2911D]/30 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200'
-            : 'flex items-center justify-center gap-2.5 w-full py-3.5 bg-white text-[#F2911D] font-bold text-base rounded-full border-2 border-[#F2911D] hover:bg-[#FFF7ED] active:scale-[0.99] transition-all duration-200'
-        }
+        // min-h-[52px]: alvo de toque confortável no celular, que é de onde vem
+        // a maior parte do tráfego. text-center + leading-tight seguram rótulo
+        // longo em tela estreita sem estourar o botão.
+        className={`flex items-center justify-center gap-2.5 w-full min-h-[52px] px-4 py-3.5 sm:py-4 font-bold text-[15px] sm:text-base text-center leading-tight rounded-full active:scale-[0.98] hover:scale-[1.01] transition-all duration-200 ${CTA_VARIANTS[variant]} ${pulse ? 'animate-pulse-slow' : ''}`}
       >
-        <MessageCircle className="w-5 h-5" />
+        <MessageCircle className="w-5 h-5 flex-shrink-0" />
         {label}
       </a>
       {sub && <p className="text-center text-[11px] text-[#94A3B8] mt-2">{sub}</p>}
@@ -1520,7 +1534,9 @@ export default function CotacaoPage() {
 
           {/* ── STEP 2: Resultado ── */}
           {step === 2 && !excluded && vehicle && plans.length > 0 && selectedPlan && (
-            <div className="max-w-5xl mx-auto pt-28">
+            /* pb-32 no mobile: reserva o espaço da barra fixa de contratação
+               lá embaixo, senão ela cobre os links de "Editar dados". */
+            <div className="max-w-5xl mx-auto pt-28 pb-32 lg:pb-0">
               {/* Header */}
               <div className="text-center mb-10">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#10B981]/10 mb-4">
@@ -1558,6 +1574,14 @@ export default function CotacaoPage() {
                     ))}
                   </div>
 
+                  {/* Acabou de escolher o plano na aba acima: pode seguir daqui
+                      mesmo, sem ter que caçar o botão no card de preço. */}
+                  <ContratarCTA
+                    label={`Quero o plano ${selectedPlan.name}`}
+                    variant="azul"
+                    wrapClass="mb-6 sm:mb-8"
+                  />
+
                   {/* Coberturas toggle */}
                   <button onClick={() => setShowCoberturas(!showCoberturas)}
                     className="flex items-center justify-between w-full mb-5 text-[#1A2754] font-semibold text-sm">
@@ -1581,7 +1605,7 @@ export default function CotacaoPage() {
                   {/* CTA após os benefícios — cliente rolou as coberturas e pode seguir daqui */}
                   <ContratarCTA
                     label="Gostei! Quero contratar"
-                    variant="outline"
+                    variant="verde"
                     wrapClass="mt-7"
                   />
                 </div>
@@ -1602,6 +1626,7 @@ export default function CotacaoPage() {
                     label="Quero contratar 🛡️"
                     sub="Sem compromisso · a gente te responde na hora"
                     wrapClass="mb-6"
+                    pulse
                   />
 
                   <div className="border-t border-[#E8ECF4] pt-4 mb-6 space-y-4 text-sm">
@@ -1726,6 +1751,7 @@ export default function CotacaoPage() {
                   </p>
                   <ContratarCTA
                     label="Gostei! Quero sair protegido 🛡️"
+                    variant="verde"
                     wrapClass="mb-4"
                   />
 
@@ -1746,6 +1772,24 @@ export default function CotacaoPage() {
                   className="text-sm text-[#293C82] hover:text-[#3D72DE] transition-colors">
                   Nova simulação
                 </button>
+              </div>
+
+              {/* Barra fixa de contratação — só no celular. A tela de resultado
+                  é longa e, rolando, o botão sai de vista; aqui ele fica sempre
+                  ao alcance do polegar, com o preço do plano escolhido ao lado
+                  pra lembrar do que se trata. No desktop não existe: lá o card
+                  de preço já acompanha a rolagem (lg:sticky). */}
+              <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-sm border-t border-[#E8ECF4] px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.07)]">
+                <div className="flex items-center gap-3 max-w-5xl mx-auto">
+                  <div className="flex-shrink-0">
+                    <p className="text-[10px] text-[#64748B] leading-none mb-1">{selectedPlan.name}</p>
+                    <p className="font-bold text-[#1A2754] leading-none whitespace-nowrap">
+                      R$ {priceFormatted}
+                      <span className="text-[10px] font-medium text-[#64748B]">/mês</span>
+                    </p>
+                  </div>
+                  <ContratarCTA label="Quero contratar" wrapClass="flex-1 min-w-0" />
+                </div>
               </div>
             </div>
           )}
