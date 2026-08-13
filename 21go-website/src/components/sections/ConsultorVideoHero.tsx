@@ -29,96 +29,54 @@ import Link from '@/components/Link'
 import { BotaoFaleWhatsApp } from '@/components/ui/BotaoFaleWhatsApp'
 import type { VideoConsultor } from '@/lib/consultores-video'
 
+/**
+ * Este script vai INLINE no HTML, antes de qualquer JavaScript do site carregar,
+ * e é o ÚNICO dono do áudio do vídeo.
+ *
+ * Por que inline: o navegador só libera som depois de uma interação do
+ * visitante, e a primeira interação costuma acontecer no primeiro segundo —
+ * antes do React hidratar. Um "escutador" que só existisse no efeito do React
+ * perderia esse primeiro toque e o vídeo seguiria mudo até a pessoa tocar de
+ * novo.
+ *
+ * Por que ÚNICO: com o React tentando `play()` em paralelo, a segunda chamada
+ * era abortada pelo navegador ("play() request was interrupted"), o `catch`
+ * dela remutava o vídeo e o som que já tinha entrado sumia. Uma ponta só.
+ */
+const SCRIPT_LIGA_SOM = `(function(){
+  var EVS=['pointerdown','pointerup','click','touchstart','touchend','touchmove','keydown','mousemove','wheel','scroll'];
+  var indo=false;
+  function limpa(){for(var i=0;i<EVS.length;i++)window.removeEventListener(EVS[i],tenta,true)}
+  function tenta(){
+    var v=document.querySelector('[data-video-consultor]');
+    if(!v)return;
+    if(v.dataset.somDesligado==='1'){limpa();return}
+    if(indo)return;
+    indo=true;
+    var onde=v.currentTime;
+    v.muted=false;
+    var p=v.play();
+    if(p&&p.then){p.then(function(){indo=false;v.currentTime=0;limpa()}).catch(function(){indo=false;v.muted=true;v.currentTime=onde;v.play().catch(function(){})})}
+    else{indo=false}
+  }
+  tenta();
+  for(var i=0;i<EVS.length;i++)window.addEventListener(EVS[i],tenta,{passive:true,capture:true});
+})()`
+
 export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [comSom, setComSom] = useState(true)
-  /** Quem desligou o som no botão não tem o áudio de volta no próximo clique. */
-  const desligadoPeloVisitante = useRef(false)
   const botaoRef = useRef<HTMLButtonElement>(null)
 
-  /* Tenta começar com som; se o navegador bloquear, toca mudo e liga o áudio no
-     primeiro gesto do visitante — em qualquer lugar da página. */
+  /* O rótulo do botão segue o estado real do vídeo — inclusive quando quem
+     ligou o som foi o script inline, antes do React existir. */
   useEffect(() => {
     const el = videoRef.current
     if (!el) return
-
-    let desistiu = false
-    /**
-     * Tudo que o visitante possa fazer conta como deixa pra ligar o som: mover o
-     * mouse, rolar, tocar, teclar. O navegador só libera áudio depois de um
-     * gesto reconhecido (toque/clique/tecla), mas tentar no `mousemove` e no
-     * `scroll` também é de graça — quando ele recusa, o vídeo segue mudo e a
-     * próxima tentativa vem no gesto seguinte.
-     */
-    const eventos = [
-      'pointerdown',
-      'pointerup',
-      'click',
-      'touchstart',
-      'touchend',
-      'touchmove',
-      'keydown',
-      'mousemove',
-      'wheel',
-      'scroll',
-    ] as const
-
-    let tentando = false
-
-    function ligarSom(e: Event) {
-      // Toque NO botão de som é decisão explícita — quem trata é o `alternarSom`.
-      // Sem esta guarda, o `pointerdown` ligaria o áudio e o `click` logo em
-      // seguida leria "já está com som" e desligaria de novo.
-      if (e.target instanceof Node && botaoRef.current?.contains(e.target)) return
-
-      // Quem já calou o vídeo no botão não tem o som de volta por ter clicado
-      // em outra coisa na página.
-      const v = videoRef.current
-      if (!v || desistiu || desligadoPeloVisitante.current) return soltar()
-      if (tentando) return
-
-      tentando = true
-      const onde = v.currentTime
-      v.muted = false
-      v.play()
-        .then(() => {
-          tentando = false
-          v.currentTime = 0 // ouvir do começo, não do meio da frase
-          setComSom(true)
-          soltar() // conseguiu — só aqui é que para de tentar
-        })
-        .catch(() => {
-          // Navegador ainda não aceitou (foi um `mousemove`, um `scroll`...).
-          // Volta pro mudo e espera o próximo evento tentar de novo.
-          tentando = false
-          v.muted = true
-          v.currentTime = onde
-          v.play().catch(() => {})
-        })
-    }
-
-    function soltar() {
-      for (const ev of eventos) window.removeEventListener(ev, ligarSom, true)
-    }
-
-    el.muted = false
-    el.play()
-      .then(() => setComSom(true))
-      .catch(() => {
-        el.muted = true
-        setComSom(false)
-        el.play().catch(() => {})
-        // `capture` pra ouvir o evento na descida, antes que qualquer componente
-        // do meio do caminho o interrompa.
-        for (const ev of eventos) {
-          window.addEventListener(ev, ligarSom, { passive: true, capture: true })
-        }
-      })
-
-    return () => {
-      desistiu = true
-      soltar()
-    }
+    const sincronizar = () => setComSom(!el.muted)
+    sincronizar()
+    el.addEventListener('volumechange', sincronizar)
+    return () => el.removeEventListener('volumechange', sincronizar)
   }, [])
 
   /* Pausa fora da tela e em aba oculta — com áudio ligado, vídeo tocando onde
@@ -129,8 +87,11 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
     const io = new IntersectionObserver(
       (entradas) => {
         for (const e of entradas) {
-          if (e.isIntersecting) el.play().catch(() => {})
-          else el.pause()
+          // `paused` na guarda: um `play()` a mais aqui abortaria o `play()` que
+          // o script do som pode estar fazendo no mesmo instante.
+          if (e.isIntersecting) {
+            if (el.paused) el.play().catch(() => {})
+          } else el.pause()
         }
       },
       { threshold: 0.25 }
@@ -151,7 +112,8 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
     if (!el) return
     const ligando = el.muted
     el.muted = !ligando
-    desligadoPeloVisitante.current = !ligando
+    // O script inline lê isto pra não religar o som de quem pediu silêncio.
+    el.dataset.somDesligado = ligando ? '0' : '1'
     el.play().catch(() => {})
     setComSom(ligando)
   }
@@ -163,6 +125,7 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
     <section className="relative h-[100svh] w-full overflow-hidden bg-black">
       <video
         ref={videoRef}
+        data-video-consultor="true"
         /* `object-cover` preenche a tela nos dois formatos. No desktop (deitado)
            o recorte sobe um pouco pra manter os rostos no quadro, em vez de
            centralizar no chão. */
@@ -176,6 +139,9 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
       >
         <source src={video.mp4} type="video/mp4" />
       </video>
+
+      {/* Depois do <video>: o script busca o elemento assim que roda. */}
+      <script dangerouslySetInnerHTML={{ __html: SCRIPT_LIGA_SOM }} />
 
       {/* Escurecimento só onde entra texto: topo leve (logo do header) e base
           forte (headline e botões). O meio do vídeo fica limpo. */}
