@@ -186,6 +186,33 @@ export const agent06: Agent<Input, Output> = {
       });
     }
 
+    // ===== 2.3.2 — Sinais de GEO (ser citado por IA), medidos em 08/08 =====
+    // Auditoria dos 20 ultimos publicados: TL;DR, "Em resumo", FAQ e fontes apareciam em
+    // 18-20/20, mas TABELA em 1/20 e apenas 47% dos H2 eram perguntas. Sao justamente os
+    // dois sinais que decidem citacao: LLM extrai tabela inteira, e H2-pergunta e o que
+    // casa com a query. O prompt ja pedia os dois — pedir nao bastou, entao vira guard.
+    // A tabela AINDA NAO e hard-block de proposito: 19 dos 20 ultimos publicados nao
+    // tinham nenhuma, entao ligar a trava hoje reprovaria quase todo lote e apostaria a
+    // producao inteira na reescrita. Primeiro o prompt reforcado precisa provar que
+    // entrega tabela na 1a tentativa; ai isto vira hard-block como trava de regressao.
+    const temTabela = /\n\|.*\|.*\n\|[\s:-]*\|/.test(bodyOnly);
+    if (!temTabela) {
+      log.warn({ articleId: a.id, slug: a.slug }, 'GEO: artigo sem tabela comparativa (ainda nao bloqueia)');
+    }
+
+    const H2_FIXOS = /^##\s*(em resumo|perguntas frequentes|fontes consultadas)/i;
+    const h2s = (bodyOnly.match(/^##\s+.+$/gm) ?? []).filter((h) => !H2_FIXOS.test(h.trim()));
+    const h2Perguntas = h2s.filter((h) => h.trim().endsWith('?'));
+    // 60%, nao 100%: o alvo editorial e todo H2 ser pergunta, mas reprovar por um
+    // subtitulo declarativo custaria a pauta inteira. O piso corta o padrao antigo
+    // (47%) sem virar tirania.
+    if (h2s.length >= 3 && h2Perguntas.length / h2s.length < 0.6) {
+      hardMatches.push({
+        pattern: `h2-perguntas=${h2Perguntas.length}/${h2s.length}`,
+        reason: 'a maioria dos H2 precisa ser pergunta real terminada em "?" (padrao Atomic Answer)',
+      });
+    }
+
     // 2.4 — Keywords frontmatter NAO duplica o title
     const fmMatch = /^---\n([\s\S]+?)\n---/.exec(mdx);
     if (fmMatch) {

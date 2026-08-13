@@ -102,9 +102,28 @@ Se nao souber a qual plano o numero pertence, NAO cite o numero: mande o leitor 
 - Reforcar: "protecao patrimonial veicular" e diferente de seguro (1x so, no comeco)
 - E-E-A-T: assinar como Equipe Editorial 21Go ou Letycya (depende do briefing)
 
+[TAB] UMA TABELA MARKDOWN E OBRIGATORIA (o Reviewer reprova sem ela):
+Modelos de linguagem citam tabela muito mais que paragrafo — e ela e o trecho que o
+AI Overview costuma extrair inteiro. Coloque 1 tabela de 3-5 colunas e 3-6 linhas
+comparando algo REAL do artigo (situacoes, prazos, o que muda entre cenarios,
+documentos exigidos, antes/depois). Formato GFM exato, com linha de separador:
+
+| Situacao | O que acontece | Prazo | O que fazer |
+| --- | --- | --- | --- |
+| Furto sem BO | Analise fica travada | — | Registrar BO antes de acionar |
+| BO registrado | Segue pra analise | ate 30 dias | Enviar documentos do veiculo |
+
+NAO invente numero pra preencher celula. Se nao souber, escreva "—" ou "varia".
+NAO use tabela pra listar planos e precos da 21Go (isso e papel da cotacao).
+
 [F] FORMATO (Markdown puro):
 - NAO inclua H1 (vai no frontmatter)
-- H2s sao PERGUNTAS reais (ex: "## Como funciona a protecao veicular para carro novo?")
+- TODO H2 e uma PERGUNTA terminada em "?" — sem excecao. E assim que o artigo casa
+  com a pergunta digitada no Google/ChatGPT.
+  CERTO:  "## Como funciona a protecao veicular para carro novo?"
+  ERRADO: "## Funcionamento da protecao veicular"
+  (as unicas excecoes sao as secoes fixas: "## Em resumo", "## Perguntas frequentes",
+   "## Fontes consultadas")
 - 1 paragrafo curto direto apos cada H2 (resposta atomica 40-60 palavras)
 - Aprofundamento em paragrafos curtos (3-5 linhas)
 - Listas com bullets reais
