@@ -31,9 +31,20 @@ export function SchemaOrg() {
           'https://www.reclameaqui.com.br/empresa/21go-protecao-patrimonial-veicular/',
           'https://www.youtube.com/@21goprotpatri',
         ],
+        /**
+         * SEM telefone de proposito.
+         *
+         * Este schema e renderizado no layout raiz, entao sai IGUAL em todos os
+         * sites — inclusive nos de consultor. O numero que estava aqui era o de
+         * uma consultora especifica, e cada site vendido tem o seu proprio
+         * contato. Deixar um numero fixo aqui daria o contato de uma pessoa nos
+         * sites de todas as outras.
+         *
+         * O schema continua valido sem `telephone`; quem quer falar usa o botao
+         * da pagina, que resolve pelo slug.
+         */
         contactPoint: {
           '@type': 'ContactPoint',
-          telephone: '+55-21-96945-4824',
           contactType: 'customer service',
           areaServed: 'BR',
           availableLanguage: ['Portuguese'],
@@ -46,7 +57,6 @@ export function SchemaOrg() {
         url: 'https://21go.site',
         logo: 'https://21go.site/logo21go.png',
         image: 'https://21go.site/logo21go.png',
-        telephone: '+55-21-96945-4824',
         email: 'contato@21go.org',
         address: {
           '@type': 'PostalAddress',

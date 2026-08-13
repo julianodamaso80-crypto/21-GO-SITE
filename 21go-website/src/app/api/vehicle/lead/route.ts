@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
   const ctx = getRequestContext(req)
 
   // Atendimento humano: nao tenta gerar PDF nem mandar mensagem com promessa
-  // de cotacao. Salva lead parcial pra Letycia ver no Supabase, manda
+  // de cotacao. Salva lead parcial pro atendimento ver no Supabase, manda
   // PowerCRM (pra criar negociacao com responsavel) e termina.
   if (body.requires_human_support) {
     console.log(`[lead] requires_human_support=true reason=${body.human_support_reason} lead=${leadId}`)

@@ -476,7 +476,7 @@ export default function CotacaoPage() {
 
   /**
    * Quando a cascata PowerCRM → API Brasil → Parallelum falha (ou cliente
-   * não consegue passar a placa), salvamos lead parcial pra Letycia ver no
+   * não consegue passar a placa), salvamos lead parcial pro atendimento ver no
    * Supabase e mostramos a tela de atendimento humano com botão WhatsApp.
    * NUNCA inventamos valor FIPE — cliente fala direto com a consultora.
    */
