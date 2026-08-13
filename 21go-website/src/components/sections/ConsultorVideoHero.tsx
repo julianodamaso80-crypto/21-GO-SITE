@@ -189,13 +189,15 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
       />
 
       {/* Desligar o som — canto de cima, longe dos CTAs e fora do caminho do
-          dedo que rola a página. */}
+          dedo que rola a página. No celular fica ABAIXO da faixa dos 80px: é
+          onde o aviso "carregando cenas" do ScrollCinema passa nos primeiros
+          segundos, e ele cobriria justamente este botão. */}
       <button
         ref={botaoRef}
         type="button"
         onClick={alternarSom}
         aria-label={comSom ? 'Desligar o som do vídeo' : 'Ligar o som do vídeo'}
-        className="absolute right-4 top-[5.25rem] z-20 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/55 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/80 sm:text-sm lg:top-28"
+        className="absolute right-4 top-[8.25rem] z-20 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/55 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/80 sm:text-sm lg:top-28"
       >
         {comSom ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         {comSom ? 'Desligar som' : 'Ativar som'}
