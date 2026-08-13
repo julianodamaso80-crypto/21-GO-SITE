@@ -4,9 +4,9 @@
  * HERO do site de um consultor que mandou vídeo próprio (ver
  * `consultores-video.ts`).
  *
- * Substitui o hero do presidente: o vídeo dele ocupa o lugar da imagem e vira o
- * destaque da dobra — vídeo em cima, texto curto e o botão de simulação logo
- * abaixo, tudo na primeira tela. Fora do hero, a home segue idêntica à da 21Go.
+ * Substitui o hero do presidente: o vídeo dele TOMA a primeira dobra inteira,
+ * de borda a borda, com a headline curta e o botão de simulação por cima, na
+ * base. Fora do hero, a home segue idêntica à da 21Go.
  *
  * ─── Som ligado por padrão, sem quebrar quando o navegador não deixa ────────
  *
@@ -157,83 +157,81 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
   }
 
   return (
-    <section
-      className="relative flex min-h-[100svh] items-center overflow-hidden bg-[#0c1330] pt-[4.5rem] pb-[5.5rem] lg:pt-24 lg:pb-20"
-    >
-      {/* Fundo institucional (o mesmo do hero padrão, sem o presidente) */}
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="absolute inset-0 bg-[radial-gradient(90%_80%_at_50%_40%,#1e2c60_0%,#101a3d_55%,#0c1330_100%)]" />
-        <div className="animate-float-slow absolute -top-32 -right-32 h-[600px] w-[600px] rounded-full bg-[#F2911D]/10 blur-[120px]" />
-        <div className="animate-float-slower absolute bottom-0 -left-32 h-[700px] w-[700px] rounded-full bg-[#293C82]/25 blur-[150px]" />
-      </div>
-
-      <div
-        className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-5 text-center sm:px-6"
+    /* Tela cheia: o vídeo É a primeira dobra. Sem moldura e sem fundo azul em
+       volta — o que sobra de azul seria justamente o que tira o vídeo do lugar
+       de destaque. */
+    <section className="relative h-[100svh] w-full overflow-hidden bg-black">
+      <video
+        ref={videoRef}
+        /* `object-cover` preenche a tela nos dois formatos. No desktop (deitado)
+           o recorte sobe um pouco pra manter os rostos no quadro, em vez de
+           centralizar no chão. */
+        className="absolute inset-0 h-full w-full object-cover object-[center_38%] lg:object-[center_42%]"
+        poster={video.poster}
+        loop
+        autoPlay
+        playsInline
+        preload="metadata"
+        controls={false}
       >
-        {/* Vídeo do consultor — o destaque da dobra */}
-        <div className="w-full">
-          <div className="relative mx-auto w-fit overflow-hidden rounded-2xl border border-white/15 bg-black/40 shadow-[0_24px_70px_rgba(4,8,24,0.6)]">
-            <video
-              ref={videoRef}
-              className="h-[min(50svh,420px)] w-auto max-w-full object-cover object-center sm:h-[min(56svh,520px)]"
-              poster={video.poster}
-              loop
-              autoPlay
-              playsInline
-              preload="metadata"
-              controls={false}
-            >
-              <source src={video.mp4} type="video/mp4" />
-            </video>
+        <source src={video.mp4} type="video/mp4" />
+      </video>
 
-            <button
-              ref={botaoRef}
-              type="button"
-              onClick={alternarSom}
-              aria-label={comSom ? 'Desativar som do vídeo' : 'Ativar som do vídeo'}
-              className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/60 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/80 sm:text-sm"
+      {/* Escurecimento só onde entra texto: topo leve (logo do header) e base
+          forte (headline e botões). O meio do vídeo fica limpo. */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        aria-hidden="true"
+        style={{
+          background:
+            'linear-gradient(to bottom, rgba(6,10,26,0.55) 0%, rgba(6,10,26,0.12) 18%, rgba(6,10,26,0) 34%, rgba(6,10,26,0.35) 56%, rgba(6,10,26,0.82) 78%, rgba(6,10,26,0.95) 100%)',
+        }}
+      />
+
+      {/* Desligar o som — canto de cima, longe dos CTAs e fora do caminho do
+          dedo que rola a página. */}
+      <button
+        ref={botaoRef}
+        type="button"
+        onClick={alternarSom}
+        aria-label={comSom ? 'Desligar o som do vídeo' : 'Ligar o som do vídeo'}
+        className="absolute right-4 top-[5.25rem] z-20 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/55 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/80 sm:text-sm lg:top-28"
+      >
+        {comSom ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+        {comSom ? 'Desligar som' : 'Ativar som'}
+      </button>
+
+      {/* Texto e CTAs sobre o vídeo, na base */}
+      <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-[6.5rem] text-center sm:px-6 lg:pb-16">
+        <div className="mx-auto max-w-3xl">
+          <h1 className="font-[var(--font-outfit)] text-[clamp(1.25rem,min(6vw,3.2vh),1.9rem)] font-bold leading-[1.14] tracking-tight text-white [text-shadow:0_2px_20px_rgba(4,8,24,0.85)] sm:text-3xl md:text-4xl lg:text-5xl">
+            {video.titulo} <span className="text-gradient-orange">{video.destaque}</span>
+          </h1>
+
+          <p className="mt-[1vh] text-[clamp(0.8rem,1.8vh,0.95rem)] font-medium text-white/90 [text-shadow:0_1px_12px_rgba(4,8,24,0.9)] sm:mt-3 sm:text-lg">
+            {video.subtitulo}
+          </p>
+
+          <div
+            data-cta-section="hero"
+            className="mt-[1.8vh] flex w-full flex-wrap items-center justify-center gap-2.5 sm:mt-7 sm:gap-4"
+          >
+            <Link
+              href="/cotacao"
+              className="shimmer-btn relative inline-flex w-full max-w-[320px] animate-glow-pulse items-center justify-center rounded-xl bg-[#F2911D] px-6 py-[clamp(0.7rem,1.7vh,0.95rem)] text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#D67A0F] hover:shadow-[0_8px_30px_rgba(242,145,29,0.5)] sm:w-auto sm:max-w-none sm:px-9 sm:py-4 sm:text-base"
             >
-              {comSom ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              {comSom ? 'Som ligado' : 'Ativar som'}
-            </button>
+              Fazer Simulação Grátis
+            </Link>
+            <BotaoFaleWhatsApp
+              origin="hero"
+              className="inline-flex w-full max-w-[320px] items-center justify-center gap-2.5 rounded-xl border border-white/25 bg-white/[0.12] px-6 py-[clamp(0.7rem,1.7vh,0.95rem)] text-sm font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-white/40 hover:bg-white/20 sm:w-auto sm:max-w-none sm:px-7 sm:py-4 sm:text-base"
+            >
+              <MessageCircle className="h-4 w-4 text-[#25D366] sm:h-5 sm:w-5" />
+              Fale no WhatsApp
+            </BotaoFaleWhatsApp>
           </div>
         </div>
-
-        {/* Texto — curto de propósito, pro vídeo e o botão caberem juntos */}
-        <h1
-          className="mt-[2vh] font-[var(--font-outfit)] text-[clamp(1.15rem,min(5.6vw,3vh),1.75rem)] font-bold leading-[1.16] tracking-tight text-white [text-shadow:0_2px_24px_rgba(8,13,34,0.7)] sm:mt-6 sm:text-3xl md:text-4xl"
-        >
-          {video.titulo} <span className="text-gradient-orange">{video.destaque}</span>
-        </h1>
-
-        <p
-          className="mt-[0.9vh] text-[clamp(0.78rem,1.8vh,0.9rem)] font-medium text-white/85 [text-shadow:0_1px_12px_rgba(8,13,34,0.75)] sm:mt-3 sm:text-lg"
-        >
-          {video.subtitulo}
-        </p>
-
-        {/* CTAs — logo abaixo do vídeo, na mesma dobra */}
-        <div
-          data-cta-section="hero"
-          className="mt-[1.6vh] flex w-full flex-wrap items-center justify-center gap-2.5 sm:mt-7 sm:gap-4"
-        >
-          <Link
-            href="/cotacao"
-            className="shimmer-btn relative inline-flex w-full max-w-[320px] animate-glow-pulse items-center justify-center rounded-xl bg-[#F2911D] px-6 py-[clamp(0.65rem,1.6vh,0.9rem)] text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#D67A0F] hover:shadow-[0_8px_30px_rgba(242,145,29,0.5)] sm:w-auto sm:max-w-none sm:px-9 sm:py-4 sm:text-base"
-          >
-            Fazer Simulação Grátis
-          </Link>
-          <BotaoFaleWhatsApp
-            origin="hero"
-            className="inline-flex w-full max-w-[320px] items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-white/[0.07] px-6 py-[clamp(0.65rem,1.6vh,0.9rem)] text-sm font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.12] sm:w-auto sm:max-w-none sm:px-7 sm:py-4 sm:text-base"
-          >
-            <MessageCircle className="h-4 w-4 text-[#25D366] sm:h-5 sm:w-5" />
-            Fale no WhatsApp
-          </BotaoFaleWhatsApp>
-        </div>
       </div>
-
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#0c1330]" />
     </section>
   )
 }
