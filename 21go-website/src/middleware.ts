@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ROTAS_RESERVADAS } from '@/lib/rotas-reservadas'
+import { VIDEO_POR_CONSULTOR } from '@/lib/consultores-video'
 
 /**
  * Site por consultor: `21go.com.br/julianodamaso` serve o MESMO site de sempre,
@@ -44,12 +45,35 @@ export function middleware(req: NextRequest) {
   const segmentos = pathname.split('/').filter(Boolean)
   const primeiro = segmentos[0]
 
+  // `/c/<slug>` e o destino interno do rewrite abaixo. Quem chega nele digitando
+  // ve o site normalmente, mas ele nao pode indexar: seria a home do consultor
+  // no indice do Google com outro endereco, competindo com o 21go.site.
+  if (primeiro === 'c') {
+    const res = NextResponse.next()
+    res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    return res
+  }
+
   if (!primeiro || ROTAS_RESERVADAS.has(primeiro) || !FORMATO_SLUG.test(primeiro)) {
     return NextResponse.next()
   }
 
+  /**
+   * A HOME de quem tem vídeo próprio vai pra uma cópia prerenderizada com o
+   * vídeo já dentro (`/c/<slug>`), em vez da home comum.
+   *
+   * Sem isto, o hero do presidente aparecia primeiro e só depois da hidratação
+   * dava lugar ao vídeo — parecia que o visitante ia entrar no site antigo. As
+   * outras páginas dele (`/<slug>/cotacao`) não mudam: o hero só existe na home.
+   */
+  const ehHome = segmentos.length === 1
+  const destinoPath =
+    ehHome && primeiro in VIDEO_POR_CONSULTOR
+      ? `/c/${primeiro}`
+      : `/${segmentos.slice(1).join('/')}`
+
   // `/julianodamaso` -> `/` · `/julianodamaso/cotacao` -> `/cotacao`
-  const destino = new URL(`/${segmentos.slice(1).join('/')}${search}`, req.url)
+  const destino = new URL(`${destinoPath}${search}`, req.url)
   const res = NextResponse.rewrite(destino)
 
   /**

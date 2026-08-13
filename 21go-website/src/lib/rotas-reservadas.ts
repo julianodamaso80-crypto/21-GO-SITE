@@ -13,6 +13,9 @@
  */
 export const ROTAS_RESERVADAS = new Set([
   'a-21go-e-confiavel',
+  // Home prerenderizada do consultor que tem video proprio. Ninguem digita
+  // `/c/<slug>` — o middleware reescreve `/<slug>` pra ca.
+  'c',
   'api',
   'blog',
   'conformidade-legal',

@@ -13,30 +13,63 @@
  * O vídeo é depoimento falado, então nasce COM som (decisão do dono). Só que
  * autoplay com áudio é bloqueado por todo navegador enquanto o visitante não
  * interagiu com a página: nesse caso `play()` rejeita e o vídeo ficaria PARADO,
- * que é pior que mudo. Por isso tentamos com som e, se o navegador recusar,
- * caímos pra mudo tocando e o botão em cima do vídeo vira "Ativar som" — um
- * toque resolve. Onde o autoplay com áudio é permitido, o botão já aparece como
- * "Som ligado" e serve pra desligar.
+ * que é pior que mudo.
+ *
+ * Então a ordem é: tenta com som; se o navegador recusar, toca mudo E fica
+ * esperando o PRIMEIRO gesto do visitante em qualquer lugar da página (toque,
+ * clique, tecla) pra ligar o áudio do começo — ninguém precisa achar o botão. Na
+ * prática o som entra no primeiro toque, que é o mais perto de "já começa
+ * ligado" que o navegador permite. O botão em cima do vídeo continua ali pra
+ * quem quiser DESLIGAR.
  */
 
-import { motion, useInView } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { MessageCircle, Volume2, VolumeX } from 'lucide-react'
-import { fadeInUp, staggerContainer } from '@/lib/motion'
 import Link from '@/components/Link'
 import { BotaoFaleWhatsApp } from '@/components/ui/BotaoFaleWhatsApp'
 import type { VideoConsultor } from '@/lib/consultores-video'
 
 export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true })
   const videoRef = useRef<HTMLVideoElement>(null)
   const [comSom, setComSom] = useState(true)
+  /** Quem desligou o som no botão não tem o áudio de volta no próximo clique. */
+  const desligadoPeloVisitante = useRef(false)
+  const botaoRef = useRef<HTMLButtonElement>(null)
 
-  /* Tenta começar com som; se o navegador bloquear, toca mudo. */
+  /* Tenta começar com som; se o navegador bloquear, toca mudo e liga o áudio no
+     primeiro gesto do visitante — em qualquer lugar da página. */
   useEffect(() => {
     const el = videoRef.current
     if (!el) return
+
+    let desistiu = false
+    const eventos = ['pointerdown', 'touchstart', 'keydown'] as const
+
+    function ligarSom(e: Event) {
+      // Toque NO botão de som é decisão explícita — quem trata é o `alternarSom`.
+      // Sem esta guarda, o `pointerdown` ligaria o áudio e o `click` logo em
+      // seguida leria "já está com som" e desligaria de novo.
+      if (e.target instanceof Node && botaoRef.current?.contains(e.target)) return
+
+      // Quem já calou o vídeo no botão não tem o som de volta por ter clicado
+      // em outra coisa na página.
+      const v = videoRef.current
+      if (!v || desistiu || desligadoPeloVisitante.current) return soltar()
+      v.muted = false
+      v.currentTime = 0
+      v.play()
+        .then(() => setComSom(true))
+        .catch(() => {
+          v.muted = true
+          v.play().catch(() => {})
+        })
+      soltar()
+    }
+
+    function soltar() {
+      for (const ev of eventos) document.removeEventListener(ev, ligarSom)
+    }
+
     el.muted = false
     el.play()
       .then(() => setComSom(true))
@@ -44,7 +77,13 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
         el.muted = true
         setComSom(false)
         el.play().catch(() => {})
+        for (const ev of eventos) document.addEventListener(ev, ligarSom, { passive: true })
       })
+
+    return () => {
+      desistiu = true
+      soltar()
+    }
   }, [])
 
   /* Pausa fora da tela e em aba oculta — com áudio ligado, vídeo tocando onde
@@ -77,13 +116,13 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
     if (!el) return
     const ligando = el.muted
     el.muted = !ligando
+    desligadoPeloVisitante.current = !ligando
     el.play().catch(() => {})
     setComSom(ligando)
   }
 
   return (
     <section
-      ref={ref}
       className="relative flex min-h-[100svh] items-center overflow-hidden bg-[#0c1330] pt-[4.5rem] pb-[5.5rem] lg:pt-24 lg:pb-20"
     >
       {/* Fundo institucional (o mesmo do hero padrão, sem o presidente) */}
@@ -93,14 +132,11 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
         <div className="animate-float-slower absolute bottom-0 -left-32 h-[700px] w-[700px] rounded-full bg-[#293C82]/25 blur-[150px]" />
       </div>
 
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate={isInView ? 'visible' : 'hidden'}
+      <div
         className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-5 text-center sm:px-6"
       >
         {/* Vídeo do consultor — o destaque da dobra */}
-        <motion.div variants={fadeInUp} className="w-full">
+        <div className="w-full">
           <div className="relative mx-auto w-fit overflow-hidden rounded-2xl border border-white/15 bg-black/40 shadow-[0_24px_70px_rgba(4,8,24,0.6)]">
             <video
               ref={videoRef}
@@ -116,6 +152,7 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
             </video>
 
             <button
+              ref={botaoRef}
               type="button"
               onClick={alternarSom}
               aria-label={comSom ? 'Desativar som do vídeo' : 'Ativar som do vídeo'}
@@ -125,27 +162,24 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
               {comSom ? 'Som ligado' : 'Ativar som'}
             </button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Texto — curto de propósito, pro vídeo e o botão caberem juntos */}
-        <motion.h1
-          variants={fadeInUp}
+        <h1
           className="mt-[2vh] font-[var(--font-outfit)] text-[clamp(1.15rem,min(5.6vw,3vh),1.75rem)] font-bold leading-[1.16] tracking-tight text-white [text-shadow:0_2px_24px_rgba(8,13,34,0.7)] sm:mt-6 sm:text-3xl md:text-4xl"
         >
           {video.titulo} <span className="text-gradient-orange">{video.destaque}</span>
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          variants={fadeInUp}
+        <p
           className="mt-[0.9vh] text-[clamp(0.78rem,1.8vh,0.9rem)] font-medium text-white/85 [text-shadow:0_1px_12px_rgba(8,13,34,0.75)] sm:mt-3 sm:text-lg"
         >
           {video.subtitulo}
-        </motion.p>
+        </p>
 
         {/* CTAs — logo abaixo do vídeo, na mesma dobra */}
-        <motion.div
+        <div
           data-cta-section="hero"
-          variants={fadeInUp}
           className="mt-[1.6vh] flex w-full flex-wrap items-center justify-center gap-2.5 sm:mt-7 sm:gap-4"
         >
           <Link
@@ -161,8 +195,8 @@ export function ConsultorVideoHero({ video }: { video: VideoConsultor }) {
             <MessageCircle className="h-4 w-4 text-[#25D366] sm:h-5 sm:w-5" />
             Fale no WhatsApp
           </BotaoFaleWhatsApp>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#0c1330]" />
     </section>
