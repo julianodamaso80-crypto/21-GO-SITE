@@ -746,8 +746,13 @@ async function sendBydQuoteWithPdf(
 
   // 2) PDF da simulação.
   const filename = `simulacao-21go-${leadId}.pdf`
+  // O consultor decide se a ativacao aparece no PDF. Resolvido aqui (com cache)
+  // porque o PDF e montado no servidor e nao ve o contexto do navegador.
+  const donoDoSite = body.consultorSlug ? await resolverConsultor(body.consultorSlug) : null
+
   const pdfInput = {
     consultorSlug: body.consultorSlug ?? null,
+    ocultarAtivacao: donoDoSite?.ocultarAtivacao ?? false,
     nome,
     whatsapp: body.whatsapp || '',
     email: body.email ?? null,

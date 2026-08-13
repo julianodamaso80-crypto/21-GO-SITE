@@ -793,6 +793,7 @@ export default function CotacaoPage() {
         mensalidadeFormatted: priceFormatted,
         ativacaoAvistaFormatted: formatPrice(ativacaoAvista),
         ativacao12xFormatted: formatPrice(ativacaoParcela12x),
+        ocultarAtivacao: consultor?.ocultarAtivacao ?? false,
         seed: leadId || msgSeed,
       }))}${consultor ? `&c=${consultor.slug}` : ''}`
     : '#'
@@ -1604,7 +1605,10 @@ export default function CotacaoPage() {
                   />
 
                   <div className="border-t border-[#E8ECF4] pt-4 mb-6 space-y-4 text-sm">
-                    {/* ATIVAÇÃO — Pagamento único do plano (cartão à vista ou 12x) */}
+                    {/* ATIVAÇÃO — Pagamento único do plano (cartão à vista ou 12x)
+                        Alguns consultores preferem tratar esse valor na conversa
+                        em vez de mostrar junto da mensalidade (ver ocultarAtivacao). */}
+                    {!consultor?.ocultarAtivacao && (
                     <div className="bg-[#FFF7ED] border border-[#F2911D]/20 rounded-xl p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-bold text-[#1A2754]">Ativação</span>
@@ -1624,6 +1628,7 @@ export default function CotacaoPage() {
                         Pagamento único de ativação do plano
                       </p>
                     </div>
+                    )}
 
                     {/* 1º PAGAMENTO — Mensalidade com desconto */}
                     <div className="bg-[#F0FDF4] border border-[#10B981]/20 rounded-xl p-4">

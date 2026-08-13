@@ -24,7 +24,12 @@ export async function GET(
   }
 
   return NextResponse.json(
-    { slug: consultor.slug, nome: consultor.nome, whatsapp: consultor.whatsapp },
+    {
+      slug: consultor.slug,
+      nome: consultor.nome,
+      whatsapp: consultor.whatsapp,
+      ocultarAtivacao: consultor.ocultarAtivacao,
+    },
     // O dado quase nunca muda e a pagina inteira depende dele pra montar o
     // botao de contato. 5 min bate com o TTL do cache do servidor.
     { headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' } },

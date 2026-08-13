@@ -21,6 +21,8 @@ export interface QuotePdfInput {
    * seria entregar o lead dele pra 21Go depois da cotacao ja feita.
    */
   consultorSlug?: string | null
+  /** Consultor que prefere tratar a ativacao na conversa (ver ocultarAtivacao). */
+  ocultarAtivacao?: boolean
   nome: string
   whatsapp: string
   email?: string | null
@@ -469,6 +471,7 @@ function renderComparisonPage(
       </div>
     </section>
 
+    ${input.ocultarAtivacao ? '' : `
     <section class="entrada">
       <div class="entrada-left">
         <span class="entrada-label">Taxa de ativação</span>
@@ -484,7 +487,7 @@ function renderComparisonPage(
           <span class="entrada-vals-num">R$ ${formatBRL(taxa12xParcela)}</span>
         </div>
       </div>
-    </section>
+    </section>`}
 
     ${infoBlock}
 

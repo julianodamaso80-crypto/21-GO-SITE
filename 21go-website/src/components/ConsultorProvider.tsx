@@ -37,6 +37,8 @@ export interface ConsultorAtual {
   slug: string
   nome: string
   whatsapp: string
+  /** Esconde a taxa de ativacao na tela de cotacao deste consultor. */
+  ocultarAtivacao: boolean
 }
 
 const Ctx = createContext<ConsultorAtual | null>(null)
@@ -95,7 +97,12 @@ export function ConsultorProvider({ children }: { children: React.ReactNode }) {
 
   // O slug entra no contexto na hora; nome/whatsapp chegam depois.
   const valor: ConsultorAtual | null = slug
-    ? { slug, nome: consultor?.nome ?? '', whatsapp: consultor?.whatsapp ?? '' }
+    ? {
+        slug,
+        nome: consultor?.nome ?? '',
+        whatsapp: consultor?.whatsapp ?? '',
+        ocultarAtivacao: consultor?.ocultarAtivacao ?? false,
+      }
     : null
 
   if (foraDoAr) return <SiteIndisponivel />

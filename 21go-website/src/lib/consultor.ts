@@ -15,6 +15,14 @@ export interface Consultor {
   whatsapp: string
   powerlinkId: string
   status: 'pendente' | 'ativo' | 'inadimplente' | 'cancelado'
+  /**
+   * Esconde a taxa de ativacao do cliente (tela, PDF e mensagem).
+   *
+   * Opcao por consultor: tem quem prefira tratar esse valor na conversa em vez
+   * de mostrar junto da mensalidade. O valor continua sendo calculado — some da
+   * vista, nao da conta.
+   */
+  ocultarAtivacao: boolean
 }
 
 /** Serve o site normalmente. Inadimplente ainda serve — o corte e no 5o dia. */
@@ -51,7 +59,7 @@ export async function resolverConsultor(slug: string): Promise<Consultor | null>
   try {
     const { data } = await supabaseAdmin()
       .from('sites_consultor')
-      .select('slug, nome, whatsapp, powerlink_id, status')
+      .select('slug, nome, whatsapp, powerlink_id, status, ocultar_ativacao')
       .eq('slug', slug)
       .maybeSingle()
 
@@ -62,6 +70,7 @@ export async function resolverConsultor(slug: string): Promise<Consultor | null>
         whatsapp: data.whatsapp as string,
         powerlinkId: data.powerlink_id as string,
         status: data.status as Consultor['status'],
+        ocultarAtivacao: Boolean(data.ocultar_ativacao),
       }
     }
   } catch (err) {

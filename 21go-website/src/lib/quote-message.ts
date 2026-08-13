@@ -114,6 +114,8 @@ export interface QuoteMessageInput {
   mensalidadeFormatted: string
   ativacaoAvistaFormatted: string
   ativacao12xFormatted: string
+  /** Consultor que prefere tratar a ativacao na conversa (ver ocultarAtivacao). */
+  ocultarAtivacao?: boolean
   /** Semente da variação — use o leadId; cai pro fallback da página se não houver. */
   seed: string
 }
@@ -167,7 +169,11 @@ export function buildContratarMessage(input: QuoteMessageInput): string {
   const linhasEscolhido = [
     `Plano: ${input.planoEscolhido}`,
     `Mensalidade: R$ ${input.mensalidadeFormatted}/mês`,
-    `Ativação: R$ ${input.ativacaoAvistaFormatted} à vista no cartão ou 12x de R$ ${input.ativacao12xFormatted}`,
+    // A ativacao sai da mensagem quando o consultor prefere tratar esse valor
+    // na conversa. O calculo nao muda — some da vista, nao da conta.
+    ...(input.ocultarAtivacao
+      ? []
+      : [`Ativação: R$ ${input.ativacaoAvistaFormatted} à vista no cartão ou 12x de R$ ${input.ativacao12xFormatted}`]),
   ]
 
   const blocos = [
