@@ -19,6 +19,9 @@ import { NumberTicker } from '@/components/ui/NumberTicker'
 import Link from '@/components/Link'
 import { BotaoFaleWhatsApp } from '@/components/ui/BotaoFaleWhatsApp'
 import { MEDIA_BASE } from '@/lib/media'
+import { useConsultor } from '@/components/ConsultorProvider'
+import { videoDoConsultor } from '@/lib/consultores-video'
+import { ConsultorVideoHero } from '@/components/sections/ConsultorVideoHero'
 
 function prefersStatic(): boolean {
   if (typeof window === 'undefined') return true
@@ -145,6 +148,13 @@ function PresidentLayer() {
 export function PresidentHero() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
+
+  // Consultor com vídeo próprio troca o hero inteiro. O slug só existe depois da
+  // hidratação (ver ConsultorProvider), então o primeiro render é sempre o hero
+  // padrão — o mesmo do HTML prerenderizado.
+  const consultor = useConsultor()
+  const video = videoDoConsultor(consultor?.slug)
+  if (video) return <ConsultorVideoHero video={video} />
 
   return (
     /* Mobile: tudo em UMA dobra (header 64px + barra fixa de CTA ~78px
