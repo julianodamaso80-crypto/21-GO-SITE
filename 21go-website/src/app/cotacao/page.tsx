@@ -1600,7 +1600,7 @@ export default function CotacaoPage() {
                   {/* CTA principal — acima da dobra, logo abaixo do preço */}
                   <ContratarCTA
                     label="Quero contratar 🛡️"
-                    sub="Sem compromisso · a Letycia te responde na hora"
+                    sub="Sem compromisso · a gente te responde na hora"
                     wrapClass="mb-6"
                   />
 
@@ -1722,7 +1722,7 @@ export default function CotacaoPage() {
                   )}
 
                   <p className="text-center text-sm font-semibold text-[#1A2754] mb-3">
-                    Gostou dos planos? 🎉 Dá o próximo passo pra sair protegido — a Letycia te acompanha daqui 👇
+                    Gostou dos planos? 🎉 Dá o próximo passo pra sair protegido — a gente te acompanha daqui 👇
                   </p>
                   <ContratarCTA
                     label="Gostei! Quero sair protegido 🛡️"

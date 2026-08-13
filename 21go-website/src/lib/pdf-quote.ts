@@ -452,7 +452,7 @@ function renderComparisonPage(
       </div>
       <a class="wpp-btn" href="${linkWhatsApp}">
         <span class="wpp-icon">💬</span>
-        <span class="wpp-text"><b>WhatsApp do Consultor</b><br/>(21) 96945-4824</span>
+        <span class="wpp-text"><b>Falar no WhatsApp</b><br/>Seu consultor 21Go</span>
       </a>
     </header>
 
@@ -510,15 +510,14 @@ function renderComparisonPage(
 
     <footer class="pdf-footer">
       <div class="footer-consultor">
-        <div class="footer-avatar">LT</div>
         <div class="footer-consultor-info">
-          <span class="footer-eyebrow">Consultor</span>
-          <span class="footer-name">Letycia Thayene Nascimento Lima</span>
+          <span class="footer-eyebrow">Atendimento</span>
+          <span class="footer-name">21Go Proteção Veicular</span>
         </div>
       </div>
       <a class="wpp-btn small" href="${linkWhatsApp}">
         <span class="wpp-icon">💬</span>
-        <span class="wpp-text">(21) 96945-4824</span>
+        <span class="wpp-text">Falar no WhatsApp</span>
       </a>
     </footer>
 

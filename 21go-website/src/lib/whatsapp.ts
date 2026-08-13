@@ -196,10 +196,10 @@ const FU_SAUDACOES: ((n: string) => string)[] = [
 ]
 
 const FU_APRESENTACOES: string[] = [
-  `Aqui é a Letycia, da 21Go.`,
-  `Sou a Letycia e vou te acompanhar por aqui 🙂`,
-  `Me chamo Letycia, do time da 21Go.`,
-  `Quem fala é a Letycia, da 21Go.`,
+  `Aqui é da 21Go.`,
+  `Vou te acompanhar por aqui 🙂`,
+  `Sou do time da 21Go.`,
+  `Quem fala é do time da 21Go.`,
 ]
 
 const FU_CORPOS: ((v: string, p: string) => string)[] = [
@@ -255,18 +255,21 @@ export function buildPdfCaption(input: FollowUpInput): string {
 
 /* ───────────────── Resumo da cotação em texto (substitui o PDF) ───────────────── */
 
-// Intro variada (apresentação da Letycia + "fiz a simulação do X"). ${p} = 'da'|'do'.
+// Intro variada (apresentacao + "fiz a simulacao do X"). ${p} = 'da'|'do'.
+// Sem nome de pessoa: a mesma mensagem sai no site da casa e no de cada
+// consultor, e assinar com o nome de alguem entregaria o lead de um no nome
+// de outro.
 const QS_INTROS: ((v: string, p: string) => string)[] = [
-  (v, p) => `Sou a Letycia, da 21Go 🙂 Fiz a sua simulação ${p} *${v}*:`,
-  (v, p) => `Aqui é a Letycia, da 21Go. Terminei a cotação ${p} *${v}* — olha só:`,
-  (v, p) => `Quem fala é a Letycia 🙂 Já preparei os números ${p} *${v}*:`,
-  (v, p) => `Letycia, da 21Go, por aqui! Segue a simulação ${p} *${v}*:`,
-  (v, p) => `Sou a Letycia 🙂 Deixei prontinha a sua cotação ${p} *${v}*:`,
-  (v, p) => `Aqui é a Letycia, da 21Go. Olha o que preparei ${p} *${v}*:`,
-  (v, p) => `Me chamo Letycia, do time da 21Go. Sua simulação ${p} *${v}* ficou assim:`,
-  (v, p) => `Letycia da 21Go aqui 🙌 Fiz a conta ${p} *${v}* pra você:`,
-  (v, p) => `Sou a Letycia 🙂 Rodei a simulação ${p} *${v}* e ficou assim:`,
-  (v, p) => `Aqui quem fala é a Letycia, da 21Go. Cotação ${p} *${v}* na mão:`,
+  (v, p) => `Aqui é da 21Go 🙂 Fiz a sua simulação ${p} *${v}*:`,
+  (v, p) => `Aqui é da 21Go. Terminei a cotação ${p} *${v}* — olha só:`,
+  (v, p) => `Tudo certo 🙂 Já preparei os números ${p} *${v}*:`,
+  (v, p) => `21Go por aqui! Segue a simulação ${p} *${v}*:`,
+  (v, p) => `Oi 🙂 Deixei prontinha a sua cotação ${p} *${v}*:`,
+  (v, p) => `Aqui é da 21Go. Olha o que preparei ${p} *${v}*:`,
+  (v, p) => `Sou do time da 21Go. Sua simulação ${p} *${v}* ficou assim:`,
+  (v, p) => `21Go aqui 🙌 Fiz a conta ${p} *${v}* pra você:`,
+  (v, p) => `Oi 🙂 Rodei a simulação ${p} *${v}* e ficou assim:`,
+  (v, p) => `Aqui quem fala é da 21Go. Cotação ${p} *${v}* na mão:`,
 ]
 
 // Formato dos valores (mensalidade + adesão). n=plano, m=mensal, e=em dia, a=à vista, x=12x.
@@ -386,7 +389,7 @@ export function buildIncompleteDataMessage(input: {
   return [
     `Oi *${firstName}*! Tudo bem? 😊`,
     ``,
-    `Me chamo Letycia e recebi a sua simulação ${veiculoText}.`,
+    `Recebi a sua simulação ${veiculoText}.`,
     ``,
     `Preciso confirmar alguns dados pra finalizar o seu orçamento personalizado. Pode me responder por aqui pra eu te ajudar?`,
   ].join('\n')
