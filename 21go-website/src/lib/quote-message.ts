@@ -82,6 +82,39 @@ const FECHOS: string[] = [
   'Quero garantir essa proteção!',
 ]
 
+/**
+ * Aberturas e fechos de quem clicou em "Tenho uma dúvida".
+ *
+ * Precisam soar DIFERENTE do fecho de contratação: quem recebe tem que saber
+ * na primeira linha que ali não é um cliente pedindo pra fechar, e sim alguém
+ * com uma pergunta em aberto. Tratar os dois igual queima o lead — o de dúvida
+ * leva um "vamos fechar?" quando o que ele queria era entender.
+ */
+const ABERTURAS_DUVIDA: string[] = [
+  'Olá! Fiz uma simulação no site e fiquei com uma dúvida.',
+  'Oi, tudo bem? Simulei aqui no site mas tenho uma pergunta antes. 🙂',
+  'Olá! Terminei a cotação no site e queria tirar uma dúvida.',
+  'Oi! Vi minha simulação no site e preciso entender uma coisa.',
+  'Olá, tudo certo? Fiz a simulação e fiquei na dúvida sobre uma parte.',
+  'Oi! Simulei pelo site da 21Go e queria perguntar uma coisa.',
+]
+
+/** Quem tem dúvida não "escolheu" nada ainda — o título não pode dizer que sim. */
+const TITULOS_ESCOLHIDO_DUVIDA: string[] = [
+  '*Plano que eu estava vendo*',
+  '*O plano da minha dúvida*',
+  '*Plano que apareceu pra mim*',
+]
+
+const FECHOS_DUVIDA: string[] = [
+  'Pode me explicar?',
+  'Consegue me ajudar com isso?',
+  'Me tira essa dúvida, por favor?',
+  'Antes de decidir eu queria entender melhor. Pode me explicar?',
+  'Fico no aguardo pra entender direitinho!',
+  'Me explica como funciona, por favor?',
+]
+
 export interface QuoteMessagePlan {
   name: string
   /** Já com os adicionais aplicados (carro de app, danos a terceiros). */
@@ -118,6 +151,13 @@ export interface QuoteMessageInput {
   ocultarAtivacao?: boolean
   /** Semente da variação — use o leadId; cai pro fallback da página se não houver. */
   seed: string
+  /**
+   * O que o cliente clicou. 'duvida' troca abertura e fecho pra quem atende
+   * saber, já na primeira linha, que ali tem pergunta em aberto e não pedido
+   * de fechamento. O corpo (dados, veículo, planos) é o mesmo nos dois: a
+   * consultora precisa do contexto igual pra responder.
+   */
+  intencao?: 'contratar' | 'duvida'
 }
 
 export function buildContratarMessage(input: QuoteMessageInput): string {
@@ -162,8 +202,13 @@ export function buildContratarMessage(input: QuoteMessageInput): string {
     `Seguro/proteção hoje: ${input.seguroAtual || 'Não tenho'}`,
   ].filter(Boolean) as string[]
 
+  const ehDuvida = input.intencao === 'duvida'
+
   const linhasPlanos = input.planos.map(
-    (p) => `• ${p.name}: R$ ${p.monthlyFormatted}/mês${p.selected ? '  ← escolhi este' : ''}`,
+    (p) =>
+      `• ${p.name}: R$ ${p.monthlyFormatted}/mês${
+        p.selected ? (ehDuvida ? '  ← estava vendo este' : '  ← escolhi este') : ''
+      }`,
   )
 
   const linhasEscolhido = [
@@ -177,12 +222,15 @@ export function buildContratarMessage(input: QuoteMessageInput): string {
   ]
 
   const blocos = [
-    pick(ABERTURAS, seed, 'abertura'),
+    pick(ehDuvida ? ABERTURAS_DUVIDA : ABERTURAS, seed, 'abertura'),
     [pick(TITULOS_DADOS, seed, 'tit-dados'), ...linhasContato].join('\n'),
     [pick(TITULOS_VEICULO, seed, 'tit-veiculo'), ...linhasVeiculo].join('\n'),
     [pick(TITULOS_PLANOS, seed, 'tit-planos'), ...linhasPlanos].join('\n'),
-    [pick(TITULOS_ESCOLHIDO, seed, 'tit-escolhido'), ...linhasEscolhido].join('\n'),
-    pick(FECHOS, seed, 'fecho'),
+    [
+      pick(ehDuvida ? TITULOS_ESCOLHIDO_DUVIDA : TITULOS_ESCOLHIDO, seed, 'tit-escolhido'),
+      ...linhasEscolhido,
+    ].join('\n'),
+    pick(ehDuvida ? FECHOS_DUVIDA : FECHOS, seed, 'fecho'),
   ]
 
   return blocos.join('\n\n')

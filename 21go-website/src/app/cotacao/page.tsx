@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { trackCotacaoInicio, trackCotacaoCompleta, trackPedidoOrcamento, trackPageView, getTrackingData } from '@/lib/tracking'
+import { trackCotacaoInicio, trackCotacaoCompleta, trackPedidoOrcamento, trackWhatsAppClick, trackPageView, getTrackingData } from '@/lib/tracking'
 import { useConsultor } from '@/components/ConsultorProvider'
 import { getIndicacao } from '@/lib/cookies'
 import {
@@ -21,6 +21,7 @@ import {
   Tag,
   Car,
   Search,
+  HelpCircle,
 } from 'lucide-react'
 import {
   type PlanId,
@@ -760,8 +761,9 @@ export default function CotacaoPage() {
     const pIsMoto = p.id === 'moto-400' || p.id === 'moto-1000'
     return p.monthly + carroAppExtra + (form.danosTerceiros === 'sim' && pIsMoto ? 22 : 0)
   }
-  const contratarHref = selectedPlan && vehicle
+  const linkWhatsApp = (intencao: 'contratar' | 'duvida') => selectedPlan && vehicle
     ? `/api/wa?text=${encodeURIComponent(buildContratarMessage({
+        intencao,
         nome: form.nome,
         whatsapp: form.whatsapp,
         email: form.email.trim() || undefined,
@@ -797,6 +799,8 @@ export default function CotacaoPage() {
         seed: leadId || msgSeed,
       }))}${consultor ? `&c=${consultor.slug}` : ''}`
     : '#'
+  const contratarHref = linkWhatsApp('contratar')
+  const duvidaHref = linkWhatsApp('duvida')
   const handleContratarClick = () => {
     if (!selectedPlan) return
     trackPedidoOrcamento({
@@ -853,6 +857,49 @@ export default function CotacaoPage() {
         {label}
       </a>
       {sub && <p className="text-center text-[11px] text-[#94A3B8] mt-2">{sub}</p>}
+    </div>
+  )
+
+  /**
+   * Saída pra quem NÃO está pronto pra contratar.
+   *
+   * Medido em 13/08/2026: de 445 pessoas que chegaram nesta tela, 61 clicaram
+   * em "Quero contratar" (14%). As outras 384 não tinham botão nenhum — só
+   * "Editar dados" e "Nova simulação". Quem queria perguntar "cobre carro de
+   * leilão?", "como é a vistoria?" fechava a aba.
+   *
+   * Abre o MESMO WhatsApp, com o mesmo resumo da simulação e o lead já
+   * identificado — a trava anti-ban continua de pé, ninguém entra anônimo. O
+   * que muda é a abertura e o fecho da mensagem, pra quem atende saber que ali
+   * é dúvida e não fechamento (ver `intencao` em quote-message.ts).
+   *
+   * Deliberadamente discreto: contorno azul contra o laranja sólido do
+   * principal. Ele existe pra capturar quem ia embora, não pra disputar o
+   * clique de quem já decidiu.
+   */
+  const DuvidaCTA = ({ wrapClass }: { wrapClass?: string }) => (
+    <div className={wrapClass}>
+      <a
+        href={duvidaHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-track-origin="cotacao_duvida"
+        data-track-button-text="Tirar dúvida pelo WhatsApp"
+        onClick={() => {
+          // trackWhatsAppClick (Contact), não trackPedidoOrcamento (Purchase):
+          // dúvida não é pedido de contratação e não pode inflar o ROAS das
+          // campanhas.
+          trackWhatsAppClick('cotacao_duvida', {
+            plano: selectedPlan?.name,
+            valor: price,
+            buttonText: 'Tenho uma dúvida',
+          })
+        }}
+        className="flex items-center justify-center gap-2 w-full min-h-[48px] px-4 py-3 font-semibold text-sm text-center leading-tight rounded-full bg-white text-[#293C82] border-2 border-[#293C82]/25 hover:border-[#293C82] hover:bg-[#F0F4FA] active:scale-[0.98] transition-all duration-200"
+      >
+        <HelpCircle className="w-4 h-4 flex-shrink-0" />
+        Tenho uma dúvida
+      </a>
     </div>
   )
 
@@ -1552,9 +1599,15 @@ export default function CotacaoPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:gap-8">
-                {/* Coberturas — no mobile vem DEPOIS do preço (order-2), no desktop à esquerda */}
-                <div className="order-2 lg:order-1 bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8">
+              {/* Três blocos. No CELULAR a ordem é 1) preço + botão, 2) planos e
+                  benefícios, 3) ativação e demais valores — o cliente escolhe
+                  sabendo o que está comprando, em vez de levar os custos extras
+                  antes de ver o que está incluído. No DESKTOP a posição é fixada
+                  na mão (col/row) pra manter o desenho de sempre: coberturas à
+                  esquerda, preço e valores empilhados à direita. */}
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 lg:items-start">
+                {/* Coberturas e planos — 2º no celular, coluna esquerda no desktop */}
+                <div className="order-2 lg:col-start-1 lg:row-start-1 lg:row-span-2 bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8">
                   {/* Plan tabs */}
                   <div className={`flex gap-1 bg-[#F0F4FA] rounded-2xl p-1.5 mb-6 sm:mb-8 ${plans.length > 4 ? 'flex-wrap' : ''}`}>
                     {plans.map((plan, idx) => (
@@ -1610,8 +1663,8 @@ export default function CotacaoPage() {
                   />
                 </div>
 
-                {/* Preço / CTA — no mobile vem PRIMEIRO (order-1), preço + botão na 1ª dobra */}
-                <div className="order-1 lg:order-2 bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8 h-fit lg:sticky lg:top-28">
+                {/* Preço + botão — 1º no celular, topo da coluna direita no desktop */}
+                <div className="order-1 lg:col-start-2 lg:row-start-1 bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8 h-fit">
                   <div className="text-center mb-5">
                     <p className="text-sm text-[#64748B] mb-1">Plano {selectedPlan.name}</p>
                     <div className="flex items-baseline justify-center gap-1">
@@ -1625,11 +1678,19 @@ export default function CotacaoPage() {
                   <ContratarCTA
                     label="Quero contratar 🛡️"
                     sub="Sem compromisso · a gente te responde na hora"
-                    wrapClass="mb-6"
+                    wrapClass="mb-3"
                     pulse
                   />
 
-                  <div className="border-t border-[#E8ECF4] pt-4 mb-6 space-y-4 text-sm">
+                  {/* Segunda saída, pra quem não está pronto pra fechar. */}
+                  <DuvidaCTA />
+                </div>
+
+                {/* Ativação e demais valores — 3º no celular (depois de o cliente
+                    já ter visto os planos e os benefícios), coluna direita no
+                    desktop, logo abaixo do preço. */}
+                <div className="order-3 lg:col-start-2 lg:row-start-2 bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8 h-fit">
+                  <div className="mb-6 space-y-4 text-sm">
                     {/* ATIVAÇÃO — Pagamento único do plano (cartão à vista ou 12x)
                         Alguns consultores preferem tratar esse valor na conversa
                         em vez de mostrar junto da mensalidade (ver ocultarAtivacao). */}
@@ -1752,8 +1813,11 @@ export default function CotacaoPage() {
                   <ContratarCTA
                     label="Gostei! Quero sair protegido 🛡️"
                     variant="verde"
-                    wrapClass="mb-4"
+                    wrapClass="mb-3"
                   />
+
+                  {/* Fim da página é onde quem não decidiu ia embora. */}
+                  <DuvidaCTA wrapClass="mb-4" />
 
                   <div className="flex items-center justify-center gap-2 text-xs text-[#94A3B8]">
                     <Lock className="w-3.5 h-3.5" />
