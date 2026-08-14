@@ -9,20 +9,23 @@ import type { Consultor } from './consultor'
  * pro numero da casa — em silencio. Site vendido entregando lead pro numero
  * errado e o pior defeito possivel deste produto.
  *
- * REGRA: o BANCO manda. Este espelho so entra quando a consulta falha (nunca
- * quando ela responde "nao existe"). Consequencia aceita: durante uma queda do
- * banco, um cancelamento recente pode continuar no ar por algumas horas. Servir
- * um site cancelado e recuperavel; entregar o lead de um consultor pago pra
- * outra pessoa, nao.
+ * REGRA: o BANCO manda. Este espelho so entra quando a consulta FALHA (nunca
+ * quando ela responde "nao existe").
  *
- * COMO ATUALIZAR: ao cadastrar, cancelar ou trocar o numero de um consultor,
- * rode a consulta abaixo e cole o resultado aqui. Espelho velho nao quebra nada
- * enquanto o banco estiver de pe — ele so e lido quando o banco cai.
+ * O `status` aqui e copia fiel do banco — inclusive `pendente`. Espelho NUNCA
+ * promove ninguem a `ativo`: quem poe site no ar e o webhook do Asaas, depois
+ * do pagamento confirmado (ver REGRA 0 no CLAUDE.md). Copiar um `pendente` como
+ * `ativo` seria liberar site sem pagamento pela porta dos fundos.
  *
- *   select slug, nome, whatsapp, powerlink_id, status
+ * COMO ATUALIZAR — cole a saida desta consulta, sem editar status na mao:
+ *
+ *   select slug, nome, whatsapp, powerlink_id, status, ocultar_ativacao
  *     from sites_consultor order by slug;
  *
- * Ultima leitura: 2026-08-14.
+ * Espelho velho nao quebra nada enquanto o banco estiver de pe: ele so e lido
+ * quando o banco cai.
+ *
+ * Ultima leitura: 2026-08-14 (14 sites).
  */
 export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
   andersonagripino: {
@@ -38,7 +41,7 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     nome: 'Anselmo da Silva Cavalcante',
     whatsapp: '5521970396300',
     powerlinkId: 'bqYyppoq',
-    status: 'ativo',
+    status: 'pendente',
     ocultarAtivacao: false,
   },
   brunoferreirasoares: {
@@ -46,7 +49,15 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     nome: 'Bruno ferreira Soares',
     whatsapp: '5521982206531',
     powerlinkId: 'zDxM7WYr',
-    status: 'ativo',
+    status: 'pendente',
+    ocultarAtivacao: false,
+  },
+  cleitonmoura: {
+    slug: 'cleitonmoura',
+    nome: 'Cleiton Moura',
+    whatsapp: '5573999977792',
+    powerlinkId: 'OERB66WE',
+    status: 'pendente',
     ocultarAtivacao: false,
   },
   elienaigomes: {
@@ -54,7 +65,7 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     nome: 'Elienai Galdino Gomes',
     whatsapp: '5521992689955',
     powerlinkId: 'RE0KX6Zr',
-    status: 'ativo',
+    status: 'pendente',
     ocultarAtivacao: false,
   },
   fabriciosilva: {
@@ -63,6 +74,14 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     whatsapp: '5521970378799',
     powerlinkId: 'bqe7MjWr',
     status: 'ativo',
+    ocultarAtivacao: false,
+  },
+  gustavo21go: {
+    slug: 'gustavo21go',
+    nome: 'Luiz Gustavo Rodrigues Gomes',
+    whatsapp: '5521981693332',
+    powerlinkId: 'XDmd05aq',
+    status: 'pendente',
     ocultarAtivacao: false,
   },
   leticyathayene: {
@@ -103,13 +122,21 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     whatsapp: '5521969779519',
     powerlinkId: 'VqLRwAvr',
     status: 'ativo',
-    ocultarAtivacao: false,
+    ocultarAtivacao: true,
   },
   regionalgustavosantos: {
     slug: 'regionalgustavosantos',
     nome: 'Gustavo Santos',
     whatsapp: '5521973234213',
     powerlinkId: 'RD8lOPxD',
+    status: 'pendente',
+    ocultarAtivacao: false,
+  },
+  rogevalone: {
+    slug: 'rogevalone',
+    nome: 'ROGE VALONE',
+    whatsapp: '5521991809353',
+    powerlinkId: 'VDlm3nYr',
     status: 'ativo',
     ocultarAtivacao: false,
   },
