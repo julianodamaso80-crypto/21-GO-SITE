@@ -265,11 +265,11 @@ export function FormularioSite() {
                 {copiado === 'boleto' ? 'Copiado!' : 'Copiar linha digitável'}
               </button>
             )}
-            {cobranca.vencimento && (
-              <p className="qs-pDim qs-venc">
-                Vence em {new Date(`${cobranca.vencimento}T00:00:00`).toLocaleDateString('pt-BR')}
-              </p>
-            )}
+            {/* Sem data de vencimento na tela de venda (ordem do dono,
+                14/08/2026): o consultor ve o VALOR, nunca a data. Data de
+                primeira mensalidade dava a leitura de "so pago la na frente" e
+                empurrava o pagamento pra depois. O `vencimento` continua vindo
+                da API pro nosso controle — so nao e exibido. */}
           </div>
         )}
 
