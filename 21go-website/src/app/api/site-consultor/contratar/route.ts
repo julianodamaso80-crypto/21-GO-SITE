@@ -105,6 +105,28 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // ─── Nunca dois "gustavo" ──────────────────────────────────────────────────
+  // Ordem do dono (14/08/2026): endereco ocupado nao vira "gustavo2" — o
+  // segundo completa com o sobrenome. Esta checagem vem ANTES de criar cliente
+  // e assinatura no Asaas: sem ela o consultor so descobria o problema depois
+  // de a cobranca ja existir, e o erro que aparecia era o generico da corrida
+  // do insert ("escolha outro"), que nao dizia o que fazer.
+  const { data: slugTomado } = await supa
+    .from('sites_consultor')
+    .select('slug')
+    .eq('slug', slug)
+    .maybeSingle()
+
+  if (slugTomado) {
+    return NextResponse.json(
+      {
+        erro: `21go.com.br/${slug} já é de outro consultor. Complete com o seu sobrenome — ex: ${slug}silva.`,
+        slugOcupado: true,
+      },
+      { status: 409 },
+    )
+  }
+
   const whatsapp = '55' + soDigitos(telefone).replace(/^55/, '')
 
   // ─── Cobranca ──────────────────────────────────────────────────────────────
@@ -146,10 +168,14 @@ export async function POST(req: NextRequest) {
     })
 
     if (error) {
-      // 23505 = alguem pegou o slug entre a checagem e o insert.
+      // 23505 = alguem pegou o slug entre a checagem acima e o insert. E o
+      // UNIQUE do banco que garante, de verdade, que nao existem dois iguais.
       if (error.code === '23505') {
         return NextResponse.json(
-          { erro: 'esse endereço acabou de ser reservado. Escolha outro.' },
+          {
+            erro: `21go.com.br/${slug} acabou de ser reservado por outro consultor. Complete com o seu sobrenome.`,
+            slugOcupado: true,
+          },
           { status: 409 },
         )
       }

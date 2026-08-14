@@ -29,6 +29,9 @@ type Achado = {
   slug?: string
   status?: string
   slugSugerido?: string
+  /** O nome do consultor ja e endereco de outra pessoa (ver avisoSlug). */
+  slugOcupado?: boolean
+  avisoSlug?: string | null
 }
 
 type Cobranca = {
@@ -377,6 +380,14 @@ export function FormularioSite() {
           <span className="qs-etiqueta">Última pergunta</span>
           <h2 className="qs-h2">Qual vai ser seu endereço?</h2>
           <p className="qs-p">Escolha com carinho: depois de criado, ele não muda.</p>
+          {/* Homônimo: o campo vem vazio de propósito e o consultor completa com
+              o sobrenome. Nunca sugerimos "gustavo2" — número no endereço não
+              identifica ninguém (ordem do dono, 14/08/2026). */}
+          {achado?.avisoSlug && (
+            <p className="qs-p" style={{ color: '#B45309', fontWeight: 600 }}>
+              {achado.avisoSlug}
+            </p>
+          )}
           <div className="qs-slugBox">
             <span className="qs-slugPrefixo">21go.com.br/</span>
             <input

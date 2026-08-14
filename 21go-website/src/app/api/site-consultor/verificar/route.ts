@@ -75,35 +75,51 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  const sugestao = await sugerirSlug(slugDoNome(consultor.nome))
+
   return NextResponse.json({
     encontrado: true,
     nome: nomeMascarado(consultor.nome),
     telefone: telefoneMascarado(consultor.telefone),
-    slugSugerido: await slugLivre(slugDoNome(consultor.nome)),
+    slugSugerido: sugestao.slug,
+    slugOcupado: sugestao.ocupado,
+    avisoSlug: sugestao.aviso,
   })
 }
 
 /**
- * Um slug que ainda nao existe.
+ * Sugere o endereco do site a partir do nome do consultor.
  *
- * Homonimo acontece — a 21Go tem milhares de consultores. O primeiro "joaosilva"
- * fica com o slug limpo e o segundo vira "joaosilva2". Quem chegou antes nunca
- * perde o link que ja imprimiu no cartao.
+ * Homonimo acontece — a 21Go tem milhares de consultores. Antes o segundo
+ * "gustavo" virava "gustavo2" automaticamente, em silencio. Isso saiu (ordem do
+ * dono, 14/08/2026): **numero no endereco nao identifica ninguem**, e o
+ * consultor descobria o "2" so depois de ja ter o link impresso no cartao.
+ *
+ * Agora o nome ocupado devolve `ocupado: true` e um aviso pedindo o sobrenome.
+ * Quem chegou primeiro fica com o endereco limpo; o segundo escolhe um endereco
+ * que de fato o identifica.
  */
-async function slugLivre(base: string): Promise<string> {
+async function sugerirSlug(
+  base: string,
+): Promise<{ slug: string; ocupado: boolean; aviso: string | null }> {
   const limpo = base || 'consultor'
   const supa = supabaseAdmin()
 
-  const { data } = await supa
+  const { data, error } = await supa
     .from('sites_consultor')
     .select('slug')
-    .like('slug', `${limpo}%`)
+    .eq('slug', limpo)
+    .maybeSingle()
 
-  const ocupados = new Set((data || []).map((r) => r.slug as string))
-  if (!ocupados.has(limpo)) return limpo
+  // Banco fora do ar nao pode inventar que o endereco esta livre: quem confirma
+  // de verdade e o UNIQUE do insert, la no /contratar.
+  if (error) return { slug: limpo, ocupado: false, aviso: null }
 
-  for (let n = 2; n < 100; n++) {
-    if (!ocupados.has(`${limpo}${n}`)) return `${limpo}${n}`
+  if (!data) return { slug: limpo, ocupado: false, aviso: null }
+
+  return {
+    slug: '',
+    ocupado: true,
+    aviso: `Já existe um site em 21go.com.br/${limpo}. Complete com o seu sobrenome para o endereço identificar você.`,
   }
-  return `${limpo}${Date.now().toString().slice(-5)}`
 }
