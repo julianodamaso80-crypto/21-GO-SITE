@@ -1,5 +1,6 @@
 import 'server-only'
 import { supabaseAdmin } from './supabase-admin'
+import { CONSULTORES_FALLBACK } from './consultores-fallback'
 
 /**
  * O consultor dono do site em `21go.com.br/<slug>`.
@@ -57,11 +58,18 @@ export async function resolverConsultor(slug: string): Promise<Consultor | null>
 
   let valor: Consultor | null = null
   try {
-    const { data } = await supabaseAdmin()
+    const { data, error } = await supabaseAdmin()
       .from('sites_consultor')
       .select('slug, nome, whatsapp, powerlink_id, status, ocultar_ativacao')
       .eq('slug', slug)
       .maybeSingle()
+
+    // O cliente do Supabase NAO lanca excecao em falha de HTTP: ele devolve
+    // `{ data: null, error }`. Sem este `throw`, um 503 do banco chegava aqui
+    // como "data vazio" e virava "consultor nao existe" — o lead de um site
+    // vendido ia calado pro numero da casa, e o null ainda era gravado no cache
+    // por 5 minutos, mantendo o erro depois de o banco voltar.
+    if (error) throw new Error(error.message)
 
     if (data) {
       valor = {
@@ -74,11 +82,16 @@ export async function resolverConsultor(slug: string): Promise<Consultor | null>
       }
     }
   } catch (err) {
-    // Banco fora do ar nao pode derrubar o site do consultor: mantem o valor
-    // velho no ar em vez de dar 404 num link que ele ja espalhou por ai.
-    console.error('[consultor] lookup falhou', (err as Error).message)
+    // Banco fora do ar nao pode derrubar o site do consultor NEM entregar o
+    // lead dele pra outra pessoa. Ordem de preferencia, da melhor pra pior:
+    //   1. ultimo valor conhecido (mesmo vencido)
+    //   2. espelho da tabela no codigo (consultores-fallback.ts)
+    //   3. null — so pra slug que nunca existiu
+    // Nada disso e gravado no cache: se gravasse, o erro sobreviveria a volta
+    // do banco pelos 5 minutos do TTL.
+    console.error(`[consultor] lookup de "${slug}" falhou:`, (err as Error).message)
     if (emCache) return emCache.valor
-    return null
+    return CONSULTORES_FALLBACK[slug] ?? null
   }
 
   cache.set(slug, { valor, expiraEm: agora + TTL_MS })
