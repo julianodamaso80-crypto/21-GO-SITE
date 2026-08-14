@@ -5,6 +5,27 @@ Toda decisão de código, design, UX e arquitetura deve ser guiada por este docu
 
 ---
 
+## 🚨 REGRA 0 — SITE DE CONSULTOR SÓ VAI AO AR COM PAGAMENTO CONFIRMADO
+
+> Primeiro confere o pagamento no Asaas. **Só depois** cria/ativa o site. Sem exceção.
+
+Quem ativa um site de consultor é o **webhook do Asaas**, nunca uma pessoa e nunca o agente.
+
+**Proibido, sempre:**
+- `update sites_consultor set status='ativo' where status='pendente'` — ou qualquer ativação em massa.
+- Ativar um slug na mão porque "está fora do ar".
+- Promover status ao sincronizar o espelho `src/lib/consultores-fallback.ts`.
+
+**`pendente` NÃO é "fora do ar" — é "não pagou".** O site serve, mas `estaNoAr()` dá `false` e o botão de WhatsApp cai no número da casa. **Isso é o comportamento correto, não é bug.** Não "consertar".
+
+- `estaNoAr()` = `ativo` **ou** `inadimplente` (inadimplente segue no ar, o corte é no 5º dia).
+- Ao investigar "site fora do ar", separar sempre **indisponibilidade técnica** (container, DNS, build, imagem) de **estado de cobrança** (`pendente`, `cancelado`). Só a primeira é para consertar.
+- Se um pedido implicar ativar alguém sem pagamento, **parar e falar** — mesmo sob "não me faça perguntas".
+
+> Origem: em 14/08/2026 o agente rodou o UPDATE acima e liberou 4 sites de gente que clicou pra comprar e não pagou, ao ler "todos têm que estar ativos no ar" como ordem de mudar status. Estado de cobrança foi confundido com disponibilidade.
+
+---
+
 ## 1. O QUE É A 21Go
 
 A 21Go é uma associação de proteção veicular no Rio de Janeiro com 20+ anos de mercado. NÃO é seguradora — funciona por mutualismo: todos os associados contribuem mensalmente para um fundo comum, e quando alguém sofre um sinistro (roubo, colisão, incêndio), o fundo cobre. Quanto mais associados, menor o rateio mensal para cada um.
