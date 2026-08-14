@@ -38,7 +38,7 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     nome: 'Anselmo da Silva Cavalcante',
     whatsapp: '5521970396300',
     powerlinkId: 'bqYyppoq',
-    status: 'pendente',
+    status: 'ativo',
     ocultarAtivacao: false,
   },
   brunoferreirasoares: {
@@ -46,7 +46,7 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     nome: 'Bruno ferreira Soares',
     whatsapp: '5521982206531',
     powerlinkId: 'zDxM7WYr',
-    status: 'pendente',
+    status: 'ativo',
     ocultarAtivacao: false,
   },
   elienaigomes: {
@@ -54,7 +54,7 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     nome: 'Elienai Galdino Gomes',
     whatsapp: '5521992689955',
     powerlinkId: 'RE0KX6Zr',
-    status: 'pendente',
+    status: 'ativo',
     ocultarAtivacao: false,
   },
   fabriciosilva: {
@@ -110,7 +110,7 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     nome: 'Gustavo Santos',
     whatsapp: '5521973234213',
     powerlinkId: 'RD8lOPxD',
-    status: 'pendente',
+    status: 'ativo',
     ocultarAtivacao: false,
   },
 }
