@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { esquecerConsultor } from '@/lib/consultor'
 import { entregarSeOTestePassar } from '@/lib/entregar-site'
+import { cobrancaEmAberto } from '@/lib/asaas'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -114,9 +115,24 @@ async function aplicar(tipo: string, assinatura: string): Promise<void> {
 
   switch (tipo) {
     case 'PAYMENT_CONFIRMED':
-    case 'PAYMENT_RECEIVED':
-      mudanca = { status: 'ativo', cancelado_em: null, updated_at: new Date().toISOString() }
+    case 'PAYMENT_RECEIVED': {
+      // `proximo_vencimento` TEM que andar junto com o pagamento. Sem isto ele
+      // ficava congelado na parcela que a pessoa acabou de quitar, e o cron
+      // (que conta os 5 dias a partir dele) passava a tratar quem pagou como
+      // inadimplente: em 15/08/2026 quatro consultores em dia receberam
+      // "sua mensalidade vence hoje", e em 5 dias teriam o site cortado.
+      const proxima = await cobrancaEmAberto(assinatura).catch(() => null)
+      mudanca = {
+        status: 'ativo',
+        cancelado_em: null,
+        updated_at: new Date().toISOString(),
+        // Sem cobranca aberta o ciclo acabou de fechar e a proxima ainda nao
+        // existe: limpar e melhor que manter data vencida, porque o cron pula
+        // quem esta com `proximo_vencimento` nulo.
+        proximo_vencimento: proxima?.vencimento ?? null,
+      }
       break
+    }
 
     case 'PAYMENT_OVERDUE':
       // So marca. O corte e no 5o dia e quem conta os dias e o cron — nao este

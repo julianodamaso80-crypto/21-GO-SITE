@@ -143,7 +143,16 @@ export async function cobrancaEmAberto(
     data?: { id?: string; invoiceUrl?: string; dueDate?: string; status?: string }[]
   }>(`/subscriptions/${encodeURIComponent(assinaturaId)}/payments`, { method: 'GET' })
 
-  const lista = r.data || []
+  // ⚠️ A API devolve as cobrancas da MAIS NOVA pra mais antiga. Sem ordenar, um
+  // `find` pega a do mes QUE VEM em vez da que vence agora — foi o que
+  // aconteceu em 15/08/2026: o checkout mostrou o Pix de setembro, o consultor
+  // pagou, e agosto continuou em aberto. Como este mesmo vencimento vira
+  // `proximo_vencimento`, o corte por inadimplencia tambem passava a contar do
+  // mes seguinte, dando um mes de graca pra quem nao paga.
+  const porVencimento = (a: { dueDate?: string }, b: { dueDate?: string }) =>
+    (a.dueDate || '').localeCompare(b.dueDate || '')
+
+  const lista = (r.data || []).slice().sort(porVencimento)
   const aberta = lista.find((p) => p.status === 'PENDING' || p.status === 'OVERDUE') || lista[0]
   return {
     id: aberta?.id ?? null,

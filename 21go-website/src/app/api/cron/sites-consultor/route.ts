@@ -87,7 +87,37 @@ export async function GET(req: NextRequest) {
   }
 
   for (const s of linhas) {
-    if (!s.proximo_vencimento) continue
+    // ─── A verdade vem do Asaas, nao da coluna ───────────────────────────────
+    // `proximo_vencimento` e uma copia, e copia envelhece: ate 15/08/2026 o
+    // webhook nao a atualizava no pagamento, entao ela ficava congelada na
+    // parcela JA QUITADA. Naquele dia quatro consultores em dia receberam
+    // "sua mensalidade vence hoje", e em 5 dias teriam a assinatura cancelada
+    // e o site derrubado. Cobrar e cortar sao acoes que nao se desfazem: elas
+    // passaram a exigir uma cobranca em aberto confirmada na fonte.
+    if (!s.asaas_subscription_id) continue
+
+    const aberta = await cobrancaEmAberto(s.asaas_subscription_id).catch(() => null)
+
+    // Asaas fora do ar: nao da pra saber quem esta devendo. Nao corta as cegas.
+    if (!aberta) {
+      console.warn(`[cron sites] ${s.slug}: nao consegui ler o Asaas — pulando`)
+      relatorio.erros++
+      continue
+    }
+
+    // Sem cobranca em aberto = esta em dia. Zera a data velha pra coluna nao
+    // continuar mentindo, e segue sem avisar nem cortar.
+    if (!aberta.vencimento) {
+      if (s.proximo_vencimento) await gravarVencimento(s.slug, null)
+      continue
+    }
+
+    // Divergiu: a coluna estava velha. Corrige de passagem — assim o proprio
+    // cron cura o dado em vez de repetir o erro todo dia.
+    if (aberta.vencimento !== s.proximo_vencimento) {
+      await gravarVencimento(s.slug, aberta.vencimento)
+      s.proximo_vencimento = aberta.vencimento
+    }
 
     const venc = new Date(`${s.proximo_vencimento}T00:00:00`)
     const diasVencido = Math.floor((hoje.getTime() - venc.getTime()) / 86_400_000)
@@ -149,6 +179,20 @@ async function avisarVencimento(s: Linha): Promise<void> {
       updated_at: new Date().toISOString(),
     })
     .eq('slug', s.slug)
+}
+
+/**
+ * Alinha a copia local com o Asaas.
+ *
+ * `null` quando nao ha nada em aberto: o laco pula quem esta sem
+ * `proximo_vencimento`, entao zerar e o jeito de dizer "esta em dia" sem
+ * deixar uma data vencida ali dando ordem de corte.
+ */
+async function gravarVencimento(slug: string, vencimento: string | null): Promise<void> {
+  await supabaseAdmin()
+    .from('sites_consultor')
+    .update({ proximo_vencimento: vencimento, updated_at: new Date().toISOString() })
+    .eq('slug', slug)
 }
 
 async function cortar(s: Linha): Promise<void> {
