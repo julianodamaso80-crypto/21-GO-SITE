@@ -8,7 +8,8 @@
     "prebuild": "node scripts/verificar-consultor.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sync:consultores": "node scripts/sync-consultores-fallback.mjs"
   },
   "keywords": [],
   "author": "",
