@@ -235,7 +235,22 @@ export async function POST(req: NextRequest) {
   //    reduz drasticamente o risco de queda/ban do chip. O lead continua salvo
   //    no PowerCRM + Supabase pra atendimento. Pra religar o disparo automático,
   //    defina WHATSAPP_AUTO_DISPATCH=true no ambiente.
-  if (process.env.WHATSAPP_AUTO_DISPATCH === 'true') {
+  // ─── Site de consultor NUNCA dispara pelo nosso chip ───────────────────────
+  // REGRA (ordem do dono, 17/08/2026): num site vendido, TODO contato e do
+  // consultor. Nosso unico chip conectado na Evolution e o da casa (site4824),
+  // entao qualquer disparo automatico chega ao cliente como "consultora
+  // leticya" — e o lead que o consultor pagou pra ter vira lead da casa.
+  //
+  // Aconteceu em 17/08/2026: um BYD simulado em /andersonagripino recebeu texto
+  // + PDF do 4824. O consultor foi passado pra tras pelo proprio sistema.
+  //
+  // No site de consultor o contato acontece pelo botao (wa.me do numero DELE) —
+  // esse caminho ja funciona e nao depende de Evolution nenhuma.
+  const siteDeConsultor = Boolean(body.consultorSlug)
+
+  if (siteDeConsultor) {
+    console.log(`[lead] site de consultor (${body.consultorSlug}) — nenhum disparo nosso`)
+  } else if (process.env.WHATSAPP_AUTO_DISPATCH === 'true') {
     ;(async () => {
       try {
         await sendQuotePdfWhatsApp(body, leadId)
@@ -248,7 +263,7 @@ export async function POST(req: NextRequest) {
     // 07/08/2026): carro BYD recebe o texto + o PDF da simulação SEM depender do
     // clique em "Quero contratar". É a única marca que dispara sozinha — todas
     // as outras seguem inbound-first, o cliente é quem inicia. Desliga com
-    // BYD_AUTO_DISPATCH=false.
+    // BYD_AUTO_DISPATCH=false. Vale só nos sites da casa (ver acima).
     ;(async () => {
       try {
         await sendBydQuoteWithPdf(body, supaResult.lead_id || leadId, supaResult.ok)

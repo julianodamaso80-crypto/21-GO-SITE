@@ -139,8 +139,35 @@ export async function garantirAssinatura(
 export async function cobrancaEmAberto(
   assinaturaId: string,
 ): Promise<{ id: string | null; link: string | null; vencimento: string | null; status: string | null }> {
+  return (await situacaoDeCobranca(assinaturaId)).aberta
+}
+
+const PAGOS = ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH']
+
+/**
+ * Retrato de cobranca da assinatura numa unica ida ao Asaas: o que esta em
+ * aberto e QUANDO foi o ultimo pagamento.
+ *
+ * A data do ultimo pagamento existe por causa da regra dos 30 dias (ordem do
+ * dono, 17/08/2026): depois de pago, ninguem pode ser cobrado de novo antes de
+ * 30 dias. Sem ela o sistema decidia "esta devendo" so por existir parcela
+ * aberta — e em 17/08/2026 cobrou o hugoaguiar, que tinha pagado: o dinheiro
+ * dele caiu na parcela de setembro e a de agosto continuou aberta.
+ */
+export async function situacaoDeCobranca(assinaturaId: string): Promise<{
+  aberta: { id: string | null; link: string | null; vencimento: string | null; status: string | null }
+  ultimoPagamentoEm: string | null
+}> {
   const r = await chamar<{
-    data?: { id?: string; invoiceUrl?: string; dueDate?: string; status?: string }[]
+    data?: {
+      id?: string
+      invoiceUrl?: string
+      dueDate?: string
+      status?: string
+      paymentDate?: string
+      confirmedDate?: string
+      clientPaymentDate?: string
+    }[]
   }>(`/subscriptions/${encodeURIComponent(assinaturaId)}/payments`, { method: 'GET' })
 
   // ⚠️ A API devolve as cobrancas da MAIS NOVA pra mais antiga. Sem ordenar, um
@@ -154,11 +181,26 @@ export async function cobrancaEmAberto(
 
   const lista = (r.data || []).slice().sort(porVencimento)
   const aberta = lista.find((p) => p.status === 'PENDING' || p.status === 'OVERDUE') || lista[0]
+
+  // A data que vale e a do PAGAMENTO, nao a do vencimento: quem paga adiantado
+  // ou atrasado tem que contar os 30 dias de quando o dinheiro entrou. Cai pro
+  // vencimento so quando o Asaas nao devolve nenhuma das datas de pagamento.
+  const ultimoPagamentoEm =
+    lista
+      .filter((p) => PAGOS.includes(p.status || ''))
+      .map((p) => p.paymentDate || p.confirmedDate || p.clientPaymentDate || p.dueDate || '')
+      .filter(Boolean)
+      .sort()
+      .pop() ?? null
+
   return {
-    id: aberta?.id ?? null,
-    link: aberta?.invoiceUrl ?? null,
-    vencimento: aberta?.dueDate ?? null,
-    status: aberta?.status ?? null,
+    aberta: {
+      id: aberta?.id ?? null,
+      link: aberta?.invoiceUrl ?? null,
+      vencimento: aberta?.dueDate ?? null,
+      status: aberta?.status ?? null,
+    },
+    ultimoPagamentoEm,
   }
 }
 

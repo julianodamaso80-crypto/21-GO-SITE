@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { esquecerConsultor } from '@/lib/consultor'
-import { cancelarAssinatura, cobrancaEmAberto, saudeDoWebhook } from '@/lib/asaas'
+import { cancelarAssinatura, cobrancaEmAberto, situacaoDeCobranca, saudeDoWebhook } from '@/lib/asaas'
 import { avisar, textoVenceHoje, textoCancelado } from '@/lib/whatsapp-avisos'
 import { entregarSeOTestePassar } from '@/lib/entregar-site'
 
@@ -24,6 +24,12 @@ export const dynamic = 'force-dynamic'
  */
 
 const DIAS_ATE_CORTAR = 5
+
+/**
+ * O ciclo e mensal (ordem do dono, 17/08/2026): quem pagou nao pode ser cobrado
+ * de novo antes disto. 30 dias, nunca menos.
+ */
+const DIAS_DO_CICLO = 30
 
 /** Pra onde vai o alerta quando a cobranca para de funcionar. */
 const DONO = '5521992208062'
@@ -96,13 +102,41 @@ export async function GET(req: NextRequest) {
     // passaram a exigir uma cobranca em aberto confirmada na fonte.
     if (!s.asaas_subscription_id) continue
 
-    const aberta = await cobrancaEmAberto(s.asaas_subscription_id).catch(() => null)
+    const situacao = await situacaoDeCobranca(s.asaas_subscription_id).catch(() => null)
 
     // Asaas fora do ar: nao da pra saber quem esta devendo. Nao corta as cegas.
-    if (!aberta) {
+    if (!situacao) {
       console.warn(`[cron sites] ${s.slug}: nao consegui ler o Asaas — pulando`)
       relatorio.erros++
       continue
+    }
+
+    const { aberta, ultimoPagamentoEm } = situacao
+
+    // ─── REGRA DOS 30 DIAS ────────────────────────────────────────────────────
+    // Ordem do dono (17/08/2026): depois de pago, a proxima cobranca e em 30
+    // dias. Ninguem pode ser cobrado num periodo menor — nem avisado, nem
+    // cortado.
+    //
+    // Esta trava existe porque "tem parcela aberta" NAO e o mesmo que "esta
+    // devendo": em 17/08/2026 o hugoaguiar levou aviso tendo pagado, porque o
+    // dinheiro dele caiu na parcela de setembro e a de agosto ficou aberta. A
+    // unica pergunta que importa e "quando essa pessoa pagou pela ultima vez".
+    if (ultimoPagamentoEm) {
+      const diasDoPagamento = Math.floor(
+        (hoje.getTime() - new Date(`${ultimoPagamentoEm.slice(0, 10)}T00:00:00`).getTime()) /
+          86_400_000,
+      )
+      if (diasDoPagamento < DIAS_DO_CICLO) {
+        // Mantem a coluna alinhada, mas nao cobra nem corta.
+        if (aberta.vencimento !== s.proximo_vencimento) {
+          await gravarVencimento(s.slug, aberta.vencimento)
+        }
+        console.log(
+          `[cron sites] ${s.slug}: pagou ha ${diasDoPagamento} dia(s) — dentro do ciclo, nao cobro`,
+        )
+        continue
+      }
     }
 
     // Sem cobranca em aberto = esta em dia. Zera a data velha pra coluna nao
