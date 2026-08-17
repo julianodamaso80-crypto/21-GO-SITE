@@ -56,13 +56,28 @@ export function middleware(req: NextRequest) {
   }
 
   if (!primeiro || ROTAS_RESERVADAS.has(primeiro) || !FORMATO_SLUG.test(primeiro)) {
-    const res = NextResponse.next()
-    // Home da CASA: o visitante saiu do site do consultor de propria vontade.
-    // As demais paginas da casa (`/cotacao`, `/faq`) NAO limpam — e justamente
-    // nelas que o clique perdido pre-hidratacao vai parar, e o cookie e o que
-    // devolve o lead pro dono (ver COOKIE_DONO).
-    if (pathname === '/') res.cookies.delete(COOKIE_DONO)
-    return res
+    /**
+     * Quem entrou pelo site de um consultor VOLTA pro site dele.
+     *
+     * Regra do dono (12/08/2026): *"uma vez que ele enviou o link, esse link vai
+     * ser respeitado pra sempre, independente de onde ele clica"*.
+     *
+     * O logo aponta pra `/` no HTML prerenderizado e so vira `/<slug>` depois da
+     * hidratacao. Quem clica antes disso caia na home da CASA — o consultor
+     * pagou o anuncio e a casa ficava com a visita. Aqui o servidor devolve, sem
+     * depender de hidratacao nenhuma.
+     *
+     * So a HOME redireciona. As outras paginas da casa (`/cotacao`, `/faq`)
+     * seguem servindo normalmente: o lead e o botao de WhatsApp ja voltam pro
+     * dono pelo cookie (ver `/api/vehicle/lead` e `/api/wa`), e redirecionar
+     * tudo quebraria fluxos que sao da casa de proposito — `/quero-site`, por
+     * exemplo, e onde o proprio consultor compra o site.
+     */
+    const dono = req.cookies.get(COOKIE_DONO)?.value
+    if (pathname === '/' && dono && FORMATO_SLUG.test(dono)) {
+      return NextResponse.redirect(new URL(`/${dono}${search}`, req.url))
+    }
+    return NextResponse.next()
   }
 
   /**
