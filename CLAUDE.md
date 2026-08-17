@@ -24,9 +24,16 @@ Quem ativa um site de consultor é o **webhook do Asaas**, nunca uma pessoa e nu
 
 > Origem: em 14/08/2026 o agente rodou o UPDATE acima e liberou 4 sites de gente que clicou pra comprar e não pagou, ao ler "todos têm que estar ativos no ar" como ordem de mudar status. Estado de cobrança foi confundido com disponibilidade.
 
-### REGRA 0.1 — Todo contato de `/fulano` é do fulano
+### REGRA 0.1 — Tudo de `/fulano` é do fulano
 
-Num site vendido, **todo** contato vai pro número que o consultor cadastrou.
+Num site vendido, **todo** contato vai pro número do consultor **e todo lead nasce no Power dele, pelo powerlink dele**. Regra absoluta.
+
+**⚠️ A armadilha: a corrida de hidratação.** O HTML é prerenderizado e compartilhado — o mesmo arquivo serve `/`, `/manghi` e `/regionalsp`. A home de qualquer consultor sai com **22 links `href="/cotacao"` sem slug**; ele só entra depois que a página hidrata (`ConsultorProvider` lê `window.location.pathname`). **Quem clica antes disso cai na cotação da CASA** — lead vai pro PowerLink da 21Go e o botão de WhatsApp pro número da casa. É intermitente e silencioso.
+
+- O servidor sempre sabe de quem é a visita: o middleware carimba o cookie **`c21go_dono`**, e `/api/wa` e `/api/vehicle/lead` leem esse cookie quando o slug não veio pela URL.
+- **Nunca confie só no slug da URL/corpo em código novo** — sempre com o cookie como rede.
+- Antes de culpar o powerlink, cheque o slug: os 11 sites já estavam com `teste_ok: true`.
+- Teste que reproduz: `curl -c ck -o /dev/null .../manghi` e depois `curl -b ck -i ".../api/wa?text=t"` (sem `?c=`) tem que dar o número do Manghi.
 
 **Consequência: site de consultor NÃO dispara nada pelo nosso chip.** O único número conectado na Evolution é o da casa (`site4824`) — qualquer envio automático chega ao cliente assinado *"consultora leticya"*, e o lead que o consultor pagou pra ter é abordado por outra pessoa. No site dele o contato acontece pelo **botão** (`/api/wa?c=<slug>` → `wa.me` dele), que não usa Evolution.
 
