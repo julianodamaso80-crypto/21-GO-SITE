@@ -24,6 +24,30 @@ Quem ativa um site de consultor é o **webhook do Asaas**, nunca uma pessoa e nu
 
 > Origem: em 14/08/2026 o agente rodou o UPDATE acima e liberou 4 sites de gente que clicou pra comprar e não pagou, ao ler "todos têm que estar ativos no ar" como ordem de mudar status. Estado de cobrança foi confundido com disponibilidade.
 
+### REGRA 0.1 — Todo contato de `/fulano` é do fulano
+
+Num site vendido, **todo** contato vai pro número que o consultor cadastrou.
+
+**Consequência: site de consultor NÃO dispara nada pelo nosso chip.** O único número conectado na Evolution é o da casa (`site4824`) — qualquer envio automático chega ao cliente assinado *"consultora leticya"*, e o lead que o consultor pagou pra ter é abordado por outra pessoa. No site dele o contato acontece pelo **botão** (`/api/wa?c=<slug>` → `wa.me` dele), que não usa Evolution.
+
+- Guarda em `vehicle/lead/route.ts`: `const siteDeConsultor = Boolean(body.consultorSlug)` corta BYD e `WHATSAPP_AUTO_DISPATCH`.
+- Ao criar qualquer envio novo, pergunte antes: *"isso pode sair num site de consultor?"*
+
+> Origem: em 17/08/2026 um BYD simulado em `/andersonagripino` recebeu texto + PDF do 4824.
+
+### REGRA 0.2 — Cobrança é de 30 em 30 dias, 1x por mês
+
+Depois de pago, a próxima cobrança é em **30 dias**. Ninguém é cobrado, avisado ou cortado num período menor.
+
+**A pergunta certa é "quando pagou pela última vez", nunca "tem parcela aberta"** — as duas divergem, porque o Asaas cria a parcela do mês seguinte junto e o dinheiro pode cair na errada.
+
+- Use `situacaoDeCobranca()` (`lib/asaas.ts`), que devolve a parcela aberta **e** `ultimoPagamentoEm`. `DIAS_DO_CICLO = 30` no cron.
+- A data é a do **pagamento**, não a do vencimento.
+- A API do Asaas devolve as cobranças **da mais nova pra mais antiga**: sempre ordenar por `dueDate` antes de escolher, senão o checkout mostra o Pix do mês seguinte.
+- Cobrar e cortar não se desfazem. Asaas fora do ar = pula, nunca age às cegas.
+
+> Origem: em 15/08/2026 o cron cobrou 4 consultores em dia, e em 17/08 cobrou o `hugoaguiar`, que havia pagado — o dinheiro dele caiu na parcela de setembro.
+
 ---
 
 ## 1. O QUE É A 21Go
