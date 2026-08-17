@@ -1,21 +1,17 @@
 import type { Consultor } from './consultor'
 
 /**
- * Espelho da tabela `sites_consultor`, usado SOMENTE quando o banco falha.
+ * Espelho da tabela sites_consultor, usado SOMENTE quando o banco falha.
  *
  * ARQUIVO GERADO — nao edite na mao. Regenere com:
  *   npm run sync:consultores
  *
- * Editar na mao foi o que ja produziu status errado e `ocultarAtivacao`
- * trocado. Como as vendas entram o dia inteiro, o arquivo envelhece rapido:
- * regenerar e mais barato e mais seguro do que conferir linha a linha.
- *
  * REGRA: o BANCO manda. Este espelho so entra quando a consulta FALHA (nunca
- * quando ela responde "nao existe"). O `status` e copia fiel — `pendente`
- * inclusive. Espelho NUNCA promove ninguem a `ativo`: quem poe site no ar e o
+ * quando ela responde que nao existe). O status e copia fiel — pendente
+ * inclusive. Espelho NUNCA promove ninguem a ativo: quem poe site no ar e o
  * webhook do Asaas, depois do pagamento (REGRA 0 do CLAUDE.md).
  *
- * Ultima geracao: 2026-08-15 (17 sites).
+ * Ultima geracao: 2026-08-17 (18 sites).
  */
 export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
   andersonagripino: {
@@ -136,6 +132,14 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
     whatsapp: "5521973234213",
     powerlinkId: "RD8lOPxD",
     status: "pendente",
+    ocultarAtivacao: false,
+  },
+  regionalsp: {
+    slug: "regionalsp",
+    nome: "Kaian Mattos",
+    whatsapp: "5511959264193",
+    powerlinkId: "3qyMJLyq",
+    status: "ativo",
     ocultarAtivacao: false,
   },
   rogevalone: {
