@@ -51,11 +51,18 @@ export function middleware(req: NextRequest) {
   if (primeiro === 'c') {
     const res = NextResponse.next()
     res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    if (segmentos[1]) marcarDono(res, segmentos[1])
     return res
   }
 
   if (!primeiro || ROTAS_RESERVADAS.has(primeiro) || !FORMATO_SLUG.test(primeiro)) {
-    return NextResponse.next()
+    const res = NextResponse.next()
+    // Home da CASA: o visitante saiu do site do consultor de propria vontade.
+    // As demais paginas da casa (`/cotacao`, `/faq`) NAO limpam — e justamente
+    // nelas que o clique perdido pre-hidratacao vai parar, e o cookie e o que
+    // devolve o lead pro dono (ver COOKIE_DONO).
+    if (pathname === '/') res.cookies.delete(COOKIE_DONO)
+    return res
   }
 
   /**
@@ -89,7 +96,43 @@ export function middleware(req: NextRequest) {
    * ranquear.
    */
   res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  marcarDono(res, primeiro)
   return res
+}
+
+/**
+ * Nome do cookie que diz de quem e a visita.
+ *
+ * ─── Por que um cookie, e nao so o slug da URL ──────────────────────────────
+ *
+ * O HTML das paginas e PRERENDERIZADO e compartilhado entre todos os sites: o
+ * mesmo arquivo serve `/`, `/manghi` e `/regionalsp`. Entao os links dentro
+ * dele nascem sem slug (`href="/cotacao"`), e o slug so entra depois que a
+ * pagina hidrata e o ConsultorProvider le `window.location.pathname`.
+ *
+ * Isso abre uma CORRIDA: quem clica antes de hidratar sai de `/manghi` e cai em
+ * `/cotacao` — a cotacao da CASA. Dali o lead nasce sem `consultorSlug`, vai
+ * pro PowerLink da 21Go e o botao de WhatsApp cai no numero da casa. O
+ * consultor que pagou pelo site perde o cliente, em silencio e de forma
+ * intermitente (medido em 17/08/2026: leads de `/regionalsp` e `/paivarj21go`
+ * chegaram certos e um teste em `/manghi` caiu na Leticya).
+ *
+ * O servidor, ao contrario do HTML, SEMPRE sabe de quem e a visita. Entao ele
+ * carimba aqui, e `/api/wa` e `/api/vehicle/lead` leem este cookie quando o
+ * slug nao veio pela URL. Nao depende de hidratacao nenhuma.
+ *
+ * Cookie de sessao de proposito: ele existe pra sobreviver ao clique perdido
+ * dentro da MESMA visita, nao pra criar regra de atribuicao por N dias.
+ */
+export const COOKIE_DONO = 'c21go_dono'
+
+function marcarDono(res: NextResponse, slug: string): void {
+  res.cookies.set(COOKIE_DONO, slug, {
+    path: '/',
+    sameSite: 'lax',
+    // Sem `httpOnly`: o ConsultorProvider tambem le, pra pintar o site certo.
+    httpOnly: false,
+  })
 }
 
 export const config = {

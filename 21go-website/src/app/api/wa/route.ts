@@ -23,7 +23,12 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(req: NextRequest) {
   const text = req.nextUrl.searchParams.get('text')
-  const slug = req.nextUrl.searchParams.get('c')
+
+  // O `?c=` so existe se a pagina ja tinha hidratado quando o cliente clicou.
+  // Quando nao tinha, o cookie que o middleware carimbou diz de quem e a visita
+  // — sem ele o contato de um site vendido caia no numero da casa. Ver
+  // COOKIE_DONO em middleware.ts.
+  const slug = req.nextUrl.searchParams.get('c') || req.cookies.get('c21go_dono')?.value || null
 
   // Trava de segurança (07/08/2026): clique vindo de dentro do site SEM
   // mensagem montada significa link solto de CTA — exatamente o que enchia os

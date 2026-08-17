@@ -154,6 +154,23 @@ export async function POST(req: NextRequest) {
   const leadId = `lead_${trk}`
   const ctx = getRequestContext(req)
 
+  // ─── De quem e este lead ──────────────────────────────────────────────────
+  // O `consultorSlug` do corpo so vem preenchido se a pagina ja tinha hidratado
+  // (o slug sai de `window.location.pathname` num efeito). Quem clica antes
+  // disso sai de `/manghi` e cai em `/cotacao`, e o lead nascia orfao — indo
+  // pro PowerLink da casa. Um cliente que o consultor pagou pra ter virava lead
+  // da Leticya, de forma intermitente e silenciosa.
+  //
+  // O cookie que o middleware carimba nao depende de hidratacao. Ver
+  // COOKIE_DONO em middleware.ts.
+  if (!body.consultorSlug) {
+    const doCookie = req.cookies.get('c21go_dono')?.value
+    if (doCookie) {
+      console.log(`[lead] slug veio do cookie (${doCookie}) — o clique perdeu o slug da URL`)
+      body.consultorSlug = doCookie
+    }
+  }
+
   // Atendimento humano: nao tenta gerar PDF nem mandar mensagem com promessa
   // de cotacao. Salva lead parcial pro atendimento ver no Supabase, manda
   // PowerCRM (pra criar negociacao com responsavel) e termina.
