@@ -65,7 +65,8 @@ export async function complete(opts: CompleteOptions): Promise<CompleteResult> {
   const retries = opts.retries ?? 3;
   const timeout_ms = opts.timeout_ms ?? 60_000;
   const temperature = opts.temperature ?? 0.4;
-  const maxOutputTokens = opts.max_tokens ?? 4096;
+  // mutavel: pode ser reduzido em voo quando o saldo do OpenRouter nao cobre o pedido
+  let maxOutputTokens = opts.max_tokens ?? 4096;
 
   const client = getClient();
   const t0 = Date.now();
@@ -107,6 +108,22 @@ export async function complete(opts: CompleteOptions): Promise<CompleteResult> {
     } catch (e) {
       lastErr = e as Error;
       const msg = lastErr.message;
+      // Saldo do OpenRouter menor que o pedido. A mensagem diz exatamente quanto cabe
+      // ("can only afford 3619"), entao encolhemos e tentamos de novo em vez de perder
+      // a chamada. Em 13/08 isso custou 56 das 59 pautas aprovadas do dia: o saldo
+      // secou no meio do lote e cada briefing morria pedindo 5500 tokens quando ainda
+      // havia folga pra 3000. Nao substitui recarregar credito — so evita jogar fora
+      // o trabalho que ainda caberia.
+      const afford = /can only afford (\d+)/i.exec(msg);
+      if (afford) {
+        const cabe = Math.max(256, Math.floor(Number(afford[1]) * 0.9));
+        if (cabe < maxOutputTokens) {
+          log.warn({ tier, pedido: maxOutputTokens, cabe }, 'saldo insuficiente — reduzindo max_tokens e tentando de novo');
+          maxOutputTokens = cabe;
+          continue;
+        }
+      }
+
       // AbortError ou timeout: retry. 4xx: nao retry. 5xx/network: retry.
       const isAbort = /abort|timeout/i.test(msg);
       const isClient4xx = /\b4\d\d\b/.test(msg) && !/\b408\b|\b429\b/.test(msg);
