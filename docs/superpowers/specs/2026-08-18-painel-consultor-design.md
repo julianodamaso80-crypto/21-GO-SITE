@@ -191,8 +191,14 @@ UPDATE public.leads SET consultor_slug = 'andersonagripino'
 WHERE consultor_slug IS NULL AND landing_page ILIKE '%/andersonagripino%';
 ```
 
-Vendedor histórico não existe — o link nunca foi emitido. O painel do vendedor começa zerado
-e isso é correto.
+**Resultado real (18/08/2026): o backfill pegou 0 leads, e nao ha historico recuperavel.**
+`landing_page` esta nulo em todos os 28.243 leads — a coluna nunca foi preenchida — e o
+PowerLink do Anderson (`PqZx6wNr`) tambem nao aparece em nenhum `powercrm_payload`. O
+registro dos leads que ja nasceram no site dele vive no PowerCRM, nao no nosso banco. Como o
+site dele foi criado em 12/08/2026, o historico perdido e de dias, nao de meses.
+
+**A atribuicao comeca na data da implantacao.** O painel do vendedor comeca zerado de
+qualquer forma — o link nunca foi emitido.
 
 > ⚠️ Banco compartilhado com o CRM. Migração é aditiva, com `IF NOT EXISTS`, aplicada por DDL
 > explícita. Nada de `drizzle-kit push`, nada de seed.
