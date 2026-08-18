@@ -1,6 +1,7 @@
 import Link from '@/components/Link'
 import Image from 'next/image'
-import { Instagram, Facebook, Linkedin } from 'lucide-react'
+import { FooterSocials } from '@/components/layout/FooterSocials'
+import { FooterCredito } from '@/components/layout/FooterCredito'
 
 const links = {
   Proteção: [
@@ -16,16 +17,16 @@ const links = {
   ],
   Suporte: [
     { label: 'FAQ', href: '/faq' },
-    { label: 'Contato', href: '/contato' },
-    { label: 'Área do Associado', href: '/area-do-associado' },
+    // Destino final direto, e nao `/contato` e `/area-do-associado`. Esses dois
+    // sao redirect do next.config, e redirect do config NAO roda depois do
+    // rewrite do middleware: no site de um consultor
+    // (`/<slug>/contato` -> rewrite -> `/contato`) davam 404 em vez de cair na
+    // simulacao. O visitante do consultor clicava em "Contato" e batia numa
+    // pagina de erro.
+    { label: 'Contato', href: '/cotacao' },
+    { label: 'Área do Associado', href: '/faq' },
   ],
 }
-
-const socials = [
-  { icon: Instagram, href: 'https://instagram.com/21go.veicular', label: 'Instagram' },
-  { icon: Facebook, href: 'https://facebook.com/21goveicular', label: 'Facebook' },
-  { icon: Linkedin, href: 'https://linkedin.com/company/21go', label: 'LinkedIn' },
-]
 
 export function Footer() {
   return (
@@ -40,20 +41,7 @@ export function Footer() {
             <p className="text-sm text-[#94A3B8] leading-relaxed mb-6">
               Proteção veicular inteligente no Rio de Janeiro. 20+ anos de mercado protegendo seu patrimônio.
             </p>
-            <div className="flex gap-3">
-              {socials.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={s.label}
-                  className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#94A3B8] hover:bg-[#F2911D]/10 hover:text-[#F2911D] hover:border-[#F2911D]/30 transition-all duration-200"
-                >
-                  <s.icon size={16} />
-                </a>
-              ))}
-            </div>
+            <FooterSocials />
           </div>
 
           {Object.entries(links).map(([title, items]) => (
@@ -98,20 +86,7 @@ export function Footer() {
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-6 py-5">
           <p className="text-xs text-[#64748B] text-center">&copy; 2026 21Go Proteção Veicular. Todos os direitos reservados.</p>
 
-          {/* Crédito da agência — clicável para o WhatsApp da FlowAI Digital */}
-          <a
-            href="https://wa.me/5521992208062?text=Ol%C3%A1%21%20Vi%20o%20site%20da%2021Go%20e%20quero%20um%20site%20assim."
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Site desenvolvido por FlowAI Digital — fale no WhatsApp"
-            className="group inline-flex flex-col items-center gap-1.5 opacity-80 transition-all duration-200 hover:opacity-100"
-          >
-            <span className="text-[10px] uppercase tracking-widest text-[#64748B] group-hover:text-[#94A3B8] transition-colors">Desenvolvido por</span>
-            <picture>
-              <source srcSet="/images/flowai-digital-branca.webp" type="image/webp" />
-              <img src="/images/flowai-digital-branca.png" alt="FlowAI Digital" width={640} height={210} className="h-8 w-auto" loading="lazy" decoding="async" />
-            </picture>
-          </a>
+          <FooterCredito />
         </div>
       </div>
     </footer>

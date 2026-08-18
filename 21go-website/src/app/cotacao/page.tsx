@@ -761,8 +761,11 @@ export default function CotacaoPage() {
     const pIsMoto = p.id === 'moto-400' || p.id === 'moto-1000'
     return p.monthly + carroAppExtra + (form.danosTerceiros === 'sim' && pIsMoto ? 22 : 0)
   }
+  // O `c=` vai explicito: sem ele, o botao dependia SO do cookie `c21go_dono`
+  // pra saber de quem e a venda, e cookie e a rede — nao o cinto. Aqui na tela
+  // o slug ja esta na mao (o `consultor` do contexto), entao mandamos os dois.
   const linkWhatsApp = (intencao: 'contratar' | 'duvida') => selectedPlan && vehicle
-    ? `/api/wa?text=${encodeURIComponent(buildContratarMessage({
+    ? `/api/wa?${consultor ? `c=${consultor.slug}&` : ''}text=${encodeURIComponent(buildContratarMessage({
         intencao,
         nome: form.nome,
         whatsapp: form.whatsapp,
