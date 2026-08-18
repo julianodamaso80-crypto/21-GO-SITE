@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "sync:consultores": "node scripts/sync-consultores-fallback.mjs"
+    "sync:consultores": "node scripts/sync-consultores-fallback.mjs",
+    "test:painel": "node --test \"testes/**/*.test.ts\""
   },
   "keywords": [],
   "author": "",
