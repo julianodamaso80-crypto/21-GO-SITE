@@ -5,7 +5,7 @@ tags: [painel, consultor, andersonagripino, multi-tenant, auth, indicacao]
 tipo: decisão
 ---
 
-# Painel do consultor — `painel.21go.com.br/<slug>`
+# Painel do consultor — `parceiroanderson.21go.com.br`
 
 ## Contexto
 
@@ -51,7 +51,7 @@ lead, não há como montar nenhuma tela do painel. É a única mudança de schem
 | 5 | Mora **dentro do `21go-website`** | O risco real (mexer em middleware e `ConsultorProvider`, que servem os 18 sites vendidos) existe em qualquer opção; esta é a única que não cria infra nova pra carregar. |
 | 6 | Vendedor vê o telefone **mascarado** | Ele trouxe o lead, mas quem atende é o Anderson. Telefone cheio na mão do divulgador é o caminho pra ele fechar por fora. Admin vê tudo. |
 | 7 | Senha com `crypto.scrypt`, sessão com HMAC próprio | Zero dependência nova. Build no VPS leva 20min–1h e lib nativa (bcrypt) é justamente o tipo de coisa que estoura. |
-| 8 | O cadastro público mora **no painel**, não no site | `painel.21go.com.br/<slug>/cadastro`. Uma página no site principal viraria rota reservada nova, mexendo nos 18 sites por um recurso de um só. |
+| 8 | O cadastro público mora **no painel**, não no site | `parceiroanderson.21go.com.br/cadastro`. Uma página no site principal viraria rota reservada nova, mexendo nos 18 sites por um recurso de um só. |
 
 ### Não faz parte deste escopo (YAGNI)
 
@@ -67,33 +67,46 @@ lead, não há como montar nenhuma tela do painel. É a única mudança de schem
 
 ### Roteamento
 
-```
-painel.21go.com.br/andersonagripino            → login
-painel.21go.com.br/andersonagripino/cadastro   → auto-cadastro do vendedor
-painel.21go.com.br/andersonagripino/app        → dashboard (admin ou vendedor)
-painel.21go.com.br/andersonagripino/app/leads  → lista de leads
-painel.21go.com.br/andersonagripino/app/usuarios → só admin
-```
-
-O middleware trata o host `painel.` **antes** da lógica de slug, igual ao `meusite.`:
+O endereço originalmente pensado, `painel.21go.com.br`, **já está ocupado**: aponta pro
+container `painel21go` (imagem `controle-acesso-21go`), o sistema de recepção/lavagem da
+21Go, com acesso registrado no mesmo dia desta decisão. Decisão do dono (18/08/2026): cada
+parceiro ganha **subdomínio próprio**, e o `painel.21go.com.br` não é tocado.
 
 ```
-host começa com "painel."  →  rewrite pra /painel/<pathname>
+parceiroanderson.21go.com.br              → login
+parceiroanderson.21go.com.br/cadastro     → auto-cadastro do vendedor
+parceiroanderson.21go.com.br/app          → dashboard (admin ou vendedor)
+parceiroanderson.21go.com.br/app/leads    → lista de leads
+parceiroanderson.21go.com.br/app/usuarios → só admin
+```
+
+O middleware trata o host **antes** da lógica de slug, igual ao `meusite.` já é tratado:
+
+```
+host em PAINEL_POR_HOST  →  rewrite pra /painel/<consultorSlug><pathname>
 ```
 
 Fisicamente: `src/app/painel/[slug]/…`. `'painel'` entra em `ROTAS_RESERVADAS` (o
-`scripts/verificar-rotas.mjs` quebra o build se esquecer). Header `X-Robots-Tag: noindex`
-em tudo que é painel.
+`scripts/verificar-consultor.mjs` roda no `prebuild` e quebra o build se esquecer). Header
+`X-Robots-Tag: noindex, nofollow` em tudo que é painel.
 
-**Quem pode ter painel** vive num mapa no código:
+**O mapa host → consultor vive no código**, único lugar que decide quem tem painel:
 
 ```ts
 // src/lib/consultores-painel.ts
-export const PAINEL_POR_CONSULTOR = new Set(['andersonagripino'])
+export const PAINEL_POR_HOST: Record<string, string> = {
+  'parceiroanderson.21go.com.br': 'andersonagripino',
+}
 ```
 
 Sem isso, o middleware precisaria consultar o banco a cada request — exatamente a carga que
-a documentação do próprio middleware proíbe.
+a documentação do próprio middleware proíbe. `PAINEL_POR_CONSULTOR` é derivado dos valores
+deste mapa e é o que libera o sub-slug do vendedor no site.
+
+**Infra por parceiro novo** (3 passos, todos aditivos): registro A no Cloudflare apontando
+pra `56.126.48.234` **DNS-only** (nuvem cinza — os domínios `21go.com.br` já são assim, e o
+Caddy emite Let's Encrypt sozinho; proxied quebraria a emissão), bloco novo no
+`/etc/caddy/Caddyfile` com `reverse_proxy 127.0.0.1:3100`, e uma linha no `PAINEL_POR_HOST`.
 
 ### Link do vendedor
 
@@ -217,39 +230,40 @@ em 40 e recusar resultado com menos de 3 caracteres (nome "Jô" viraria slug inv
 
 ### Isolamento entre consultores
 
-Toda query do painel filtra por `consultor_slug` tirado **da sessão**, nunca da URL. Um
-usuário do `andersonagripino` que digitar `painel.21go.com.br/outroconsultor/app` cai no login
-daquele consultor, sem enxergar nada.
+Toda query do painel filtra por `consultor_slug` tirado **da sessão**, nunca do host nem da
+URL. O cookie de sessão é gravado sem `domain`, então fica preso ao subdomínio que o emitiu:
+sessão de `parceiroanderson` não viaja pro subdomínio de outro parceiro. A sessão também
+carrega o slug, e toda rota confere se ele bate com o do host — divergência é 401.
 
 ---
 
 ## Telas
 
-### Login (`/<slug>`)
+### Login (`/`)
 E-mail + senha, nome e logo do consultor no topo (vem de `resolverConsultor`), link
 "Quero divulgar e ganhar" → `/cadastro`. Consultor fora do ar (`estaNoAr() === false`) → a
 mesma página "não está disponível" do site.
 
-### Cadastro (`/<slug>/cadastro`)
+### Cadastro (`/cadastro`)
 Nome, WhatsApp, e-mail, senha escolhida pela pessoa (com opção de gerar). Ao concluir, a tela
 mostra: link de divulgação com botão copiar, e-mail e senha. Já entra logado.
 
-### Dashboard admin (`/<slug>/app`)
+### Dashboard admin (`/app`)
 - Cards: leads no mês, leads hoje, em negociação, ganhos, perdidos.
 - Ranking de vendedores: nome, link, leads no mês, ganhos, total histórico.
 - "Direto no meu link" como linha própria (leads sem `vendedor_slug`).
 - Últimos 10 leads.
 
-### Dashboard vendedor (`/<slug>/app`)
+### Dashboard vendedor (`/app`)
 - Meu link, grande, com botão copiar.
 - Cards: leads totais, no mês, ganhos.
 - Meus últimos leads.
 
-### Leads (`/<slug>/app/leads`)
+### Leads (`/app/leads`)
 Tabela: data, nome, telefone (mascarado pro vendedor), veículo, valor cotado, etapa, vendedor
 (só admin). Filtros: período e vendedor (só admin). Paginação de 50.
 
-### Usuários (`/<slug>/app/usuarios`, só admin)
+### Usuários (`/app/usuarios`, só admin)
 Tabela com nome, e-mail, link, leads, status. Ações: criar (define senha na hora), editar
 (nome, e-mail, WhatsApp), redefinir senha (mostra a nova na tela), ativar/desativar, excluir.
 
@@ -264,9 +278,9 @@ Visual: mesma paleta obrigatória da marca — azul `#293C82`, laranja `#F2911D`
 ## APIs
 
 ```
-POST /api/painel/entrar        { slug, email, senha }        → cookie de sessão
+POST /api/painel/entrar        { email, senha }               → cookie de sessão
 POST /api/painel/sair
-POST /api/painel/cadastro      { slug, nome, whatsapp, email, senha }
+POST /api/painel/cadastro      { nome, whatsapp, email, senha }
 GET  /api/painel/resumo        → cards + ranking (papel decide o recorte)
 GET  /api/painel/leads         ?de&ate&vendedor&pagina
 GET  /api/painel/usuarios      (admin)
@@ -294,11 +308,13 @@ Em produção, depois do deploy:
 5. Simulação completa entrando por `/andersonagripino/juliano`: a linha em `leads` sai com
    `consultor_slug='andersonagripino'` e `vendedor_slug='juliano'`, e o `slsmnNwId` enviado
    ao Power é o do Anderson.
-6. `painel.21go.com.br/andersonagripino` responde **200** e o login do Anderson entra no
+6. `curl -s -o /dev/null -w "%{http_code}" https://painel.21go.com.br/login` → **200**
+   (o controle de acesso da recepção continua de pé — este host não foi tocado).
+7. `https://parceiroanderson.21go.com.br` responde **200** e o login do Anderson entra no
    dashboard de admin com o lead do passo 5 visível, atribuído ao Juliano.
-7. Login do Juliano vê **só** o lead dele, com telefone mascarado, e não abre
+8. Login do Juliano vê **só** o lead dele, com telefone mascarado, e não abre
    `/app/usuarios` (403).
-8. Excluir o Juliano no painel: a sessão dele morre no request seguinte e o histórico do lead
+9. Excluir o Juliano no painel: a sessão dele morre no request seguinte e o histórico do lead
    continua apontando pra ele.
 
 ---
@@ -311,6 +327,7 @@ Em produção, depois do deploy:
 | Migração no banco compartilhado com o CRM | Só `ADD COLUMN IF NOT EXISTS` e `CREATE TABLE IF NOT EXISTS`. Nenhuma coluna existente é tocada. |
 | Painel no mesmo build derruba o site | Rotas do painel isoladas em `src/app/painel/`, todas `force-dynamic`. Build local antes de qualquer deploy; baseline de 200 no site antes e depois (REGRA 0). |
 | Vendedor pular o consultor e vender por fora | Telefone mascarado e WhatsApp sempre no consultor. |
+| Subdomínio novo sem certificado | Registro Cloudflare **DNS-only**. Proxied impede o Caddy de emitir Let's Encrypt e o painel abre com erro de certificado. |
 | Auto-cadastro aberto virar entulho | Soft delete + desativar no painel do admin. Se virar problema de verdade, aí sim entra aprovação. |
 
 ## Links relacionados
