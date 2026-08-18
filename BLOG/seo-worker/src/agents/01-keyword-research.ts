@@ -132,6 +132,34 @@ const BASE_SEEDS: Array<{ seed: string; category: KeywordCategory }> = [
   { seed: 'desvalorizacao carro eletrico', category: 'byd' },
   { seed: 'perda total carro eletrico', category: 'byd' },
   { seed: 'carro hibrido manutencao', category: 'byd' },
+  // ---- Lote 2026-08-13: dores de POSSE ainda nao exploradas ----
+  // O pool anterior cobria bem roubo/furto/colisao, mas o dono de veiculo tem uma
+  // fila de problemas que tambem terminam em "e agora?" — e sao justamente onde a
+  // protecao patrimonial responde. Todas sao dor de quem JA TEM o veiculo.
+  { seed: 'vistoria cautelar', category: 'carros' },
+  { seed: 'laudo cautelar veicular', category: 'carros' },
+  { seed: 'carro sinistrado', category: 'carros' },
+  { seed: 'carro apreendido', category: 'carros' },
+  { seed: 'ipva atrasado', category: 'carros' },
+  { seed: 'multa de transito recurso', category: 'carros' },
+  { seed: 'danos a terceiros', category: 'carros' },
+  { seed: 'seguro recusado', category: 'carros' },
+  { seed: 'carro antigo seguro', category: 'carros' },
+  { seed: 'bateria descarregada', category: 'carros' },
+  { seed: 'pane seca', category: 'carros' },
+  { seed: 'chave do carro perdida', category: 'carros' },
+  { seed: 'moto sinistrada', category: 'motos' },
+  { seed: 'moto apreendida', category: 'motos' },
+  { seed: 'acidente de moto', category: 'motos' },
+  { seed: 'moto usada comprar', category: 'motos' },
+  { seed: 'requisitos carro uber', category: 'frotas' },
+  { seed: 'carro alugado por aplicativo', category: 'frotas' },
+  { seed: 'motorista de aplicativo custos', category: 'frotas' },
+  { seed: 'documentacao de frota', category: 'frotas' },
+  { seed: 'recall veiculo', category: 'educativo' },
+  { seed: 'consulta de debitos veiculares', category: 'educativo' },
+  { seed: 'transferencia de propriedade veiculo', category: 'educativo' },
+  { seed: 'seguro obrigatorio dpvat', category: 'educativo' },
 ];
 
 /**
