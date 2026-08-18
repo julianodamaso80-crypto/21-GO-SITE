@@ -76,8 +76,8 @@ export function Footer() {
             Falar com a 21Go pela simulação
           </Link>
           <div className="flex gap-5">
-            <Link href="/termos-de-uso" className="text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors">Termos</Link>
-            <Link href="/politica-privacidade" className="text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors">Privacidade</Link>
+            <Link href="/conformidade-legal" className="text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors">Termos</Link>
+            <Link href="/conformidade-legal" className="text-xs text-[#64748B] hover:text-[#94A3B8] transition-colors">Privacidade</Link>
           </div>
         </div>
       </div>
