@@ -25,6 +25,9 @@ export const ROTAS_RESERVADAS = new Set([
   'faq',
   'indique',
   'ouvidoria',
+  // Painel do parceiro. Ninguem digita `/painel/<slug>` — o middleware reescreve
+  // `parceiroanderson.21go.com.br` pra ca.
+  'painel',
   'preview-scroll-3d',
   'protecao-veicular',
   'protecao-veicular-rj',
