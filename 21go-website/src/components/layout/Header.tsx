@@ -2,7 +2,9 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from '@/components/Link'
 import Image from 'next/image'
-import { Menu, X, MessageSquare, ShieldAlert, ChevronDown } from 'lucide-react'
+import { Menu, X, MessageSquare, ShieldAlert, ChevronDown, Instagram } from 'lucide-react'
+import { useConsultor } from '@/components/ConsultorProvider'
+import { instagramDoConsultor } from '@/lib/consultores-instagram'
 
 const navLinks = [
   { label: 'Planos', href: '/protecao-veicular' },
@@ -23,6 +25,12 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // So aparece no site de quem pediu (ver consultores-instagram.ts). O slug so
+  // existe depois da hidratacao, entao o primeiro render e sempre o header
+  // padrao — o mesmo do HTML prerenderizado.
+  const consultor = useConsultor()
+  const instagram = instagramDoConsultor(consultor?.slug)
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50)
@@ -114,7 +122,23 @@ export function Header() {
           </div>
         </div>
 
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex items-center gap-3">
+          {instagram && (
+            <a
+              href={instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram do consultor"
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-all duration-200 ${
+                scrolled
+                  ? 'border-[#E2E8F0] text-[#293C82] hover:border-[#293C82]/40 hover:bg-[#F0F4FA]'
+                  : 'border-white/25 text-white hover:bg-white/10'
+              }`}
+            >
+              <Instagram className="h-4 w-4" />
+              Instagram
+            </a>
+          )}
           <Link
             href="/cotacao"
             className="inline-flex items-center px-6 py-2.5 rounded-lg bg-[#F2911D] text-white text-sm font-semibold hover:bg-[#D67A0F] transition-all duration-200 shadow-sm hover:shadow-[0_4px_12px_rgba(242, 145, 29,0.35)] hover:-translate-y-px"
@@ -123,12 +147,25 @@ export function Header() {
           </Link>
         </div>
 
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`lg:hidden transition-colors duration-300 ${scrolled ? 'text-[#1A2754]' : 'text-white'}`}
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-4 lg:hidden">
+          {instagram && (
+            <a
+              href={instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram do consultor"
+              className={`transition-colors duration-300 ${scrolled ? 'text-[#293C82]' : 'text-white'}`}
+            >
+              <Instagram size={22} />
+            </a>
+          )}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className={`transition-colors duration-300 ${scrolled ? 'text-[#1A2754]' : 'text-white'}`}
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </nav>
 
       {isOpen && (
