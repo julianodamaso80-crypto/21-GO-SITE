@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ROTAS_RESERVADAS } from '@/lib/rotas-reservadas'
 import { VIDEO_POR_CONSULTOR } from '@/lib/consultores-video'
+import {
+  PAINEL_POR_HOST,
+  PAINEL_POR_CONSULTOR,
+  COOKIE_VENDEDOR,
+  DIAS_COOKIE_VENDEDOR,
+} from '@/lib/consultores-painel'
+import { painelDoHost, vendedorDoCaminho } from '@/lib/painel/rotas'
 
 /**
  * Site por consultor: `21go.com.br/julianodamaso` serve o MESMO site de sempre,
@@ -40,6 +47,22 @@ export function middleware(req: NextRequest) {
   if (req.headers.get('host')?.startsWith('meusite.')) {
     if (pathname === '/quero-site') return NextResponse.next()
     return NextResponse.rewrite(new URL(`/quero-site${search}`, req.url))
+  }
+
+  /**
+   * `parceiroanderson.21go.com.br` — o painel do parceiro.
+   *
+   * Vem antes da logica de slug pelo mesmo motivo do `meusite.`: nada num host
+   * de painel pode ser lido como site de consultor. O slug sai do HOST, nunca
+   * da URL, e as rotas ainda conferem contra a sessao.
+   */
+  const slugDoPainel = painelDoHost(req.headers.get('host') ?? '', PAINEL_POR_HOST)
+  if (slugDoPainel) {
+    const res = NextResponse.rewrite(
+      new URL(`/painel/${slugDoPainel}${pathname === '/' ? '' : pathname}${search}`, req.url),
+    )
+    res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    return res
   }
 
   const segmentos = pathname.split('/').filter(Boolean)
@@ -88,6 +111,33 @@ export function middleware(req: NextRequest) {
    * dava lugar ao vídeo — parecia que o visitante ia entrar no site antigo. As
    * outras páginas dele (`/<slug>/cotacao`) não mudam: o hero só existe na home.
    */
+  /**
+   * `/andersonagripino/juliano` — o link do divulgador.
+   *
+   * So pra quem tem painel: sem este corte, `/manghi/qualquercoisa` deixaria de
+   * ser 404 nos outros 17 sites vendidos, e um erro de digitacao passaria a
+   * servir a home como se fosse pagina de alguem.
+   *
+   * O slug do vendedor NAO precisa sobreviver na URL: o cookie carrega a
+   * atribuicao, a mesma rede que ja resolve a corrida de hidratacao da REGRA
+   * 0.1. Por isso o rewrite manda pro caminho normal do site.
+   */
+  if (PAINEL_POR_CONSULTOR.has(primeiro)) {
+    const doVendedor = vendedorDoCaminho(segmentos, ROTAS_RESERVADAS)
+    if (doVendedor) {
+      const res = NextResponse.rewrite(new URL(`${doVendedor.resto}${search}`, req.url))
+      res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+      marcarDono(res, primeiro)
+      res.cookies.set(COOKIE_VENDEDOR, doVendedor.vendedor, {
+        path: '/',
+        sameSite: 'lax',
+        httpOnly: false,
+        maxAge: DIAS_COOKIE_VENDEDOR * 24 * 60 * 60,
+      })
+      return res
+    }
+  }
+
   const ehHome = segmentos.length === 1
   const destinoPath =
     ehHome && primeiro in VIDEO_POR_CONSULTOR

@@ -70,6 +70,32 @@ async function powerlinkDoLead(slug: string | null | undefined): Promise<string>
   console.log(`[lead] powerlink de ${consultor.nome} (${slug})`)
   return consultor.powerlinkId
 }
+
+/**
+ * Devolve o slug do vendedor so se ele existir e estiver ativo naquele painel.
+ *
+ * Uma consulta por LEAD — nao por pageview —, entao o custo e desprezivel. E
+ * carimbo errado vale menos que carimbo nenhum: vira comissao paga pra quem nao
+ * trouxe, e o consultor so descobre pagando.
+ */
+async function vendedorValido(
+  consultorSlug: string | null | undefined,
+  vendedorSlug: string | null | undefined,
+): Promise<string | null> {
+  if (!consultorSlug || !vendedorSlug) return null
+  try {
+    const { data } = await supabaseAdmin()
+      .from('painel_usuarios')
+      .select('vendedor_slug')
+      .eq('consultor_slug', consultorSlug)
+      .eq('vendedor_slug', vendedorSlug)
+      .eq('ativo', true)
+      .maybeSingle()
+    return data ? vendedorSlug : null
+  } catch {
+    return null
+  }
+}
 const POWERCRM_DEFAULT_LEAD_SOURCE = process.env.POWERCRM_DEFAULT_LEAD_SOURCE || '1584'
 
 interface LeadInput {
@@ -97,6 +123,13 @@ interface LeadInput {
   estado?: string | null
   /** Slug do site de consultor por onde o lead entrou (21go.com.br/<slug>). */
   consultorSlug?: string | null
+  /**
+   * Quem trouxe a visita: o `<vendedor>` de `21go.com.br/<slug>/<vendedor>`.
+   *
+   * Nao muda nada do fluxo — o lead segue nascendo no Power do consultor e o
+   * WhatsApp segue sendo o dele. Serve so pro painel saber a quem creditar.
+   */
+  vendedorSlug?: string | null
   /**
    * Codigo de quem indicou (Member Get Member).
    *
@@ -170,6 +203,13 @@ export async function POST(req: NextRequest) {
       body.consultorSlug = doCookie
     }
   }
+
+  // Quem trouxe. Mesma logica do slug acima: o corpo so vem preenchido se a
+  // pagina ja tinha hidratado, entao o cookie carimbado pelo servidor e a rede.
+  body.vendedorSlug = await vendedorValido(
+    body.consultorSlug,
+    body.vendedorSlug ?? req.cookies.get('c21go_vend')?.value ?? null,
+  )
 
   // Atendimento humano: nao tenta gerar PDF nem mandar mensagem com promessa
   // de cotacao. Salva lead parcial pro atendimento ver no Supabase, manda
@@ -400,6 +440,10 @@ async function persistLeadInSupabase(args: {
     // Quem indicou. Guardado como veio (codigo cru): se um dia chegar um codigo
     // que nao existe, da pra ver o valor errado em vez de perder a pista.
     indicado_por: body.indicadoPor?.trim().toLowerCase() || null,
+
+    // De quem e o lead. Ate 08/2026 isto so existia no `slsmnNwId` do PowerCRM.
+    consultor_slug: body.consultorSlug ?? null,
+    vendedor_slug: body.vendedorSlug ?? null,
 
     utm_source: body.utm_source ?? null,
     utm_medium: body.utm_medium ?? null,

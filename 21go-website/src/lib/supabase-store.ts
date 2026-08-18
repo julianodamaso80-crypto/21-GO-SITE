@@ -106,6 +106,11 @@ export interface UpsertLeadInput {
   // Funil
   etapa_funil?: string | null
   status?: string | null
+
+  // Posse do lead. Ate 08/2026 isto so existia no `slsmnNwId` mandado pro
+  // PowerCRM — nao dava pra montar nenhuma tela a partir do nosso banco.
+  consultor_slug?: string | null
+  vendedor_slug?: string | null
 }
 
 /**
@@ -149,6 +154,8 @@ export async function upsertLead(input: UpsertLeadInput): Promise<{ id: string; 
     status: input.status ?? 'lead',
     origem: input.origem ?? deriveOrigem(input.utm_source, input.utm_medium),
     indicado_por: input.indicado_por ?? null,
+    consultor_slug: input.consultor_slug ?? null,
+    vendedor_slug: input.vendedor_slug ?? null,
     utm_source: input.utm_source ?? null,
     utm_medium: input.utm_medium ?? null,
     utm_campaign: input.utm_campaign ?? null,
