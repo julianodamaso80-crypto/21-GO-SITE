@@ -196,9 +196,14 @@ export function textoLeadIndicado(dados: {
 /**
  * Avisa o consultor que entrou uma cotacao no site DELE.
  *
- * Ordem do dono (19/08/2026): "cada cotacao ele tem q receber no whatsapp".
+ * Ordem do dono (19/08/2026): *"so ele recebe o pdf e ele chama o associado (...)
+ * com numero do associado, detalhes do plano ue ai facilita para ele chamar"*.
  * Ate aqui o site vendido nao avisava nada — o consultor so descobria o lead
- * abrindo o Power, e leads de madrugada ficavam horas parados.
+ * abrindo o Power, e lead de madrugada ficava horas parado.
+ *
+ * A mensagem e feita pra ele NAO precisar abrir mais nada antes de ligar: nome,
+ * telefone clicavel, veiculo e o plano com o valor ja calculado. O PDF vem logo
+ * atras, pronto pra encaminhar.
  *
  * Vai em TODA cotacao de site vendido, nao so nas indicadas (ver
  * `textoLeadIndicado`): quem paga pelo site comprou justamente o lead.
@@ -208,6 +213,8 @@ export function textoCotacaoNova(dados: {
   leadWhatsapp: string
   veiculo: string | null
   placa: string | null
+  ano: string | null
+  fipe: number | null
   plano: string | null
   valorMensal: number | null
   comPdf: boolean
@@ -219,18 +226,25 @@ export function textoCotacaoNova(dados: {
   const digitos = dados.leadWhatsapp.replace(/\D/g, '')
   const zap = digitos.startsWith('55') ? digitos : `55${digitos}`
 
+  const brl = (v: number) =>
+    v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
   const linhas = [`🔔 *Nova cotação no seu site*`, ``, `*${dados.leadNome}*`, fone(dados.leadWhatsapp)]
-  if (dados.veiculo) linhas.push(``, dados.placa ? `${dados.veiculo} — placa *${dados.placa}*` : dados.veiculo)
-  if (dados.plano && dados.valorMensal) {
-    linhas.push(
-      `Plano *${dados.plano}* — R$ ${dados.valorMensal.toFixed(2).replace('.', ',')}/mês`,
-    )
+
+  if (dados.veiculo) {
+    linhas.push(``, dados.placa ? `${dados.veiculo} — placa *${dados.placa}*` : dados.veiculo)
+    const ficha = [dados.ano, dados.fipe ? `FIPE R$ ${brl(dados.fipe)}` : null].filter(Boolean)
+    if (ficha.length) linhas.push(ficha.join(' · '))
   }
+  if (dados.plano && dados.valorMensal) {
+    linhas.push(`Plano *${dados.plano}* — R$ ${brl(dados.valorMensal)}/mês`)
+  }
+
   linhas.push(``, `Chamar agora: https://wa.me/${zap}`)
   linhas.push(
     ``,
     dados.comPdf
-      ? `O cliente já recebeu a simulação em PDF. Quem fala primeiro fecha.`
+      ? `A simulação em PDF vem logo abaixo — só encaminhar pra ele.`
       : `A cotação ficou incompleta, então não saiu PDF — vale ligar pra fechar os dados.`,
   )
   return linhas.join('\n')
