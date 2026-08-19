@@ -22,6 +22,9 @@ export default function GestaoUsuarios() {
   const [novoAcesso, setNovoAcesso] = useState<{ nome: string; senha: string; link: string } | null>(
     null,
   )
+  // Quem esta sendo editado agora. O link NAO entra aqui: ele ja foi impresso e
+  // postado por ai, entao so nome, e-mail e WhatsApp mudam.
+  const [editando, setEditando] = useState<{ id: string; nome: string; email: string } | null>(null)
 
   async function carregar() {
     const r = await fetch('/api/painel/usuarios')
@@ -76,6 +79,24 @@ export default function GestaoUsuarios() {
     void carregar()
   }
 
+  async function salvarEdicao(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editando) return
+    setErro('')
+    const r = await fetch(`/api/painel/usuarios/${editando.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: editando.nome, email: editando.email }),
+    })
+    const d = await r.json()
+    if (!r.ok) {
+      setErro(d.erro || 'Não deu pra salvar.')
+      return
+    }
+    setEditando(null)
+    void carregar()
+  }
+
   async function excluir(id: string, nomeDele: string) {
     if (!confirm(`Excluir o acesso de ${nomeDele}? Os leads que ele trouxe continuam no histórico.`))
       return
@@ -107,6 +128,42 @@ export default function GestaoUsuarios() {
             Ok, anotei
           </button>
         </div>
+      )}
+
+      {editando && (
+        <form onSubmit={salvarEdicao} className="rounded-2xl border border-[#293C82] bg-white p-4">
+          <h2 className="mb-3 font-semibold text-[#293C82]">Editar acesso</h2>
+          <Campo
+            rotulo="Nome"
+            valor={editando.nome}
+            aoMudar={(v) => setEditando({ ...editando, nome: v })}
+          />
+          <Campo
+            rotulo="E-mail"
+            tipo="email"
+            valor={editando.email}
+            aoMudar={(v) => setEditando({ ...editando, email: v })}
+          />
+          <p className="mb-3 text-xs text-slate-500">
+            O link de divulgação não muda — ele já foi espalhado por aí.
+          </p>
+          {erro && <p className="mb-3 text-sm text-red-600">{erro}</p>}
+          <div className="flex gap-2">
+            <button className="rounded-xl bg-[#293C82] px-4 py-2.5 font-semibold text-white">
+              Salvar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditando(null)
+                setErro('')
+              }}
+              className="rounded-xl border border-slate-300 px-4 py-2.5 font-medium text-slate-600"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
       )}
 
       <form onSubmit={criar} className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -145,6 +202,14 @@ export default function GestaoUsuarios() {
                 <td className="p-3">
                   {u.papel !== 'admin' && (
                     <div className="flex flex-wrap gap-2 text-xs">
+                      <button
+                        onClick={() =>
+                          setEditando({ id: u.id, nome: u.nome, email: u.email })
+                        }
+                        className="rounded-lg border border-slate-300 px-2 py-1"
+                      >
+                        Editar
+                      </button>
                       <button
                         onClick={() => void acao(u.id, { acao: 'senha' })}
                         className="rounded-lg border border-slate-300 px-2 py-1"
