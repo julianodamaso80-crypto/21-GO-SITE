@@ -509,6 +509,15 @@ async function persistLeadInSupabase(args: {
 
 /* ───────────────── PowerCRM ───────────────── */
 
+/** Nome de cidade comparavel: o DENATRAN manda sem acento, o Power manda com. */
+function semAcento(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim()
+    .toUpperCase()
+}
+
 async function createLeadPowerCRM(body: LeadInput, leadId: string) {
   const apiHeaders = {
     accept: 'application/json',
@@ -545,8 +554,11 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
         const ctList = (await ctRes.json().catch(() => null)) as
           | { id: number; text: string }[]
           | null
-        const cityName = (pcVehicle.city as string).toUpperCase()
-        const city = ctList?.find((c) => (c.text || '').toUpperCase() === cityName)
+        // O DENATRAN devolve a cidade sem acento ("SAO GONCALO") e o Power lista com
+        // ("Sao Goncalo" -> "Sao Goncalo" acentuado). Comparar cru nunca casa, e a cotacao
+        // nasce na cidade default em vez da cidade do veiculo.
+        const cityName = semAcento(pcVehicle.city as string)
+        const city = ctList?.find((c) => semAcento(c.text || '') === cityName)
         if (city) cityId = city.id
       }
     } catch {

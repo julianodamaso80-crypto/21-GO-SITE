@@ -116,24 +116,15 @@ export function ConsultorProvider({ children }: { children: React.ReactNode }) {
  *
  * Nao diz qual dos dois: se dissesse "cancelado por falta de pagamento", quem
  * abrisse o link antigo de um consultor ficaria sabendo que ele nao pagou.
- * Manda pra 21Go, que e o que interessa pra quem chegou aqui querendo cotar.
+ *
+ * Sem CTA de cotacao: quem chegou por um link fora do ar nao faz simulacao aqui.
  */
 function SiteIndisponivel() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-[#F8FAFC]">
       <div className="max-w-md text-center">
         <h1 className="text-2xl font-bold text-[#1A2754] mb-3">Esta página não está disponível</h1>
-        <p className="text-[#64748B] mb-8">
-          O endereço que você abriu não está mais no ar. Mas a 21Go continua aqui — se você quer
-          proteger seu carro ou sua moto, é só simular.
-        </p>
-        <a
-          href="/cotacao"
-          data-sai-do-slug
-          className="inline-flex items-center justify-center h-12 px-8 rounded-lg bg-[#F2911D] text-white font-semibold hover:bg-[#D67A0F] transition"
-        >
-          Fazer minha simulação
-        </a>
+        <p className="text-[#64748B]">O endereço que você abriu não está mais no ar.</p>
       </div>
     </div>
   )
