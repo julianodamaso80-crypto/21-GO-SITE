@@ -242,7 +242,10 @@ export function buildContratarMessage(input: QuoteMessageInput): string {
     pick(ehDuvida ? FECHOS_DUVIDA : FECHOS, seed, 'fecho'),
   ]
 
-  if (input.pdfUrl) blocos.push(`📄 Minha simulação em PDF:\n${input.pdfUrl}`)
+  // Sem emoji de proposito: o proprio wa.me troca caractere fora do BMP pelo
+  // caractere de substituicao na versao web (medido em 19/08/2026). O link e o
+  // que importa.
+  if (input.pdfUrl) blocos.push(`Minha simulação em PDF:\n${input.pdfUrl}`)
 
   return blocos.join('\n\n')
 }
