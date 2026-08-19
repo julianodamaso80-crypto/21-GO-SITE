@@ -149,6 +149,15 @@ export interface QuoteMessageInput {
   ativacao12xFormatted: string
   /** Consultor que prefere tratar a ativacao na conversa (ver ocultarAtivacao). */
   ocultarAtivacao?: boolean
+  /**
+   * URL publica do PDF da simulacao (`/api/pdfs/<leadId>`).
+   *
+   * Vai na mensagem porque `wa.me` nao anexa arquivo — so texto. Com o link, o
+   * consultor recebe a simulacao pelo unico canal que nao depende de chip
+   * nenhum: a propria mensagem que o cliente manda. Fica de fora enquanto o
+   * lead nao terminou de salvar (sem `leadId` nao existe PDF pra abrir).
+   */
+  pdfUrl?: string | null
   /** Semente da variação — use o leadId; cai pro fallback da página se não houver. */
   seed: string
   /**
@@ -232,6 +241,8 @@ export function buildContratarMessage(input: QuoteMessageInput): string {
     ].join('\n'),
     pick(ehDuvida ? FECHOS_DUVIDA : FECHOS, seed, 'fecho'),
   ]
+
+  if (input.pdfUrl) blocos.push(`📄 Minha simulação em PDF:\n${input.pdfUrl}`)
 
   return blocos.join('\n\n')
 }

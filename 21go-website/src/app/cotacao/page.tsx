@@ -337,6 +337,43 @@ export default function CotacaoPage() {
     setMsgSeed(`${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`)
   }, [])
 
+  // Origem do link do PDF. Lida do navegador (e nao de env) porque o mesmo app
+  // serve 21go.com.br e os .site: o link tem que nascer no dominio em que o
+  // cliente esta, senao ele muda de site no meio da conversa.
+  const [origin, setOrigin] = useState('')
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
+
+  // ─── Site de consultor: acabou a simulação, a conversa abre sozinha ──────
+  // Ordem do dono (19/08/2026): *"nao so qd clica em quero contratar, acabou
+  // simulacao faz isso, pra todos que compraram o site"*.
+  //
+  // O `wa.me` NAO envia — ele abre a conversa com o texto ja digitado, e quem
+  // aperta enviar e o cliente. Entao o maximo que existe e levar ele pra la com
+  // tudo pronto, que e o que este bloco faz. Vale so em site vendido: no site da
+  // casa nada muda (REGRA: nada abre WhatsApp sem o formulario — aqui o
+  // formulario acabou de ser preenchido).
+  // O cadastro vem em caixa alta do Power ("RAPHAEL MANGHI"); na tela do cliente
+  // isso parece grito. So o primeiro nome, capitalizado.
+  const primeiroNome = (n: string) => {
+    const p = (n || '').trim().split(/\s+/)[0] || ''
+    return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+  }
+
+  const autoWaDisparado = useRef(false)
+  const autoWaInicio = useRef(0)
+  const [autoWa, setAutoWa] = useState(false)
+
+  useEffect(() => {
+    if (!consultor || step !== 2 || excluded || plans.length === 0) return
+    if (autoWaDisparado.current) return
+    autoWaDisparado.current = true
+    autoWaInicio.current = Date.now()
+    setAutoWa(true)
+  }, [consultor, step, excluded, plans.length])
+
+
   // Helper: notify WhatsApp click to API (legado + backend/CRM com envio imediato de PDF)
   const notifyWhatsAppClick = useCallback(() => {
     whatsappClicked.current = true
@@ -799,6 +836,9 @@ export default function CotacaoPage() {
         ativacaoAvistaFormatted: formatPrice(ativacaoAvista),
         ativacao12xFormatted: formatPrice(ativacaoParcela12x),
         ocultarAtivacao: consultor?.ocultarAtivacao ?? false,
+        // So depois que o lead salvou existe PDF pra abrir. Sem isso o consultor
+        // receberia um link 404 na propria mensagem do cliente.
+        pdfUrl: leadId && consultor ? `${origin}/api/pdfs/${leadId}` : null,
         seed: leadId || msgSeed,
       }))}${consultor ? `&c=${consultor.slug}` : ''}`
     : '#'
@@ -815,6 +855,22 @@ export default function CotacaoPage() {
     })
     notifyWhatsAppClick()
   }
+
+  // Abre a conversa. Espera o `leadId` pra o link do PDF ir junto, com teto de 7s:
+  // se o lead demorar, a conversa abre sem o anexo — o consultor prefere o lead
+  // sem PDF do que PDF nenhum. O deadline e absoluto pra o relogio nao reiniciar
+  // a cada re-render.
+  useEffect(() => {
+    if (!autoWa || contratarHref === '#') return
+    const alvo = autoWaInicio.current + (leadId ? 2500 : 7000)
+    const t = setTimeout(() => {
+      handleContratarClick()
+      window.location.href = contratarHref
+    }, Math.max(0, alvo - Date.now()))
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoWa, leadId, contratarHref])
+
   // Botão "Quero contratar" — repetido ao longo do resultado pra que o cliente
   // nunca precise rolar de volta pra agir. Todos abrem o mesmo WhatsApp com o
   // resumo pré-montado; o que muda é a cor, pra cada ponto da página chamar
@@ -1862,6 +1918,39 @@ export default function CotacaoPage() {
           )}
         </div>
       </div>
+
+      {/* Acabou a simulação num site vendido: a conversa com o consultor abre
+          sozinha, com todos os dados e o link do PDF. O cliente ainda pode
+          escolher ver os planos antes — quem fecha a tela por cima da própria
+          simulação sem saída perde a venda dos dois lados. */}
+      {autoWa && consultor && (
+        <div className="fixed inset-0 z-[60] bg-[#0B1120]/75 backdrop-blur-sm flex items-center justify-center px-6">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-7 text-center shadow-2xl">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[#C7D301]/20 flex items-center justify-center">
+              <Check className="w-7 h-7 text-[#5C6600]" />
+            </div>
+            <h3 className="text-xl font-bold text-[#1A2754] mb-2">Simulação pronta!</h3>
+            <p className="text-sm text-[#64748B] mb-6">
+              Abrindo sua conversa no WhatsApp com{' '}
+              <strong className="text-[#1A2754]">{primeiroNome(consultor.nome)}</strong>, já com
+              todos os dados da sua simulação. É só apertar enviar.
+            </p>
+            <a
+              href={contratarHref}
+              onClick={handleContratarClick}
+              className="flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-gradient-to-r from-[#F2911D] to-[#F5A845] text-white font-semibold shadow-lg shadow-[#F2911D]/25"
+            >
+              <MessageCircle className="w-5 h-5" /> Abrir agora
+            </a>
+            <button
+              onClick={() => setAutoWa(false)}
+              className="mt-3 text-sm text-[#64748B] hover:text-[#1A2754] transition-colors"
+            >
+              Ver meus planos primeiro
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   )
