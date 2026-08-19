@@ -65,6 +65,54 @@ export async function avisar(whatsapp: string, texto: string): Promise<boolean> 
   }
 }
 
+/**
+ * Manda um documento (o PDF da cotacao) pelo mesmo canal do `avisar`.
+ *
+ * Existe pra o consultor receber a simulacao pronta, do mesmo numero que ja
+ * fala com ele — e NAO pelo chip da casa, que e o que atende cliente. Se o
+ * numero de avisos cair, o consultor deixa de receber o PDF, mas nenhum cliente
+ * fica sem atendimento.
+ *
+ * Nunca lanca, pelo mesmo motivo do `avisar`: o lead ja esta salvo no Power e no
+ * banco quando isto roda. WhatsApp que falha nao pode derrubar o resto.
+ */
+export async function avisarComPdf(
+  whatsapp: string,
+  legenda: string,
+  media: string,
+  nomeArquivo: string,
+): Promise<boolean> {
+  if (!avisosConfigurados()) {
+    console.log(`[avisos] (desligado) PDF pra ${whatsapp}: ${nomeArquivo}`)
+    return false
+  }
+
+  try {
+    const res = await fetch(`${URL_BASE}/message/sendMedia/${INSTANCIA}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: CHAVE },
+      body: JSON.stringify({
+        number: whatsapp,
+        mediatype: 'document',
+        mimetype: 'application/pdf',
+        media,
+        caption: legenda,
+        fileName: nomeArquivo,
+        delay: 1200 + Math.floor(Math.random() * 1800),
+      }),
+      signal: AbortSignal.timeout(45_000),
+    })
+    if (!res.ok) {
+      console.error('[avisos] PDF: evolution respondeu', res.status, await res.text().catch(() => ''))
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('[avisos] PDF falhou', whatsapp, (err as Error).message)
+    return false
+  }
+}
+
 /** Primeiro nome — as mensagens falam com a pessoa, nao com o cadastro. */
 function primeiroNome(nome: string): string {
   const p = (nome || '').trim().split(/\s+/)[0] || ''
@@ -143,6 +191,49 @@ export function textoLeadIndicado(dados: {
     `Quem indicou: *${dados.indicadorNome}* — ${fone(dados.indicadorWhatsapp)}\n\n` +
     `Vale citar na conversa: quem chega por indicação já vem com confiança.`
   )
+}
+
+/**
+ * Avisa o consultor que entrou uma cotacao no site DELE.
+ *
+ * Ordem do dono (19/08/2026): "cada cotacao ele tem q receber no whatsapp".
+ * Ate aqui o site vendido nao avisava nada — o consultor so descobria o lead
+ * abrindo o Power, e leads de madrugada ficavam horas parados.
+ *
+ * Vai em TODA cotacao de site vendido, nao so nas indicadas (ver
+ * `textoLeadIndicado`): quem paga pelo site comprou justamente o lead.
+ */
+export function textoCotacaoNova(dados: {
+  leadNome: string
+  leadWhatsapp: string
+  veiculo: string | null
+  placa: string | null
+  plano: string | null
+  valorMensal: number | null
+  comPdf: boolean
+}): string {
+  const fone = (w: string) => {
+    const d = w.replace(/\D/g, '').replace(/^55/, '')
+    return d.length >= 10 ? `(${d.slice(0, 2)}) ${d.slice(2, -4)}-${d.slice(-4)}` : w
+  }
+  const digitos = dados.leadWhatsapp.replace(/\D/g, '')
+  const zap = digitos.startsWith('55') ? digitos : `55${digitos}`
+
+  const linhas = [`🔔 *Nova cotação no seu site*`, ``, `*${dados.leadNome}*`, fone(dados.leadWhatsapp)]
+  if (dados.veiculo) linhas.push(``, dados.placa ? `${dados.veiculo} — placa *${dados.placa}*` : dados.veiculo)
+  if (dados.plano && dados.valorMensal) {
+    linhas.push(
+      `Plano *${dados.plano}* — R$ ${dados.valorMensal.toFixed(2).replace('.', ',')}/mês`,
+    )
+  }
+  linhas.push(``, `Chamar agora: https://wa.me/${zap}`)
+  linhas.push(
+    ``,
+    dados.comPdf
+      ? `O cliente já recebeu a simulação em PDF. Quem fala primeiro fecha.`
+      : `A cotação ficou incompleta, então não saiu PDF — vale ligar pra fechar os dados.`,
+  )
+  return linhas.join('\n')
 }
 
 /**

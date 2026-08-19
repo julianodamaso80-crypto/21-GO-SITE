@@ -30,7 +30,7 @@ import {
 import { getRequestContext } from '@/lib/request-context'
 import { estaNoAr, resolverConsultor } from '@/lib/consultor'
 import { acharIndicador, marcarUso } from '@/lib/indicacao'
-import { avisar, textoLeadIndicado } from '@/lib/whatsapp-avisos'
+import { avisar, avisarComPdf, textoCotacaoNova, textoLeadIndicado } from '@/lib/whatsapp-avisos'
 
 /** Pra onde vai o aviso de lead indicado quando nao ha consultor dono do site. */
 const DONO_WHATSAPP = '5521992208062'
@@ -292,21 +292,43 @@ export async function POST(req: NextRequest) {
   //    reduz drasticamente o risco de queda/ban do chip. O lead continua salvo
   //    no PowerCRM + Supabase pra atendimento. Pra religar o disparo automático,
   //    defina WHATSAPP_AUTO_DISPATCH=true no ambiente.
-  // ─── Site de consultor NUNCA dispara pelo nosso chip ───────────────────────
-  // REGRA (ordem do dono, 17/08/2026): num site vendido, TODO contato e do
-  // consultor. Nosso unico chip conectado na Evolution e o da casa (site4824),
-  // entao qualquer disparo automatico chega ao cliente como "consultora
-  // leticya" — e o lead que o consultor pagou pra ter vira lead da casa.
+  // ─── Site de consultor: entrega nas DUAS pontas ────────────────────────
+  // Historico, porque a regra ja foi o contrario: de 17/08 a 19/08/2026 site
+  // vendido nao disparava NADA. O motivo era real — um BYD simulado em
+  // /andersonagripino recebeu texto + PDF do 4824, e o cliente que o consultor
+  // pagou pra ter foi abordado por outro numero.
   //
-  // Aconteceu em 17/08/2026: um BYD simulado em /andersonagripino recebeu texto
-  // + PDF do 4824. O consultor foi passado pra tras pelo proprio sistema.
+  // O dono reviu em 19/08/2026 sabendo desse custo: o silencio saiu mais caro
+  // que o risco, porque o consultor so via o lead abrindo o Power. Agora o
+  // cliente recebe a simulacao (chip da casa) e o consultor recebe o aviso + o
+  // mesmo PDF (numero de avisos), na hora.
   //
-  // No site de consultor o contato acontece pelo botao (wa.me do numero DELE) —
-  // esse caminho ja funciona e nao depende de Evolution nenhuma.
+  // O que continua valendo do incidente antigo: nenhum texto e nenhum PDF cita
+  // nome ou telefone de quem quer que seja da casa, e todo link de contato
+  // resolve pelo slug — `/api/wa?c=<slug>` cai no WhatsApp DELE. O botao da
+  // tela de planos segue sendo o caminho principal; isto aqui e a rede.
   const siteDeConsultor = Boolean(body.consultorSlug)
 
   if (siteDeConsultor) {
-    console.log(`[lead] site de consultor (${body.consultorSlug}) — nenhum disparo nosso`)
+    // ORDEM DO DONO (19/08/2026), depois de ver cotações do Manghi paradas sem
+    // ninguém saber: *"cada cotação ele tem q receber no whatsapp (...) qd
+    // cliente entrou fez cotação ele recebe pdf com a cotação igual era
+    // antigamente nos .site"*. Ele foi avisado, com o incidente de 17/08 na
+    // frente, de que a mensagem ao CLIENTE sai do chip da casa e chega com o
+    // nome daquele perfil — e mandou seguir assim mesmo.
+    //
+    // Desliga sem deploy com CONSULTOR_AUTO_DISPATCH=false.
+    if (process.env.CONSULTOR_AUTO_DISPATCH === 'false') {
+      console.log(`[lead] site de consultor (${body.consultorSlug}) — disparo desligado por env`)
+    } else {
+      ;(async () => {
+        try {
+          await sendConsultorQuoteWithPdf(body, supaResult.lead_id || leadId, supaResult.ok)
+        } catch (err) {
+          console.error('[lead] consultor: falha no envio:', err instanceof Error ? err.message : err)
+        }
+      })()
+    }
   } else if (process.env.WHATSAPP_AUTO_DISPATCH === 'true') {
     ;(async () => {
       try {
@@ -905,6 +927,200 @@ async function sendBydQuoteWithPdf(
     } catch (err) {
       console.warn('[lead] BYD: falha marcar pdf_enviado:', err instanceof Error ? err.message : err)
     }
+  }
+}
+
+/**
+ * Site vendido: a cotacao chega no cliente E no consultor, na hora.
+ *
+ * Duas pontas, dois canais de proposito:
+ *  - cliente   -> chip do site (`lib/whatsapp.ts`), com o mesmo ritmo humano do
+ *    BYD (presenca + espera aleatoria). E contato frio, entao paga o pedagio
+ *    anti-ban;
+ *  - consultor -> numero de avisos (`lib/whatsapp-avisos.ts`), que ja e o que
+ *    fala com ele sobre o site. Aviso interno nao pode somar volume no unico
+ *    chip que atende venda, e se o chip da casa cair ele continua sabendo dos
+ *    leads.
+ *
+ * O PDF e gerado UMA vez e vai pros dois.
+ *
+ * Nao envia nada se o site nao estiver no ar: `pendente` e `cancelado` nao
+ * compraram lead nenhum (REGRA 0). O lead ja esta salvo no Power e no banco
+ * quando isto roda, entao nenhuma falha aqui pode derrubar o resto.
+ */
+async function sendConsultorQuoteWithPdf(
+  body: LeadInput,
+  leadId: string,
+  leadPersisted: boolean,
+): Promise<void> {
+  const slug = body.consultorSlug!
+  const consultor = await resolverConsultor(slug)
+  if (!consultor || !estaNoAr(consultor)) {
+    console.log(`[lead] consultor "${slug}" sem site no ar — nenhum envio`)
+    return
+  }
+
+  const nome = body.nome || ''
+  const veiculo = [body.marca, body.modelo].filter(Boolean).join(' ').trim() || null
+
+  const avisaConsultor = (comPdf: boolean) =>
+    avisar(
+      consultor.whatsapp,
+      textoCotacaoNova({
+        leadNome: nome,
+        leadWhatsapp: body.whatsapp || '',
+        veiculo,
+        placa: body.placa ?? null,
+        plano: comPdf ? body.plano ?? null : null,
+        valorMensal: comPdf ? body.valorMensal ?? null : null,
+        comPdf,
+      }),
+    )
+
+  // Sem dados completos nao existe PDF pra gerar. O cliente recebe a mensagem
+  // honesta (sem prometer arquivo que nao vem) e o consultor e avisado do mesmo
+  // jeito: lead pela metade continua sendo lead dele, e ele resolve no telefone
+  // o que o formulario nao resolveu.
+  const semDados =
+    !body.marca || !body.modelo || !body.valorFipe || body.valorFipe <= 0 ||
+    !body.plano || !body.valorMensal
+  if (semDados) {
+    console.warn(`[lead] consultor ${slug}: dados incompletos lead=${leadId} — sem PDF`)
+    if (isWhatsappConfigured()) {
+      await sendQuotePdfWhatsApp(body, leadId).catch((err) =>
+        console.error('[lead] consultor: falha no texto ao cliente:', err instanceof Error ? err.message : err),
+      )
+    }
+    await avisaConsultor(false)
+    return
+  }
+
+  console.log(`[lead] consultor ${slug}: cotacao+PDF lead=${leadId} ${body.marca} ${body.modelo}`)
+
+  const filename = `simulacao-21go-${leadId}.pdf`
+  const pdfInput = {
+    consultorSlug: slug,
+    ocultarAtivacao: consultor.ocultarAtivacao ?? false,
+    nome,
+    whatsapp: body.whatsapp || '',
+    email: body.email ?? null,
+    placa: body.placa ?? null,
+    marca: body.marca!,
+    modelo: body.modelo!,
+    ano: body.ano ?? '',
+    cor: body.cor ?? null,
+    fipe: body.valorFipe!,
+    planoNome: body.plano!,
+    mensalidade: body.valorMensal!,
+    categoria: body.categoria ?? null,
+    combustivel: body.combustivel ?? null,
+    cilindrada: body.cilindrada ?? null,
+    carroApp: !!body.carroApp,
+    leilao: body.leilao ?? null,
+    seguroAtual: body.seguroAtual ?? null,
+  }
+
+  // Mesma escada do BYD (storage -> URL do proprio site -> base64). Repetida em
+  // vez de extraida de proposito: mexer na funcao do BYD mexeria no que ja esta
+  // no ar nos .site, e a ordem foi para nao tocar neles.
+  let media: string | null = null
+  let pdfUrl: string | null = null
+
+  if (isStorageConfigured()) {
+    try {
+      const pdf = await generateQuotePdf(pdfInput)
+      const key = `quotes/${new Date().toISOString().slice(0, 10)}/${leadId}.pdf`
+      const { url } = await uploadPdf(key, pdf, filename)
+      media = url
+      pdfUrl = url
+    } catch (err) {
+      console.warn('[lead] consultor: upload do PDF falhou:', err instanceof Error ? err.message : err)
+    }
+  }
+  if (!media && leadPersisted) {
+    media = `${SITE_URL}/api/pdfs/${leadId}`
+    pdfUrl = media
+  }
+  if (!media) {
+    const pdf = await generateQuotePdf(pdfInput)
+    media = pdf.toString('base64')
+  }
+
+  // 1) Cliente. Envolvido em try/catch proprio: se o chip da casa estiver fora,
+  // o consultor ainda tem que receber o lead dele.
+  let entregueAoCliente = false
+  if (isWhatsappConfigured()) {
+    try {
+      const phone = formatPhone(body.whatsapp || '')
+      const jid = phoneToJid(phone)
+      const instance = getEvolutionInstance()
+
+      const texto = buildFollowUpMessage({
+        nome,
+        marca: body.marca,
+        modelo: body.modelo,
+        placa: body.placa,
+        seed: leadId,
+      })
+      await sendPresence(phone, 'composing', 3000)
+      await sleep(randInt(2500, 4500))
+      const textResult = await sendText(phone, texto)
+      await registerOutboundMessage({
+        result: textResult,
+        jid,
+        instance,
+        leadId,
+        message_type: 'text',
+        content: texto,
+      })
+
+      await sendPresence(phone, 'composing', 2000)
+      await sleep(randInt(2000, 3500))
+      const caption = buildPdfCaption({
+        nome,
+        marca: body.marca,
+        modelo: body.modelo,
+        placa: body.placa,
+        seed: leadId,
+      })
+      const pdfResult = await sendPdfMedia(phone, media, caption, filename)
+      await registerOutboundMessage({
+        result: pdfResult,
+        jid,
+        instance,
+        leadId,
+        message_type: 'document',
+        content: caption,
+        caption,
+        media_url: pdfUrl,
+        media_filename: filename,
+        media_mime_type: 'application/pdf',
+      })
+      entregueAoCliente = true
+
+      if (leadPersisted) {
+        try {
+          await supabaseAdmin()
+            .from('leads')
+            .update({ pdf_enviado: true, pdf_enviado_em: new Date().toISOString() })
+            .eq('id', leadId)
+        } catch (err) {
+          console.warn('[lead] consultor: falha marcar pdf_enviado:', err instanceof Error ? err.message : err)
+        }
+      }
+    } catch (err) {
+      console.error('[lead] consultor: falha no envio ao cliente:', err instanceof Error ? err.message : err)
+    }
+  } else {
+    console.warn('[lead] consultor: WhatsApp do site nao configurado — cliente nao recebeu')
+  }
+
+  // 2) Consultor: o aviso primeiro (e o que ele le), o PDF logo atras. So manda
+  // o arquivo se o aviso saiu — sem ele, o documento chegaria sem contexto.
+  const avisou = await avisaConsultor(entregueAoCliente)
+  if (avisou) {
+    const legenda = veiculo ? `Simulação de ${nome} — ${veiculo}` : `Simulação de ${nome}`
+    await avisarComPdf(consultor.whatsapp, legenda, media, filename)
   }
 }
 
