@@ -38,6 +38,7 @@ Num site vendido, **todo** contato vai pro número do consultor **e todo lead na
 **Consequência: site de consultor NÃO dispara nada pelo nosso chip.** O único número conectado na Evolution é o da casa (`site4824`) — qualquer envio automático chega ao cliente assinado *"consultora leticya"*, e o lead que o consultor pagou pra ter é abordado por outra pessoa. No site dele o contato acontece pelo **botão** (`/api/wa?c=<slug>` → `wa.me` dele), que não usa Evolution.
 
 - Guarda em `vehicle/lead/route.ts`: `const siteDeConsultor = Boolean(body.consultorSlug)` corta BYD e `WHATSAPP_AUTO_DISPATCH`.
+- **O CONSULTOR, sim, e avisado** (19/08/2026): toda cotacao num site vendido manda pra ele, no WhatsApp, o telefone do cliente + plano + o PDF pronto pra encaminhar. Sai pelo numero de AVISOS (`lib/whatsapp-avisos.ts`, instancia `julianodamaso`), nunca pelo chip da casa — e por isso nao fere a regra acima. Site `pendente`/`cancelado` nao recebe. Desliga com `CONSULTOR_AUTO_DISPATCH=false`.
 - Ao criar qualquer envio novo, pergunte antes: *"isso pode sair num site de consultor?"*
 
 > Origem: em 17/08/2026 um BYD simulado em `/andersonagripino` recebeu texto + PDF do 4824.
