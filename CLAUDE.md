@@ -38,7 +38,8 @@ Num site vendido, **todo** contato vai pro número do consultor **e todo lead na
 **Consequência: site de consultor NÃO dispara nada pelo nosso chip.** O único número conectado na Evolution é o da casa (`site4824`) — qualquer envio automático chega ao cliente assinado *"consultora leticya"*, e o lead que o consultor pagou pra ter é abordado por outra pessoa. No site dele o contato acontece pelo **botão** (`/api/wa?c=<slug>` → `wa.me` dele), que não usa Evolution.
 
 - Guarda em `vehicle/lead/route.ts`: `const siteDeConsultor = Boolean(body.consultorSlug)` corta BYD e `WHATSAPP_AUTO_DISPATCH`.
-- **O CONSULTOR, sim, e avisado** (19/08/2026): toda cotacao num site vendido manda pra ele, no WhatsApp, o telefone do cliente + plano + o PDF pronto pra encaminhar. Sai pelo numero de AVISOS (`lib/whatsapp-avisos.ts`, instancia `julianodamaso`), nunca pelo chip da casa — e por isso nao fere a regra acima. Site `pendente`/`cancelado` nao recebe. Desliga com `CONSULTOR_AUTO_DISPATCH=false`.
+- **Acabou a simulacao, o WhatsApp DELE abre sozinho** (19/08/2026): em site vendido o cliente e levado pro `wa.me` do consultor com a mensagem inteira montada + o LINK do PDF (`/api/pdfs/<leadId>`). `wa.me` nao anexa arquivo e nao envia nada sozinho — quem aperta enviar e o cliente. Codigo: `autoWa` em `cotacao/page.tsx`.
+- O disparo por chip (`sendConsultorQuoteWithPdf`) existe mas esta **DESLIGADO** (`CONSULTOR_AUTO_DISPATCH=false`): a instancia de avisos e o celular do proprio dono, e ele mandou parar. So ha 2 numeros conectados — o dele e o `site4824` da casa. Religar exige chip novo.
 - Ao criar qualquer envio novo, pergunte antes: *"isso pode sair num site de consultor?"*
 
 > Origem: em 17/08/2026 um BYD simulado em `/andersonagripino` recebeu texto + PDF do 4824.
