@@ -108,19 +108,49 @@ export async function gerarQrCode(consultorSlug: string): Promise<{
     return { qr, estado: 'conectando' }
   }
 
+  /**
+   * ⚠️ NADA de `webhook` aqui dentro.
+   *
+   * Esta versao da Evolution responde 400 ("Cannot read properties of
+   * undefined") quando o `create` leva o objeto de webhook junto — medido em
+   * 20/08/2026, contra 201 sem ele. O webhook e configurado logo depois, no
+   * endpoint proprio.
+   */
   const { corpo } = await evo('/instance/create', {
     method: 'POST',
     body: JSON.stringify({
       instanceName: instancia,
       qrcode: true,
       integration: 'WHATSAPP-BAILEYS',
-      webhook: { url: WEBHOOK, byEvents: false, base64: true },
     }),
   })
 
   const qr = ((corpo?.qrcode as Record<string, unknown>)?.base64 as string) || (corpo?.base64 as string) || null
-  if (qr) await guardarInstancia(consultorSlug, instancia)
-  return { qr, estado: qr ? 'conectando' : 'desconectado' }
+  if (!qr) {
+    console.error('[whatsapp-proprio] create sem QR:', JSON.stringify(corpo).slice(0, 300))
+    return { qr: null, estado: 'desconectado' }
+  }
+
+  await definirWebhook(instancia)
+  await guardarInstancia(consultorSlug, instancia)
+  return { qr, estado: 'conectando' }
+}
+
+/** Sem isto, mensagem recebida no chip dele nao chega ao nosso sistema. */
+async function definirWebhook(instancia: string): Promise<void> {
+  const { status } = await evo(`/webhook/set/${instancia}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      webhook: {
+        enabled: true,
+        url: WEBHOOK,
+        webhookByEvents: false,
+        webhookBase64: true,
+        events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'SEND_MESSAGE'],
+      },
+    }),
+  })
+  if (status >= 400) console.warn(`[whatsapp-proprio] webhook/set devolveu ${status}`)
 }
 
 async function guardarInstancia(consultorSlug: string, instancia: string): Promise<void> {
