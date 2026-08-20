@@ -12,5 +12,6 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   const res = NextResponse.redirect(new URL('/', req.url), { status: 303 })
   res.cookies.set(COOKIE_SESSAO, '', { path: '/', httpOnly: true, maxAge: 0 })
+  res.cookies.set('painel_papel', '', { path: '/', maxAge: 0 })
   return res
 }

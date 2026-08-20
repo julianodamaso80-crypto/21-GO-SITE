@@ -75,5 +75,16 @@ export async function POST(req: NextRequest) {
     secure: true,
     maxAge: DURACAO_SESSAO_MS / 1000,
   })
+  /**
+   * So pra TELA saber o que mostrar (esconder a aba "Equipe" de quem nao e
+   * dono). Nao e httpOnly de proposito e nao vale como permissao: quem decide
+   * continua sendo a sessao assinada, conferida no servidor a cada rota.
+   */
+  res.cookies.set('painel_papel', usuario.papel, {
+    path: '/',
+    sameSite: 'lax',
+    secure: true,
+    maxAge: DURACAO_SESSAO_MS / 1000,
+  })
   return res
 }
