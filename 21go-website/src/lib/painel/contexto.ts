@@ -48,6 +48,33 @@ export async function sessaoDaRequisicao(req: NextRequest): Promise<Sessao | nul
   return sessao
 }
 
+/**
+ * A mesma sessao, mas lida de dentro de um Server Component.
+ *
+ * Existe porque o papel do usuario precisa ser conhecido no SERVIDOR pra montar
+ * a navegacao. A primeira versao usava um cookie de tela gravado no login — e
+ * quem ja estava logado antes daquele deploy ficou sem a aba "Equipe", porque o
+ * cookie so nascia em login novo. Estado derivado da sessao nao pode depender
+ * de quando a pessoa entrou.
+ *
+ * Nao torna nada estatico: as rotas do painel ja sao `force-dynamic`.
+ */
+export async function sessaoDoServidor(): Promise<Sessao | null> {
+  const { cookies, headers } = await import('next/headers')
+  const [ck, hd] = await Promise.all([cookies(), headers()])
+
+  const token = ck.get(COOKIE_SESSAO)?.value
+  const slugDoHost = painelDoHost(hd.get('host') ?? '', PAINEL_POR_HOST)
+  if (!token || !slugDoHost) return null
+
+  const sessao = lerSessao(token, segredoSessao())
+  if (!sessao || sessao.slug !== slugDoHost) return null
+
+  const usuario = await buscarPorId(sessao.uid, sessao.slug)
+  if (!usuario || !usuario.ativo || usuario.tokenVersao !== sessao.v) return null
+  return sessao
+}
+
 export class SemPermissao extends Error {
   constructor(readonly status: 401 | 403) {
     super(status === 401 ? 'nao_autenticado' : 'sem_permissao')

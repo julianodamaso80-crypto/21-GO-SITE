@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import Campo from './Campo'
+import { Botao, Campo } from './ui'
 
 export default function FormCadastro() {
   const [nome, setNome] = useState('')
@@ -43,11 +43,11 @@ export default function FormCadastro() {
   if (pronto) {
     return (
       <div className="text-center">
-        <p className="text-lg font-semibold text-[#293C82] mb-2">Pronto, {pronto.nome}!</p>
-        <p className="text-sm text-slate-600 mb-5">
+        <p className="mb-2 text-lg font-bold text-[#E8E8EE]">Pronto, {pronto.nome}!</p>
+        <p className="mb-5 text-sm text-[#9D9DB5]">
           Este é o seu link. Todo mundo que fizer cotação por ele conta como seu.
         </p>
-        <div className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm break-all text-slate-800 mb-3">
+        <div className="mb-3 break-all rounded-lg border border-[#3D3D5C] bg-[#2A2A42] px-4 py-3 font-mono text-sm text-[#E8E8EE]">
           {pronto.link}
         </div>
         <button
@@ -55,14 +55,14 @@ export default function FormCadastro() {
             void navigator.clipboard.writeText(pronto.link)
             setCopiado(true)
           }}
-          className="w-full rounded-xl bg-[#C7D301] py-3 font-semibold text-[#293C82] mb-3"
+          className="mb-3 w-full rounded-lg bg-[#E07620] py-3 font-semibold text-white transition-colors hover:bg-[#C4651A]"
         >
           {copiado ? 'Copiado!' : 'Copiar meu link'}
         </button>
         <a
           href="/app"
           data-sai-do-slug
-          className="block w-full rounded-xl bg-[#293C82] py-3 font-semibold text-white"
+          className="block w-full rounded-lg bg-[#1B4DA1] py-3 font-semibold text-white transition-colors hover:bg-[#164087]"
         >
           Ver meu painel
         </a>
@@ -89,14 +89,10 @@ export default function FormCadastro() {
         dica="Mínimo de 8 caracteres"
         autoComplete="new-password"
       />
-      {erro && <p className="text-sm text-red-600 mb-4">{erro}</p>}
-      <button
-        type="submit"
-        disabled={enviando}
-        className="w-full rounded-xl bg-[#F2911D] py-3 font-semibold text-white disabled:opacity-60"
-      >
+      {erro && <p className="mb-4 text-sm text-[#FB7185]">{erro}</p>}
+      <Botao tipo="cta" type="submit" disabled={enviando} className="w-full">
         {enviando ? 'Criando…' : 'Criar meu acesso'}
-      </button>
+      </Botao>
     </form>
   )
 }

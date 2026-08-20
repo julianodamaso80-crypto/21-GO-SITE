@@ -31,6 +31,12 @@ export interface Resumo {
   ganhos: number
   perdidos: number
   emNegociacao: number
+  /**
+   * As duas origens, separadas — e a pergunta que o dono do painel faz primeiro:
+   * "quanto veio do meu site e quanto a minha rede me trouxe?".
+   */
+  doSite: { total: number; noMes: number; ganhos: number }
+  deIndicacao: { total: number; noMes: number; ganhos: number }
   porVendedor: { slug: string; nome: string; total: number; noMes: number; ganhos: number }[]
 }
 
@@ -88,8 +94,20 @@ export async function resumoDoPainel(
     emNegociacao: contar(
       (l) => l.status !== 'convertido' && l.status !== 'perdido' && l.etapa_funil !== 'novo',
     ),
+    doSite: { total: 0, noMes: 0, ganhos: 0 },
+    deIndicacao: { total: 0, noMes: 0, ganhos: 0 },
     porVendedor: [],
   }
+
+  const doSite = linhas.filter((l) => !l.vendedor_slug)
+  const deIndicacao = linhas.filter((l) => !!l.vendedor_slug)
+  const fatia = (ls: Record<string, unknown>[]) => ({
+    total: ls.length,
+    noMes: ls.filter((l) => (l.created_at as string) >= mes).length,
+    ganhos: ls.filter((l) => l.status === 'convertido').length,
+  })
+  resumo.doSite = fatia(doSite)
+  resumo.deIndicacao = fatia(deIndicacao)
 
   if (vendedorSlug) return resumo
 
@@ -114,19 +132,6 @@ export async function resumoDoPainel(
     })
     .sort((a, b) => b.noMes - a.noMes || b.total - a.total)
 
-  // "Direto no meu link" e linha propria: sem ela, o consultor soma os
-  // vendedores, nao bate com o total e acha que o painel esta errado.
-  const semVendedor = linhas.filter((l) => !l.vendedor_slug)
-  if (semVendedor.length) {
-    resumo.porVendedor.push({
-      slug: '',
-      nome: 'Direto no meu link',
-      total: semVendedor.length,
-      noMes: semVendedor.filter((l) => (l.created_at as string) >= mes).length,
-      ganhos: semVendedor.filter((l) => l.status === 'convertido').length,
-    })
-  }
-
   return resumo
 }
 
@@ -138,6 +143,8 @@ export async function leadsDoPainel(a: {
   pagina?: number
   porPagina?: number
   mascarar: boolean
+  /** `site` = veio direto do link do consultor · `indicacao` = alguem trouxe. */
+  origem?: 'site' | 'indicacao' | null
 }): Promise<{ itens: LeadPainel[]; total: number }> {
   const porPagina = Math.min(a.porPagina ?? 50, 200)
   const pagina = Math.max(a.pagina || 1, 1)
@@ -151,6 +158,8 @@ export async function leadsDoPainel(a: {
     .range(inicio, inicio + porPagina - 1)
 
   if (a.vendedorSlug) q = q.eq('vendedor_slug', a.vendedorSlug)
+  if (a.origem === 'site') q = q.is('vendedor_slug', null)
+  if (a.origem === 'indicacao') q = q.not('vendedor_slug', 'is', null)
   if (a.de) q = q.gte('created_at', a.de)
   if (a.ate) q = q.lte('created_at', a.ate)
 

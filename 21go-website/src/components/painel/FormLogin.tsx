@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import Campo from './Campo'
+import { Botao, Campo } from './ui'
 
 export default function FormLogin() {
   const [email, setEmail] = useState('')
@@ -45,14 +45,10 @@ export default function FormLogin() {
         aoMudar={setSenha}
         autoComplete="current-password"
       />
-      {erro && <p className="text-sm text-red-600 mb-4">{erro}</p>}
-      <button
-        type="submit"
-        disabled={enviando}
-        className="w-full rounded-xl bg-[#F2911D] py-3 font-semibold text-white disabled:opacity-60"
-      >
+      {erro && <p className="mb-4 text-sm text-[#FB7185]">{erro}</p>}
+      <Botao tipo="cta" type="submit" disabled={enviando} className="w-full">
         {enviando ? 'Entrando…' : 'Entrar'}
-      </button>
+      </Botao>
     </form>
   )
 }

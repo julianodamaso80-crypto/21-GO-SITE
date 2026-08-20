@@ -13,12 +13,12 @@ export default async function PaginaLogin({ params }: { params: Promise<{ slug: 
     <main className="flex min-h-screen items-center justify-center px-5 py-12">
       <div className="w-full max-w-sm">
         <Marca nome={consultor?.nome ?? ''} />
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-200">
+        <div className="rounded-xl border border-[#3D3D5C]/50 bg-[#1A1F35] p-6">
           <FormLogin />
         </div>
-        <p className="mt-5 text-center text-sm text-slate-600">
+        <p className="mt-5 text-center text-sm text-[#9D9DB5]">
           Ainda não tem acesso?{' '}
-          <Link href="/cadastro" className="font-semibold text-[#293C82] underline">
+          <Link href="/cadastro" className="font-semibold text-[#6B96EB] hover:underline">
             Quero divulgar e ganhar
           </Link>
         </p>

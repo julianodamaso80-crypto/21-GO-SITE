@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
       de: p.get('de'),
       ate: p.get('ate'),
       pagina: Number(p.get('pagina') || 1),
+      origem: (p.get('origem') as 'site' | 'indicacao' | null) || null,
       mascarar: sessao.papel !== 'admin',
     })
 

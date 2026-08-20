@@ -25,5 +25,5 @@ export default async function LayoutPainel({
   const consultor = await resolverConsultor(slug)
   if (!consultor || !estaNoAr(consultor)) notFound()
 
-  return <div className="min-h-screen bg-[#F8FAFC] text-slate-900">{children}</div>
+  return <div className="min-h-screen bg-[#0B1120] text-[#E8E8EE]">{children}</div>
 }
