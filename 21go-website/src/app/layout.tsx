@@ -12,6 +12,7 @@ import { SchemaOrg } from '@/components/seo/SchemaOrg'
 import SmoothScrollProvider from '@/components/SmoothScrollProvider'
 import MobileCTA from '@/components/MobileCTA'
 import { ConsultorProvider } from '@/components/ConsultorProvider'
+import { PAINEL_POR_HOST } from '@/lib/consultores-painel'
 
 /* Inter = fallback oficial (Google Fonts) do manual de marca 21Go v1.0 abr/2026 */
 /* Pesos cobrindo: Light(300), Regular(400), Medium(500), Bold(700), Heavy/ExtraBold(800) */
@@ -65,14 +66,37 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Envolve tudo: num site de consultor (/julianodamaso) é o que faz
             todo <Link> carregar o slug junto e o visitante nunca escorregar
             pra home da 21Go. Fora dele, não faz nada. */}
+        {/* O painel do parceiro (`parceiroanderson.21go.com.br`) NAO leva o site
+            em volta: header e rodape de marketing la dentro mandariam o dono
+            do painel pra "Simulacao", "Area do Associado" e ate pro "Falar com
+            a 21Go" — a casa dentro do produto que ele comprou.
+
+            Script inline em vez de efeito do React de proposito: roda ANTES da
+            pintura, entao o header nao pisca antes de sumir. Mesmo padrao do
+            MetaPixelScripts, que ja escolhe o pixel lendo `location`. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var h=(location.hostname||'').toLowerCase();if(${JSON.stringify(
+              Object.keys(PAINEL_POR_HOST),
+            )}.indexOf(h)>=0)document.documentElement.setAttribute('data-painel','1')}catch(e){}})()`,
+          }}
+        />
         <ConsultorProvider>
           <SmoothScrollProvider>
-            <Header />
+            {/* `display:contents` faz o embrulho sumir do layout: o header
+                continua grudando no topo como sempre no site normal. */}
+            <div data-chrome-do-site style={{ display: 'contents' }}>
+              <Header />
+            </div>
             <main>{children}</main>
-            <Footer />
+            <div data-chrome-do-site style={{ display: 'contents' }}>
+              <Footer />
+            </div>
             {/* Botão flutuante do WhatsApp removido (ordem do dono, 03/08/2026):
                 o único caminho pro atendimento é a simulação em /cotacao. */}
-            <MobileCTA />
+            <div data-chrome-do-site style={{ display: 'contents' }}>
+              <MobileCTA />
+            </div>
           </SmoothScrollProvider>
         </ConsultorProvider>
       </body>

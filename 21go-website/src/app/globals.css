@@ -290,3 +290,10 @@ main > div > section:not(:first-of-type) {
 
 /* O botão flutuante do WhatsApp foi removido do layout (03/08/2026) — a regra
    `body.sem-whatsapp` que o escondia na tela de veículo excluído saiu junto. */
+
+/* Painel do parceiro: sem header, rodape ou CTA do site de marketing.
+   O atributo `data-painel` e posto pelo script inline do layout, antes da
+   pintura — nada pisca. */
+html[data-painel] [data-chrome-do-site] {
+  display: none !important;
+}
