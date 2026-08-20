@@ -297,3 +297,10 @@ main > div > section:not(:first-of-type) {
 html[data-painel] [data-chrome-do-site] {
   display: none !important;
 }
+
+/* O <body> tem o fundo claro do site. No painel isso aparecia como uma faixa
+   branca embaixo sempre que a pagina era mais curta que a tela. */
+html[data-painel],
+html[data-painel] body {
+  background: #0B1120 !important;
+}
