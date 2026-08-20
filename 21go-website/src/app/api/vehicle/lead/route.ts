@@ -19,6 +19,7 @@ import {
 import { generateQuotePdf } from '@/lib/pdf-quote'
 import { isStorageConfigured, uploadPdf } from '@/lib/storage'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { contaDoConsultor, lerEnvioAoCliente } from '@/lib/painel/whatsapp-proprio'
 import {
   upsertLead,
   upsertConversation,
@@ -1028,6 +1029,17 @@ async function sendConsultorQuoteWithPdf(
 
   console.log(`[lead] consultor ${slug}: aviso+PDF lead=${leadId} ${body.marca} ${body.modelo}`)
 
+  /**
+   * O cliente so recebe alguma coisa se o consultor tiver conectado o WhatsApp
+   * DELE e ligado o interruptor no painel.
+   *
+   * As duas condicoes existem por motivos diferentes: sem o chip dele a
+   * mensagem sairia do numero da casa, assinada por outra pessoa (REGRA 0.1);
+   * e o interruptor deixa o risco de ban com quem e dono do numero.
+   */
+  const contaDele = await contaDoConsultor(slug)
+  const falarComCliente = Boolean(contaDele) && (await lerEnvioAoCliente(slug))
+
   const filename = `simulacao-21go-${leadId}.pdf`
   const pdfInput = {
     consultorSlug: slug,
@@ -1080,6 +1092,34 @@ async function sendConsultorQuoteWithPdf(
   if (avisou) {
     const legenda = veiculo ? `Simulação de ${nome} — ${veiculo}` : `Simulação de ${nome}`
     await avisarComPdf(consultor.whatsapp, legenda, media, filename)
+  }
+
+  // ─── E o cliente, pelo numero do proprio consultor ──────────────────────
+  if (falarComCliente && body.whatsapp) {
+    const texto =
+      `Oi ${nome.split(' ')[0]}! Aqui é ${consultor.nome.split(' ')[0]}, da 21Go.
+
+` +
+      `Sua simulação do ${veiculo ?? 'veículo'} ficou pronta — mando o PDF logo abaixo.
+` +
+      `Qualquer dúvida é só me chamar por aqui.`
+    try {
+      await sendText(body.whatsapp, texto, contaDele)
+      await sendPdfMedia(
+        body.whatsapp,
+        media,
+        `Simulação 21Go — ${veiculo ?? 'seu veículo'}`,
+        filename,
+        contaDele,
+      )
+      console.log(`[lead] consultor ${slug}: cotação enviada ao cliente pelo número dele`)
+    } catch (err) {
+      // O consultor ja foi avisado; falhar aqui nao pode derrubar o resto.
+      console.error(
+        `[lead] consultor ${slug}: envio ao cliente falhou:`,
+        err instanceof Error ? err.message : err,
+      )
+    }
   }
 }
 

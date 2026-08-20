@@ -59,15 +59,33 @@ function parseEvolutionResponse(raw: unknown): SendResult {
   }
 }
 
-export async function sendText(phone: string, text: string): Promise<SendResult> {
-  if (!EVOLUTION_API_KEY) {
+/**
+ * A conta que envia. Sem ela, e a da casa.
+ *
+ * O consultor que conecta o WhatsApp dele no painel passa a enviar pela conta
+ * DELE — e o que tira a mensagem do numero da casa, que chegava ao cliente
+ * assinada por outra pessoa (REGRA 0.1).
+ */
+export interface ContaEnvio {
+  instancia: string
+  chave: string
+}
+
+export async function sendText(
+  phone: string,
+  text: string,
+  conta?: ContaEnvio | null,
+): Promise<SendResult> {
+  const instancia = conta?.instancia || EVOLUTION_INSTANCE
+  const chave = conta?.chave || EVOLUTION_API_KEY
+  if (!chave) {
     throw new Error('EVOLUTION_API_KEY não configurada')
   }
-  const url = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`
+  const url = `${EVOLUTION_API_URL}/message/sendText/${instancia}`
   console.log('[WhatsApp] sendText →', phone, '(', text.length, 'chars )')
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: EVOLUTION_API_KEY },
+    headers: { 'Content-Type': 'application/json', apikey: chave },
     body: JSON.stringify({ number: phone, text }),
   })
   const bodyText = await res.text().catch(() => '')
@@ -83,11 +101,14 @@ export async function sendPdfMedia(
   media: string,
   caption: string,
   filename: string,
+  conta?: ContaEnvio | null,
 ): Promise<SendResult> {
-  if (!EVOLUTION_API_KEY) {
+  const instancia = conta?.instancia || EVOLUTION_INSTANCE
+  const chave = conta?.chave || EVOLUTION_API_KEY
+  if (!chave) {
     throw new Error('EVOLUTION_API_KEY não configurada')
   }
-  const url = `${EVOLUTION_API_URL}/message/sendMedia/${EVOLUTION_INSTANCE}`
+  const url = `${EVOLUTION_API_URL}/message/sendMedia/${instancia}`
   const isUrl = media.startsWith('http')
   console.log(
     '[WhatsApp] sendPdfMedia →',
@@ -98,7 +119,7 @@ export async function sendPdfMedia(
   )
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: EVOLUTION_API_KEY },
+    headers: { 'Content-Type': 'application/json', apikey: chave },
     body: JSON.stringify({
       number: phone,
       mediatype: 'document',

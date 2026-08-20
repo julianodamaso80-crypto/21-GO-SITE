@@ -4,6 +4,7 @@ import Link from '@/components/Link'
 import { Cartao, Kpi, TituloSecao, Vazio } from './ui'
 import CopiarLink from './CopiarLink'
 import MinhaSenha from './MinhaSenha'
+import MeuWhatsApp from './MeuWhatsApp'
 
 interface Fatia {
   total: number
@@ -74,6 +75,8 @@ export default function PainelResumo() {
       </div>
 
       <MinhaSenha />
+
+      {ehAdmin && <MeuWhatsApp />}
 
       {!ehAdmin && <CopiarLink link={d.link} />}
 
