@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
-import { Cartao, Etiqueta, Vazio } from './ui'
+import { Botao, Campo, Cartao, Etiqueta, Vazio } from './ui'
 
 interface Lead {
   id: string
@@ -12,6 +12,7 @@ interface Lead {
   plano: string | null
   etapa: string
   vendedorNome: string | null
+  nota: string | null
 }
 
 type Origem = '' | 'site' | 'indicacao'
@@ -24,6 +25,10 @@ export default function TabelaLeads() {
   const [vendedor, setVendedor] = useState('')
   const [papel, setPapel] = useState<'admin' | 'vendedor'>('vendedor')
   const [carregando, setCarregando] = useState(true)
+  const [editando, setEditando] = useState<Lead | null>(null)
+  const [rascunho, setRascunho] = useState({ nome: '', telefone: '', nota: '' })
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState('')
 
   // A URL manda no primeiro render: os cartoes do painel abrem esta tela ja
   // filtrada (`/app/leads?origem=indicacao`), entao o filtro tem que vir de la.
@@ -56,6 +61,47 @@ export default function TabelaLeads() {
   useEffect(() => {
     buscar()
   }, [buscar])
+
+  async function salvar() {
+    if (!editando) return
+    setSalvando(true)
+    setErro('')
+    const r = await fetch(`/api/painel/leads/${editando.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rascunho),
+    })
+    setSalvando(false)
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}))
+      setErro(d.erro || 'Não deu pra salvar.')
+      return
+    }
+    setEditando(null)
+    buscar()
+  }
+
+  async function remover(l: Lead) {
+    if (!confirm(`Tirar "${l.nome}" da sua lista? Ele some do painel, mas continua no seu Power.`))
+      return
+    const r = await fetch(`/api/painel/leads/${l.id}`, { method: 'DELETE' })
+    if (!r.ok) {
+      setErro('Não deu pra remover.')
+      return
+    }
+    buscar()
+  }
+
+  function abrir(l: Lead) {
+    setEditando(l)
+    setErro('')
+    setRascunho({
+      nome: l.nome,
+      // Vem formatado da API; o servidor normaliza de volta.
+      telefone: l.telefone,
+      nota: l.nota ?? '',
+    })
+  }
 
   const ehAdmin = papel === 'admin'
   const abas: { id: Origem; texto: string }[] = [
@@ -108,6 +154,52 @@ export default function TabelaLeads() {
         </div>
       )}
 
+      {erro && <p className="text-sm text-[#FB7185]">{erro}</p>}
+
+      {editando && (
+        <Cartao className="border-[#6B96EB]/40 p-5">
+          <h2 className="mb-4 text-base font-bold text-[#E8E8EE]">
+            Editar lead · {editando.veiculo}
+          </h2>
+          <div className="grid gap-x-4 md:grid-cols-2">
+            <Campo
+              rotulo="Nome"
+              valor={rascunho.nome}
+              aoMudar={(v) => setRascunho({ ...rascunho, nome: v })}
+            />
+            <Campo
+              rotulo="WhatsApp"
+              valor={rascunho.telefone}
+              aoMudar={(v) => setRascunho({ ...rascunho, telefone: v })}
+              dica="Com DDD"
+            />
+          </div>
+          <label className="mb-4 block">
+            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#9D9DB5]">
+              Comentário
+            </span>
+            <textarea
+              value={rascunho.nota}
+              onChange={(e) => setRascunho({ ...rascunho, nota: e.target.value })}
+              rows={3}
+              placeholder="O que ficou combinado, quando retornar, o que ele pediu…"
+              className="w-full rounded-lg border border-[#3D3D5C] bg-[#2A2A42] px-4 py-3 text-[#E8E8EE] outline-none transition-colors placeholder:text-[#757598] focus:border-[#6B96EB] focus:ring-1 focus:ring-[#6B96EB]/30"
+            />
+            <span className="mt-1 block text-xs text-[#757598]">
+              Fica só no seu painel. Apagar o texto remove o comentário.
+            </span>
+          </label>
+          <div className="flex gap-2">
+            <Botao tipo="primario" onClick={() => void salvar()} disabled={salvando}>
+              {salvando ? 'Salvando…' : 'Salvar'}
+            </Botao>
+            <Botao tipo="ghost" onClick={() => setEditando(null)}>
+              Cancelar
+            </Botao>
+          </div>
+        </Cartao>
+      )}
+
       {carregando ? (
         <p className="text-sm text-[#9D9DB5]">Carregando…</p>
       ) : !itens.length ? (
@@ -129,6 +221,7 @@ export default function TabelaLeads() {
                   <th className="p-4 font-semibold">Mensal</th>
                   <th className="p-4 font-semibold">Situação</th>
                   <th className="p-4 font-semibold">Origem</th>
+                  {ehAdmin && <th className="p-4 font-semibold">Ações</th>}
                 </tr>
               </thead>
               <tbody>
@@ -140,7 +233,17 @@ export default function TabelaLeads() {
                     <td className="whitespace-nowrap p-4 text-[#9D9DB5]">
                       {new Date(l.criadoEm).toLocaleDateString('pt-BR')}
                     </td>
-                    <td className="p-4 font-medium text-[#E8E8EE]">{l.nome}</td>
+                    <td className="p-4 font-medium text-[#E8E8EE]">
+                      {l.nome}
+                      {l.nota && (
+                        <span
+                          title={l.nota}
+                          className="mt-1 block max-w-[220px] truncate text-xs font-normal italic text-[#FBBF24]"
+                        >
+                          “{l.nota}”
+                        </span>
+                      )}
+                    </td>
                     <td className="whitespace-nowrap p-4 font-mono text-[#C5C5D2]">{l.telefone}</td>
                     <td className="p-4 text-[#C5C5D2]">{l.veiculo}</td>
                     <td className="whitespace-nowrap p-4 font-semibold text-[#E8E8EE]">
@@ -158,6 +261,22 @@ export default function TabelaLeads() {
                         <span className="text-xs text-[#757598]">meu site</span>
                       )}
                     </td>
+                    {ehAdmin && (
+                      <td className="whitespace-nowrap p-4">
+                        <button
+                          onClick={() => abrir(l)}
+                          className="mr-2 rounded-lg border border-[#3D3D5C] px-2.5 py-1 text-xs font-semibold text-[#C5C5D2] hover:bg-[#2A2A42]"
+                        >
+                          {l.nota ? 'Editar / nota' : 'Editar'}
+                        </button>
+                        <button
+                          onClick={() => void remover(l)}
+                          className="rounded-lg border border-[#FB7185]/30 bg-[#FB7185]/10 px-2.5 py-1 text-xs font-semibold text-[#FB7185] hover:bg-[#FB7185]/20"
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

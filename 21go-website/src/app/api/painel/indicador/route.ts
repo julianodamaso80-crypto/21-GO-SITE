@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizarWhatsapp } from '@/lib/painel/formato'
 import { criarUsuario } from '@/lib/painel/usuarios'
+import { criarIndicadorNoPower } from '@/lib/painel/power-indicador'
 import { PAINEL_POR_CONSULTOR, hostDoPainel } from '@/lib/consultores-painel'
 
 export const runtime = 'nodejs'
@@ -51,6 +52,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const usuario = await criarUsuario({ consultorSlug: slug, nome, email, whatsapp, senha })
+
+    // Fora do await: a pessoa nao pode esperar o Power pra ver o proprio link,
+    // e se o Power estiver fora do ar o cadastro dela continua valendo.
+    void criarIndicadorNoPower({ consultorSlug: slug, nome, whatsapp, email })
+
     return NextResponse.json({
       ok: true,
       nome: usuario.nome,

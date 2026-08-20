@@ -78,6 +78,26 @@ async function powerlinkDoLead(slug: string | null | undefined): Promise<string>
  * carimbo errado vale menos que carimbo nenhum: vira comissao paga pra quem nao
  * trouxe, e o consultor so descobre pagando.
  */
+/** Nome de quem indicou, pra nota do Power. Cai no slug se o nome sumir. */
+async function nomeDoVendedor(
+  consultorSlug: string | null | undefined,
+  vendedorSlug: string,
+): Promise<string> {
+  try {
+    const { data } = await supabaseAdmin()
+      .from('painel_usuarios')
+      .select('nome, whatsapp')
+      .eq('consultor_slug', consultorSlug ?? '')
+      .eq('vendedor_slug', vendedorSlug)
+      .maybeSingle()
+    if (!data) return vendedorSlug
+    const tel = (data.whatsapp as string) || ''
+    return tel ? `${data.nome} (${tel})` : (data.nome as string)
+  } catch {
+    return vendedorSlug
+  }
+}
+
 async function vendedorValido(
   consultorSlug: string | null | undefined,
   vendedorSlug: string | null | undefined,
@@ -653,6 +673,13 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
   const quotationCode = addJson?.quotationCode as string | undefined
 
   const internalNotes: string[] = []
+  // Quem trouxe o cliente, na negociacao que o consultor abre no Power. Sem
+  // isto ele ve o lead mas nao sabe a quem deve a indicacao — e comissao que
+  // depende de alguem lembrar nao e paga.
+  if (body.vendedorSlug) {
+    const quemIndicou = await nomeDoVendedor(body.consultorSlug, body.vendedorSlug)
+    internalNotes.push(`INDICADO POR: ${quemIndicou}`)
+  }
   if (body.leilao === 'leilao') internalNotes.push('Veículo de leilão')
   if (body.leilao === 'remarcado') internalNotes.push('Veículo remarcado')
   if (body.carroApp) internalNotes.push('Carro de aplicativo (Uber/99)')

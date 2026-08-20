@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from '@/components/Link'
 import { Cartao, Kpi, TituloSecao, Vazio } from './ui'
 import CopiarLink from './CopiarLink'
+import MinhaSenha from './MinhaSenha'
 
 interface Fatia {
   total: number
@@ -71,6 +72,8 @@ export default function PainelResumo() {
           </Link>
         )}
       </div>
+
+      <MinhaSenha />
 
       {!ehAdmin && <CopiarLink link={d.link} />}
 

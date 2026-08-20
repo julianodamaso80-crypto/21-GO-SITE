@@ -22,6 +22,7 @@ export interface LeadPainel {
   etapa: string
   vendedorSlug: string | null
   vendedorNome: string | null
+  nota: string | null
 }
 
 export interface Resumo {
@@ -41,7 +42,7 @@ export interface Resumo {
 }
 
 const COLUNAS_LEAD =
-  'id, created_at, nome, telefone, marca_interesse, modelo_interesse, ano_interesse, cotacao_valor, cotacao_plano, status, etapa_funil, vendedor_slug'
+  'id, created_at, nome, telefone, marca_interesse, modelo_interesse, ano_interesse, cotacao_valor, cotacao_plano, status, etapa_funil, vendedor_slug, nota_painel'
 
 function inicioDoMes(): string {
   const d = new Date()
@@ -73,6 +74,9 @@ export async function resumoDoPainel(
     .from('leads')
     .select('created_at, status, etapa_funil, vendedor_slug')
     .eq('consultor_slug', consultorSlug)
+    // Lead que o dono tirou da vista nao conta em numero nenhum — senao o
+    // cartao diz 7 e a lista mostra 6.
+    .is('oculto_painel_em', null)
   // Vendedor so ve o que ele mesmo trouxe. O recorte sai da SESSAO, nunca de
   // parametro da URL.
   if (vendedorSlug) q = q.eq('vendedor_slug', vendedorSlug)
@@ -154,6 +158,7 @@ export async function leadsDoPainel(a: {
     .from('leads')
     .select(COLUNAS_LEAD, { count: 'exact' })
     .eq('consultor_slug', a.consultorSlug)
+    .is('oculto_painel_em', null)
     .order('created_at', { ascending: false })
     .range(inicio, inicio + porPagina - 1)
 
@@ -184,6 +189,7 @@ export async function leadsDoPainel(a: {
     vendedorNome: l.vendedor_slug
       ? (nomePorSlug.get(l.vendedor_slug as string) ?? (l.vendedor_slug as string))
       : null,
+    nota: (l.nota_painel as string) ?? null,
   }))
 
   return { itens, total: count ?? itens.length }

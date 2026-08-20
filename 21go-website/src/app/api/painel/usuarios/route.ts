@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { exigirSessao, SemPermissao } from '@/lib/painel/contexto'
 import { listarUsuarios, criarUsuario } from '@/lib/painel/usuarios'
+import { criarIndicadorNoPower } from '@/lib/painel/power-indicador'
 import { gerarSenha } from '@/lib/painel/senha'
 import { normalizarWhatsapp } from '@/lib/painel/formato'
 import { hostDoPainel } from '@/lib/consultores-painel'
@@ -54,13 +55,17 @@ export async function POST(req: NextRequest) {
     // repassa como quiser. Nada sai pelo nosso WhatsApp (REGRA 0.1).
     const senha = b.senha && b.senha.length >= 8 ? b.senha : gerarSenha()
 
+    const whatsapp = normalizarWhatsapp(b.whatsapp ?? '')
     const usuario = await criarUsuario({
       consultorSlug: sessao.slug,
       nome,
       email,
-      whatsapp: normalizarWhatsapp(b.whatsapp ?? ''),
+      whatsapp,
       senha,
     })
+
+    // Cai no Power do consultor tambem — quem indica e quem preenche.
+    if (whatsapp) void criarIndicadorNoPower({ consultorSlug: sessao.slug, nome, whatsapp, email })
 
     return NextResponse.json({
       ok: true,

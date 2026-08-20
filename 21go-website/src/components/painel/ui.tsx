@@ -1,3 +1,5 @@
+'use client'
+import { useState } from 'react'
 import Link from '@/components/Link'
 
 /**
@@ -145,18 +147,37 @@ export function Campo({
   dica?: string
   autoComplete?: string
 }) {
+  // Senha com olhinho: quem digita errado sem ver so descobre no "senha
+  // incorreta", e a senha daqui costuma ser gerada (`a557fftw`) — dificil de
+  // acertar no escuro.
+  const [mostrando, setMostrando] = useState(false)
+  const ehSenha = tipo === 'password'
+  const tipoReal = ehSenha && mostrando ? 'text' : tipo
+
   return (
     <label className="mb-4 block">
       <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#9D9DB5]">
         {rotulo}
       </span>
-      <input
-        type={tipo}
-        value={valor}
-        autoComplete={autoComplete}
-        onChange={(e) => aoMudar(e.target.value)}
-        className="w-full rounded-lg border border-[#3D3D5C] bg-[#2A2A42] px-4 py-3 text-[#E8E8EE] outline-none transition-colors placeholder:text-[#757598] focus:border-[#6B96EB] focus:ring-1 focus:ring-[#6B96EB]/30"
-      />
+      <div className="relative">
+        <input
+          type={tipoReal}
+          value={valor}
+          autoComplete={autoComplete}
+          onChange={(e) => aoMudar(e.target.value)}
+          className={`w-full rounded-lg border border-[#3D3D5C] bg-[#2A2A42] py-3 pl-4 text-[#E8E8EE] outline-none transition-colors placeholder:text-[#757598] focus:border-[#6B96EB] focus:ring-1 focus:ring-[#6B96EB]/30 ${ehSenha ? 'pr-12' : 'pr-4'}`}
+        />
+        {ehSenha && (
+          <button
+            type="button"
+            onClick={() => setMostrando((v) => !v)}
+            aria-label={mostrando ? 'Esconder senha' : 'Mostrar senha'}
+            className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md px-3 py-2 text-xs font-semibold text-[#9D9DB5] transition-colors hover:text-[#E8E8EE]"
+          >
+            {mostrando ? 'ocultar' : 'ver'}
+          </button>
+        )}
+      </div>
       {dica && <span className="mt-1 block text-xs text-[#757598]">{dica}</span>}
     </label>
   )
