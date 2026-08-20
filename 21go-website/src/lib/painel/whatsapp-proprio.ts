@@ -1,6 +1,8 @@
 import 'server-only'
 import { supabaseAdmin } from '../supabase-admin'
-import { esquecerConsultor } from '../consultor'
+import { esquecerConsultor, resolverConsultor } from '../consultor'
+import { sendText } from '../whatsapp'
+import { avisar } from '../whatsapp-avisos'
 
 /**
  * O WhatsApp do proprio consultor, conectado por QR no painel dele.
@@ -60,19 +62,20 @@ export async function estadoDaConexao(consultorSlug: string): Promise<{
   estado: EstadoConexao
   numero: string | null
 }> {
-  if (!configurado()) return { estado: 'sem_instancia', numero: null }
-
   const { data } = await supabaseAdmin()
     .from('sites_consultor')
-    .select('evolution_instancia, evolution_numero')
+    .select('evolution_instancia, evolution_numero, evolution_url, evolution_chave')
     .eq('slug', consultorSlug)
     .maybeSingle()
 
   const instancia = (data?.evolution_instancia as string) || null
   if (!instancia) return { estado: 'sem_instancia', numero: null }
 
-  const { status, corpo } = await evo(`/instance/connectionState/${instancia}`)
-  if (status === 404) return { estado: 'sem_instancia', numero: null }
+  const url = (data?.evolution_url as string) || URL_EVO
+  const chave = (data?.evolution_chave as string) || CHAVE_GLOBAL
+  const r = await fetch(`${url}/instance/connectionState/${instancia}`, { headers: { apikey: chave } })
+  if (r.status === 404) return { estado: 'sem_instancia', numero: null }
+  const corpo = (await r.json().catch(() => null)) as Record<string, unknown> | null
 
   const dentro = (corpo?.instance ?? corpo) as Record<string, unknown> | null
   return {
@@ -225,9 +228,74 @@ export async function desconectar(consultorSlug: string): Promise<void> {
  */
 export async function contaDoConsultor(
   consultorSlug: string,
-): Promise<{ instancia: string; chave: string } | null> {
-  if (!configurado()) return null
-  const { estado } = await estadoDaConexao(consultorSlug)
-  if (estado !== 'conectado') return null
-  return { instancia: nomeDaInstancia(consultorSlug), chave: CHAVE_GLOBAL }
+): Promise<{ instancia: string; chave: string; url: string } | null> {
+  const { data } = await supabaseAdmin()
+    .from('sites_consultor')
+    .select('evolution_instancia, evolution_url, evolution_chave')
+    .eq('slug', consultorSlug)
+    .maybeSingle()
+
+  const instancia = (data?.evolution_instancia as string) || null
+  if (!instancia) return null
+
+  // Conta conectada a mao noutro servidor Evolution: url e chave proprias.
+  const url = (data?.evolution_url as string) || URL_EVO
+  const chave = (data?.evolution_chave as string) || CHAVE_GLOBAL
+  if (!url || !chave) return null
+
+  // So envia por chip que esta de pe — mandar pra instancia caida some com a
+  // mensagem sem erro nenhum.
+  try {
+    const r = await fetch(`${url}/instance/connectionState/${instancia}`, { headers: { apikey: chave } })
+    const j = (await r.json().catch(() => null)) as Record<string, unknown> | null
+    const dentro = (j?.instance ?? j) as Record<string, unknown> | null
+    if (traduzir(dentro?.state ?? dentro?.connectionStatus) !== 'conectado') return null
+  } catch {
+    return null
+  }
+
+  return { instancia, chave, url }
+}
+
+/**
+ * Avisa o consultor que entrou gente nova pra indicar por ele.
+ *
+ * Pelo numero DELE quando conectado; senao pela instancia de avisos da casa.
+ * Cadastro de indicador que ninguem ve e rede que nao cresce: ele precisa saber
+ * pra ativar a pessoa no mesmo dia.
+ */
+export async function avisarIndicadorNovo(dados: {
+  consultorSlug: string
+  nome: string
+  whatsapp: string
+  link: string
+}): Promise<void> {
+  const consultor = await resolverConsultor(dados.consultorSlug)
+  if (!consultor?.whatsapp) return
+
+  const texto =
+    `🤝 *Entrou gente nova pra te indicar*
+
+` +
+    `*${dados.nome}*
+` +
+    `WhatsApp: ${dados.whatsapp}
+
+` +
+    `Link de divulgação dele(a):
+${dados.link}
+
+` +
+    `Todo lead que entrar por esse link aparece no seu painel no nome dele(a).`
+
+  const conta = await contaDoConsultor(dados.consultorSlug)
+  try {
+    if (conta) {
+      await sendText(consultor.whatsapp, texto, conta)
+      return
+    }
+  } catch (err) {
+    console.warn('[indicador] aviso pela conta do consultor falhou:', err instanceof Error ? err.message : err)
+  }
+  await avisar(consultor.whatsapp, texto)
 }

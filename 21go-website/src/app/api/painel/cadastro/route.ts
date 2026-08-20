@@ -3,6 +3,7 @@ import { normalizarWhatsapp } from '@/lib/painel/formato'
 import { assinarSessao, DURACAO_SESSAO_MS } from '@/lib/painel/sessao'
 import { criarUsuario } from '@/lib/painel/usuarios'
 import { criarIndicadorNoPower } from '@/lib/painel/power-indicador'
+import { avisarIndicadorNovo } from '@/lib/painel/whatsapp-proprio'
 import { COOKIE_SESSAO, consultorDoHost, segredoSessao } from '@/lib/painel/contexto'
 
 export const runtime = 'nodejs'
@@ -43,6 +44,12 @@ export async function POST(req: NextRequest) {
     usuario = await criarUsuario({ consultorSlug: slug, nome, email, whatsapp, senha })
     // Cai no Power do consultor tambem — quem indica e quem preenche.
     void criarIndicadorNoPower({ consultorSlug: slug, nome, whatsapp, email })
+    void avisarIndicadorNovo({
+      consultorSlug: slug,
+      nome,
+      whatsapp,
+      link: `https://21go.com.br/${slug}/${usuario.vendedorSlug}`,
+    })
   } catch (err) {
     const conhecido = ERROS[(err as Error).message]
     if (conhecido) return NextResponse.json({ erro: conhecido.msg }, { status: conhecido.status })

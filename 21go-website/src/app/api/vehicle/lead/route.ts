@@ -999,10 +999,17 @@ async function sendConsultorQuoteWithPdf(
   const nome = body.nome || ''
   const veiculo = [body.marca, body.modelo].filter(Boolean).join(' ').trim() || null
 
-  const avisaConsultor = (comPdf: boolean) =>
-    avisar(
-      consultor.whatsapp,
-      textoCotacaoNova({
+  /**
+   * A conta dele, se conectada. Definida antes do primeiro aviso porque o aviso
+   * TAMBEM passa a sair pelo numero dele — a instancia de avisos da casa vive
+   * caindo (medido em 20/08/2026: `julianodamaso` estava `close`), e aviso que
+   * nao chega e lead parado.
+   */
+  const contaDele = await contaDoConsultor(slug)
+  const falarComCliente = Boolean(contaDele) && (await lerEnvioAoCliente(slug))
+
+  const avisaConsultor = async (comPdf: boolean) => {
+    const texto = textoCotacaoNova({
         leadNome: nome,
         leadWhatsapp: body.whatsapp || '',
         veiculo,
@@ -1011,9 +1018,20 @@ async function sendConsultorQuoteWithPdf(
         fipe: comPdf ? body.valorFipe ?? null : null,
         plano: comPdf ? body.plano ?? null : null,
         valorMensal: comPdf ? body.valorMensal ?? null : null,
-        comPdf,
-      }),
-    )
+      comPdf,
+    })
+    // Pelo numero dele: ele se manda a mensagem, entao ela chega no proprio
+    // WhatsApp com o nome dele — e nao depende do chip da casa.
+    if (contaDele) {
+      try {
+        await sendText(consultor.whatsapp, texto, contaDele)
+        return true
+      } catch (err) {
+        console.warn('[lead] aviso pela conta do consultor falhou:', err instanceof Error ? err.message : err)
+      }
+    }
+    return avisar(consultor.whatsapp, texto)
+  }
 
   // Sem dados completos nao existe PDF pra gerar. O consultor e avisado do mesmo
   // jeito: lead pela metade continua sendo lead dele, e ele resolve no telefone
@@ -1029,16 +1047,6 @@ async function sendConsultorQuoteWithPdf(
 
   console.log(`[lead] consultor ${slug}: aviso+PDF lead=${leadId} ${body.marca} ${body.modelo}`)
 
-  /**
-   * O cliente so recebe alguma coisa se o consultor tiver conectado o WhatsApp
-   * DELE e ligado o interruptor no painel.
-   *
-   * As duas condicoes existem por motivos diferentes: sem o chip dele a
-   * mensagem sairia do numero da casa, assinada por outra pessoa (REGRA 0.1);
-   * e o interruptor deixa o risco de ban com quem e dono do numero.
-   */
-  const contaDele = await contaDoConsultor(slug)
-  const falarComCliente = Boolean(contaDele) && (await lerEnvioAoCliente(slug))
 
   const filename = `simulacao-21go-${leadId}.pdf`
   const pdfInput = {
@@ -1091,7 +1099,13 @@ async function sendConsultorQuoteWithPdf(
   const avisou = await avisaConsultor(true)
   if (avisou) {
     const legenda = veiculo ? `Simulação de ${nome} — ${veiculo}` : `Simulação de ${nome}`
-    await avisarComPdf(consultor.whatsapp, legenda, media, filename)
+    if (contaDele) {
+      await sendPdfMedia(consultor.whatsapp, media, legenda, filename, contaDele).catch((err) =>
+        console.warn('[lead] PDF pela conta do consultor falhou:', err instanceof Error ? err.message : err),
+      )
+    } else {
+      await avisarComPdf(consultor.whatsapp, legenda, media, filename)
+    }
   }
 
   // ─── E o cliente, pelo numero do proprio consultor ──────────────────────

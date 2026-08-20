@@ -69,6 +69,8 @@ function parseEvolutionResponse(raw: unknown): SendResult {
 export interface ContaEnvio {
   instancia: string
   chave: string
+  /** O servidor Evolution dessa conta. Sem isto, so daria pra usar o da casa. */
+  url?: string
 }
 
 export async function sendText(
@@ -78,10 +80,11 @@ export async function sendText(
 ): Promise<SendResult> {
   const instancia = conta?.instancia || EVOLUTION_INSTANCE
   const chave = conta?.chave || EVOLUTION_API_KEY
+  const base = conta?.url || EVOLUTION_API_URL
   if (!chave) {
     throw new Error('EVOLUTION_API_KEY não configurada')
   }
-  const url = `${EVOLUTION_API_URL}/message/sendText/${instancia}`
+  const url = `${base}/message/sendText/${instancia}`
   console.log('[WhatsApp] sendText →', phone, '(', text.length, 'chars )')
   const res = await fetch(url, {
     method: 'POST',
@@ -105,10 +108,11 @@ export async function sendPdfMedia(
 ): Promise<SendResult> {
   const instancia = conta?.instancia || EVOLUTION_INSTANCE
   const chave = conta?.chave || EVOLUTION_API_KEY
+  const base = conta?.url || EVOLUTION_API_URL
   if (!chave) {
     throw new Error('EVOLUTION_API_KEY não configurada')
   }
-  const url = `${EVOLUTION_API_URL}/message/sendMedia/${instancia}`
+  const url = `${base}/message/sendMedia/${instancia}`
   const isUrl = media.startsWith('http')
   console.log(
     '[WhatsApp] sendPdfMedia →',
