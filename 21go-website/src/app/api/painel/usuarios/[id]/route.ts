@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { exigirSessao, SemPermissao } from '@/lib/painel/contexto'
-import { atualizarUsuario, redefinirSenha, desativarUsuario } from '@/lib/painel/usuarios'
+import {
+  atualizarUsuario,
+  redefinirSenha,
+  desativarUsuario,
+  excluirUsuario,
+} from '@/lib/painel/usuarios'
 import { normalizarWhatsapp } from '@/lib/painel/formato'
 
 export const runtime = 'nodejs'
@@ -69,7 +74,7 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
      * reescreveria o historico de quem trouxe cada lead — o painel passaria a
      * mostrar comissao de gente errada.
      */
-    await desativarUsuario(id, sessao.slug, false)
+    await excluirUsuario(id, sessao.slug)
     return NextResponse.json({ ok: true })
   } catch (err) {
     if (err instanceof SemPermissao)

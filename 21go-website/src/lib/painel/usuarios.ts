@@ -18,10 +18,11 @@ export interface UsuarioPainel {
   ativo: boolean
   criadoEm: string
   ultimoLoginEm: string | null
+  excluidoEm: string | null
 }
 
 const COLUNAS =
-  'id, consultor_slug, papel, nome, email, whatsapp, vendedor_slug, token_versao, ativo, criado_em, ultimo_login_em'
+  'id, consultor_slug, papel, nome, email, whatsapp, vendedor_slug, token_versao, ativo, criado_em, ultimo_login_em, excluido_em'
 
 function daLinha(l: Record<string, unknown>): UsuarioPainel {
   return {
@@ -36,6 +37,7 @@ function daLinha(l: Record<string, unknown>): UsuarioPainel {
     ativo: l.ativo as boolean,
     criadoEm: l.criado_em as string,
     ultimoLoginEm: (l.ultimo_login_em as string) ?? null,
+    excluidoEm: (l.excluido_em as string) ?? null,
   }
 }
 
@@ -68,12 +70,26 @@ export async function buscarPorId(id: string, consultorSlug: string): Promise<Us
   return data ? daLinha(data) : null
 }
 
-export async function listarUsuarios(consultorSlug: string): Promise<UsuarioPainel[]> {
-  const { data, error } = await supabaseAdmin()
+/**
+ * Por padrao NAO devolve quem foi excluido — e o que a tela de Equipe mostra.
+ *
+ * `incluirExcluidos` existe pra dois casos em que o excluido ainda importa: a
+ * lista de leads, que precisa do nome dele pra dizer quem trouxe cada lead, e a
+ * escolha de slug de um cadastro novo, que nao pode reaproveitar um link que ja
+ * foi espalhado por ai.
+ */
+export async function listarUsuarios(
+  consultorSlug: string,
+  opcoes: { incluirExcluidos?: boolean } = {},
+): Promise<UsuarioPainel[]> {
+  let q = supabaseAdmin()
     .from('painel_usuarios')
     .select(COLUNAS)
     .eq('consultor_slug', consultorSlug)
     .order('criado_em', { ascending: false })
+  if (!opcoes.incluirExcluidos) q = q.is('excluido_em', null)
+
+  const { data, error } = await q
   if (error) throw new Error(error.message)
   return (data ?? []).map(daLinha)
 }
@@ -86,7 +102,9 @@ export async function criarUsuario(a: {
   senha: string
   papel?: Papel
 }): Promise<UsuarioPainel> {
-  const existentes = new Set((await listarUsuarios(a.consultorSlug)).map((u) => u.vendedorSlug))
+  const existentes = new Set(
+    (await listarUsuarios(a.consultorSlug, { incluirExcluidos: true })).map((u) => u.vendedorSlug),
+  )
   const vendedorSlug = slugDeVendedor({
     nome: a.nome,
     whatsapp: a.whatsapp ?? '',
@@ -180,6 +198,30 @@ export async function desativarUsuario(
     .from('painel_usuarios')
     .update({
       ativo,
+      token_versao: usuario.tokenVersao + 1,
+      atualizado_em: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('consultor_slug', consultorSlug)
+  if (error) throw new Error(error.message)
+}
+
+/**
+ * Excluir = some da lista, mas a linha fica.
+ *
+ * Apagar de verdade soltaria o `vendedor_slug` pra outra pessoa e faria o
+ * historico de leads apontar pra quem nao trouxe nada.
+ */
+export async function excluirUsuario(id: string, consultorSlug: string): Promise<void> {
+  const usuario = await buscarPorId(id, consultorSlug)
+  if (!usuario) throw new Error('nao_encontrado')
+  if (usuario.papel === 'admin') throw new Error('admin_nao_desativa')
+
+  const { error } = await supabaseAdmin()
+    .from('painel_usuarios')
+    .update({
+      ativo: false,
+      excluido_em: new Date().toISOString(),
       token_versao: usuario.tokenVersao + 1,
       atualizado_em: new Date().toISOString(),
     })

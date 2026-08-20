@@ -93,7 +93,7 @@ export async function resumoDoPainel(
 
   if (vendedorSlug) return resumo
 
-  const usuarios = await listarUsuarios(consultorSlug)
+  const usuarios = await listarUsuarios(consultorSlug, { incluirExcluidos: true })
   const nomePorSlug = new Map(usuarios.map((u) => [u.vendedorSlug, u.nome]))
 
   const chaves = new Set<string>([
@@ -157,7 +157,7 @@ export async function leadsDoPainel(a: {
   const { data, error, count } = await q
   if (error) throw new Error(error.message)
 
-  const usuarios = await listarUsuarios(a.consultorSlug)
+  const usuarios = await listarUsuarios(a.consultorSlug, { incluirExcluidos: true })
   const nomePorSlug = new Map(usuarios.map((u) => [u.vendedorSlug, u.nome]))
 
   const itens = ((data ?? []) as unknown as Record<string, unknown>[]).map((l) => ({
