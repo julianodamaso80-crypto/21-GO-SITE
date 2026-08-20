@@ -27,6 +27,22 @@ export const PAINEL_POR_HOST: Record<string, string> = {
 export const PAINEL_POR_CONSULTOR = new Set(Object.values(PAINEL_POR_HOST))
 
 /**
+ * Estamos num host de painel?
+ *
+ * O `ConsultorProvider` PRECISA disto. Ele le o 1o segmento da URL como slug de
+ * consultor, e no painel esse segmento e `/app` ou `/cadastro` — que nao sao
+ * consultor nenhum. Sem esta trava ele buscava `/api/consultor/app`, tomava 404
+ * e pintava a tela de "esta pagina nao esta disponivel" por cima do painel
+ * inteiro.
+ *
+ * ⚠️ E um bug que `curl` NAO enxerga: o servidor responde 200 e a tela so se
+ * quebra depois da hidratacao, no navegador. Testar painel com curl nao vale.
+ */
+export function ehHostDePainel(hostname: string): boolean {
+  return Boolean(PAINEL_POR_HOST[(hostname || '').split(':')[0].toLowerCase()])
+}
+
+/**
  * Quem trouxe a visita. Vive 30 dias, ao contrario do `c21go_dono` (que e de
  * sessao): o dono existe pra sobreviver a um clique perdido dentro da mesma
  * visita; este define quem recebe comissao, e o visitante costuma voltar

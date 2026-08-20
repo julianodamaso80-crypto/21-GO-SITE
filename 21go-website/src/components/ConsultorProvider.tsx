@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { ROTAS_RESERVADAS } from '@/lib/rotas-reservadas'
+import { ehHostDePainel } from '@/lib/consultores-painel'
 
 /**
  * Quem e o dono do site que o visitante esta vendo.
@@ -63,6 +64,15 @@ export function ConsultorProvider({ children }: { children: React.ReactNode }) {
   // Roda depois da hidratacao — o HTML prerenderizado e o mesmo pra todo mundo,
   // entao ler a URL no primeiro render quebraria a hidratacao.
   useEffect(() => {
+    // O painel tem host proprio (`parceiroanderson.21go.com.br`). La o 1o
+    // segmento e `/app` ou `/cadastro`, que nao sao slug de ninguem: sem esta
+    // saida, o provider buscava `/api/consultor/app`, tomava 404 e cobria o
+    // painel inteiro com a tela de "pagina indisponivel".
+    if (ehHostDePainel(window.location.hostname)) {
+      setSlug(null)
+      setForaDoAr(false)
+      return
+    }
     setSlug(slugDoPathname(window.location.pathname))
     setForaDoAr(false)
   }, [pathname])

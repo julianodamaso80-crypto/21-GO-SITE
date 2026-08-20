@@ -46,3 +46,11 @@ test('segmento fora do formato nao e vendedor', () => {
   assert.equal(vendedorDoCaminho(['andersonagripino', 'ab'], RESERVADAS), null)
   assert.equal(vendedorDoCaminho(['andersonagripino', 'jo-ao'], RESERVADAS), null)
 })
+
+test('host de painel e reconhecido no navegador', async () => {
+  const { ehHostDePainel } = await import('../../src/lib/consultores-painel.ts')
+  assert.equal(ehHostDePainel('parceiroanderson.21go.com.br'), true)
+  assert.equal(ehHostDePainel('parceiroanderson.21go.com.br:3000'), true)
+  assert.equal(ehHostDePainel('21go.com.br'), false)
+  assert.equal(ehHostDePainel(''), false)
+})
