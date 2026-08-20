@@ -38,7 +38,8 @@ Num site vendido, **todo** contato vai pro número do consultor **e todo lead na
 **Consequência: site de consultor NÃO dispara nada pelo nosso chip.** O único número conectado na Evolution é o da casa (`site4824`) — qualquer envio automático chega ao cliente assinado *"consultora leticya"*, e o lead que o consultor pagou pra ter é abordado por outra pessoa. No site dele o contato acontece pelo **botão** (`/api/wa?c=<slug>` → `wa.me` dele), que não usa Evolution.
 
 - Guarda em `vehicle/lead/route.ts`: `const siteDeConsultor = Boolean(body.consultorSlug)` corta BYD e `WHATSAPP_AUTO_DISPATCH`.
-- **Acabou a simulacao, o WhatsApp DELE abre sozinho** (19/08/2026): em site vendido o cliente e levado pro `wa.me` do consultor com a mensagem inteira montada + o LINK do PDF (`/api/pdfs/<leadId>`). `wa.me` nao anexa arquivo e nao envia nada sozinho — quem aperta enviar e o cliente. Codigo: `autoWa` em `cotacao/page.tsx`.
+- **A simulacao termina na TELA DE PLANOS, nunca no WhatsApp** (20/08/2026): site vendido mostra o resultado igual ao `.site` — os planos, os detalhes, os CTAs. Quem abre a conversa e o cliente, clicando em "Quero contratar" (`contratarHref` → `wa.me` do consultor, com a mensagem montada + o LINK do PDF `/api/pdfs/<leadId>`; `wa.me` nao anexa arquivo nem envia sozinho).
+  > Em 19/08/2026 foi ligado um redirect automatico (`autoWa`) que pulava a tela de planos e caia direto no `api.whatsapp.com`. O dono viu e mandou tirar em 20/08: **o cliente tem que ver os planos**. Nao reintroduzir sob "abre sozinho pra nao perder o lead" — pular a tela de planos e perder a venda, nao ganhar.
 - O disparo por chip (`sendConsultorQuoteWithPdf`) existe mas esta **DESLIGADO** (`CONSULTOR_AUTO_DISPATCH=false`): a instancia de avisos e o celular do proprio dono, e ele mandou parar. So ha 2 numeros conectados — o dele e o `site4824` da casa. Religar exige chip novo.
 - Ao criar qualquer envio novo, pergunte antes: *"isso pode sair num site de consultor?"*
 
