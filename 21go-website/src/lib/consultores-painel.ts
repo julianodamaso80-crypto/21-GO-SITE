@@ -27,6 +27,19 @@ export const PAINEL_POR_HOST: Record<string, string> = {
 export const PAINEL_POR_CONSULTOR = new Set(Object.values(PAINEL_POR_HOST))
 
 /**
+ * O endereco onde o parceiro e a equipe dele entram.
+ *
+ * Precisa existir porque o acesso e criado em DOIS lugares fora do painel: o
+ * dono cadastrando alguem, e a pessoa se cadastrando pelo `/indique` do site.
+ * Nos dois casos e preciso dizer onde ela entra — senha sem endereco de login
+ * nao serve pra nada.
+ */
+export function hostDoPainel(consultorSlug: string): string | null {
+  const par = Object.entries(PAINEL_POR_HOST).find(([, slug]) => slug === consultorSlug)
+  return par ? par[0] : null
+}
+
+/**
  * Estamos num host de painel?
  *
  * O `ConsultorProvider` PRECISA disto. Ele le o 1o segmento da URL como slug de

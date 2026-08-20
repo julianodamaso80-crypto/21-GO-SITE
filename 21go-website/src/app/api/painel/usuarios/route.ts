@@ -3,6 +3,7 @@ import { exigirSessao, SemPermissao } from '@/lib/painel/contexto'
 import { listarUsuarios, criarUsuario } from '@/lib/painel/usuarios'
 import { gerarSenha } from '@/lib/painel/senha'
 import { normalizarWhatsapp } from '@/lib/painel/formato'
+import { hostDoPainel } from '@/lib/consultores-painel'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -64,6 +65,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       senha,
+      // Onde a pessoa entra. Senha sem endereco de login nao serve pra nada — e
+      // o dono nao tem como adivinhar o subdominio do proprio painel.
+      painel: `https://${hostDoPainel(sessao.slug)}`,
       usuario: {
         id: usuario.id,
         nome: usuario.nome,

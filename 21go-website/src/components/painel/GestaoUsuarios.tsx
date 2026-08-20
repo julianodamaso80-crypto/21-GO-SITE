@@ -27,6 +27,7 @@ export default function GestaoUsuarios() {
     email?: string
     senha: string
     link?: string
+    painel?: string
   } | null>(null)
   const [editando, setEditando] = useState<{ id: string; nome: string; email: string } | null>(null)
 
@@ -66,6 +67,7 @@ export default function GestaoUsuarios() {
       email: d.usuario.email,
       senha: d.senha,
       link: d.usuario.link,
+      painel: d.painel,
     })
     setNome('')
     setEmail('')
@@ -155,15 +157,42 @@ export default function GestaoUsuarios() {
                 {novoAcesso.senha}
               </span>
             </p>
+            {novoAcesso.painel && (
+              <p className="break-all text-[#C5C5D2]">
+                Entra em:{' '}
+                <span className="font-mono text-[#E8E8EE]">
+                  {novoAcesso.painel.replace('https://', '')}
+                </span>
+              </p>
+            )}
             {novoAcesso.link && (
               <p className="break-all text-[#C5C5D2]">
-                Link: <span className="font-mono text-[#E8E8EE]">{novoAcesso.link}</span>
+                Link de divulgação:{' '}
+                <span className="font-mono text-[#E8E8EE]">{novoAcesso.link}</span>
               </p>
             )}
           </div>
           <p className="mt-3 text-xs text-[#FBBF24]">
-            Anote e passe pra pessoa agora — esta senha não aparece de novo.
+            Anote e passe os três pra pessoa agora — esta senha não aparece de novo.
           </p>
+          {novoAcesso.painel && novoAcesso.email && (
+            <button
+              onClick={() =>
+                void navigator.clipboard.writeText(
+                  `Seu acesso ao painel:
+${novoAcesso.painel}
+Login: ${novoAcesso.email}
+Senha: ${novoAcesso.senha}
+
+Seu link de divulgação:
+${novoAcesso.link}`,
+                )
+              }
+              className="mt-3 mr-2 rounded-lg bg-[#1B4DA1] px-4 py-2 text-sm font-semibold text-white hover:bg-[#164087]"
+            >
+              Copiar tudo pra mandar
+            </button>
+          )}
           <Botao tipo="ghost" className="mt-3" onClick={() => setNovoAcesso(null)}>
             Ok, anotei
           </Botao>
