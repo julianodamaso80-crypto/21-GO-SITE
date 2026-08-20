@@ -332,7 +332,16 @@ export async function POST(req: NextRequest) {
     // chamar o associado"*.
     //
     // Desliga sem deploy com CONSULTOR_AUTO_DISPATCH=false.
-    if (process.env.CONSULTOR_AUTO_DISPATCH === 'false') {
+    /**
+     * O `CONSULTOR_AUTO_DISPATCH=false` desliga o disparo que sai pelo chip da
+     * CASA — foi por isso que ele existe.
+     *
+     * Consultor com o WhatsApp DELE conectado nao entra nessa trava: a mensagem
+     * sai do numero dele, com o nome dele, e o risco de ban tambem e dele. A
+     * decisao de mandar ou nao vive no painel dele, nao numa env global.
+     */
+    const temChipProprio = Boolean(await contaDoConsultor(body.consultorSlug!))
+    if (process.env.CONSULTOR_AUTO_DISPATCH === 'false' && !temChipProprio) {
       console.log(`[lead] site de consultor (${body.consultorSlug}) — disparo desligado por env`)
     } else {
       ;(async () => {
