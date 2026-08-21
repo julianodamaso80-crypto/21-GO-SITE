@@ -26,6 +26,7 @@ const isPreviewExport = process.env.PREVIEW_EXPORT === '1'
  */
 const PILAR_REMARCADO = 'veiculo-remarcado-o-que-e-tem-protecao'
 const PILAR_RM = 'carro-rm-no-rio-entenda-a-classificacao-e-suas-implicacoes'
+const PILAR_BYD = 'seguro-byd-protecao-veicular-guia-completo'
 
 const BLOG_CONSOLIDACOES = Object.entries({
   // -- tudo que fala do ESTADO "remarcado" cai no pilar do tema --
@@ -41,6 +42,18 @@ const BLOG_CONSOLIDACOES = Object.entries({
   'veiculo-remarcado-no-rj-protecao-veicular-para-seu-carro': PILAR_REMARCADO,
   // -- quem busca a SIGLA tem intencao propria e cai no outro pilar --
   'rm-no-documento-do-veiculo-no-rj-o-que-significa': PILAR_RM,
+  // -- cluster BYD/eletrico (21/08) --
+  // 22 artigos disputavam o tema e SEIS respondiam a mesma pergunta ("protecao
+  // veicular pra BYD/eletrico"), todos entre a 5a e a 8a posicao com ~0 clique.
+  // O pilar novo (seguro-byd-protecao-veicular-guia-completo) assume a intencao
+  // "seguro/protecao de BYD", que e o termo que o dono quer dominar e onde nao
+  // haviamos nenhuma query rankeando. Ficam de fora da consolidacao os artigos com
+  // intencao PROPRIA (bateria, oficina, recarga, revisao, roubo, recorte RJ).
+  'protecao-veicular-byd-dolphin-custo-cobertura-e-alternativas': PILAR_BYD,
+  'protecao-veicular-para-carro-eletrico-byd-alternativa-ao-seguro': PILAR_BYD,
+  'protecao-veicular-byd-seal-alternativa-ao-seguro-alto-custo': PILAR_BYD,
+  'protecao-veicular-para-carros-hibridos-e-eletricos-guia-completo': PILAR_BYD,
+  'carro-eletrico-21go-protege-sim': PILAR_BYD,
   // -- recarga de eletrico (05/08): dois artigos do mesmo dia respondiam a mesma
   //    pergunta ("onde carregar meu eletrico"). Fica o que fala de BYD, o publico-alvo.
   'mapa-de-pontos-de-recarga-para-carros-eletricos-onde-carregar':
@@ -76,6 +89,22 @@ const nextConfig: NextConfig = {
     : {
         async redirects() {
           return [
+            // www -> raiz (301). O canonical ja apontava certo, mas o Google seguia
+            // indexando as duas versoes: no Search Console as URLs com www aparecem com
+            // impressoes PROPRIAS (108 numa unica pagina), ou seja, a autoridade estava
+            // sendo dividida entre dois enderecos do mesmo site.
+            {
+              source: '/:path*',
+              has: [{ type: 'host', value: 'www.21go.site' }],
+              destination: 'https://21go.site/:path*',
+              permanent: true,
+            },
+            {
+              source: '/:path*',
+              has: [{ type: 'host', value: 'www.21goconsultoraleticya.site' }],
+              destination: 'https://21goconsultoraleticya.site/:path*',
+              permanent: true,
+            },
             { source: '/termos-de-uso', destination: '/conformidade-legal', permanent: true },
             { source: '/politica-privacidade', destination: '/conformidade-legal', permanent: true },
             // Nada de mandar direto pro WhatsApp (ordem do dono, 07/08/2026):
