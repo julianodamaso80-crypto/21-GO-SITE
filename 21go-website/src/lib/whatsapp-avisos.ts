@@ -27,42 +27,150 @@ const URL_BASE = process.env.EVOLUTION_AVISOS_URL || ''
 const INSTANCIA = process.env.EVOLUTION_AVISOS_INSTANCE || ''
 const CHAVE = process.env.EVOLUTION_AVISOS_KEY || ''
 
+/**
+ * O canal RESERVA: a instancia da casa (`site4824`), a mesma do `lib/whatsapp.ts`.
+ *
+ * ⚠️ Existe por um incidente real (21/08/2026). O canal de avisos e a instancia
+ * `julianodamaso` — o celular do proprio dono — e os chips caem sozinhos toda
+ * hora. Naquele dia ela estava `close`, e o efeito foi este: a Renata pagou, o
+ * site subiu, o teste do PowerLink passou, e o link NAO foi entregue. Pior: o
+ * alerta "nao entreguei" tambem sai por este mesmo canal, entao o silencio foi
+ * completo — o dono so descobriu porque a consultora reclamou.
+ *
+ * Um canal so, usado pra entregar E pra alertar que a entrega falhou, nao e
+ * redundancia nenhuma. Por isso a reserva: se o numero de avisos estiver fora,
+ * a mensagem sai pelo da casa em vez de nao sair.
+ *
+ * Continua valendo a preferencia pelo numero separado (ver o cabecalho): a casa
+ * e o ULTIMO recurso, so quando o de avisos falhou de fato.
+ */
+const RESERVA_URL = process.env.EVOLUTION_API_URL || ''
+const RESERVA_INSTANCIA = process.env.EVOLUTION_INSTANCE || ''
+const RESERVA_CHAVE = process.env.EVOLUTION_API_KEY || ''
+
+interface Canal {
+  nome: string
+  url: string
+  instancia: string
+  chave: string
+}
+
+/** Os canais em ordem de preferencia, so os que estao configurados. */
+function canais(): Canal[] {
+  const lista: Canal[] = []
+  if (URL_BASE && INSTANCIA && CHAVE) {
+    lista.push({ nome: INSTANCIA, url: URL_BASE, instancia: INSTANCIA, chave: CHAVE })
+  }
+  if (RESERVA_URL && RESERVA_INSTANCIA && RESERVA_CHAVE) {
+    lista.push({
+      nome: `${RESERVA_INSTANCIA} (reserva)`,
+      url: RESERVA_URL,
+      instancia: RESERVA_INSTANCIA,
+      chave: RESERVA_CHAVE,
+    })
+  }
+  return lista
+}
+
 export function avisosConfigurados(): boolean {
-  return Boolean(URL_BASE && INSTANCIA && CHAVE)
+  return canais().length > 0
+}
+
+/** Uma tentativa num canal. `true` so quando o Evolution aceitou de fato. */
+async function tentar(
+  canal: Canal,
+  rota: string,
+  corpo: Record<string, unknown>,
+  timeout: number,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${canal.url}/message/${rota}/${canal.instancia}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: canal.chave },
+      body: JSON.stringify(corpo),
+      signal: AbortSignal.timeout(timeout),
+    })
+    if (!res.ok) {
+      // "Connection Closed" (500) e o chip desconectado — o caso do 21/08/2026.
+      console.error(
+        `[avisos] ${canal.nome} respondeu`,
+        res.status,
+        await res.text().catch(() => ''),
+      )
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error(`[avisos] ${canal.nome} falhou`, (err as Error).message)
+    return false
+  }
 }
 
 /**
- * Manda a mensagem. Nunca lanca: uma falha de WhatsApp nao pode abortar o cron
- * no meio e deixar metade dos consultores sem processar.
+ * Manda a mensagem, tentando os canais em ordem. Nunca lanca: uma falha de
+ * WhatsApp nao pode abortar o cron no meio e deixar metade dos consultores sem
+ * processar.
  */
 export async function avisar(whatsapp: string, texto: string): Promise<boolean> {
-  if (!avisosConfigurados()) {
+  const lista = canais()
+  if (!lista.length) {
     console.log(`[avisos] (desligado) ${whatsapp}: ${texto.slice(0, 60)}...`)
     return false
   }
 
-  try {
-    const res = await fetch(`${URL_BASE}/message/sendText/${INSTANCIA}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: CHAVE },
-      body: JSON.stringify({
+  for (const canal of lista) {
+    const ok = await tentar(
+      canal,
+      'sendText',
+      {
         number: whatsapp,
         text: texto,
         // Ritmo humano: o Evolution digita antes de mandar. Disparo instantaneo
         // em serie e o padrao que faz numero novo ser derrubado.
         delay: 1200 + Math.floor(Math.random() * 1800),
-      }),
-      signal: AbortSignal.timeout(25_000),
-    })
-    if (!res.ok) {
-      console.error('[avisos] evolution respondeu', res.status, await res.text().catch(() => ''))
-      return false
+      },
+      25_000,
+    )
+    if (ok) {
+      if (canal.nome.includes('reserva')) {
+        console.warn(`[avisos] saiu pela RESERVA (${canal.instancia}) — o canal de avisos está fora`)
+      }
+      return true
     }
-    return true
-  } catch (err) {
-    console.error('[avisos] falhou', whatsapp, (err as Error).message)
-    return false
   }
+
+  console.error(`[avisos] nenhum canal aceitou a mensagem pra ${whatsapp}`)
+  return false
+}
+
+/**
+ * Qual canal esta de pe, sem mandar mensagem nenhuma.
+ *
+ * O cron usa isto pra gritar ANTES de alguem ficar sem receber: canal de avisos
+ * fora significa entrega de site dependendo da reserva, e os dois fora significa
+ * que ninguem vai receber nada e ninguem vai ser avisado disso.
+ */
+export async function saudeDosCanais(): Promise<{
+  ok: boolean
+  detalhes: { nome: string; estado: string }[]
+}> {
+  const detalhes = await Promise.all(
+    canais().map(async (c) => {
+      try {
+        const res = await fetch(`${c.url}/instance/connectionState/${c.instancia}`, {
+          headers: { apikey: c.chave },
+          signal: AbortSignal.timeout(15_000),
+        })
+        const corpo = (await res.json().catch(() => null)) as {
+          instance?: { state?: string }
+        } | null
+        return { nome: c.nome, estado: corpo?.instance?.state || `http ${res.status}` }
+      } catch (err) {
+        return { nome: c.nome, estado: `erro: ${(err as Error).message}` }
+      }
+    }),
+  )
+  return { ok: detalhes.some((d) => d.estado === 'open'), detalhes }
 }
 
 /**
@@ -82,16 +190,17 @@ export async function avisarComPdf(
   media: string,
   nomeArquivo: string,
 ): Promise<boolean> {
-  if (!avisosConfigurados()) {
+  const lista = canais()
+  if (!lista.length) {
     console.log(`[avisos] (desligado) PDF pra ${whatsapp}: ${nomeArquivo}`)
     return false
   }
 
-  try {
-    const res = await fetch(`${URL_BASE}/message/sendMedia/${INSTANCIA}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: CHAVE },
-      body: JSON.stringify({
+  for (const canal of lista) {
+    const ok = await tentar(
+      canal,
+      'sendMedia',
+      {
         number: whatsapp,
         mediatype: 'document',
         mimetype: 'application/pdf',
@@ -99,18 +208,12 @@ export async function avisarComPdf(
         caption: legenda,
         fileName: nomeArquivo,
         delay: 1200 + Math.floor(Math.random() * 1800),
-      }),
-      signal: AbortSignal.timeout(45_000),
-    })
-    if (!res.ok) {
-      console.error('[avisos] PDF: evolution respondeu', res.status, await res.text().catch(() => ''))
-      return false
-    }
-    return true
-  } catch (err) {
-    console.error('[avisos] PDF falhou', whatsapp, (err as Error).message)
-    return false
+      },
+      45_000,
+    )
+    if (ok) return true
   }
+  return false
 }
 
 /** Primeiro nome — as mensagens falam com a pessoa, nao com o cadastro. */
@@ -128,13 +231,61 @@ export function textoSiteNoAr(nome: string, slug: string): string {
   )
 }
 
-export function textoVenceHoje(nome: string, slug: string, link: string | null): string {
+/**
+ * O calendario de cobranca, ordem do dono (21/08/2026):
+ *
+ *   *"VC ENVIA SO O PAGAMENTO 5 DIAS ANTES DE VENCER CADA CLIENTE, EXEMPLO SE
+ *   VENCE DIA 5 VC ENVIA DIA 1, DEPOIS ENVIA NO DIA 4, E SE NAO PAGOU FALA QUE
+ *   E ULTIMO DIA NO DIA 5. E SE NAO PAGOU VC CANCELA O SITE SEM MAIS NENHUMA
+ *   MENSAGEM 2 DIAS DEPOIS."*
+ *
+ * Sao tres mensagens e so tres, cada uma no dia de vencimento DAQUELA pessoa —
+ * nunca numa data fixa do mes. O corte no D+2 e mudo.
+ *
+ * ⚠️ O exemplo dele ("vence dia 5 → avisa dia 1") e o que manda na primeira
+ * mensagem: sao 4 dias de antecedencia, dentro da janela de "5 dias antes".
+ */
+export function textoPrimeiroAviso(
+  nome: string,
+  slug: string,
+  vencimento: string,
+  link: string | null,
+): string {
   return (
-    `Oi, ${primeiroNome(nome)}! Passando pra avisar que a mensalidade do seu site ` +
-    `(21go.com.br/${slug}) vence hoje.\n\n` +
-    (link ? `${link}\n\n` : '') +
-    `Se já pagou, pode ignorar — às vezes leva algumas horas pra compensar.`
+    `Oi, ${primeiroNome(nome)}! Sua mensalidade do site 21Go ` +
+    `(21go.com.br/${slug}) vence em ${dataCurta(vencimento)}.\n\n` +
+    `São R$ 80,00 — já deixo o pagamento aqui pra você adiantar quando puder:\n` +
+    (link ? `${link}\n\n` : '\n') +
+    `Qualquer coisa é só me chamar por aqui.`
   )
+}
+
+export function textoVesperaDoVencimento(
+  nome: string,
+  slug: string,
+  link: string | null,
+): string {
+  return (
+    `Oi, ${primeiroNome(nome)}! Lembrete rápido: a mensalidade do seu site ` +
+    `(21go.com.br/${slug}) vence amanhã — R$ 80,00.\n\n` +
+    (link ? `${link}\n\n` : '') +
+    `Se já pagou, pode ignorar essa mensagem. 🙂`
+  )
+}
+
+export function textoUltimoDia(nome: string, slug: string, link: string | null): string {
+  return (
+    `Oi, ${primeiroNome(nome)}! Hoje é o último dia da mensalidade do seu site ` +
+    `(21go.com.br/${slug}) — R$ 80,00.\n\n` +
+    (link ? `${link}\n\n` : '') +
+    `Pagando hoje, seu site continua no ar normalmente. Se já pagou, é só ignorar.`
+  )
+}
+
+/** "2026-09-05" -> "05/09". As mensagens falam a data dele, nao um ISO. */
+function dataCurta(iso: string): string {
+  const [, mes, dia] = iso.slice(0, 10).split('-')
+  return `${dia}/${mes}`
 }
 
 /**
@@ -251,8 +402,14 @@ export function textoCotacaoNova(dados: {
 }
 
 /**
- * O tom aqui foi pedido pelo dono: educado, sem cobrança agressiva, e deixando
- * a porta aberta. Consultor que sai hoje volta depois.
+ * ⚠️ FORA DE USO desde 21/08/2026, de proposito. A ordem passou a ser cortar
+ * *"SEM MAIS NENHUMA MENSAGEM 2 DIAS DEPOIS"* — quem nao pagou ja recebeu tres
+ * avisos (D-4, D-1, D0) e uma quarta mensagem no corte vira cobranca chata.
+ *
+ * Fica aqui, e nao apagada, porque e uma decisao de tom que ja mudou uma vez:
+ * se o dono quiser a despedida educada de volta, e so o `cortar()` chamar isto.
+ *
+ * O tom foi pedido por ele: educado, sem cobranca agressiva, porta aberta.
  */
 export function textoCancelado(nome: string, slug: string): string {
   return (

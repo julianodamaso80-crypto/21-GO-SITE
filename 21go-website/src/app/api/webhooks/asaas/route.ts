@@ -113,6 +113,22 @@ async function aplicar(tipo: string, assinatura: string): Promise<void> {
   const alvo = { asaas_subscription_id: assinatura }
   let mudanca: Record<string, unknown> | null = null
 
+  // Le o estado ANTES de decidir: e ele que diz se esta e a primeira ativacao
+  // (merece a mensagem de boas-vindas) ou so a mensalidade de mais um mes — e
+  // tambem se a pessoa chegou a pagar alguma vez (ver PAYMENT_OVERDUE).
+  const { data: antes } = await supa
+    .from('sites_consultor')
+    .select('slug, status, nome, whatsapp, powerlink_id')
+    .match(alvo)
+    .maybeSingle()
+
+  if (!antes) {
+    // Esperado: a conta do Asaas e compartilhada com outros produtos, entao
+    // chega aqui evento de cobranca que nao tem nada a ver com site.
+    console.log(`[asaas] ${tipo}: assinatura ${assinatura} não é de site, ignorando`)
+    return
+  }
+
   switch (tipo) {
     case 'PAYMENT_CONFIRMED':
     case 'PAYMENT_RECEIVED': {
@@ -135,8 +151,19 @@ async function aplicar(tipo: string, assinatura: string): Promise<void> {
     }
 
     case 'PAYMENT_OVERDUE':
-      // So marca. O corte e no 5o dia e quem conta os dias e o cron — nao este
-      // webhook, que chega uma vez so no dia do vencimento.
+      // ⚠️ So quem JA ESTEVE ativo pode virar `inadimplente`. Parece detalhe e
+      // nao e: `estaNoAr()` da `true` pra inadimplente (quem ja paga fica no ar
+      // durante o atraso), entao promover um `pendente` aqui punha no ar quem
+      // nunca pagou nada. Foi o que aconteceu com tres consultores em 14/08/2026
+      // — venceram sem nunca ter pagado, viraram "inadimplente" e ganharam site
+      // de graca. `pendente` nao pode virar nada alem de `ativo`, e so com
+      // pagamento confirmado (REGRA 0).
+      if (antes.status === 'pendente') {
+        console.log(`[asaas] PAYMENT_OVERDUE em ${antes.slug}: nunca pagou, segue pendente`)
+        return
+      }
+      // So marca. Quem conta os dias ate o corte e o cron — nao este webhook,
+      // que chega uma vez so, no dia do vencimento.
       mudanca = { status: 'inadimplente', updated_at: new Date().toISOString() }
       break
 
@@ -151,21 +178,6 @@ async function aplicar(tipo: string, assinatura: string): Promise<void> {
 
     default:
       return
-  }
-
-  // Le o estado ANTES do update: e ele que diz se esta e a primeira ativacao
-  // (merece a mensagem de boas-vindas) ou so a mensalidade de mais um mes.
-  const { data: antes } = await supa
-    .from('sites_consultor')
-    .select('slug, status, nome, whatsapp, powerlink_id')
-    .match(alvo)
-    .maybeSingle()
-
-  if (!antes) {
-    // Esperado: a conta do Asaas e compartilhada com outros produtos, entao
-    // chega aqui evento de cobranca que nao tem nada a ver com site.
-    console.log(`[asaas] ${tipo}: assinatura ${assinatura} não é de site, ignorando`)
-    return
   }
 
   const { data } = await supa.from('sites_consultor').update(mudanca).match(alvo).select('slug')

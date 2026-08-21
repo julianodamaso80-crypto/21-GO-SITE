@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { esquecerConsultor } from '@/lib/consultor'
 import { cancelarAssinatura, cobrancaEmAberto, situacaoDeCobranca, saudeDoWebhook } from '@/lib/asaas'
-import { avisar, textoVenceHoje, textoCancelado } from '@/lib/whatsapp-avisos'
+import {
+  avisar,
+  saudeDosCanais,
+  textoPrimeiroAviso,
+  textoUltimoDia,
+  textoVesperaDoVencimento,
+} from '@/lib/whatsapp-avisos'
 import { entregarSeOTestePassar } from '@/lib/entregar-site'
 
 export const runtime = 'nodejs'
@@ -11,28 +17,44 @@ export const dynamic = 'force-dynamic'
 /**
  * O ciclo de cobranca do site do consultor, uma vez por dia.
  *
- * Regra do dono: *"boleto atrasou 5 dias voce cancela o site dele, avisa que vai
- * cancelar no dia que vence, com educacao, falando que no futuro se precisar ele
- * volta a procurar"*.
+ * ─── O calendario, ordem do dono (21/08/2026) ────────────────────────────────
  *
- * Entao sao dois momentos, e so dois:
- *   D+0  vence hoje  -> aviso educado, site continua no ar
- *   D+5  cinco dias  -> corta o site e avisa, deixando a porta aberta
+ *   *"VC ENVIA SO O PAGAMENTO 5 DIAS ANTES DE VENCER CADA CLIENTE, EXEMPLO SE
+ *   VENCE DIA 5 VC ENVIA DIA 1, DEPOIS ENVIA NO DIA 4, E SE NAO PAGOU FALA QUE
+ *   E ULTIMO DIA NO DIA 5. E SE NAO PAGOU VC CANCELA O SITE SEM MAIS NENHUMA
+ *   MENSAGEM 2 DIAS DEPOIS. CADA UM TEM SEU DIA DE VENCIMENTO, VC TEM QUE
+ *   COBRAR O CLIENTE NA DATA CERTA E NAO DATA ERRADA."*
+ *
+ *   D-4  primeiro aviso, com o link (o "dia 1" do exemplo dele)
+ *   D-1  vespera
+ *   D0   ultimo dia
+ *   D+2  corta o site, MUDO — nenhuma mensagem
+ *
+ * Nada sai fora dessas quatro marcas. Antes de D-4 e cedo demais, entre D0 e
+ * D+2 ja foi dito tudo, e depois do corte nao se fala mais nada.
+ *
+ * ─── A data que manda ────────────────────────────────────────────────────────
+ *
+ * O dia de vencimento e o DE CADA UM, tirado do Asaas — nunca uma data fixa do
+ * mes, nunca a copia local sozinha. E nao e a parcela aberta crua: e o
+ * `vencimentoEfetivo`, que respeita "quem pagou tem 30 dias" mesmo quando o
+ * dinheiro caiu na parcela errada (o caso do hugoaguiar, 17/08/2026).
  *
  * Quem PAGA nao passa por aqui: o webhook do Asaas ja poe em `ativo` no mesmo
  * minuto. Este cron so cuida de quem nao pagou.
  */
 
-const DIAS_ATE_CORTAR = 5
+/** Dias DEPOIS do vencimento ate o corte. Ordem do dono: 2. */
+const DIAS_ATE_CORTAR = 2
 
-/**
- * O ciclo e mensal (ordem do dono, 17/08/2026): quem pagou nao pode ser cobrado
- * de novo antes disto. 30 dias, nunca menos.
- */
-const DIAS_DO_CICLO = 30
+/** Antecedencia do primeiro aviso, em dias. O "vence dia 5 → avisa dia 1". */
+const PRIMEIRO_AVISO_DIAS = 4
 
 /** Pra onde vai o alerta quando a cobranca para de funcionar. */
 const DONO = '5521992208062'
+
+/** As tres mensagens do ciclo, na ordem em que saem. */
+type Etapa = 'd4' | 'd1' | 'd0'
 
 interface Linha {
   slug: string
@@ -41,7 +63,7 @@ interface Linha {
   status: string
   proximo_vencimento: string | null
   asaas_subscription_id: string | null
-  aviso_vencimento_ref: string | null
+  aviso_etapas: string | null
 }
 
 export async function GET(req: NextRequest) {
@@ -56,7 +78,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supa
     .from('sites_consultor')
-    .select('slug, nome, whatsapp, status, proximo_vencimento, asaas_subscription_id, aviso_vencimento_ref')
+    .select('slug, nome, whatsapp, status, proximo_vencimento, asaas_subscription_id, aviso_etapas')
     .in('status', ['pendente', 'ativo', 'inadimplente'])
 
   if (error) {
@@ -111,61 +133,56 @@ export async function GET(req: NextRequest) {
       continue
     }
 
-    const { aberta, ultimoPagamentoEm } = situacao
+    const { aberta, vencimentoEfetivo } = situacao
 
-    // ─── REGRA DOS 30 DIAS ────────────────────────────────────────────────────
-    // Ordem do dono (17/08/2026): depois de pago, a proxima cobranca e em 30
-    // dias. Ninguem pode ser cobrado num periodo menor — nem avisado, nem
-    // cortado.
-    //
-    // Esta trava existe porque "tem parcela aberta" NAO e o mesmo que "esta
-    // devendo": em 17/08/2026 o hugoaguiar levou aviso tendo pagado, porque o
-    // dinheiro dele caiu na parcela de setembro e a de agosto ficou aberta. A
-    // unica pergunta que importa e "quando essa pessoa pagou pela ultima vez".
-    if (ultimoPagamentoEm) {
-      const diasDoPagamento = Math.floor(
-        (hoje.getTime() - new Date(`${ultimoPagamentoEm.slice(0, 10)}T00:00:00`).getTime()) /
-          86_400_000,
-      )
-      if (diasDoPagamento < DIAS_DO_CICLO) {
-        // Mantem a coluna alinhada, mas nao cobra nem corta.
-        if (aberta.vencimento !== s.proximo_vencimento) {
-          await gravarVencimento(s.slug, aberta.vencimento)
-        }
-        console.log(
-          `[cron sites] ${s.slug}: pagou ha ${diasDoPagamento} dia(s) — dentro do ciclo, nao cobro`,
-        )
-        continue
-      }
-    }
-
-    // Sem cobranca em aberto = esta em dia. Zera a data velha pra coluna nao
-    // continuar mentindo, e segue sem avisar nem cortar.
-    if (!aberta.vencimento) {
+    // Sem nada em aberto e sem ciclo correndo = esta em dia. Zera a data velha
+    // pra coluna nao continuar mentindo, e segue sem avisar nem cortar.
+    if (!vencimentoEfetivo) {
       if (s.proximo_vencimento) await gravarVencimento(s.slug, null)
       continue
     }
 
     // Divergiu: a coluna estava velha. Corrige de passagem — assim o proprio
     // cron cura o dado em vez de repetir o erro todo dia.
-    if (aberta.vencimento !== s.proximo_vencimento) {
-      await gravarVencimento(s.slug, aberta.vencimento)
-      s.proximo_vencimento = aberta.vencimento
+    if (vencimentoEfetivo !== s.proximo_vencimento) {
+      await gravarVencimento(s.slug, vencimentoEfetivo)
+      s.proximo_vencimento = vencimentoEfetivo
     }
 
-    const venc = new Date(`${s.proximo_vencimento}T00:00:00`)
-    const diasVencido = Math.floor((hoje.getTime() - venc.getTime()) / 86_400_000)
+    const venc = new Date(`${vencimentoEfetivo}T00:00:00`)
+    // Positivo = ainda falta; zero = vence hoje; negativo = ja venceu.
+    const faltam = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000)
+
+    // ⚠️ Sem parcela aberta no Asaas nao ha nem o que cobrar nem por que cortar,
+    // e a data acima e so o piso do ciclo (pagamento + 30) — nao um vencimento
+    // de verdade. Avisar com ela seria dizer uma data que o Asaas ainda vai
+    // desmentir: a Renata pagou em 21/08 e o piso deu 20/09, mas a parcela dela,
+    // quando o Asaas gerar, vai vencer em 24/09. Cobranca em data errada e
+    // exatamente o que nao pode sair — entao espera a parcela existir de fato.
+    if (!aberta.vencimento) continue
 
     try {
-      if (diasVencido >= DIAS_ATE_CORTAR) {
+      if (faltam <= -DIAS_ATE_CORTAR) {
         await cortar(s)
         relatorio.cortados++
-      } else if (diasVencido >= 0 && s.aviso_vencimento_ref !== s.proximo_vencimento) {
-        // `aviso_vencimento_ref` guarda QUAL vencimento ja foi avisado. Assim o
-        // aviso sai uma vez por mes, e nao uma vez por dia ate a pessoa pagar.
-        await avisarVencimento(s)
-        relatorio.avisados++
+        continue
       }
+
+      const etapa = etapaDoDia(faltam)
+      if (!etapa) continue
+
+      // ─── Quem nunca pagou nao entra no ciclo de cobranca ────────────────────
+      // `pendente` e quem clicou em contratar e nunca pagou: nao tem site no ar
+      // e nao e cliente. Mandar "sua mensalidade vence amanha" pra ele seria
+      // cobrar uma pessoa que nao contratou nada de fato — e o texto ainda
+      // falaria de um site que ela nao tem. O corte no D+2 continua valendo pra
+      // ela: cancela a assinatura e para de gerar cobranca.
+      if (s.status === 'pendente') continue
+
+      if (jaAvisou(s.aviso_etapas, vencimentoEfetivo, etapa)) continue
+
+      await avisarEtapa(s, etapa, vencimentoEfetivo, aberta.link)
+      relatorio.avisados++
     } catch (err) {
       relatorio.erros++
       console.error('[cron sites]', s.slug, (err as Error).message)
@@ -189,30 +206,110 @@ export async function GET(req: NextRequest) {
     ).catch(() => {})
   }
 
-  const saida = { ...relatorio, webhook: saude.ok ? 'ok' : saude.motivo }
+  // ─── O canal de WhatsApp esta de pe? ──────────────────────────────────────
+  // A outra metade da falha silenciosa de 21/08/2026: o webhook estava perfeito,
+  // o problema era o numero de avisos `close`. Como o proprio alerta sai por ele,
+  // ninguem soube. Agora o cron confere o estado direto na Evolution e, com a
+  // reserva no lugar, o aviso chega mesmo com o principal fora.
+  const canais = await saudeDosCanais().catch(() => ({ ok: false, detalhes: [] }))
+  if (!canais.ok || canais.detalhes.some((d) => d.estado !== 'open')) {
+    const resumo = canais.detalhes.map((d) => `${d.nome}: ${d.estado}`).join('\n')
+    console.error('[cron sites] CANAL DE WHATSAPP:', resumo)
+    if (!canais.ok) {
+      await avisar(
+        DONO,
+        `🚨 21Go — NENHUM WhatsApp de avisos está conectado\n\n${resumo}\n\n` +
+          `Enquanto isso, quem pagar não recebe o link do site e ninguém é avisado ` +
+          `do vencimento. Conserto: reconectar a instância pelo QR code.`,
+      ).catch(() => {})
+    }
+  }
+
+  const saida = {
+    ...relatorio,
+    webhook: saude.ok ? 'ok' : saude.motivo,
+    canais: canais.detalhes.map((d) => `${d.nome}=${d.estado}`).join(' '),
+  }
   console.log('[cron sites]', JSON.stringify(saida))
   return NextResponse.json(saida)
 }
 
-async function avisarVencimento(s: Linha): Promise<void> {
+/**
+ * Qual mensagem o dia de hoje pede — ou nenhuma.
+ *
+ * ⚠️ D-1 e D0 sao dias EXATOS, nao faixas, de proposito. "Vence amanha" e "hoje
+ * e o ultimo dia" sao afirmacoes sobre uma data especifica: mandadas com um dia
+ * de atraso viram cobranca em data errada, que e exatamente o que nao pode
+ * acontecer. Se o cron nao rodar naquele dia, a mensagem simplesmente nao sai.
+ *
+ * O primeiro aviso e o unico com faixa (D-4 a D-2) porque o texto dele diz a
+ * data por extenso ("vence em 05/09"), entao continua correto em qualquer dia
+ * da janela — e nunca antes dos 5 dias que o dono estipulou.
+ */
+function etapaDoDia(faltam: number): Etapa | null {
+  if (faltam === 0) return 'd0'
+  if (faltam === 1) return 'd1'
+  if (faltam >= 2 && faltam <= PRIMEIRO_AVISO_DIAS) return 'd4'
+  return null
+}
+
+/**
+ * Se esta etapa ja saiu para ESTE vencimento.
+ *
+ * O registro guarda o vencimento junto (`2026-09-15|d4,d1`) porque a etapa
+ * sozinha nao diz nada: `d4` do mes passado nao pode calar o `d4` deste mes.
+ * Vencimento novo comeca a lista do zero.
+ */
+function jaAvisou(registro: string | null, vencimento: string, etapa: Etapa): boolean {
+  if (!registro) return false
+  const [venc, etapas] = registro.split('|')
+  if (venc !== vencimento) return false
+  return (etapas || '').split(',').includes(etapa)
+}
+
+function marcarEtapa(registro: string | null, vencimento: string, etapa: Etapa): string {
+  const [venc, etapas] = (registro || '').split('|')
+  const anteriores = venc === vencimento ? (etapas || '').split(',').filter(Boolean) : []
+  return `${vencimento}|${[...new Set([...anteriores, etapa])].join(',')}`
+}
+
+async function avisarEtapa(
+  s: Linha,
+  etapa: Etapa,
+  vencimento: string,
+  link: string | null,
+): Promise<void> {
   const supa = supabaseAdmin()
 
-  const cobranca = s.asaas_subscription_id
-    ? await cobrancaEmAberto(s.asaas_subscription_id).catch(() => null)
-    : null
+  const texto =
+    etapa === 'd4'
+      ? textoPrimeiroAviso(s.nome, s.slug, vencimento, link)
+      : etapa === 'd1'
+        ? textoVesperaDoVencimento(s.nome, s.slug, link)
+        : textoUltimoDia(s.nome, s.slug, link)
 
-  await avisar(s.whatsapp, textoVenceHoje(s.nome, s.slug, cobranca?.link ?? null))
+  const saiu = await avisar(s.whatsapp, texto)
 
-  // Marca mesmo se o WhatsApp falhou: o aviso e cortesia, e reenviar todo dia
-  // por causa de uma instancia fora do ar seria pior que nao avisar.
+  // ⚠️ So marca se a mensagem SAIU. Marcar no escuro (como era ate 21/08/2026)
+  // significa que um canal fora do ar consome a etapa em silencio: o consultor
+  // nunca recebe o aviso, e dois dias depois perde o site sem ter sido avisado.
+  // Nao saiu, tenta de novo amanha — dentro da janela da propria etapa.
+  if (!saiu) {
+    console.error(`[cron sites] ${s.slug}: aviso ${etapa} não saiu, tento amanhã`)
+    return
+  }
+
   await supa
     .from('sites_consultor')
     .update({
       aviso_vencimento_em: new Date().toISOString(),
-      aviso_vencimento_ref: s.proximo_vencimento,
+      aviso_vencimento_ref: vencimento,
+      aviso_etapas: marcarEtapa(s.aviso_etapas, vencimento, etapa),
       updated_at: new Date().toISOString(),
     })
     .eq('slug', s.slug)
+
+  console.log(`[cron sites] ${s.slug}: aviso ${etapa} enviado (vence ${vencimento})`)
 }
 
 /**
@@ -245,7 +342,6 @@ async function cortar(s: Linha): Promise<void> {
     .update({
       status: 'cancelado',
       cancelado_em: new Date().toISOString(),
-      aviso_cancelamento_em: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq('slug', s.slug)
@@ -253,6 +349,8 @@ async function cortar(s: Linha): Promise<void> {
   // Sem isto o site cortado continuaria no ar por ate 5 minutos (TTL do cache).
   esquecerConsultor(s.slug)
 
-  await avisar(s.whatsapp, textoCancelado(s.nome, s.slug))
-  console.log(`[cron sites] cortado: ${s.slug}`)
+  // ⚠️ Sem mensagem, de proposito — ordem do dono (21/08/2026): *"se nao pagou
+  // vc cancela o site SEM MAIS NENHUMA MENSAGEM 2 dias depois"*. Ele ja recebeu
+  // tres avisos (D-4, D-1, D0); a quarta mensagem seria cobranca chata.
+  console.log(`[cron sites] cortado (mudo): ${s.slug}`)
 }

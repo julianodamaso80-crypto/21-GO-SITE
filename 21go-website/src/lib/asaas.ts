@@ -157,6 +157,8 @@ const PAGOS = ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH']
 export async function situacaoDeCobranca(assinaturaId: string): Promise<{
   aberta: { id: string | null; link: string | null; vencimento: string | null; status: string | null }
   ultimoPagamentoEm: string | null
+  /** A data que vale pra avisar e pra cortar — ver `vencimentoEfetivo`. */
+  vencimentoEfetivo: string | null
 }> {
   const r = await chamar<{
     data?: {
@@ -180,7 +182,14 @@ export async function situacaoDeCobranca(assinaturaId: string): Promise<{
     (a.dueDate || '').localeCompare(b.dueDate || '')
 
   const lista = (r.data || []).slice().sort(porVencimento)
-  const aberta = lista.find((p) => p.status === 'PENDING' || p.status === 'OVERDUE') || lista[0]
+
+  // ⚠️ Sem `|| lista[0]`, de proposito. Aquele fallback devolvia uma parcela JA
+  // PAGA como se fosse a cobranca em aberto: em 21/08/2026 a Renata pagou e o
+  // `proximo_vencimento` dela ficou gravado como 24/08 — a data da parcela que
+  // ela acabara de quitar. Com o calendario de avisos contando a partir dessa
+  // coluna, seria cobranca em data errada, que e justamente o que nao pode
+  // acontecer. "Nao ha nada em aberto" tem que devolver nada.
+  const aberta = lista.find((p) => p.status === 'PENDING' || p.status === 'OVERDUE') || null
 
   // A data que vale e a do PAGAMENTO, nao a do vencimento: quem paga adiantado
   // ou atrasado tem que contar os 30 dias de quando o dinheiro entrou. Cai pro
@@ -201,7 +210,33 @@ export async function situacaoDeCobranca(assinaturaId: string): Promise<{
       status: aberta?.status ?? null,
     },
     ultimoPagamentoEm,
+    vencimentoEfetivo: vencimentoEfetivo(aberta?.dueDate ?? null, ultimoPagamentoEm),
   }
+}
+
+/**
+ * A data que o consultor REALMENTE tem que pagar — a unica que pode disparar
+ * aviso ou corte.
+ *
+ * E o mais TARDE entre a parcela aberta e "ultimo pagamento + 30 dias", porque
+ * as duas coisas divergem na vida real. O caso que provou isso e o hugoaguiar:
+ * ele pagou em 14/08/2026, mas o Pix caiu na parcela de 17/09 e a de 17/08
+ * ficou OVERDUE pra sempre. Olhando so a parcela aberta, ele e um caloteiro de
+ * um mes e leva corte; olhando o pagamento, ele esta em dia — e esta.
+ *
+ * Quem pagou tem 30 dias de site, ponto. Uma parcela velha que ficou aberta por
+ * descasamento do Asaas nao pode cobrar de novo o mes que ja foi pago.
+ */
+export function vencimentoEfetivo(
+  vencimentoAberto: string | null,
+  ultimoPagamentoEm: string | null,
+): string | null {
+  if (!ultimoPagamentoEm) return vencimentoAberto
+  const trintaDepois = new Date(`${ultimoPagamentoEm.slice(0, 10)}T00:00:00`)
+  trintaDepois.setDate(trintaDepois.getDate() + 30)
+  const pisoDoCiclo = trintaDepois.toISOString().slice(0, 10)
+  if (!vencimentoAberto) return pisoDoCiclo
+  return vencimentoAberto > pisoDoCiclo ? vencimentoAberto : pisoDoCiclo
 }
 
 /**

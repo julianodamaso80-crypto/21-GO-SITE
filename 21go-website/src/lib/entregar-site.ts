@@ -84,10 +84,28 @@ export async function entregarSeOTestePassar(alvo: Alvo): Promise<{ entregue: bo
   // ─── Passou: agora sim o link pode sair ───────────────────────────────────
   const mandou = await avisar(alvo.whatsapp, textoSiteNoAr(alvo.nome, alvo.slug))
   if (!mandou) {
-    // Teste passou mas o WhatsApp falhou: NAO marca como enviado, pra o cron
-    // tentar de novo amanha. Marcar aqui deixaria o consultor pagando sem nunca
+    // Teste passou mas o WhatsApp falhou: NAO marca como enviado, pra a proxima
+    // rodada tentar de novo. Marcar aqui deixaria o consultor pagando sem nunca
     // receber o link.
     console.error(`[entrega] ${alvo.slug}: teste passou mas o WhatsApp falhou`)
+
+    // ⚠️ Este alerta faltava, e a falta dele foi o incidente de 21/08/2026: a
+    // Renata pagou, o site subiu, o teste passou, o WhatsApp estava fora e
+    // NINGUEM soube. So o teste reprovado avisava o dono; canal caido era
+    // silencio total ate o cliente reclamar. Agora todo caminho que termina em
+    // "pagou e nao recebeu" grita — e grita pela reserva, ja que o canal
+    // principal e justamente o que costuma estar fora quando isto acontece.
+    await avisar(
+      DONO,
+      `🚨 21Go — ${alvo.nome} PAGOU e NÃO recebeu o link\n\n` +
+        `Site: 21go.com.br/${alvo.slug}\n` +
+        `WhatsApp dele(a): ${alvo.whatsapp}\n\n` +
+        `O site está no ar e o teste do Power passou. O que falhou foi o envio ` +
+        `da mensagem — provavelmente o número de avisos caiu.\n\n` +
+        `Eu tento de novo a cada 15 min sozinho. Se quiser resolver na hora, ` +
+        `reconecte a instância de avisos no Evolution.`,
+    ).catch(() => {})
+
     return { entregue: false, motivo: 'teste passou, mas o WhatsApp não saiu' }
   }
 
