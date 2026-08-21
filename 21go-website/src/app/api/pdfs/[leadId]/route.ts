@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { generateQuotePdf } from '@/lib/pdf-quote'
+import { resolverConsultor } from '@/lib/consultor'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
   const { data, error } = await supa
     .from('leads')
     .select(
-      'id, nome, telefone, whatsapp, email, placa_interesse, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado, cotacao_plano, cotacao_valor, carro_app, leilao, seguro_atual',
+      'id, nome, telefone, whatsapp, email, placa_interesse, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado, cotacao_plano, cotacao_valor, carro_app, leilao, seguro_atual, consultor_slug',
     )
     .eq('id', id)
     .maybeSingle()
@@ -49,8 +50,20 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
     return new NextResponse('Lead sem dados completos pra gerar PDF', { status: 400 })
   }
 
+  // ─── De quem e este PDF ────────────────────────────────────────────────────
+  // ⚠️ Ate 21/08/2026 este endpoint nao lia `consultor_slug`, e o efeito era o
+  // pior possivel: ESTE e o PDF que o cliente do consultor abre — o link vai na
+  // mensagem do "Quero contratar". Sem o slug, o botao "Falar no WhatsApp"
+  // dentro dele apontava pro rodizio da CASA, entregando pra 21Go o cliente que
+  // o consultor pagou pra ter, depois da cotacao ja feita (REGRA 0.1). E o
+  // rodape saia com o nome da casa num material que e dele.
+  const slug = (data.consultor_slug as string | null) || null
+  const dono = slug ? await resolverConsultor(slug) : null
+
   try {
     const pdf = await generateQuotePdf({
+      consultorSlug: slug,
+      ocultarAtivacao: dono?.ocultarAtivacao ?? false,
       nome: (data.nome as string) || '',
       whatsapp: (data.whatsapp as string) || (data.telefone as string) || '',
       email: data.email as string | null,

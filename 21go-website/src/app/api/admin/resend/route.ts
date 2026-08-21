@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supa
       .from('leads')
       .select(
-        'id, nome, telefone, whatsapp, email, placa_interesse, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado, cotacao_plano, cotacao_valor, carro_app, leilao, seguro_atual',
+        'id, nome, telefone, whatsapp, email, placa_interesse, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado, cotacao_plano, cotacao_valor, carro_app, leilao, seguro_atual, consultor_slug',
       )
       .eq(filter.col, filter.val)
       .maybeSingle()
@@ -179,7 +179,10 @@ export async function POST(req: NextRequest) {
       )
     }
     const filename = `simulacao-21go-${leadId}.pdf`
+    // Mesmo motivo do /api/pdfs/[leadId]: reenviar um lead de site vendido sem
+    // o slug faria o PDF sair com o botao da casa e o rodape da casa.
     const pdf = await generateQuotePdf({
+      consultorSlug: (leadData?.consultor_slug as string | null) ?? null,
       nome,
       whatsapp: phone,
       email: (body.email ?? leadData?.email) as string | null,
