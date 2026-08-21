@@ -41,7 +41,15 @@ Num site vendido, **todo** contato vai pro número do consultor **e todo lead na
 - **A simulacao termina na TELA DE PLANOS, nunca no WhatsApp** (20/08/2026): site vendido mostra o resultado igual ao `.site` — os planos, os detalhes, os CTAs. Quem abre a conversa e o cliente, clicando em "Quero contratar" (`contratarHref` → `wa.me` do consultor, com a mensagem montada + o LINK do PDF `/api/pdfs/<leadId>`; `wa.me` nao anexa arquivo nem envia sozinho).
   > Em 19/08/2026 foi ligado um redirect automatico (`autoWa`) que pulava a tela de planos e caia direto no `api.whatsapp.com`. O dono viu e mandou tirar em 20/08: **o cliente tem que ver os planos**. Nao reintroduzir sob "abre sozinho pra nao perder o lead" — pular a tela de planos e perder a venda, nao ganhar.
 - O disparo por chip (`sendConsultorQuoteWithPdf`) existe mas esta **DESLIGADO** (`CONSULTOR_AUTO_DISPATCH=false`): a instancia de avisos e o celular do proprio dono, e ele mandou parar. So ha 2 numeros conectados — o dele e o `site4824` da casa. Religar exige chip novo.
-- Ao criar qualquer envio novo, pergunte antes: *"isso pode sair num site de consultor?"*
+- Ao criar qualquer envio novo, pergunte antes: *"isso pode sair num site de consultor?"* — e
+  **de qual número isso sai, e ele autorizou?**
+
+> **O número do remetente não é escolha sua.** Venda de site (entrega do link, cobrança, qualquer
+> conversa com o consultor) sai **só do 5521992208062**. Chip dele desconectado = **não envia por
+> ninguém e avisa ele** — nunca "melhor mandar de outro número do que não mandar". Em 21/08/2026 o
+> agente criou um canal reserva por conta própria e dois consultores receberam o site de um número
+> assinado *"consultora leticya 21go"*. A única mensagem que pode sair por outro número é o alerta
+> **para o dono**, porque é justamente o chip dele que está fora quando ele precisa saber.
 
 > Origem: em 17/08/2026 um BYD simulado em `/andersonagripino` recebeu texto + PDF do 4824.
 
