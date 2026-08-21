@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { exigirSessao, SemPermissao } from '@/lib/painel/contexto'
 import { listarUsuarios, criarUsuario } from '@/lib/painel/usuarios'
-import { criarIndicadorNoPower } from '@/lib/painel/power-indicador'
 import { avisarIndicadorNovo } from '@/lib/painel/whatsapp-proprio'
 import { gerarSenha } from '@/lib/painel/senha'
 import { normalizarWhatsapp } from '@/lib/painel/formato'
@@ -65,9 +64,7 @@ export async function POST(req: NextRequest) {
       senha,
     })
 
-    // Cai no Power do consultor tambem — quem indica e quem preenche.
     if (whatsapp) {
-      void criarIndicadorNoPower({ consultorSlug: sessao.slug, nome, whatsapp, email })
       void avisarIndicadorNovo({
         consultorSlug: sessao.slug,
         nome,

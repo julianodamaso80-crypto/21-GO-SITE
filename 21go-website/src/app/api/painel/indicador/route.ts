@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizarWhatsapp } from '@/lib/painel/formato'
 import { criarUsuario } from '@/lib/painel/usuarios'
-import { criarIndicadorNoPower } from '@/lib/painel/power-indicador'
 import { avisarIndicadorNovo } from '@/lib/painel/whatsapp-proprio'
 import { PAINEL_POR_CONSULTOR, hostDoPainel } from '@/lib/consultores-painel'
 
@@ -22,6 +21,12 @@ export const dynamic = 'force-dynamic'
  *
  * Nao abre sessao: o cookie do painel pertence a outro dominio e nao pode ser
  * gravado daqui. A pessoa sai com o endereco de login na tela.
+ *
+ * ⚠️ INDICADOR NAO ENTRA NO POWERCRM. Ordem do dono (20/08/2026): *"quem indica
+ * trabalha pra mim, nao ta vendendo nada (...) pensa assim: quem indica e meu
+ * funcionario"*. O Power e a base de quem esta COTANDO um plano — encher de
+ * funcionario suja o funil de vendas dele. Se esse mesmo funcionario um dia
+ * quiser contratar, ele entra pela cotacao normal, como qualquer cliente.
  */
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
@@ -53,10 +58,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const usuario = await criarUsuario({ consultorSlug: slug, nome, email, whatsapp, senha })
-
-    // Fora do await: a pessoa nao pode esperar o Power pra ver o proprio link,
-    // e se o Power estiver fora do ar o cadastro dela continua valendo.
-    void criarIndicadorNoPower({ consultorSlug: slug, nome, whatsapp, email })
     void avisarIndicadorNovo({
       consultorSlug: slug,
       nome,

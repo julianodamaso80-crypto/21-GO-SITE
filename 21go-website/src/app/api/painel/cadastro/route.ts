@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { normalizarWhatsapp } from '@/lib/painel/formato'
 import { assinarSessao, DURACAO_SESSAO_MS } from '@/lib/painel/sessao'
 import { criarUsuario } from '@/lib/painel/usuarios'
-import { criarIndicadorNoPower } from '@/lib/painel/power-indicador'
 import { avisarIndicadorNovo } from '@/lib/painel/whatsapp-proprio'
 import { COOKIE_SESSAO, consultorDoHost, segredoSessao } from '@/lib/painel/contexto'
 
@@ -42,8 +41,6 @@ export async function POST(req: NextRequest) {
   let usuario
   try {
     usuario = await criarUsuario({ consultorSlug: slug, nome, email, whatsapp, senha })
-    // Cai no Power do consultor tambem — quem indica e quem preenche.
-    void criarIndicadorNoPower({ consultorSlug: slug, nome, whatsapp, email })
     void avisarIndicadorNovo({
       consultorSlug: slug,
       nome,
