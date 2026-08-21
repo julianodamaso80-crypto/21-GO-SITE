@@ -4,7 +4,8 @@ import { esquecerConsultor } from '@/lib/consultor'
 import { cancelarAssinatura, cobrancaEmAberto, situacaoDeCobranca, saudeDoWebhook } from '@/lib/asaas'
 import {
   avisar,
-  saudeDosCanais,
+  avisarDono,
+  saudeDoCanal,
   textoPrimeiroAviso,
   textoUltimoDia,
   textoVesperaDoVencimento,
@@ -106,7 +107,7 @@ export async function GET(req: NextRequest) {
         nome: s.nome,
         whatsapp: s.whatsapp,
         powerlinkId: s.powerlink_id,
-      })
+      }, { alertarDono: true })
       if (r.entregue) relatorio.entregues++
     } catch (err) {
       relatorio.erros++
@@ -198,7 +199,7 @@ export async function GET(req: NextRequest) {
 
   if (!saude.ok) {
     console.error('[cron sites] WEBHOOK COM PROBLEMA:', saude.motivo)
-    await avisar(
+    await avisarDono(
       DONO,
       `⚠️ 21Go — atenção no Asaas\n\n${saude.motivo}.\n\n` +
         `Enquanto isso, pagamento de site de consultor não sobe site sozinho. ` +
@@ -206,29 +207,27 @@ export async function GET(req: NextRequest) {
     ).catch(() => {})
   }
 
-  // ─── O canal de WhatsApp esta de pe? ──────────────────────────────────────
+  // ─── O WhatsApp do dono esta de pe? ───────────────────────────────────────
   // A outra metade da falha silenciosa de 21/08/2026: o webhook estava perfeito,
-  // o problema era o numero de avisos `close`. Como o proprio alerta sai por ele,
-  // ninguem soube. Agora o cron confere o estado direto na Evolution e, com a
-  // reserva no lugar, o aviso chega mesmo com o principal fora.
-  const canais = await saudeDosCanais().catch(() => ({ ok: false, detalhes: [] }))
-  if (!canais.ok || canais.detalhes.some((d) => d.estado !== 'open')) {
-    const resumo = canais.detalhes.map((d) => `${d.nome}: ${d.estado}`).join('\n')
-    console.error('[cron sites] CANAL DE WHATSAPP:', resumo)
-    if (!canais.ok) {
-      await avisar(
-        DONO,
-        `🚨 21Go — NENHUM WhatsApp de avisos está conectado\n\n${resumo}\n\n` +
-          `Enquanto isso, quem pagar não recebe o link do site e ninguém é avisado ` +
-          `do vencimento. Conserto: reconectar a instância pelo QR code.`,
-      ).catch(() => {})
-    }
+  // o problema era o chip dele `close`. Como e o UNICO numero que fala com
+  // consultor, ele fora significa que nada sai — nem entrega, nem cobranca.
+  // Este alerta e o que ele pediu no lugar de "manda por outro numero".
+  const canal = await saudeDoCanal().catch(() => ({ ok: false, estado: 'não consegui checar' }))
+  if (!canal.ok) {
+    console.error('[cron sites] WHATSAPP DO DONO:', canal.estado)
+    await avisarDono(
+      DONO,
+      `🚨 21Go — seu WhatsApp está *${canal.estado}*\n\n` +
+        `Venda de site só sai pelo seu número, então enquanto ele estiver fora ` +
+        `ninguém recebe site e ninguém é cobrado. Não mandei nada por outro número.\n\n` +
+        `Conserto: reconectar pelo QR code no Evolution.`,
+    ).catch(() => {})
   }
 
   const saida = {
     ...relatorio,
     webhook: saude.ok ? 'ok' : saude.motivo,
-    canais: canais.detalhes.map((d) => `${d.nome}=${d.estado}`).join(' '),
+    whatsappDono: canal.estado,
   }
   console.log('[cron sites]', JSON.stringify(saida))
   return NextResponse.json(saida)

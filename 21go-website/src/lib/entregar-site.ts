@@ -1,7 +1,7 @@
 import 'server-only'
 import { supabaseAdmin } from './supabase-admin'
 import { testarPowerlink } from './teste-powerlink'
-import { avisar, textoSiteNoAr } from './whatsapp-avisos'
+import { avisar, avisarDono, saudeDoCanal, textoSiteNoAr } from './whatsapp-avisos'
 
 /**
  * A entrega do site: so manda o link depois de PROVAR que o lead cai no Power
@@ -29,7 +29,10 @@ export interface Alvo {
   powerlinkId: string
 }
 
-export async function entregarSeOTestePassar(alvo: Alvo): Promise<{ entregue: boolean; motivo: string | null }> {
+export async function entregarSeOTestePassar(
+  alvo: Alvo,
+  opcoes?: { alertarDono?: boolean },
+): Promise<{ entregue: boolean; motivo: string | null }> {
   const supa = supabaseAdmin()
 
   // Trava contra entrega dupla: se ja foi entregue, nao testa nem manda de novo.
@@ -40,6 +43,29 @@ export async function entregarSeOTestePassar(alvo: Alvo): Promise<{ entregue: bo
     .maybeSingle()
 
   if (atual?.link_enviado_em) return { entregue: false, motivo: 'link já foi enviado antes' }
+
+  // ─── O WhatsApp do dono esta de pe? ───────────────────────────────────────
+  // Se nao estiver, PARA aqui: nao testa o Power (a cotacao de teste suja o
+  // funil dele a toa) e, principalmente, nao procura outro numero pra mandar.
+  // Ordem do dono, 21/08/2026: *"se meu wpp tiver desconectado vc NAO ENVIA DE
+  // NINGUEM e me avisa"*. No mesmo dia eu fiz a entrega sair pelo numero da
+  // casa sem ele pedir, e duas pessoas receberam o site de um numero que ele
+  // nunca autorizou. Chip fora e motivo pra parar, nao pra contornar.
+  const canal = await saudeDoCanal()
+  if (!canal.ok) {
+    console.error(`[entrega] ${alvo.slug}: NAO entreguei — WhatsApp do dono ${canal.estado}`)
+    if (opcoes?.alertarDono) {
+      await avisarDono(
+        DONO,
+        `🚨 21Go — ${alvo.nome} PAGOU e não recebeu o site\n\n` +
+          `Site: 21go.com.br/${alvo.slug}\n\n` +
+          `Seu WhatsApp está *${canal.estado}* na Evolution, e venda de site só sai pelo ` +
+          `seu número — então não mandei por ninguém, como você pediu.\n\n` +
+          `Assim que você reconectar, eu entrego sozinho (tento a cada 15 min).`,
+      ).catch(() => {})
+    }
+    return { entregue: false, motivo: `WhatsApp do dono ${canal.estado}` }
+  }
 
   const tentativas = ((atual?.teste_tentativas as number) ?? 0) + 1
   const r = await testarPowerlink({
@@ -67,7 +93,7 @@ export async function entregarSeOTestePassar(alvo: Alvo): Promise<{ entregue: bo
     // significa consultor pagando por um site que nao entrega o lead dele, mas
     // um alerta por dia sobre o mesmo problema vira ruido e ninguem le mais.
     if (tentativas === 1 || tentativas % 3 === 0) {
-      await avisar(
+      await avisarDono(
         DONO,
         `⚠️ 21Go — site de ${alvo.nome} (21go.com.br/${alvo.slug}) NÃO foi entregue\n\n` +
           `Ele pagou, o site está no ar, mas a cotação de teste não caiu no Power dele:\n` +
@@ -92,19 +118,20 @@ export async function entregarSeOTestePassar(alvo: Alvo): Promise<{ entregue: bo
     // ⚠️ Este alerta faltava, e a falta dele foi o incidente de 21/08/2026: a
     // Renata pagou, o site subiu, o teste passou, o WhatsApp estava fora e
     // NINGUEM soube. So o teste reprovado avisava o dono; canal caido era
-    // silencio total ate o cliente reclamar. Agora todo caminho que termina em
-    // "pagou e nao recebeu" grita — e grita pela reserva, ja que o canal
-    // principal e justamente o que costuma estar fora quando isto acontece.
-    await avisar(
-      DONO,
-      `🚨 21Go — ${alvo.nome} PAGOU e NÃO recebeu o link\n\n` +
-        `Site: 21go.com.br/${alvo.slug}\n` +
-        `WhatsApp dele(a): ${alvo.whatsapp}\n\n` +
-        `O site está no ar e o teste do Power passou. O que falhou foi o envio ` +
-        `da mensagem — provavelmente o número de avisos caiu.\n\n` +
-        `Eu tento de novo a cada 15 min sozinho. Se quiser resolver na hora, ` +
-        `reconecte a instância de avisos no Evolution.`,
-    ).catch(() => {})
+    // silencio total ate o cliente reclamar. O aviso PRA O DONO pode sair pelo
+    // numero interno — e justamente o chip dele que costuma estar fora. A
+    // mensagem PRA O CONSULTOR, essa, nao sai de outro numero nunca.
+    if (opcoes?.alertarDono) {
+      await avisarDono(
+        DONO,
+        `🚨 21Go — ${alvo.nome} PAGOU e NÃO recebeu o link\n\n` +
+          `Site: 21go.com.br/${alvo.slug}\n` +
+          `WhatsApp dele(a): ${alvo.whatsapp}\n\n` +
+          `O site está no ar e o teste do Power passou. O que falhou foi o envio ` +
+          `pelo seu número — não mandei por mais ninguém.\n\n` +
+          `Eu tento de novo a cada 15 min sozinho.`,
+      ).catch(() => {})
+    }
 
     return { entregue: false, motivo: 'teste passou, mas o WhatsApp não saiu' }
   }

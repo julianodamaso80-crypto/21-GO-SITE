@@ -201,6 +201,8 @@ async function aplicar(tipo: string, assinatura: string): Promise<void> {
       nome: antes.nome as string,
       whatsapp: antes.whatsapp as string,
       powerlinkId: antes.powerlink_id as string,
-    }).catch((err) => console.error('[asaas] teste do powerlink falhou', slug, err))
+      // Alerta na hora: se o WhatsApp do dono estiver fora, nada e enviado por
+      // outro numero — ele e avisado e a entrega fica pro retry de 15 min.
+    }, { alertarDono: true }).catch((err) => console.error('[asaas] teste do powerlink falhou', slug, err))
   }
 }

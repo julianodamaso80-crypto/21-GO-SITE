@@ -28,25 +28,41 @@ const INSTANCIA = process.env.EVOLUTION_AVISOS_INSTANCE || ''
 const CHAVE = process.env.EVOLUTION_AVISOS_KEY || ''
 
 /**
- * O canal RESERVA: a instancia da casa (`site4824`), a mesma do `lib/whatsapp.ts`.
+ * 🚨 VENDA DE SITE SAI DO 21992208062. SEMPRE. SO DELE.
  *
- * ⚠️ Existe por um incidente real (21/08/2026). O canal de avisos e a instancia
- * `julianodamaso` — o celular do proprio dono — e os chips caem sozinhos toda
- * hora. Naquele dia ela estava `close`, e o efeito foi este: a Renata pagou, o
- * site subiu, o teste do PowerLink passou, e o link NAO foi entregue. Pior: o
- * alerta "nao entreguei" tambem sai por este mesmo canal, entao o silencio foi
- * completo — o dono so descobriu porque a consultora reclamou.
+ * Ordem do dono, 21/08/2026: *"venda de site vc envia pelo MEU numero
+ * 21992208062 sempre. Se meu wpp tiver desconectado vc NAO ENVIA DE NINGUEM e
+ * me avisa."*
  *
- * Um canal so, usado pra entregar E pra alertar que a entrega falhou, nao e
- * redundancia nenhuma. Por isso a reserva: se o numero de avisos estiver fora,
- * a mensagem sai pelo da casa em vez de nao sair.
+ * ⚠️ Nao existe fallback, nao existe canal reserva, nao existe "melhor mandar de
+ * outro numero do que nao mandar". Isso foi tentado no mesmo dia — o chip dele
+ * estava `close` e eu fiz a entrega sair pelo `site4824`, que se apresenta como
+ * "consultora leticya 21go". Duas pessoas receberam o site de um numero que o
+ * dono nunca autorizou, e ele mandou tirar na hora. Numero desconectado nao e
+ * problema pra contornar: e motivo pra PARAR e avisar.
  *
- * Continua valendo a preferencia pelo numero separado (ver o cabecalho): a casa
- * e o ULTIMO recurso, so quando o de avisos falhou de fato.
+ * A unica excecao e o aviso pro proprio dono (`avisarDono`), que nao e mensagem
+ * de venda e precisa chegar justamente quando o chip dele caiu.
  */
-const RESERVA_URL = process.env.EVOLUTION_API_URL || ''
-const RESERVA_INSTANCIA = process.env.EVOLUTION_INSTANCE || ''
-const RESERVA_CHAVE = process.env.EVOLUTION_API_KEY || ''
+const CANAL_DO_DONO: Canal | null =
+  URL_BASE && INSTANCIA && CHAVE
+    ? { nome: INSTANCIA, url: URL_BASE, instancia: INSTANCIA, chave: CHAVE }
+    : null
+
+/**
+ * O numero da casa (`site4824`). Serve **exclusivamente** pra avisar o dono
+ * quando o WhatsApp dele esta fora — a mensagem que ele pediu pra receber nesse
+ * caso. Nunca fala com consultor, nunca fala com cliente.
+ */
+const CANAL_INTERNO: Canal | null =
+  process.env.EVOLUTION_API_URL && process.env.EVOLUTION_INSTANCE && process.env.EVOLUTION_API_KEY
+    ? {
+        nome: `${process.env.EVOLUTION_INSTANCE} (interno)`,
+        url: process.env.EVOLUTION_API_URL,
+        instancia: process.env.EVOLUTION_INSTANCE,
+        chave: process.env.EVOLUTION_API_KEY,
+      }
+    : null
 
 interface Canal {
   nome: string
@@ -55,25 +71,8 @@ interface Canal {
   chave: string
 }
 
-/** Os canais em ordem de preferencia, so os que estao configurados. */
-function canais(): Canal[] {
-  const lista: Canal[] = []
-  if (URL_BASE && INSTANCIA && CHAVE) {
-    lista.push({ nome: INSTANCIA, url: URL_BASE, instancia: INSTANCIA, chave: CHAVE })
-  }
-  if (RESERVA_URL && RESERVA_INSTANCIA && RESERVA_CHAVE) {
-    lista.push({
-      nome: `${RESERVA_INSTANCIA} (reserva)`,
-      url: RESERVA_URL,
-      instancia: RESERVA_INSTANCIA,
-      chave: RESERVA_CHAVE,
-    })
-  }
-  return lista
-}
-
 export function avisosConfigurados(): boolean {
-  return canais().length > 0
+  return CANAL_DO_DONO !== null
 }
 
 /** Uma tentativa num canal. `true` so quando o Evolution aceitou de fato. */
@@ -107,70 +106,86 @@ async function tentar(
 }
 
 /**
- * Manda a mensagem, tentando os canais em ordem. Nunca lanca: uma falha de
- * WhatsApp nao pode abortar o cron no meio e deixar metade dos consultores sem
- * processar.
+ * Fala com o CONSULTOR — e so pelo numero do dono.
+ *
+ * Se o chip dele estiver fora, devolve `false` e NAO tenta outro caminho. Quem
+ * chama trata isso parando e avisando o dono; nada sai por outro numero.
+ *
+ * Nunca lanca: uma falha de WhatsApp nao pode abortar o cron no meio e deixar
+ * metade dos consultores sem processar.
  */
 export async function avisar(whatsapp: string, texto: string): Promise<boolean> {
-  const lista = canais()
-  if (!lista.length) {
+  if (!CANAL_DO_DONO) {
     console.log(`[avisos] (desligado) ${whatsapp}: ${texto.slice(0, 60)}...`)
     return false
   }
 
-  for (const canal of lista) {
-    const ok = await tentar(
-      canal,
-      'sendText',
-      {
-        number: whatsapp,
-        text: texto,
-        // Ritmo humano: o Evolution digita antes de mandar. Disparo instantaneo
-        // em serie e o padrao que faz numero novo ser derrubado.
-        delay: 1200 + Math.floor(Math.random() * 1800),
-      },
-      25_000,
-    )
-    if (ok) {
-      if (canal.nome.includes('reserva')) {
-        console.warn(`[avisos] saiu pela RESERVA (${canal.instancia}) — o canal de avisos está fora`)
-      }
-      return true
-    }
+  const ok = await tentar(
+    CANAL_DO_DONO,
+    'sendText',
+    {
+      number: whatsapp,
+      text: texto,
+      // Ritmo humano: o Evolution digita antes de mandar. Disparo instantaneo
+      // em serie e o padrao que faz numero novo ser derrubado.
+      delay: 1200 + Math.floor(Math.random() * 1800),
+    },
+    25_000,
+  )
+
+  if (!ok) console.error(`[avisos] NAO enviei pra ${whatsapp} — o WhatsApp do dono está fora`)
+  return ok
+}
+
+/**
+ * Fala com o DONO. Esta e a unica mensagem que pode sair por outro numero.
+ *
+ * Motivo: o aviso que ele mais precisa receber e justamente "seu WhatsApp caiu e
+ * por isso ninguem esta recebendo nada". Mandar so pelo chip dele garantiria que
+ * esse aviso especifico nunca chegasse. O chip dele estar `close` na Evolution
+ * nao impede o WhatsApp dele de RECEBER — so de enviar.
+ *
+ * Nao e mensagem de venda e nao vai pra consultor nenhum: sai do numero da casa
+ * e chega no celular dele.
+ */
+export async function avisarDono(numeroDoDono: string, texto: string): Promise<boolean> {
+  const corpo = {
+    number: numeroDoDono,
+    text: texto,
+    delay: 1200 + Math.floor(Math.random() * 1800),
   }
 
-  console.error(`[avisos] nenhum canal aceitou a mensagem pra ${whatsapp}`)
+  if (CANAL_DO_DONO && (await tentar(CANAL_DO_DONO, 'sendText', corpo, 25_000))) return true
+
+  if (CANAL_INTERNO && (await tentar(CANAL_INTERNO, 'sendText', corpo, 25_000))) {
+    console.warn('[avisos] alerta ao dono saiu pelo número interno — o WhatsApp dele está fora')
+    return true
+  }
+
+  console.error('[avisos] NAO consegui avisar o dono por nenhum caminho')
   return false
 }
 
 /**
- * Qual canal esta de pe, sem mandar mensagem nenhuma.
+ * O WhatsApp do dono esta conectado?
  *
- * O cron usa isto pra gritar ANTES de alguem ficar sem receber: canal de avisos
- * fora significa entrega de site dependendo da reserva, e os dois fora significa
- * que ninguem vai receber nada e ninguem vai ser avisado disso.
+ * Como e o UNICO numero que fala com consultor, ele fora significa que nada de
+ * venda de site sai — nem entrega, nem cobranca. O cron usa isto pra avisar o
+ * dono ANTES de alguem ficar esperando, em vez de descobrir pela reclamacao.
  */
-export async function saudeDosCanais(): Promise<{
-  ok: boolean
-  detalhes: { nome: string; estado: string }[]
-}> {
-  const detalhes = await Promise.all(
-    canais().map(async (c) => {
-      try {
-        const res = await fetch(`${c.url}/instance/connectionState/${c.instancia}`, {
-          headers: { apikey: c.chave },
-          signal: AbortSignal.timeout(15_000),
-        })
-        const corpo = (await res.json().catch(() => null)) as {
-          instance?: { state?: string }
-        } | null
-        return { nome: c.nome, estado: corpo?.instance?.state || `http ${res.status}` }
-      } catch (err) {
-        return { nome: c.nome, estado: `erro: ${(err as Error).message}` }
-      }
-    }),
-  )
-  return { ok: detalhes.some((d) => d.estado === 'open'), detalhes }
+export async function saudeDoCanal(): Promise<{ ok: boolean; estado: string }> {
+  if (!CANAL_DO_DONO) return { ok: false, estado: 'não configurado' }
+  try {
+    const res = await fetch(
+      `${CANAL_DO_DONO.url}/instance/connectionState/${CANAL_DO_DONO.instancia}`,
+      { headers: { apikey: CANAL_DO_DONO.chave }, signal: AbortSignal.timeout(15_000) },
+    )
+    const corpo = (await res.json().catch(() => null)) as { instance?: { state?: string } } | null
+    const estado = corpo?.instance?.state || `http ${res.status}`
+    return { ok: estado === 'open', estado }
+  } catch (err) {
+    return { ok: false, estado: `erro: ${(err as Error).message}` }
+  }
 }
 
 /**
@@ -190,30 +205,27 @@ export async function avisarComPdf(
   media: string,
   nomeArquivo: string,
 ): Promise<boolean> {
-  const lista = canais()
-  if (!lista.length) {
+  if (!CANAL_DO_DONO) {
     console.log(`[avisos] (desligado) PDF pra ${whatsapp}: ${nomeArquivo}`)
     return false
   }
 
-  for (const canal of lista) {
-    const ok = await tentar(
-      canal,
-      'sendMedia',
-      {
-        number: whatsapp,
-        mediatype: 'document',
-        mimetype: 'application/pdf',
-        media,
-        caption: legenda,
-        fileName: nomeArquivo,
-        delay: 1200 + Math.floor(Math.random() * 1800),
-      },
-      45_000,
-    )
-    if (ok) return true
-  }
-  return false
+  // Mesmo canal unico do `avisar`: PDF de cotacao e conversa com consultor, e
+  // consultor so recebe pelo numero do dono.
+  return tentar(
+    CANAL_DO_DONO,
+    'sendMedia',
+    {
+      number: whatsapp,
+      mediatype: 'document',
+      mimetype: 'application/pdf',
+      media,
+      caption: legenda,
+      fileName: nomeArquivo,
+      delay: 1200 + Math.floor(Math.random() * 1800),
+    },
+    45_000,
+  )
 }
 
 /** Primeiro nome — as mensagens falam com a pessoa, nao com o cadastro. */
