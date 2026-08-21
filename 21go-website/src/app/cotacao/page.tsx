@@ -910,9 +910,15 @@ export default function CotacaoPage() {
             buttonText: 'Tenho uma dúvida',
           })
         }}
-        className="flex items-center justify-center gap-2 w-full min-h-[48px] px-4 py-3 font-semibold text-sm text-center leading-tight rounded-full bg-white text-[#293C82] border-2 border-[#293C82]/25 hover:border-[#293C82] hover:bg-[#F0F4FA] active:scale-[0.98] transition-all duration-200"
+        // Azul da marca cheio, não a 25% de opacidade: assim a borda sumia no
+        // branco do card e o botão lia como desabilitado. Continua secundário
+        // pela FORMA (contorno sobre fundo claro) e não pela falta de cor — o
+        // laranja sólido do "Quero contratar" segue sendo o mais pesado da tela.
+        // Mesma altura e mesmo corpo de texto do principal: 48px é alvo de toque
+        // apertado no celular, de onde vem quase todo o tráfego.
+        className="flex items-center justify-center gap-2 w-full min-h-[52px] px-4 py-3.5 font-bold text-[15px] text-center leading-tight rounded-full bg-[#EEF2FB] text-[#293C82] border-2 border-[#293C82] shadow-sm shadow-[#293C82]/10 hover:bg-[#293C82] hover:text-white active:scale-[0.98] transition-all duration-200"
       >
-        <HelpCircle className="w-4 h-4 flex-shrink-0" />
+        <HelpCircle className="w-[18px] h-[18px] flex-shrink-0" />
         Tenho uma dúvida
       </a>
     </div>
@@ -920,6 +926,22 @@ export default function CotacaoPage() {
 
   return (
     <div className="min-h-screen bg-[#F7F8FC] relative">
+      {/*
+        A barra fixa global do celular ("Fazer Simulação Grátis", em MobileCTA)
+        mora no layout e nasce DEPOIS desta página no DOM. Como as duas usam
+        bottom-0 e z-40, ela ficava por cima: medido em 21/08/2026, cobria 65px
+        dos 77px da barra de contratação — sobrava uma fresta de 12px, e o toque
+        no rodapé (onde o polegar cai) abria "Fazer Simulação Grátis" em vez de
+        "Quero contratar". Quem tinha acabado de simular era mandado a simular
+        de novo.
+
+        Escondida por CSS e não por pathname de propósito: o HTML aqui é
+        prerenderizado e compartilhado entre `/cotacao` e `/<consultor>/cotacao`,
+        então `usePathname()` não é confiável e ler `window.location` num efeito
+        faria a barra piscar antes de sumir.
+      */}
+      <style>{`[data-cta-section="mobile_cta"]{display:none!important}`}</style>
+
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-[0.02]" style={{
         backgroundImage: `radial-gradient(circle at 1px 1px, #293C82 1px, transparent 0)`,
