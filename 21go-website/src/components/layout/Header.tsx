@@ -62,7 +62,7 @@ export function Header() {
     >
       <nav className="mx-auto max-w-7xl px-6 flex items-center justify-between h-16 lg:h-20">
         <Link href="/" className="flex items-center gap-2.5">
-          <Image src="/logo21go-72.png" alt="21Go Proteção Veicular" width={36} height={36} className="rounded-lg" />
+          <Image src="/logo21go-72.png" alt="21Go Proteção Patrimonial Veicular" width={36} height={36} className="rounded-lg" />
           <span className={`font-[var(--font-outfit)] text-xl font-bold tracking-tight transition-colors duration-300 ${
             scrolled ? 'text-[#293C82]' : 'text-white'
           }`}>21Go</span>

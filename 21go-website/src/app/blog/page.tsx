@@ -5,7 +5,7 @@ import { getAllPosts } from '@/lib/blog'
 
 export const metadata: Metadata = {
   title: 'Blog 21Go — Conteudo sobre Protecao Veicular',
-  description: 'Artigos, dicas e guias sobre protecao veicular, seguranca no transito, economia e muito mais. Blog da 21Go Protecao Veicular no RJ.',
+  description: 'Artigos, dicas e guias sobre protecao veicular, seguranca no transito, economia e muito mais. Blog da 21Go Protecao Patrimonial Veicular no RJ.',
 }
 
 const categoryColors: Record<string, string> = {

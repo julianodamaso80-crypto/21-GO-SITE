@@ -25,10 +25,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: '21Go Proteção Veicular RJ — A partir de R$77,50/mês',
+    default: '21Go Proteção Patrimonial Veicular RJ — A partir de R$77,50/mês',
     template: '%s | 21Go',
   },
-  description: '21Go Proteção Veicular no Rio de Janeiro. Proteja seu carro ou moto a partir de R$77,50/mês. Sem análise de perfil, sem burocracia. 20+ anos no mercado. Simule grátis em 30 segundos.',
+  description: '21Go Proteção Patrimonial Veicular no Rio de Janeiro. Proteja seu carro ou moto a partir de R$77,50/mês. Sem análise de perfil, sem burocracia. 20+ anos no mercado. Simule grátis em 30 segundos.',
   metadataBase: new URL('https://21go.site'),
   openGraph: {
     type: 'website',

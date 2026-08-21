@@ -508,13 +508,28 @@ function renderComparisonPage(
       </table>
     </section>
 
-    <footer class="pdf-footer">
-      <div class="footer-consultor">
+    <footer class="pdf-footer${input.consultorSlug ? ' so-botao' : ''}">
+      ${
+        /**
+         * Ordem do dono (21/08/2026): *"nenhum site pode ter escrito proteção
+         * veicular, sempre proteção patrimonial veicular. (...) você pode
+         * excluir de todos que compraram e não colocar nada no lugar."*
+         *
+         * Num site vendido este bloco some inteiro — sem substituto, nem o nome
+         * do consultor. O PDF vai na mao do CLIENTE dele: quem atende ali e ele,
+         * e carimbar "Atendimento: 21Go" no rodape e a casa se pondo no meio de
+         * uma venda que nao e dela (REGRA 0.1). O botao de WhatsApp ao lado ja
+         * resolve pelo slug e continua sendo dele.
+         */
+        input.consultorSlug
+          ? ''
+          : `<div class="footer-consultor">
         <div class="footer-consultor-info">
           <span class="footer-eyebrow">Atendimento</span>
-          <span class="footer-name">21Go Proteção Veicular</span>
+          <span class="footer-name">21Go Proteção Patrimonial Veicular</span>
         </div>
-      </div>
+      </div>`
+      }
       <a class="wpp-btn small" href="${linkWhatsApp}">
         <span class="wpp-icon">💬</span>
         <span class="wpp-text">Falar no WhatsApp</span>
@@ -913,6 +928,12 @@ function renderHTML(input: QuotePdfInput): string {
   }
 
   /* FOOTER compacto */
+  /* Sem o bloco de atendimento (site de consultor) o botao sozinho ficaria
+     encostado na esquerda por causa do space-between. */
+  .pdf-footer.so-botao {
+    justify-content: flex-end;
+  }
+
   .pdf-footer {
     background: #0F172A;
     color: #fff;

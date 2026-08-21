@@ -21,7 +21,7 @@ export default function PreviewScroll3D() {
       {/* Header reduzido do protótipo */}
       <header className="preview3d-header fixed top-0 left-0 right-0 z-[80] flex h-14 items-center justify-between border-b border-white/10 bg-[#0c1330]/70 px-5 backdrop-blur-md">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo21go.png" alt="21Go Proteção Veicular" width={28} height={28} className="rounded-md" />
+          <Image src="/logo21go.png" alt="21Go Proteção Patrimonial Veicular" width={28} height={28} className="rounded-md" />
           <span className="text-sm font-bold text-white">21Go</span>
           <span className="ml-2 rounded-full border border-[#C7D301]/40 bg-[#C7D301]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#C7D301]">
             protótipo scroll 3D

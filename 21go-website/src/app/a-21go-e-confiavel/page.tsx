@@ -91,7 +91,7 @@ function schemaDaPagina() {
       },
       {
         '@type': 'Organization',
-        name: '21Go Proteção Veicular',
+        name: '21Go Proteção Patrimonial Veicular',
         url: 'https://21go.site',
         description: RESPOSTA_DIRETA,
         areaServed: { '@type': 'State', name: 'Rio de Janeiro' },

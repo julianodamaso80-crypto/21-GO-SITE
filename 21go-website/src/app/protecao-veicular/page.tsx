@@ -188,7 +188,7 @@ function schemaDaPagina() {
         areaServed: { '@type': 'Country', name: 'Brasil' },
         provider: {
           '@type': 'Organization',
-          name: '21Go Proteção Veicular',
+          name: '21Go Proteção Patrimonial Veicular',
           url: 'https://21go.site',
           areaServed: 'BR',
         },

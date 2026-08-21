@@ -107,7 +107,7 @@ function schemaDaPagina() {
         ],
         provider: {
           '@type': 'Organization',
-          name: '21Go Proteção Veicular',
+          name: '21Go Proteção Patrimonial Veicular',
           url: 'https://21go.site',
         },
         offers: {
