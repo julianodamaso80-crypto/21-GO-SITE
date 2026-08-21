@@ -187,7 +187,23 @@ Retorne JSON conforme as instrucoes do sistema.`,
           }
 
           // Injeta a secao ANTES de "## Em resumo" (ou no fim, se nao existir)
-          newContent = insertSection(parsed.content, sug.new_section_markdown.trim());
+          // Guarda contra colcha de retalhos: o refresh injetava secao nova sem olhar
+          // o que ja existe. Depois de varios refreshes os artigos de MAIOR trafego —
+          // justamente os que disputam o 1o lugar — viraram repeticao: em 13/08 o
+          // "carros mais roubados" tinha 15 H2 com 3 variacoes de "como os criminosos
+          // escolhem", e "por que escolher 21Go" tinha o MESMO H2 duas vezes.
+          const secaoNova = sug.new_section_markdown.trim();
+          if (jaTemTema(parsed.content, secaoNova)) {
+            log.info({ recId: rec.id, articleId: article.id }, 'refresh dispensado — artigo ja tem secao sobre esse tema');
+            if (!ctx.dry_run) {
+              await exec(
+                `UPDATE seo.recommendations SET status='dismissed', applied_at=now(), data = coalesce(data,'{}'::jsonb) || '{"dismiss_reason":"tema ja coberto por H2 existente"}'::jsonb WHERE id=$1`,
+                [rec.id],
+              );
+            }
+            continue;
+          }
+          newContent = insertSection(parsed.content, secaoNova);
           if (sug.new_title) newTitle = sug.new_title;
           if (sug.new_description) newDescription = sug.new_description;
         } else {
@@ -329,6 +345,51 @@ async function ensureMdxContent(article: { id: string; slug: string; mdx_path?: 
     log.warn({ err: (e as Error).message, articleId: article.id }, 'falha ao hidratar mdx_content');
     return null;
   }
+}
+
+/**
+ * O artigo ja responde essa pergunta?
+ *
+ * Compara os termos DISTINTIVOS do H2 novo com os H2 que ja existem — ignorando
+ * marca, servico e veiculo, que aparecem em todo titulo e fariam qualquer par
+ * parecer igual. Jaccard (nao overlap) porque headings curtos inflam o overlap.
+ * Negacao exclusiva salva pares OPOSTOS: "o que NAO deve pesar" nao e duplicado de
+ * "o que deve pesar".
+ */
+const H2_STOP = new Set(
+  ('no na do da de em o a os as para com seu sua rj rio janeiro 21go voce te que e ou ' +
+   'um uma como qual quais protecao veicular patrimonial seguro associacao carro ' +
+   'carros moto motos veiculo veiculos').split(' '),
+);
+
+function termosH2(h: string): Set<string> {
+  const limpo = h.replace(/^#{1,6}\s+/, '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ');
+  return new Set(limpo.split(/\s+/).filter((t) => t.length > 2 && !H2_STOP.has(t)).map((t) => t.replace(/s$/, '')));
+}
+
+function temNegacao(h: string): boolean {
+  const n = h.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return /(nao|sem|nunca|evitar|errado)/.test(n);
+}
+
+export function jaTemTema(body: string, secaoNova: string): boolean {
+  const novoH2 = (secaoNova.match(/^#{2,3}\s+.+$/m) ?? [''])[0];
+  if (!novoH2) return false;
+  const novos = termosH2(novoH2);
+  if (novos.size === 0) return false;
+  for (const h of body.match(/^#{2,3}\s+.+$/gm) ?? []) {
+    const t = termosH2(h);
+    if (t.size === 0) continue;
+    const inter = [...novos].filter((x) => t.has(x)).length;
+    if (inter < 2) continue;
+    const uniao = new Set([...novos, ...t]).size;
+    if (inter / uniao < 0.7) continue;
+    if (temNegacao(novoH2) !== temNegacao(h)) continue;
+    return true;
+  }
+  return false;
 }
 
 /** Insere a secao nova antes de "## Em resumo" / "## Perguntas frequentes" / "## Fontes". */

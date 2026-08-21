@@ -8,63 +8,48 @@ import type { NextConfig } from 'next'
 const isPreviewExport = process.env.PREVIEW_EXPORT === '1'
 
 /**
- * Consolidacao do cluster "remarcado" (2026-08-03).
+ * Consolidacao de clusters canibais do blog.
  *
- * A esteira SEO gerou 11 posts quase identicos sobre o mesmo assunto — o Agente 02
- * marcava a pauta como duplicada e o worker publicava artigo novo assim mesmo
- * (corrigido em BLOG/seo-worker). Os 11 competiam entre si no Google, nenhum
- * passava de 0-2 cliques.
+ * A esteira SEO gerou dezenas de posts quase identicos sobre os mesmos temas: o
+ * Agente 02 marcava a pauta como duplicada e o worker publicava artigo novo assim
+ * mesmo (corrigido em BLOG/seo-worker). Em 90 dias o cluster "remarcado" somou 12
+ * URLs, 2.034 impressoes e 3 cliques — com varias paginas empatadas, o Google nao
+ * promove nenhuma.
  *
- * Mantemos o de maior alcance em cada grupo e redirecionamos os demais com 301,
- * concentrando autoridade sem perder as URLs ja indexadas. Vencedor escolhido por
- * impressoes no GSC (90 dias) — os cliques eram ~0 em todos, entao impressao e o
- * unico sinal com volume.
+ * Este mapa aponta SEMPRE pro destino final. Nao encadear 301: a consolidacao de
+ * 08/08 mandava pra paginas que a de 13/08 tambem redirecionou, criando saltos em
+ * cadeia que desperdicam crawl e diluem o sinal.
+ *
+ * Sobram DOIS pilares no cluster remarcado, com intencoes de busca diferentes:
+ *   veiculo-remarcado-o-que-e-tem-protecao   -> "o que e remarcado" (710 impressoes)
+ *   carro-rm-no-rio-entenda-a-classificacao  -> a sigla "RM" (1o lugar hoje no Google)
  */
-const BLOG_CONSOLIDACOES = [
-  // grupo "carro remarcado" -> 51 impressoes
-  'carro-remarcado-no-rj-protecao-veicular-e-compra-segura',
-  'carro-remarcado-no-rj-entenda-riscos-e-proteja-seu-veiculo',
-].map((slug) => ({
-  source: `/blog/${slug}`,
-  destination: '/blog/carro-remarcado-no-rj-entenda-o-que-e-e-seus-riscos',
+const PILAR_REMARCADO = 'veiculo-remarcado-o-que-e-tem-protecao'
+const PILAR_RM = 'carro-rm-no-rio-entenda-a-classificacao-e-suas-implicacoes'
+
+const BLOG_CONSOLIDACOES = Object.entries({
+  // -- tudo que fala do ESTADO "remarcado" cai no pilar do tema --
+  'carro-remarcado-no-rj-protecao-veicular-e-compra-segura': PILAR_REMARCADO,
+  'carro-remarcado-no-rj-entenda-riscos-e-proteja-seu-veiculo': PILAR_REMARCADO,
+  'carro-remarcado-no-rj-entenda-o-que-e-e-seus-riscos': PILAR_REMARCADO,
+  'chassi-remarcado-no-rj-legalidade-riscos-e-como-consultar': PILAR_REMARCADO,
+  'chassi-remarcado-no-rj-riscos-legalidade-e-protecao-veicular': PILAR_REMARCADO,
+  'chassi-remarcado-no-rj-legalidade-regularizacao-e-implicacoes': PILAR_REMARCADO,
+  'chassi-remarcado-no-rj-entenda-implicacoes-e-protecao-veicular': PILAR_REMARCADO,
+  'motor-remarcado-rj-legalidade-venda-e-protecao-veicular': PILAR_REMARCADO,
+  'motor-remarcado-no-rj-entenda-impactos-e-legalidade-no-veiculo': PILAR_REMARCADO,
+  'veiculo-remarcado-no-rj-protecao-veicular-para-seu-carro': PILAR_REMARCADO,
+  // -- quem busca a SIGLA tem intencao propria e cai no outro pilar --
+  'rm-no-documento-do-veiculo-no-rj-o-que-significa': PILAR_RM,
+  // -- recarga de eletrico (05/08): dois artigos do mesmo dia respondiam a mesma
+  //    pergunta ("onde carregar meu eletrico"). Fica o que fala de BYD, o publico-alvo.
+  'mapa-de-pontos-de-recarga-para-carros-eletricos-onde-carregar':
+    'apps-para-encontrar-pontos-de-recarga-byd-guia-completo-2',
+}).map(([de, para]) => ({
+  source: `/blog/${de}`,
+  destination: `/blog/${para}`,
   permanent: true,
-})).concat(
-  // grupo "chassi remarcado" -> 73 impressoes
-  [
-    'chassi-remarcado-no-rj-legalidade-riscos-e-como-consultar',
-    'chassi-remarcado-no-rj-riscos-legalidade-e-protecao-veicular',
-    'chassi-remarcado-no-rj-legalidade-regularizacao-e-implicacoes',
-  ].map((slug) => ({
-    source: `/blog/${slug}`,
-    destination: '/blog/chassi-remarcado-no-rj-entenda-implicacoes-e-protecao-veicular',
-    permanent: true,
-  })),
-  // grupo "motor remarcado" -> 46 impressoes, posicao 8.6
-  [
-    'motor-remarcado-rj-legalidade-venda-e-protecao-veicular',
-  ].map((slug) => ({
-    source: `/blog/${slug}`,
-    destination: '/blog/motor-remarcado-no-rj-entenda-impactos-e-legalidade-no-veiculo',
-    permanent: true,
-  })),
-  // grupo "veiculo remarcado" -> 622 impressoes (de longe o mais forte do cluster)
-  [
-    'veiculo-remarcado-no-rj-protecao-veicular-para-seu-carro',
-  ].map((slug) => ({
-    source: `/blog/${slug}`,
-    destination: '/blog/veiculo-remarcado-o-que-e-tem-protecao',
-    permanent: true,
-  })),
-  // recarga de eletrico (05/08): dois artigos do mesmo dia respondiam a mesma pergunta
-  // ("onde carregar meu eletrico"). Mantido o que fala de BYD, que e o publico-alvo.
-  [
-    'mapa-de-pontos-de-recarga-para-carros-eletricos-onde-carregar',
-  ].map((slug) => ({
-    source: `/blog/${slug}`,
-    destination: '/blog/apps-para-encontrar-pontos-de-recarga-byd-guia-completo-2',
-    permanent: true,
-  })),
-)
+}))
 
 const nextConfig: NextConfig = {
   output: isPreviewExport ? 'export' : 'standalone',
