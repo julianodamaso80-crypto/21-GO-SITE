@@ -146,7 +146,6 @@ export interface QuoteMessageInput {
   planoEscolhido: string
   mensalidadeFormatted: string
   ativacaoAvistaFormatted: string
-  ativacao12xFormatted: string
   /** Consultor que prefere tratar a ativacao na conversa (ver ocultarAtivacao). */
   ocultarAtivacao?: boolean
   /**
@@ -227,7 +226,7 @@ export function buildContratarMessage(input: QuoteMessageInput): string {
     // na conversa. O calculo nao muda — some da vista, nao da conta.
     ...(input.ocultarAtivacao
       ? []
-      : [`Ativação: R$ ${input.ativacaoAvistaFormatted} à vista no cartão ou 12x de R$ ${input.ativacao12xFormatted}`]),
+      : [`Ativação: R$ ${input.ativacaoAvistaFormatted} à vista no cartão`]),
   ]
 
   const blocos = [

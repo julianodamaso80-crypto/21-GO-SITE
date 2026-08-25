@@ -8,7 +8,6 @@ import {
   PRICING_TABLES,
   calcActivation,
   activationCashPrice,
-  activationInstallment12x,
   type QuotePlanFull,
   type PlanId,
 } from '@/data/pricing'
@@ -261,10 +260,9 @@ function renderComparisonPage(
 ): string {
   // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): mensalidade CHEIA do
   // plano de referencia + R$ 50 (carro e moto), piso R$ 249, BYD R$ 1.550 fixo.
-  // A vista = valor cheio; 12x = valor cheio + juros 22,11% / 12 (nunca sem juros).
+  // A vista = valor cheio. Sem parcelamento: os sites da 21Go nao oferecem 12x.
   const taxa = ctx.taxa
   const taxaAvista = activationCashPrice(taxa)
-  const taxa12xParcela = activationInstallment12x(taxa)
 
   const firstName = input.nome.split(' ')[0]
 
@@ -481,10 +479,6 @@ function renderComparisonPage(
         <div class="entrada-vals-item">
           <span class="entrada-vals-tag">À vista</span>
           <span class="entrada-vals-num">R$ ${formatBRL(taxaAvista)}</span>
-        </div>
-        <div class="entrada-vals-item">
-          <span class="entrada-vals-tag">12x no cartão</span>
-          <span class="entrada-vals-num">R$ ${formatBRL(taxa12xParcela)}</span>
         </div>
       </div>
     </section>`}

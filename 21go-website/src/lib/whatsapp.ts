@@ -12,7 +12,6 @@ import {
   getAllRelevantPlans,
   calcActivation,
   activationCashPrice,
-  activationInstallment12x,
   isLeilaoOrigin,
 } from '@/data/pricing'
 
@@ -297,16 +296,16 @@ const QS_INTROS: ((v: string, p: string) => string)[] = [
   (v, p) => `Aqui quem fala é da 21Go. Cotação ${p} *${v}* na mão:`,
 ]
 
-// Formato dos valores (mensalidade + adesão). n=plano, m=mensal, e=em dia, a=à vista, x=12x.
-const QS_VALORES: ((n: string, m: string, e: string, a: string, x: string) => string)[] = [
-  (n, m, e, a, x) =>
-    `🛡️ *Plano ${n}*: R$ ${m}/mês _(R$ ${e} pagando em dia)_\n✅ *Adesão*: R$ ${a} à vista ou 12x de R$ ${x}`,
-  (n, m, e, a, x) =>
-    `💙 *${n}* — R$ ${m}/mês _(R$ ${e} pagando em dia)_\n📄 *Ativação* — R$ ${a} à vista ou 12x de R$ ${x}`,
-  (n, m, e, a, x) =>
-    `No *plano ${n}* a mensalidade fica em *R$ ${m}* (R$ ${e} pagando em dia).\nA adesão é *R$ ${a}* à vista, ou 12x de R$ ${x}.`,
-  (n, m, e, a, x) =>
-    `📌 *${n}*\n• Mensalidade: R$ ${m} _(R$ ${e} em dia)_\n• Adesão: R$ ${a} à vista (ou 12x de R$ ${x})`,
+// Formato dos valores (mensalidade + adesão). n=plano, m=mensal, e=em dia, a=à vista.
+const QS_VALORES: ((n: string, m: string, e: string, a: string) => string)[] = [
+  (n, m, e, a) =>
+    `🛡️ *Plano ${n}*: R$ ${m}/mês _(R$ ${e} pagando em dia)_\n✅ *Adesão*: R$ ${a} à vista`,
+  (n, m, e, a) =>
+    `💙 *${n}* — R$ ${m}/mês _(R$ ${e} pagando em dia)_\n📄 *Ativação* — R$ ${a} à vista`,
+  (n, m, e, a) =>
+    `No *plano ${n}* a mensalidade fica em *R$ ${m}* (R$ ${e} pagando em dia).\nA adesão é *R$ ${a}* à vista.`,
+  (n, m, e, a) =>
+    `📌 *${n}*\n• Mensalidade: R$ ${m} _(R$ ${e} em dia)_\n• Adesão: R$ ${a} à vista`,
 ]
 
 const QS_FECHOS: string[] = [
@@ -379,7 +378,6 @@ export function buildQuoteSummaryMessage(input: {
   // da ativação é o próprio VIP (ver calcActivation em pricing.ts).
   const taxa = calcActivation(ref.monthly, isBYD)
   const avista = activationCashPrice(taxa)
-  const parcela12 = activationInstallment12x(taxa)
   const emDia = ref.monthly * 0.95
 
   const saudacao = pickVariant(FU_SAUDACOES, seed, 'qs-saud')(firstName)
@@ -389,7 +387,6 @@ export function buildQuoteSummaryMessage(input: {
     fmtBRL(ref.monthly),
     fmtBRL(emDia),
     fmtBRL(avista),
-    fmtBRL(parcela12),
   )
   const fecho = pickVariant(QS_FECHOS, seed, 'qs-fecho')
 
