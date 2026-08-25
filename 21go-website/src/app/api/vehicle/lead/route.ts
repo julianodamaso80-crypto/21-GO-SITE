@@ -1126,10 +1126,15 @@ async function sendConsultorQuoteWithPdf(
       `Sua simulação do ${veiculo ?? 'veículo'} ficou pronta — mando o PDF logo abaixo.
 ` +
       `Qualquer dúvida é só me chamar por aqui.`
+    // O cliente digita "(21) 99999-9999" no formulario, sem o 55. Mandar isso cru
+    // pra Evolution devolve `exists:false` e a mensagem simplesmente nao sai —
+    // foi o que aconteceu no primeiro teste de /manghi (25/08/2026). O aviso ao
+    // consultor escapava porque o numero DELE vem do banco ja em E.164.
+    const clientePhone = formatPhone(body.whatsapp)
     try {
-      await sendText(body.whatsapp, texto, contaDele)
+      await sendText(clientePhone, texto, contaDele)
       await sendPdfMedia(
-        body.whatsapp,
+        clientePhone,
         media,
         `Simulação 21Go — ${veiculo ?? 'seu veículo'}`,
         filename,
