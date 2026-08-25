@@ -8,10 +8,12 @@ import {
   PRICING_TABLES,
   calcActivation,
   activationCashPrice,
+  activationInstallment12x,
   type QuotePlanFull,
   type PlanId,
 } from '@/data/pricing'
 import { LOGO_21GO_BASE64 } from './assets/logo-base64'
+import { temParcelamento } from './consultores-parcelamento'
 
 export interface QuotePdfInput {
   /**
@@ -260,9 +262,13 @@ function renderComparisonPage(
 ): string {
   // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts): mensalidade CHEIA do
   // plano de referencia + R$ 50 (carro e moto), piso R$ 249, BYD R$ 1.550 fixo.
-  // A vista = valor cheio. Sem parcelamento: os sites da 21Go nao oferecem 12x.
+  // A vista = valor cheio. O 12x saiu de todos os sites em 25/08/2026 e so
+  // sobrevive nos consultores de `temParcelamento` (hoje: a Renata) — este PDF e
+  // o material que o cliente DELA abre, entao acompanha o que ela mostra na tela.
   const taxa = ctx.taxa
   const taxaAvista = activationCashPrice(taxa)
+  const mostraParcelamento = temParcelamento(input.consultorSlug)
+  const taxa12xParcela = activationInstallment12x(taxa)
 
   const firstName = input.nome.split(' ')[0]
 
@@ -479,7 +485,11 @@ function renderComparisonPage(
         <div class="entrada-vals-item">
           <span class="entrada-vals-tag">À vista</span>
           <span class="entrada-vals-num">R$ ${formatBRL(taxaAvista)}</span>
-        </div>
+        </div>${mostraParcelamento ? `
+        <div class="entrada-vals-item">
+          <span class="entrada-vals-tag">12x no cartão</span>
+          <span class="entrada-vals-num">R$ ${formatBRL(taxa12xParcela)}</span>
+        </div>` : ''}
       </div>
     </section>`}
 

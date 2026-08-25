@@ -146,6 +146,12 @@ export interface QuoteMessageInput {
   planoEscolhido: string
   mensalidadeFormatted: string
   ativacaoAvistaFormatted: string
+  /**
+   * Parcela do 12x ja formatada, ou null pra quem nao parcela — que e a regra
+   * desde 25/08/2026 (a casa e todos os sites vendidos, menos os consultores
+   * de `temParcelamento`).
+   */
+  ativacao12xFormatted?: string | null
   /** Consultor que prefere tratar a ativacao na conversa (ver ocultarAtivacao). */
   ocultarAtivacao?: boolean
   /**
@@ -226,7 +232,11 @@ export function buildContratarMessage(input: QuoteMessageInput): string {
     // na conversa. O calculo nao muda — some da vista, nao da conta.
     ...(input.ocultarAtivacao
       ? []
-      : [`Ativação: R$ ${input.ativacaoAvistaFormatted} à vista no cartão`]),
+      : [
+          `Ativação: R$ ${input.ativacaoAvistaFormatted} à vista no cartão${
+            input.ativacao12xFormatted ? ` ou 12x de R$ ${input.ativacao12xFormatted}` : ''
+          }`,
+        ]),
   ]
 
   const blocos = [

@@ -32,8 +32,10 @@ import {
   getApplicablePlans,
   calcActivation,
   activationCashPrice,
+  activationInstallment12x,
 } from '@/data/pricing'
 import { buildContratarMessage } from '@/lib/quote-message'
+import { temParcelamento } from '@/lib/consultores-parcelamento'
 import { isPlacaFormatValid, normalizePlaca, validatePlaca } from '@/lib/placa'
 
 /* ─── Types ─── */
@@ -708,7 +710,8 @@ export default function CotacaoPage() {
   // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts):
   //   - mensalidade CHEIA da base + R$ 50 (carro e moto), piso R$ 249
   //   - BYD → R$ 1.550 fixo
-  //   - A vista = valor cheio (sem parcelamento: os sites da 21Go nao oferecem 12x)
+  //   - A vista = valor cheio. O 12x saiu de todos os sites em 25/08/2026 e so
+  //     sobrevive nos consultores de `temParcelamento` (hoje: a Renata).
   // Base = MAIOR entre o VIP de referencia e o plano escolhido: Basico/Do Seu Jeito
   // pagam VIP + R$ 50 (VIP e o piso), Premium paga Premium + R$ 50.
   // Ordem de fallback quando nao ha VIP "puro" (moto/suv/especial usam o "VIP" deles).
@@ -720,8 +723,11 @@ export default function CotacaoPage() {
   const isBYD = (vehicle?.marca || '').trim().toUpperCase() === 'BYD'
   // `price` = mensalidade cheia do plano selecionado (ja com carroApp/danos a terceiros).
   const taxaAtivacao = calcActivation(vipMonthly, isBYD, price)
-  // A vista = valor cheio (base + R$50). Sem parcelamento.
+  // A vista = valor cheio (base + R$50). O 12x leva os juros do cartao (22,11%)
+  // e so e calculado pra quem ainda pode exibi-lo — a 21Go nunca parcela sem juros.
+  const mostraParcelamento = temParcelamento(consultor?.slug)
   const ativacaoAvista = activationCashPrice(taxaAtivacao)
+  const ativacaoParcela12x = activationInstallment12x(taxaAtivacao)
   const today = new Date()
   const dayOfMonth = today.getDate()
   const currentMonth = today.getMonth()
@@ -803,6 +809,7 @@ export default function CotacaoPage() {
         planoEscolhido: selectedPlan.name,
         mensalidadeFormatted: priceFormatted,
         ativacaoAvistaFormatted: formatPrice(ativacaoAvista),
+        ativacao12xFormatted: mostraParcelamento ? formatPrice(ativacaoParcela12x) : null,
         ocultarAtivacao: consultor?.ocultarAtivacao ?? false,
         // So depois que o lead salvou existe PDF pra abrir. Sem isso o consultor
         // receberia um link 404 na propria mensagem do cliente.
@@ -1725,7 +1732,8 @@ export default function CotacaoPage() {
                     desktop, logo abaixo do preço. */}
                 <div className="order-3 lg:col-start-2 lg:row-start-2 bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-black/[0.04] border border-[#E8ECF4] p-4 sm:p-6 md:p-8 h-fit">
                   <div className="mb-6 space-y-4 text-sm">
-                    {/* ATIVAÇÃO — Pagamento único do plano (cartão à vista)
+                    {/* ATIVAÇÃO — Pagamento único do plano (cartão à vista; o 12x
+                        só aparece nos consultores de `temParcelamento`)
                         Alguns consultores preferem tratar esse valor na conversa
                         em vez de mostrar junto da mensalidade (ver ocultarAtivacao). */}
                     {!consultor?.ocultarAtivacao && (
@@ -1739,6 +1747,12 @@ export default function CotacaoPage() {
                           <span className="text-xs text-[#64748B] font-semibold">À vista no cartão</span>
                           <span className="font-extrabold text-[#F2911D] text-xl">R$ {formatPrice(ativacaoAvista)}</span>
                         </div>
+                        {mostraParcelamento && (
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-xs text-[#64748B] font-semibold">ou 12x de</span>
+                          <span className="font-extrabold text-[#10B981] text-xl">R$ {formatPrice(ativacaoParcela12x)}</span>
+                        </div>
+                        )}
                       </div>
                       <p className="text-[13px] text-[#DC2626] font-extrabold mt-2.5 leading-tight">
                         Pagamento único de ativação do plano
