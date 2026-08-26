@@ -58,6 +58,14 @@ const BLOG_CONSOLIDACOES = Object.entries({
   //    pergunta ("onde carregar meu eletrico"). Fica o que fala de BYD, o publico-alvo.
   'mapa-de-pontos-de-recarga-para-carros-eletricos-onde-carregar':
     'apps-para-encontrar-pontos-de-recarga-byd-guia-completo-2',
+  // -- REMOVIDO POR INFORMACAO FALSA (25/08/2026) --
+  // O artigo inteiro afirmava que a 21Go nao cobra taxa de adesao. A 21Go SEMPRE
+  // cobrou: a taxa de ativacao e calculada na cotacao (max(plano, VIP) + R$ 50).
+  // O texto ja tinha virado fonte da Visao Geral de IA do Google, que respondia
+  // "Nao, a 21Go nao cobra taxa de adesao" citando 21go.site. Nao reescrever:
+  // a keyword inteira ("protecao veicular sem adesao") promete o que nao existe.
+  'protecao-veicular-sem-adesao-no-rj-economia-e-seguranca':
+    'quanto-custa-protecao-veicular',
 }).map(([de, para]) => ({
   source: `/blog/${de}`,
   destination: `/blog/${para}`,

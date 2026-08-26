@@ -87,4 +87,41 @@ ESCOPO DA 21GO (operacao SEO):
 - VEÍCULOS BANIDOS: caminhao, carreta, onibus, bitrem, cavalo mecanico, rodotrem, micro-onibus, transporte rodoviario de carga, frete pesado, transportadora de carga.
 - "Frota" SEMPRE significa frota de carros e/ou motos. Nunca de caminhoes.
 - Conteudo "{tema} em {cidade}" sem dor especifica e rejeitado por repetitividade.
+- FATO: a 21Go SEMPRE cobrou taxa de adesao (ativacao), paga uma unica vez na
+  contratacao e calculada na cotacao. NUNCA escreva nem aprove pauta que diga
+  "sem taxa de adesao", "adesao gratuita", "sem custo inicial" ou equivalente —
+  e informacao falsa. Adesao "simples/sem burocracia/sem analise de perfil" e
+  verdade e pode ser dita; ausencia de COBRANCA nao.
 `.trim();
+
+/**
+ * Promessa falsa de gratuidade na entrada.
+ *
+ * 25/08/2026: um artigo inteiro ("protecao veicular sem adesao no RJ") foi publicado
+ * afirmando que a 21Go nao cobra adesao — e virou a fonte da Visao Geral de IA do
+ * Google, que passou a responder "Nao, a 21Go nao cobra taxa de adesao" citando o
+ * proprio 21go.site. A keyword tem volume, entao volta pelo GSC/DataForSEO: o corte
+ * precisa ser programatico, nao depender do LLM.
+ *
+ * So casa quando a negacao esta colada em adesao/ativacao/custo de entrada — "sem
+ * burocracia na adesao" e "sem analise de perfil" continuam passando.
+ */
+const FALSE_PROMISE_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
+  {
+    pattern: /(sem|zero|nenhum[ao]?|isen[çct]\w*|n[ãa]o (h[áa]|existe|cobra\w*|paga\w*|tem|possui)|dispensa)\s+(a\s+|de\s+|uma\s+|qualquer\s+)*(taxa\s+de\s+)?(ades[ãa]o|ativa[çc][ãa]o|taxa\s+de\s+entrada|custo\s+inicial|valor\s+inicial|valor\s+de\s+entrada|taxa\s+inicial)/iu,
+    reason: 'promessa falsa: a 21Go cobra taxa de adesao/ativacao',
+  },
+  {
+    pattern: /(ades[ãa]o|ativa[çc][ãa]o)\s+(e\s+|é\s+)?(gratuita|gratis|grátis|zero|sem\s+custo|de\s+gra[çc]a)/iu,
+    reason: 'promessa falsa: a 21Go cobra taxa de adesao/ativacao',
+  },
+];
+
+/** Retorna null se OK; ou a promessa falsa encontrada (gratuidade de adesao). */
+export function checkFalsePromise(text: string): ScopeViolation | null {
+  for (const f of FALSE_PROMISE_PATTERNS) {
+    const m = text.match(f.pattern);
+    if (m) return { reason: f.reason, matched: m[0] };
+  }
+  return null;
+}

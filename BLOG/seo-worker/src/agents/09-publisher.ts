@@ -28,6 +28,7 @@ import { query } from '../db/pg.js';
 import { commitFile } from '../integrations/github.js';
 import { config } from '../config.js';
 import { child } from '../lib/logger.js';
+import { checkFalsePromise } from '../lib/scope-guard.js';
 
 const log = child('agent:09-publisher');
 
@@ -78,6 +79,18 @@ export const agent09: Agent<Input, Output> = {
       return { output: { pr_opened: false, reason: 'article sem mdx_content (Writer falhou ou article muito antigo)' } };
     }
     const mdx = a.mdx_content;
+
+    // Ultima trava antes do commit: nenhum artigo vai pro ar dizendo que a 21Go nao
+    // cobra adesao. O Agente 14 republica sem passar pelo Reviewer, entao a checagem
+    // precisa estar aqui — e a versao falsa ja existe no mdx_content dos artigos
+    // antigos (25/08/2026).
+    const promessaFalsa = checkFalsePromise(mdx);
+    if (promessaFalsa) {
+      const reason = `${promessaFalsa.reason} — trecho: "${promessaFalsa.matched}"`;
+      log.error({ articleId: a.id, slug: a.slug, reason }, 'commit BLOQUEADO por promessa falsa');
+      if (!ctx.dry_run) await updateArticle(a.id, { status: 'in_review', review_status: 'REPROVADO', review_notes: reason });
+      return { output: { pr_opened: false, reason } };
+    }
 
     if (ctx.dry_run) {
       log.info({ articleId: a.id }, 'DRY-RUN — nao commita');

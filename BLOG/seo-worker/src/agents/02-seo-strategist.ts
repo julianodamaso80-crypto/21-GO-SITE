@@ -16,7 +16,7 @@ import { insertTopic, type TopicDecision } from '../db/repositories/topics.js';
 import { setStatus } from '../db/repositories/keywords.js';
 import { agent03 } from './03-anti-repetition.js';
 import { complete } from '../integrations/llm.js';
-import { checkScope, SCOPE_RULES_TEXT } from '../lib/scope-guard.js';
+import { checkScope, checkFalsePromise, SCOPE_RULES_TEXT } from '../lib/scope-guard.js';
 import { child } from '../lib/logger.js';
 
 const log = child('agent:02-seo-strategist');
@@ -88,6 +88,16 @@ export const agent02: Agent<Input, Output> = {
     if (scopeViolation) {
       const reason = `fora de escopo (${scopeViolation.reason}: "${scopeViolation.matched}")`;
       log.info({ kw: k.keyword, reason }, 'rejeitado por escopo');
+      if (!ctx.dry_run) await setStatus(k.id, 'out_of_scope', reason);
+      return { output: { topic_id: null, decision: 'REJEITAR_FORA_DO_ESCOPO', reason, llm_cost_usd: null } };
+    }
+
+    // 1.1) Hard check de promessa falsa — a keyword "protecao veicular sem adesao"
+    // tem volume e volta pelo GSC/DataForSEO. Nao existe angulo honesto: a 21Go cobra.
+    const falsePromise = checkFalsePromise(k.keyword);
+    if (falsePromise) {
+      const reason = `${falsePromise.reason} (keyword: "${falsePromise.matched}")`;
+      log.info({ kw: k.keyword, reason }, 'rejeitado por promessa falsa');
       if (!ctx.dry_run) await setStatus(k.id, 'out_of_scope', reason);
       return { output: { topic_id: null, decision: 'REJEITAR_FORA_DO_ESCOPO', reason, llm_cost_usd: null } };
     }

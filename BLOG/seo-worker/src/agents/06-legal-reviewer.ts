@@ -13,7 +13,7 @@ import type { Agent } from './_types.js';
 import type { ArticleRow, ReviewStatus } from '../db/repositories/articles.js';
 import { updateArticle } from '../db/repositories/articles.js';
 import { complete } from '../integrations/llm.js';
-import { checkScope, SCOPE_RULES_TEXT } from '../lib/scope-guard.js';
+import { checkScope, checkFalsePromise, SCOPE_RULES_TEXT } from '../lib/scope-guard.js';
 import { child } from '../lib/logger.js';
 
 const log = child('agent:06-legal-reviewer');
@@ -116,6 +116,10 @@ export const agent06: Agent<Input, Output> = {
     // Escopo
     const scope = checkScope(mdx);
     if (scope) hardMatches.push({ pattern: scope.matched, reason: scope.reason });
+
+    // Gratuidade de adesao — a 21Go cobra taxa de ativacao desde sempre (25/08/2026)
+    const falsePromise = checkFalsePromise(mdx);
+    if (falsePromise) hardMatches.push({ pattern: falsePromise.matched, reason: falsePromise.reason });
 
     // ===== 2) Guards deterministicos de qualidade (decisao user 2026-05-20) =====
     // Separa body (sem frontmatter) pra contar so o conteudo
