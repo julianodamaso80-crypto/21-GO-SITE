@@ -68,6 +68,25 @@ export function middleware(req: NextRequest) {
   const segmentos = pathname.split('/').filter(Boolean)
   const primeiro = segmentos[0]
 
+  /**
+   * `/ConsultorFulano` e o mesmo endereco que `/consultorfulano`.
+   *
+   * O slug no banco e sempre minusculo (o formulario so aceita `[a-z0-9]`), mas
+   * o consultor divulga como escreveu no cartao e na bio. Ate 27/08/2026 essa
+   * URL dava 404 puro — o link que ele espalhou simplesmente nao abria.
+   *
+   * Redireciona em vez de servir nas duas grafias: se a pagina abrisse com a URL
+   * como foi digitada, os links dela nasceriam com maiuscula e
+   * `/api/wa?c=ConsultorFulano` nao acharia ninguem no banco — o contato e o
+   * lead cairiam na casa, que e exatamente a REGRA 0.1. Uma grafia so no
+   * sistema inteiro, e a de fora vira atalho.
+   */
+  if (primeiro && primeiro !== primeiro.toLowerCase() && FORMATO_SLUG.test(primeiro.toLowerCase())) {
+    const url = req.nextUrl.clone()
+    url.pathname = '/' + [primeiro.toLowerCase(), ...segmentos.slice(1)].join('/')
+    return NextResponse.redirect(url, 308)
+  }
+
   // `/c/<slug>` e o destino interno do rewrite abaixo. Quem chega nele digitando
   // ve o site normalmente, mas ele nao pode indexar: seria a home do consultor
   // no indice do Google com outro endereco, competindo com o 21go.site.
