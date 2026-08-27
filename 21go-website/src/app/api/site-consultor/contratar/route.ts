@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   // Ja contratou? Devolve o que existe em vez de criar uma segunda assinatura.
   const { data: existente } = await supa
     .from('sites_consultor')
-    .select('slug, status, asaas_subscription_id')
+    .select('id, slug, status, asaas_subscription_id')
     .ilike('email', noPower.email)
     .maybeSingle()
 
@@ -111,13 +111,17 @@ export async function POST(req: NextRequest) {
   // e assinatura no Asaas: sem ela o consultor so descobria o problema depois
   // de a cobranca ja existir, e o erro que aparecia era o generico da corrida
   // do insert ("escolha outro"), que nao dizia o que fazer.
+  //
+  // A excecao: o endereco tomado pela PROPRIA linha cancelada dele. Quem nao
+  // pagou e foi cortado volta pra ca pra recomecar, e o endereco que ele ja
+  // tinha escolhido continua sendo dele — nao e de "outro consultor".
   const { data: slugTomado } = await supa
     .from('sites_consultor')
     .select('slug')
     .eq('slug', slug)
     .maybeSingle()
 
-  if (slugTomado) {
+  if (slugTomado && slugTomado.slug !== existente?.slug) {
     return NextResponse.json(
       {
         erro: `21go.com.br/${slug} já é de outro consultor. Complete com o seu sobrenome — ex: ${slug}silva.`,
@@ -153,8 +157,7 @@ export async function POST(req: NextRequest) {
     // ─── So grava depois que a cobranca existe ───────────────────────────────
     // Se gravasse antes, uma falha no Asaas deixaria um site "pendente" sem
     // assinatura nenhuma — e o slug ocupado pra sempre por quem nunca pagou.
-    const { error } = await supa.from('sites_consultor').insert({
-      id: randomUUID(),
+    const dados = {
       slug,
       nome: noPower.nome,
       email: noPower.email,
@@ -165,7 +168,38 @@ export async function POST(req: NextRequest) {
       asaas_subscription_id: assinatura.id,
       status: 'pendente',
       proximo_vencimento: vencimento,
-    })
+    }
+
+    // ─── Recontratacao: linha cancelada volta a valer ────────────────────────
+    // O e-mail e UNIQUE na tabela (ux_sites_consultor_email), entao um INSERT
+    // aqui esbarraria na linha cancelada dele mesmo e o consultor recebia
+    // "esse endereco acabou de ser reservado por outro consultor" — mensagem
+    // falsa, sobre um endereco que era dele. Na pratica o e-mail ficava
+    // travado pra sempre depois do corte por falta de pagamento.
+    //
+    // As marcas do ciclo anterior sao zeradas de proposito: com
+    // `link_enviado_em` preenchido, o cron acha que ja entregou o site e o
+    // consultor nunca receberia o link da nova contratacao.
+    const { error } = existente
+      ? await supa
+          .from('sites_consultor')
+          .update({
+            ...dados,
+            cancelado_em: null,
+            link_enviado_em: null,
+            teste_ok: false,
+            teste_em: null,
+            teste_tentativas: 0,
+            teste_negociacao: null,
+            teste_motivo: null,
+            aviso_etapas: null,
+            aviso_vencimento_em: null,
+            aviso_vencimento_ref: null,
+            aviso_cancelamento_em: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existente.id)
+      : await supa.from('sites_consultor').insert({ id: randomUUID(), ...dados })
 
     if (error) {
       // 23505 = alguem pegou o slug entre a checagem acima e o insert. E o

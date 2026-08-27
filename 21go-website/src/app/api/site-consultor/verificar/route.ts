@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const sugestao = await sugerirSlug(slugDoNome(consultor.nome))
+  const sugestao = await sugerirSlug(slugDoNome(consultor.nome), consultor.email)
 
   return NextResponse.json({
     encontrado: true,
@@ -101,13 +101,14 @@ export async function POST(req: NextRequest) {
  */
 async function sugerirSlug(
   base: string,
+  email: string,
 ): Promise<{ slug: string; ocupado: boolean; aviso: string | null }> {
   const limpo = base || 'consultor'
   const supa = supabaseAdmin()
 
   const { data, error } = await supa
     .from('sites_consultor')
-    .select('slug')
+    .select('slug, email')
     .eq('slug', limpo)
     .maybeSingle()
 
@@ -116,6 +117,13 @@ async function sugerirSlug(
   if (error) return { slug: limpo, ocupado: false, aviso: null }
 
   if (!data) return { slug: limpo, ocupado: false, aviso: null }
+
+  // O endereco e dele mesmo, de uma contratacao cancelada (quem chega aqui com
+  // site vivo ja saiu pelo `jaTemSite` acima). Nao e homonimo: e o consultor
+  // recomecando, e o endereco que ele escolheu continua sendo o dele.
+  if ((data.email || '').toLowerCase() === email.toLowerCase()) {
+    return { slug: limpo, ocupado: false, aviso: null }
+  }
 
   return {
     slug: '',

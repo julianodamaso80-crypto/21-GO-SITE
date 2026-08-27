@@ -88,6 +88,35 @@ export function FormularioSite() {
     }
   }
 
+  /**
+   * Quem ja contratou e nao pagou volta pro MESMO checkout.
+   *
+   * Sair da tela do Pix antes de pagar e comum (foi buscar o celular, o app do
+   * banco pediu senha, o navegador matou a aba). Ate 27/08/2026 quem voltava
+   * batia numa tela sem saida — "Voce ja tem site... falta so o pagamento
+   * entrar" — sem nenhum botao pra pagar. A cobranca existia o tempo todo no
+   * Asaas; o que faltava era caminho ate ela, e quem nao achasse o caminho era
+   * cortado no D+2 sem nunca ter conseguido pagar.
+   *
+   * Nao gera cobranca nova: le a que ja existe, pelo slug.
+   */
+  async function retomarPagamento() {
+    if (!achado?.slug) return
+    setErro('')
+    setCarregando(true)
+    try {
+      setContratado({ slug: achado.slug, nome: achado.nome || '' })
+      setPasso(5)
+      const p = await fetch(`/api/site-consultor/pagamento/${achado.slug}`).then((x) => x.json())
+      setCobranca(p)
+      if (p.pago) setPago(true)
+    } catch (err) {
+      setErro((err as Error).message)
+    } finally {
+      setCarregando(false)
+    }
+  }
+
   // ─── passo 4: fecha e gera a cobranca ────────────────────────────────────
   async function contratar(e: React.FormEvent) {
     e.preventDefault()
@@ -144,18 +173,46 @@ export function FormularioSite() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  if (achado?.jaTemSite) {
+  // `!contratado` porque clicar em "Pagar agora" cai no passo 5 logo abaixo —
+  // sem isso esta tela continuaria por cima do checkout.
+  const podePagarAgora = achado?.status === 'pendente' || achado?.status === 'inadimplente'
+
+  if (achado?.jaTemSite && !contratado) {
     return (
       <Cartao>
         <Selo tipo="ok">
           <ShieldCheck size={22} />
         </Selo>
-        <h2 className="qs-h2">Você já tem site</h2>
+        <h2 className="qs-h2">
+          {podePagarAgora ? 'Seu endereço está reservado' : 'Você já tem site'}
+        </h2>
         <p className="qs-p">
           Seu endereço é <strong className="qs-mono">21go.com.br/{achado.slug}</strong>
           {achado.status === 'pendente' && ' — falta só o pagamento entrar.'}
           {achado.status === 'inadimplente' && ' — tem uma mensalidade em aberto.'}
         </p>
+        {podePagarAgora && (
+          <>
+            <button className="qs-btn" onClick={retomarPagamento} disabled={carregando}>
+              {carregando ? (
+                <>
+                  <Loader2 className="qs-spin" size={18} /> Só um instante...
+                </>
+              ) : (
+                <>
+                  {achado.status === 'pendente'
+                    ? `Pagar agora — R$ ${MENSALIDADE}`
+                    : `Pagar a mensalidade — R$ ${MENSALIDADE}`}{' '}
+                  <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+            <div className="qs-nota">
+              É a mesma cobrança de antes, não é uma segunda. Você não paga duas vezes.
+            </div>
+          </>
+        )}
+        {erro && <Erro texto={erro} />}
       </Cartao>
     )
   }
