@@ -705,7 +705,11 @@ export default function CotacaoPage() {
   const vehicleLabel = vehicle
     ? `${vehicle.marca} ${vehicle.modelo} ${vehicle.ano}`
     : ''
-  const fipeFormatted = vehicle ? vehicle.fipeValue.toLocaleString('pt-BR') : '0'
+  // Veiculo recusado vem com `fipeValue: null` (o /preco corta antes de consultar a FIPE) —
+  // o tipo acima diz `number` e mente. Sem esta guarda, todo "nao aceitamos esse veiculo"
+  // (ano < 2006, Power negou, BYD de leilao) derrubava a pagina inteira com "Application
+  // error" no lugar da tela de recusa: o cliente via um site quebrado, nao uma resposta.
+  const fipeFormatted = vehicle?.fipeValue ? vehicle.fipeValue.toLocaleString('pt-BR') : '0'
 
   // REGRA OFICIAL 21Go (ver calcActivation em pricing.ts):
   //   - mensalidade CHEIA da base + R$ 50 (carro e moto), piso R$ 249
