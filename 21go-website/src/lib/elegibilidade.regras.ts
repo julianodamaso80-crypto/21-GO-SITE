@@ -25,8 +25,11 @@
 export type Elegibilidade =
   /** Power confirmou plano de protecao (ou nao ha motivo pra duvidar) — segue a cotacao. */
   | { acao: 'cotar' }
-  /** Nao fazemos: `model` = o Power negou; `ano` = anterior a 2006. A tela agradece e encerra. */
-  | { acao: 'nao_fazemos'; motivo: 'model' | 'ano' }
+  /**
+   * Nao fazemos: `model` = o Power negou; `ano` = anterior a 2006; `byd_leilao` = BYD de
+   * leilao/remarcado. A tela agradece e encerra.
+   */
+  | { acao: 'nao_fazemos'; motivo: 'model' | 'ano' | 'byd_leilao' }
   /** Nao deu pra confirmar. Cliente vai pro WhatsApp do consultor, nunca dispensado. */
   | { acao: 'consultor'; motivo: 'elegibilidade_indisponivel' }
 
@@ -39,6 +42,26 @@ export function aceitaAno(ano: number | null | undefined): boolean {
   return ano >= ANO_MINIMO
 }
 
+/**
+ * BYD de leilao ou remarcado nao e aceito — NENHUM modelo (ordem do dono, 27/08/2026).
+ *
+ * Como a exececao de ano, esta regra vence o Power: ele cota o veiculo normalmente (saiu do
+ * site um Song Pro 2025 marcado como leilao, com plano Veiculos Especiais e ativacao de
+ * R$ 1.550). Nao e cadastro largo do Power — e regra comercial que so existe aqui.
+ *
+ * Olha marca E modelo porque nem todo fluxo separa os dois: a descricao que chega pode ser
+ * "BYD Song Pro GL 1.5 16V Aut. (Hibrido)" inteira no modelo. `\bbyd\b` pra nao pegar marca
+ * nenhuma que apenas contenha essas tres letras.
+ */
+export function ehBydDeLeilao(
+  marca: string | null | undefined,
+  modelo: string | null | undefined,
+  origem: string | null | undefined,
+): boolean {
+  if (!origem || origem === 'nao') return false
+  return /\bbyd\b/i.test(`${marca || ''} ${modelo || ''}`)
+}
+
 export interface EntradaElegibilidade {
   /** Ano-modelo do veiculo. `null` quando nao deu pra resolver. */
   ano: number | null
@@ -46,11 +69,20 @@ export interface EntradaElegibilidade {
   powerAoVivo: boolean | null
   /** Allowlist extraida do painel: true/false, null quando nao ha id pra consultar. */
   allowlist: boolean | null
+  /** Marca do veiculo, como o Power devolveu. So usada pra barrar BYD de leilao. */
+  marca?: string | null
+  /** Modelo/versao do veiculo. Idem. */
+  modelo?: string | null
+  /** Origem declarada pelo cliente: 'nao' | 'leilao' | 'remarcado'. */
+  origem?: string | null
 }
 
 export function decidirElegibilidade(e: EntradaElegibilidade): Elegibilidade {
-  // Antes do Power de proposito: e a unica regra do site que vence a resposta dele.
+  // Antes do Power de proposito: sao as duas regras do site que vencem a resposta dele.
   if (!aceitaAno(e.ano)) return { acao: 'nao_fazemos', motivo: 'ano' }
+  if (ehBydDeLeilao(e.marca, e.modelo, e.origem)) {
+    return { acao: 'nao_fazemos', motivo: 'byd_leilao' }
+  }
 
   if (e.powerAoVivo === true) return { acao: 'cotar' }
   if (e.powerAoVivo === false) return { acao: 'nao_fazemos', motivo: 'model' }

@@ -4,7 +4,7 @@ import { lookupFipeDirect } from '@/lib/fipe-direct'
 import { getApplicablePlans, isLeilaoOrigin, type QuotePlan } from '@/data/pricing'
 import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
 import { temProtecaoNoPowerAoVivo } from '@/lib/powercrm-planos'
-import { aceitaAno, decidirElegibilidade } from '@/lib/elegibilidade.regras'
+import { aceitaAno, decidirElegibilidade, ehBydDeLeilao } from '@/lib/elegibilidade.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -64,6 +64,29 @@ export async function POST(req: NextRequest) {
       success: true,
       excluded: true,
       reason: 'ano',
+      vehicle: {
+        marca: brandText,
+        modelo: modelText,
+        ano: yearStr,
+        fipeValue: null,
+        fipeCode: codFipe || null,
+        categoria: tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL',
+        combustivel: null,
+      },
+      powercrm: { brandId: Number(brandId), modelId: Number(modelId), yearId: null },
+      plans: [],
+    })
+  }
+
+  // 1.1) BYD de leilão/remarcado: não fazemos, nenhum modelo (ordem do dono, 27/08/2026).
+  //      Antes do Power pelo mesmo motivo do ano — ele cota normalmente, e aqui a regra é
+  //      comercial, não cadastro dele. Um Song Pro 2025 de leilão saiu do site com plano
+  //      Veículos Especiais e ativação de R$ 1.550.
+  if (ehBydDeLeilao(brandText, modelText, body.leilao)) {
+    return NextResponse.json({
+      success: true,
+      excluded: true,
+      reason: 'byd_leilao',
       vehicle: {
         marca: brandText,
         modelo: modelText,
