@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listYearsPowerCrm } from '@/lib/powercrm-lookup'
 import { lookupFipeDirect } from '@/lib/fipe-direct'
-import { getApplicablePlans, isLeilaoOrigin, type QuotePlan } from '@/data/pricing'
+import { isLeilaoOrigin, type QuotePlan } from '@/data/pricing'
 import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
 import { planosDoPowerAoVivo } from '@/lib/powercrm-planos'
 import { planosDoPowerParaTela } from '@/lib/planos-para-tela'
@@ -198,19 +198,14 @@ export async function POST(req: NextRequest) {
   }
 
   // 4) Planos: os que o PowerCRM deu, com o preço dele (leilão/remarcado desce uma faixa).
-  //    Só cai na tabela local quando o Power não respondeu — aí a allowlist já deixou cotar.
+  //    Não há ramo local aqui: passar deste ponto exige `veredicto.acao === 'cotar'`, que só
+  //    acontece quando o Power respondeu com plano. Power mudo já virou consultor lá em cima.
   const categoria = tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL'
-  const isLeilao = isLeilaoOrigin(body.leilao)
-  const plans: QuotePlan[] = consulta.planos?.length
-    ? planosDoPowerParaTela(consulta.planos, direct.fipeValue, isLeilao)
-    : getApplicablePlans(
-        direct.fipeValue,
-        categoria,
-        combustivel || direct.matchedYear,
-        undefined,
-        modelText,
-        isLeilao,
-      )
+  const plans: QuotePlan[] = planosDoPowerParaTela(
+    consulta.planos || [],
+    direct.fipeValue,
+    isLeilaoOrigin(body.leilao),
+  )
 
   return NextResponse.json({
     success: true,
@@ -228,8 +223,6 @@ export async function POST(req: NextRequest) {
       modelId: Number(modelId),
       yearId: mdlYr || null,
     },
-    /** De onde saiu a lista de planos e o preço — 'power' é o normal, 'tabela' é o Power mudo. */
-    plans_source: consulta.planos?.length ? 'power' : 'tabela',
     plans,
   })
 }

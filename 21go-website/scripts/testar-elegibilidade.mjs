@@ -74,15 +74,16 @@ test('Power mudo + suspeita da allowlist — consultor, NUNCA "nao fazemos"', ()
   assert.notEqual(r.acao, 'nao_fazemos')
 })
 
-test('Power mudo sem suspeita — cota (API que pisca nao pode derrubar venda)', () => {
-  assert.deepEqual(
-    decidirElegibilidade({ ano: 2020, powerAoVivo: null, allowlist: true }),
-    { acao: 'cotar' },
-  )
-  assert.deepEqual(
-    decidirElegibilidade({ ano: 2020, powerAoVivo: null, allowlist: null }),
-    { acao: 'cotar' },
-  )
+test('Power mudo — consultor, mesmo sem suspeita nenhuma', () => {
+  // Mudou em 31/08/2026 (ordem do dono: "vc sempre vai seguir o power"). Antes o site cotava
+  // pela tabela local quando o Power nao respondia — e era ai que ele inventava plano e preco.
+  // Medido: em 47 versoes de 10 marcas o Power respondeu 47 vezes, entao isto quase nunca dispara.
+  for (const allowlist of [true, null, false]) {
+    assert.deepEqual(
+      decidirElegibilidade({ ano: 2020, powerAoVivo: null, allowlist }),
+      { acao: 'consultor', motivo: 'elegibilidade_indisponivel' },
+    )
+  }
 })
 
 test('nenhuma combinacao dispensa cliente sem o Power ter dito "nao"', () => {

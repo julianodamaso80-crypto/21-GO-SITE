@@ -38,12 +38,7 @@
  * ╚══════════════════════════════════════════════════════════════════════════╝
  */
 
-import {
-  PRICING_TABLES,
-  findPrice,
-  getApplicablePlans,
-  type QuotePlan,
-} from '@/data/pricing'
+import { PRICING_TABLES, findPrice, type QuotePlan } from '@/data/pricing'
 import { lookupFipeDirect } from './fipe-direct'
 import { lookupApiBrasilByPlate, isApiBrasilConfigured } from './apibrasil-lookup'
 import { aceitaAno, decidirElegibilidade } from './elegibilidade.regras'
@@ -508,10 +503,9 @@ export async function lookupPlate(
     return humanSupportResponse('elegibilidade_indisponivel', normalized)
   }
 
-  // Power mudo (e allowlist sem suspeita) é o único caso em que a tabela local ainda calcula.
-  const plans = consulta.planos?.length
-    ? planosDoPowerParaTela(consulta.planos, fipeValue)
-    : getApplicablePlans(fipeValue, categoria, combustivel, cilindrada, modelo || marca)
+  // Sem ramo local: chegar aqui exige `veredicto.acao === 'cotar'`, que só acontece com o
+  // Power tendo respondido com plano. Power mudo virou consultor logo acima.
+  const plans = planosDoPowerParaTela(consulta.planos || [], fipeValue)
 
   if (plans.length === 0) {
     // FIPE válido mas fora das faixas das tabelas (ex: caminhão pesado, especial fora de regra)

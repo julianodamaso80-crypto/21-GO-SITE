@@ -87,9 +87,11 @@ export function decidirElegibilidade(e: EntradaElegibilidade): Elegibilidade {
   if (e.powerAoVivo === true) return { acao: 'cotar' }
   if (e.powerAoVivo === false) return { acao: 'nao_fazemos', motivo: 'model' }
 
-  // Power mudo. So mandamos pro consultor quando ha suspeita de verdade (a lista extraida diz
-  // que essa versao nao esta em tabela nenhuma). Sem suspeita, cota normal: derrubar cotacao
-  // porque uma API piscou custa venda.
-  if (e.allowlist === false) return { acao: 'consultor', motivo: 'elegibilidade_indisponivel' }
-  return { acao: 'cotar' }
+  // Power mudo: o site NAO cota por conta propria (ordem do dono, 31/08/2026 — "vc sempre vai
+  // seguir o power"). Antes cotava pela tabela local quando nao havia suspeita na allowlist, e
+  // era exatamente ai que ele mostrava plano que o Power nao da e preco que nao bate.
+  //
+  // Nao e recusa: o cliente vai pro consultor, com o lead parcial salvo. E raro por medicao —
+  // em 47 versoes de 10 marcas o /api/plans/ respondeu 47 vezes.
+  return { acao: 'consultor', motivo: 'elegibilidade_indisponivel' }
 }
