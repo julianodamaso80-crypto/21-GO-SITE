@@ -14,6 +14,7 @@ import {
 } from '@/data/pricing'
 import { LOGO_21GO_BASE64 } from './assets/logo-base64'
 import { temParcelamento } from './consultores-parcelamento'
+import { ativacaoDoConsultor } from './consultores-ativacao'
 
 export interface QuotePdfInput {
   /**
@@ -603,10 +604,12 @@ function renderHTML(input: QuotePdfInput): string {
   const isBYD = (input.marca || '').trim().toUpperCase() === 'BYD'
   const selectedMonthly =
     planosAplicaveis.find((p) => p.id === planoEscolhidoId)?.monthly || input.mensalidade
-  const taxa = calcActivation(
-    referencePlan?.monthly || input.mensalidade,
+  // Consultor com ativacao fixa combinada na venda usa o numero dele; os demais
+  // (e a casa) seguem a tabela. BYD nao entra no acordo — ver consultores-ativacao.
+  const taxa = ativacaoDoConsultor(
+    input.consultorSlug,
+    calcActivation(referencePlan?.monthly || input.mensalidade, isBYD, selectedMonthly),
     isBYD,
-    selectedMonthly,
   )
 
   // Determinar tipo (carros / suv / moto / especial) baseado nos planos

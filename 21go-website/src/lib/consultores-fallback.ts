@@ -121,10 +121,10 @@ export const CONSULTORES_FALLBACK: Record<string, Consultor> = {
   paivarj21go: {
     slug: "paivarj21go",
     nome: "Danilo Paiva de Azevedo",
-    whatsapp: "5521969779519",
+    whatsapp: "5521991934562",
     powerlinkId: "VqLRwAvr",
     status: "ativo",
-    ocultarAtivacao: true,
+    ocultarAtivacao: false,
   },
   regionalgustavosantos: {
     slug: "regionalgustavosantos",

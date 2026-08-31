@@ -35,6 +35,7 @@ import {
 } from '@/data/pricing'
 import { buildContratarMessage } from '@/lib/quote-message'
 import { temParcelamento } from '@/lib/consultores-parcelamento'
+import { ativacaoDoConsultor } from '@/lib/consultores-ativacao'
 import { isPlacaFormatValid, normalizePlaca, validatePlaca } from '@/lib/placa'
 
 /* ─── Types ─── */
@@ -722,7 +723,13 @@ export default function CotacaoPage() {
     + (form.danosTerceiros === 'sim' && vipIsMoto ? 22 : 0)
   const isBYD = (vehicle?.marca || '').trim().toUpperCase() === 'BYD'
   // `price` = mensalidade cheia do plano selecionado (ja com carroApp/danos a terceiros).
-  const taxaAtivacao = calcActivation(vipMonthly, isBYD, price)
+  // Consultor com ativacao fixa combinada na venda usa o numero dele; os demais
+  // (e a casa) seguem a tabela. BYD nao entra no acordo — ver consultores-ativacao.
+  const taxaAtivacao = ativacaoDoConsultor(
+    consultor?.slug,
+    calcActivation(vipMonthly, isBYD, price),
+    isBYD,
+  )
   // A vista = valor cheio (base + R$50). O 12x leva os juros do cartao (22,11%)
   // e so e calculado pra quem ainda pode exibi-lo — a 21Go nunca parcela sem juros.
   const mostraParcelamento = temParcelamento(consultor?.slug)
