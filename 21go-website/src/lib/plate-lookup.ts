@@ -29,12 +29,12 @@
  * ║   ❌ NUNCA parar a cascata antes de tentar as 3 fontes.                  ║
  * ║   ❌ NUNCA mostrar planos calculados em cima de valor FIPE chutado.      ║
  * ║                                                                          ║
- * ║ Os planos exibidos ao cliente são calculados LOCALMENTE com              ║
- * ║ findPrice/getApplicablePlans em cima do fipeValue OFICIAL — assim o      ║
- * ║ preço bate exatamente com PRICING_TABLES (fonte única da verdade).       ║
+ * ║   ❌ NUNCA mostrar plano que o PowerCRM não deu, nem por outro preço.    ║
  * ║                                                                          ║
- * ║ PowerCRM /plans/ ainda é chamado best-effort APÓS ter o valor oficial,   ║
- * ║ apenas pra integração de lead no PowerCRM (não pra exibir preço).        ║
+ * ║ Os planos exibidos e o PREÇO de cada um são os do PowerCRM /plans/ — a   ║
+ * ║ mesma cotação que o consultor faz (ordem do dono, 31/08/2026). A tabela  ║
+ * ║ local (PRICING_TABLES) só entra em dois lugares: o desconto de leilão e  ║
+ * ║ o fallback de quando o Power não responde.                               ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -42,12 +42,14 @@ import {
   PRICING_TABLES,
   findPrice,
   getApplicablePlans,
-  type PlanId,
   type QuotePlan,
 } from '@/data/pricing'
 import { lookupFipeDirect } from './fipe-direct'
 import { lookupApiBrasilByPlate, isApiBrasilConfigured } from './apibrasil-lookup'
-import { aceitaAno } from './elegibilidade.regras'
+import { aceitaAno, decidirElegibilidade } from './elegibilidade.regras'
+import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
+import { planosDoPowerAoVivo } from './powercrm-planos'
+import { planosDoPowerParaTela } from './planos-para-tela'
 
 const POWERCRM_BASE_URL = process.env.POWERCRM_BASE_URL || 'https://api.powercrm.com.br'
 const POWERAPI_TOKEN = process.env.POWERAPI_TOKEN || ''
@@ -86,7 +88,7 @@ export interface PlateErrorResponse {
   requires_human_support?: boolean
   /** Veículo que a 21Go não aceita — não é falha de consulta, não vai pra humano */
   excluded?: true
-  reason?: 'ano'
+  reason?: 'ano' | 'model' | 'byd_leilao'
 }
 
 const apiHeaders = {
@@ -99,21 +101,6 @@ async function powerGet<T>(path: string, signal?: AbortSignal): Promise<T | null
     const res = await fetch(`${POWERCRM_BASE_URL}${path}`, {
       headers: apiHeaders,
       signal: signal ?? AbortSignal.timeout(API_TIMEOUT),
-    })
-    if (!res.ok) return null
-    return (await res.json().catch(() => null)) as T | null
-  } catch {
-    return null
-  }
-}
-
-async function powerPost<T>(path: string, body: unknown): Promise<T | null> {
-  try {
-    const res = await fetch(`${POWERCRM_BASE_URL}${path}`, {
-      method: 'POST',
-      headers: { ...apiHeaders, 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(API_TIMEOUT),
     })
     if (!res.ok) return null
     return (await res.json().catch(() => null)) as T | null
@@ -162,20 +149,6 @@ interface PowerSttItem {
 interface PowerCtItem {
   id: number
   text: string
-}
-
-interface PowerPlansResp {
-  plans?: Array<{
-    planId: number
-    name: string
-    tppId: number
-    price: string
-    priceValue: number
-    accessPrice?: string
-    trackerPrice?: string
-    franchisePrice?: string
-  }>
-  error?: string | null
 }
 
 /* ─── Cache em memória (placa → resposta, TTL 24h) ─── */
@@ -475,21 +448,70 @@ export async function lookupPlate(
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ETAPA 4 — Calcular planos LOCALMENTE em cima do FIPE oficial
-  // (preço EXATO da PRICING_TABLES — bate sempre com a tabela oficial)
+  // ETAPA 4 — Resolver a VERSÃO no PowerCRM (mdl/mdlYr/cityId)
+  //
+  // Deixou de ser "best-effort pro lead": é ela que permite perguntar ao Power quais planos
+  // ele dá. O codFipe usado é o do /plates/ OU o da API Brasil — é a mesma chave do /cmby.
+  // Sem esse "ou", 3 das 5 placas medidas em 31/08/2026 (/plates/ veio sem codFipe) nem
+  // chegavam a ser perguntadas, e o site cotava por conta própria.
   // ═══════════════════════════════════════════════════════════════════════════
   const { tipo, categoria, isMoto, isCaminhao } = inferCategoria(
     pcVehicle?.vehicleType,
     abCategoriaRaw,
   )
 
-  const plans = getApplicablePlans(
-    fipeValue,
-    categoria,
-    combustivel,
+  let internals: { mdl?: number; mdlYr?: number; cityId?: number } = {}
+  const codFipeParaPower = pcCodFipe || fipeCode
+  if (pcVehicle && codFipeParaPower && year) {
+    try {
+      internals = await resolvePowerInternals(pcVehicle, tipo, year, codFipeParaPower)
+    } catch (err) {
+      console.warn(
+        '[plate-lookup] resolvePowerInternals falhou:',
+        err instanceof Error ? err.message : err,
+      )
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ETAPA 5 — Quem diz os planos e o preço é o PowerCRM (a cotação do consultor)
+  //
+  // Antes esta rota calculava sozinha e só logava quando divergia do Power. Resultado medido
+  // nos prints de 31/08/2026: a BMW X1 sDrive20i 2013 virava "SUV R$ 377,50" (o Power dá 4
+  // planos, VIP R$ 359,04) e um Tiida 2009 de R$ 28 mil saía como carro comum (o Power cota
+  // VIP ESPECIAIS R$ 238,50). Nome de modelo não diz em que tabela a versão está.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const consulta = await planosDoPowerAoVivo(internals.mdl, internals.mdlYr, {
+    cityId: internals.cityId,
     cilindrada,
-    modelo || marca,
-  )
+  })
+
+  const veredicto = decidirElegibilidade({
+    ano: Number(year),
+    powerAoVivo: consulta.planos === null ? null : consulta.planos.length > 0,
+    allowlist: planoNoPowerCrm(internals.mdl),
+  })
+
+  if (veredicto.acao === 'nao_fazemos') {
+    console.log(
+      `[plate-lookup] EXCLUIDO pelo Power placa=${normalized} mdl=${internals.mdl} mdlYr=${internals.mdlYr} motivo=${veredicto.motivo}`,
+    )
+    return {
+      success: false,
+      excluded: true,
+      reason: veredicto.motivo,
+      error: 'No momento não estamos aceitando esse veículo.',
+    }
+  }
+
+  if (veredicto.acao === 'consultor') {
+    return humanSupportResponse('elegibilidade_indisponivel', normalized)
+  }
+
+  // Power mudo (e allowlist sem suspeita) é o único caso em que a tabela local ainda calcula.
+  const plans = consulta.planos?.length
+    ? planosDoPowerParaTela(consulta.planos, fipeValue)
+    : getApplicablePlans(fipeValue, categoria, combustivel, cilindrada, modelo || marca)
 
   if (plans.length === 0) {
     // FIPE válido mas fora das faixas das tabelas (ex: caminhão pesado, especial fora de regra)
@@ -499,62 +521,14 @@ export async function lookupPlate(
     )
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ETAPA 5 — PowerCRM internals (best-effort, NÃO afeta o que cliente vê)
-  // Usado só pra integração de lead no PowerCRM depois.
-  // ═══════════════════════════════════════════════════════════════════════════
-  let internals: { mdl?: number; mdlYr?: number; cityId?: number } = {}
-  if (pcVehicle && pcCodFipe && pcYear) {
-    try {
-      internals = await resolvePowerInternals(pcVehicle, tipo, pcYear, pcCodFipe)
-    } catch (err) {
+  // Auditoria: o preço mostrado JÁ é o do Power, então divergência aqui significa que a nossa
+  // tabela local (usada no desconto de leilão e no fallback) envelheceu. É log, não muda nada.
+  for (const p of consulta.planos || []) {
+    const nosso = findPrice(PRICING_TABLES[p.id], fipeValue)
+    if (nosso != null && Math.abs(nosso - p.monthly) > 1) {
       console.warn(
-        '[plate-lookup] resolvePowerInternals falhou (best-effort, não bloqueia):',
-        err instanceof Error ? err.message : err,
+        `[plate-lookup] TABELA LOCAL DESATUALIZADA placa=${normalized} plano=${p.id} fipe=R$${fipeValue} local=R$${nosso} powercrm=R$${p.monthly}`,
       )
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Cross-check (auditoria, NÃO altera resultado)
-  // Se temos internals + PowerCRM /plans/, compara preço PowerCRM com preço
-  // calculado local — divergência > R$ 1 vira log de alerta.
-  // ═══════════════════════════════════════════════════════════════════════════
-  if (internals.mdl && internals.mdlYr && internals.cityId) {
-    const plansResp = await powerPost<PowerPlansResp>('/api/plans/', {
-      carModelId: internals.mdl,
-      carModelYearId: internals.mdlYr,
-      cityId: internals.cityId,
-      quotationWorkVehicle: false,
-    }).catch(() => null)
-    if (plansResp?.plans && Array.isArray(plansResp.plans)) {
-      for (const pcPlan of plansResp.plans) {
-        const lower = pcPlan.name.toLowerCase()
-        const matchId: PlanId | null = lower.includes('especial')
-          ? 'especial'
-          : lower.includes('suv')
-            ? 'suv'
-            : lower.includes('moto') && lower.includes('400')
-              ? 'moto-400'
-              : lower.includes('moto')
-                ? 'moto-1000'
-                : lower.includes('premium')
-                  ? 'premium'
-                  : lower.includes('vip')
-                    ? 'vip'
-                    : lower.includes('jeito')
-                      ? 'do-seu-jeito'
-                      : lower.includes('básico') || lower.includes('basico')
-                        ? 'basico'
-                        : null
-        if (!matchId) continue
-        const ourPrice = findPrice(PRICING_TABLES[matchId], fipeValue)
-        if (ourPrice != null && Math.abs(ourPrice - pcPlan.priceValue) > 1) {
-          console.warn(
-            `[plate-lookup] DIVERGENCIA placa=${normalized} plano=${matchId} fipe=R$${fipeValue} local=R$${ourPrice} powercrm=R$${pcPlan.priceValue}`,
-          )
-        }
-      }
     }
   }
 

@@ -29,7 +29,6 @@ import {
   type PlanInfo,
   PLAN_INFO,
   formatPrice,
-  getApplicablePlans,
   calcActivation,
   activationCashPrice,
   activationInstallment12x,
@@ -601,18 +600,15 @@ export default function CotacaoPage() {
         return
       }
 
-      // Calcula planos localmente pela tabela real (defesa em camada — bate com /preco).
-      // Leilão/remarcado: cobra a faixa imediatamente ABAIXO da tabela (regra oficial
-      // 21Go — tratada dentro de findPrice, não como percentual).
-      const isLeilao = form.leilao !== 'nao'
-      const finalPlans = getApplicablePlans(
-        v.fipeValue,
-        v.categoria,
-        v.combustivel,
-        undefined,
-        v.modelo,
-        isLeilao,
-      )
+      // Os planos são os que o servidor devolveu — e lá eles vieram do PowerCRM, com o preço
+      // dele e o leilão/remarcado já descontado (o `leilao` vai no corpo do /preco).
+      //
+      // Aqui havia um recálculo local com `getApplicablePlans`, chamado de "defesa em camada".
+      // Ele não defendia nada: SOBRESCREVIA a resposta do servidor, e era esta linha que
+      // mostrava "SUV R$ 377,50" pra uma BMW X1 que o Power cota com VIP R$ 359,04
+      // (medido em 31/08/2026). Tabela local no cliente não sabe em que tabela o Power
+      // colocou a versão — só o Power sabe.
+      const finalPlans: QuotePlan[] = Array.isArray(data.plans) ? data.plans : []
 
       if (finalPlans.length === 0) {
         setApiError('Não encontramos planos para esse veículo. Fale com um consultor.')

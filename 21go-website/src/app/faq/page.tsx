@@ -61,7 +61,7 @@ const categories = [
       },
       {
         q: 'Existe carência para eventos?',
-        a: 'Sim. Há uma carência de 90 dias para eventos de roubo/furto e colisão após a ativação da proteção. A assistência 24h (guincho, pane mecânica) está disponível imediatamente após a ativação.',
+        a: 'Sim. Há uma carência de 90 dias para eventos de roubo/furto e colisão após a ativação da proteção. A assistência (guincho, pane mecânica) fica disponível 72 horas após a ativação.',
       },
     ],
   },

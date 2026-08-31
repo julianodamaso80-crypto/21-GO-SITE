@@ -140,7 +140,7 @@ const planFAQ = [
   },
   {
     q: 'Existe carência?',
-    a: 'Sim, há uma carência de 90 dias para eventos de roubo/furto e colisão após a ativação. A assistência 24h (guincho) está disponível imediatamente.',
+    a: 'Sim, há uma carência de 90 dias para eventos de roubo/furto e colisão após a ativação. A assistência (guincho) fica disponível 72 horas após a ativação.',
   },
 ]
 

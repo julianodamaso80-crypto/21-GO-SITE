@@ -53,7 +53,7 @@ const MOTIVOS = [
     icon: Clock,
     titulo: 'Pressa para estar protegido',
     texto:
-      'A simulação sai em cerca de 30 segundos com a placa. A assistência 24h vale desde a ativação; roubo, furto e colisão têm carência de 90 dias.',
+      'A simulação sai em cerca de 30 segundos com a placa. A assistência (guincho) fica disponível 72 horas após a ativação; roubo, furto e colisão têm carência de 90 dias.',
   },
 ]
 

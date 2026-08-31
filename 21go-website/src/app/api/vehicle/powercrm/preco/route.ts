@@ -3,7 +3,8 @@ import { listYearsPowerCrm } from '@/lib/powercrm-lookup'
 import { lookupFipeDirect } from '@/lib/fipe-direct'
 import { getApplicablePlans, isLeilaoOrigin, type QuotePlan } from '@/data/pricing'
 import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
-import { temProtecaoNoPowerAoVivo } from '@/lib/powercrm-planos'
+import { planosDoPowerAoVivo } from '@/lib/powercrm-planos'
+import { planosDoPowerParaTela } from '@/lib/planos-para-tela'
 import { aceitaAno, decidirElegibilidade, ehBydDeLeilao } from '@/lib/elegibilidade.regras'
 
 export const runtime = 'nodejs'
@@ -127,9 +128,15 @@ export async function POST(req: NextRequest) {
   //    plano. Se o Power não respondeu, o cliente vai pro consultor — nunca é dispensado.
   //    A allowlist extraída virou só desempate: ela envelhece (em 3 dias já bloqueava o BYD
   //    Dolphin Mini, que o Power cota), então não pode mais dispensar cliente sozinha.
+  //    Ele nao decide so "faz ou nao faz": os planos que aparecem e o PRECO de cada um sao os
+  //    dele (ordem do dono, 31/08/2026, depois de o site mostrar "SUV R$ 377,50" pra uma BMW X1
+  //    que o Power cota como carro comum com VIP R$ 359,04). A tabela local so entra quando o
+  //    Power fica mudo.
+  const consulta = await planosDoPowerAoVivo(modelId, mdlYr)
+
   const veredicto = decidirElegibilidade({
     ano: Number(yearStr),
-    powerAoVivo: await temProtecaoNoPowerAoVivo(modelId, mdlYr),
+    powerAoVivo: consulta.planos === null ? null : consulta.planos.length > 0,
     allowlist: planoNoPowerCrm(modelId),
   })
 
@@ -190,16 +197,20 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // 3) Calcula planos local (leilão/remarcado desce uma faixa na tabela)
+  // 4) Planos: os que o PowerCRM deu, com o preço dele (leilão/remarcado desce uma faixa).
+  //    Só cai na tabela local quando o Power não respondeu — aí a allowlist já deixou cotar.
   const categoria = tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL'
-  const plans: QuotePlan[] = getApplicablePlans(
-    direct.fipeValue,
-    categoria,
-    combustivel || direct.matchedYear,
-    undefined,
-    modelText,
-    isLeilaoOrigin(body.leilao),
-  )
+  const isLeilao = isLeilaoOrigin(body.leilao)
+  const plans: QuotePlan[] = consulta.planos?.length
+    ? planosDoPowerParaTela(consulta.planos, direct.fipeValue, isLeilao)
+    : getApplicablePlans(
+        direct.fipeValue,
+        categoria,
+        combustivel || direct.matchedYear,
+        undefined,
+        modelText,
+        isLeilao,
+      )
 
   return NextResponse.json({
     success: true,
@@ -217,6 +228,8 @@ export async function POST(req: NextRequest) {
       modelId: Number(modelId),
       yearId: mdlYr || null,
     },
+    /** De onde saiu a lista de planos e o preço — 'power' é o normal, 'tabela' é o Power mudo. */
+    plans_source: consulta.planos?.length ? 'power' : 'tabela',
     plans,
   })
 }
