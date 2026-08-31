@@ -34,6 +34,7 @@ const PIXEL_ID = '999953532385177'
  */
 const PIXEL_POR_CONSULTOR: Record<string, string> = {
   andersonagripino: '1044939631609503',
+  regionalararuama: '1011719121892329',
 }
 
 export function MetaPixelScripts() {
