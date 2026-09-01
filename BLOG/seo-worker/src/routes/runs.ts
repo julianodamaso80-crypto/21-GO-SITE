@@ -21,6 +21,9 @@ function requireSecret(req: FastifyRequest): { ok: true } | { ok: false; reason:
 const RunBody = z.object({
   limit: z.number().int().positive().optional(),
   dry_run: z.boolean().optional(),
+  // publicacao em lote (manual): afrouxa o teto por categoria do write worker
+  lote: z.boolean().optional(),
+  teto_por_categoria: z.number().int().positive().max(10).optional(),
 }).strict();
 
 export async function runsRoutes(app: FastifyInstance): Promise<void> {
@@ -46,7 +49,13 @@ export async function runsRoutes(app: FastifyInstance): Promise<void> {
 
     const job = await queueWrite.add(
       'manual-daily-write',
-      { triggered_by: 'manual', limit: body.data.limit ?? config.DAILY_ARTICLE_LIMIT, dry_run: body.data.dry_run ?? false },
+      {
+        triggered_by: 'manual',
+        limit: body.data.limit ?? config.DAILY_ARTICLE_LIMIT,
+        dry_run: body.data.dry_run ?? false,
+        lote: body.data.lote ?? false,
+        teto_por_categoria: body.data.teto_por_categoria,
+      },
     );
     log.info({ jobId: job.id }, 'manual daily disparado');
     return reply.code(202).send({ enqueued: 'seo-write', jobId: job.id });

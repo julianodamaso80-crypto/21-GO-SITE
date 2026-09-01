@@ -27,6 +27,14 @@ interface JobData {
   triggered_by?: string;
   limit?: number;
   dry_run?: boolean;
+  /**
+   * Publicacao em LOTE (disparo manual). Afrouxa o teto por categoria pra
+   * `teto_por_categoria`, permitindo encher o dia com o estoque disponivel.
+   * O teto normal continua valendo no cron diario — ele existe pra impedir dia
+   * monotematico, que e a canibalizacao que a esteira deveria evitar.
+   */
+  lote?: boolean;
+  teto_por_categoria?: number;
 }
 
 interface WorkerResult {
@@ -193,8 +201,12 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   const remaining = Math.max(0, limit - briefingsToProcess.length);
   if (remaining > 0) {
     const cotaDe = new Map(SLOTS_DIARIOS.map((s) => [s.cat as string, s.qtd]));
-    // teto = cota do dia + 1 (categoria sem cota propria, como 'educativo', pode 1)
-    const tetoDe = (cat: string) => (cotaDe.get(cat) ?? 0) + 1;
+    // teto = cota do dia + 1 (categoria sem cota propria, como 'educativo', pode 1).
+    // Em modo lote o teto sobe pro valor pedido, mas continua EXISTINDO: mesmo numa
+    // publicacao grande, despejar 8 artigos da mesma categoria no mesmo dia e o
+    // caminho mais curto pra eles competirem entre si no Google.
+    const tetoLote = job.data.lote ? Math.max(2, job.data.teto_por_categoria ?? 4) : null;
+    const tetoDe = (cat: string) => tetoLote ?? (cotaDe.get(cat) ?? 0) + 1;
     const jaPlanejado = new Map<string, number>();
     for (const p of briefingsToProcess) {
       jaPlanejado.set(p.topic.category, (jaPlanejado.get(p.topic.category) ?? 0) + (articlesHoje[p.topic.category] ?? 0) + 1);
