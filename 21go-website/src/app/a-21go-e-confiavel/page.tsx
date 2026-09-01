@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 }
 
 const RESPOSTA_DIRETA =
-  'A 21Go é uma associação de proteção veicular que atua no Rio de Janeiro há mais de 20 anos, com sede física no estado e atendimento próprio. O modelo é o mutualismo — associados contribuem para um fundo comum que cobre roubo, furto, colisão e incêndio —, atividade reconhecida pela Lei Complementar 213/2025. A 21Go não é seguradora e não vende apólice: por isso não faz análise de perfil nem consulta ao SPC, e por isso também as regras de carência, vistoria e cobertura precisam ser lidas antes de assinar.'
+  'A 21Go é uma associação de proteção veicular que atua no Rio de Janeiro há mais de 20 anos, com sede física no estado e atendimento próprio. O modelo é o mutualismo — associados contribuem para um fundo comum que cobre roubo, furto, colisão e incêndio —, atividade reconhecida pela Lei Complementar 213/2025. A 21Go não é seguradora e não vende apólice: por isso não faz análise de perfil nem consulta ao SPC, e por isso também as regras de vistoria e cobertura precisam ser lidas antes de assinar.'
 
 const PILARES = [
   {
@@ -57,7 +57,7 @@ const PILARES = [
 const FAQ = [
   {
     q: 'A 21Go é confiável?',
-    a: 'A 21Go atua há mais de 20 anos no Rio de Janeiro, com sede física, equipe própria e rede credenciada. Como qualquer associação de proteção veicular, ela não é seguradora e não é fiscalizada pela SUSEP — é regida pelo modelo mutualista da Lei Complementar 213/2025. Antes de contratar, leia o regulamento: carência, vistoria e limites de cobertura estão escritos lá, e é isso que separa uma associação séria de uma promessa vazia.',
+    a: 'A 21Go atua há mais de 20 anos no Rio de Janeiro, com sede física, equipe própria e rede credenciada. Como qualquer associação de proteção veicular, ela não é seguradora e não é fiscalizada pela SUSEP — é regida pelo modelo mutualista da Lei Complementar 213/2025. Antes de contratar, leia o regulamento: vistoria e limites de cobertura estão escritos lá, e é isso que separa uma associação séria de uma promessa vazia.',
   },
   {
     q: 'Por que aparecem reclamações da 21Go no Reclame Aqui?',
@@ -69,7 +69,7 @@ const FAQ = [
   },
   {
     q: 'O que a 21Go NÃO cobre?',
-    a: 'Eventos fora do regulamento, veículo sem vistoria aprovada, evento dentro do prazo de carência (90 dias para roubo, furto e colisão) e situações excluídas em contrato, como uso do veículo em atividade ilícita. A assistência 24h vale desde a ativação. Todas as regras ficam no regulamento entregue na adesão.',
+    a: 'Eventos fora do regulamento, veículo sem vistoria aprovada e situações excluídas em contrato, como uso do veículo em atividade ilícita. A proteção e a assistência 24h valem desde o pagamento da ativação. Todas as regras ficam no regulamento entregue na adesão.',
   },
   {
     q: 'Como faço para reclamar ou cobrar a 21Go?',

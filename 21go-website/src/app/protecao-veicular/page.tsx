@@ -139,8 +139,8 @@ const planFAQ = [
     a: 'A tabela FIPE (Fundação Instituto de Pesquisas Econômicas) é a referência de preços de veículos no Brasil. Usamos ela para calcular sua mensalidade e para definir o valor de indenização em caso de evento de perda total.',
   },
   {
-    q: 'Existe carência?',
-    a: 'Sim, há uma carência de 90 dias para eventos de roubo/furto e colisão após a ativação. A assistência (guincho) fica disponível 72 horas após a ativação.',
+    q: 'Quando a proteção começa a valer?',
+    a: 'Imediatamente após o pagamento da taxa de ativação. A partir daí você já está protegido, sem período de espera.',
   },
 ]
 

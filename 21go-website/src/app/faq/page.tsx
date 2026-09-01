@@ -56,12 +56,12 @@ const categories = [
         a: 'Em caso de evento, entre em contato pelo WhatsApp ou app. Abrimos o processo imediatamente, direcionamos para uma oficina credenciada e acompanhamos tudo até a resolução. Para roubo/furto com perda total, a indenização é baseada na tabela FIPE.',
       },
       {
-        q: 'Qual o prazo de resolução do evento?',
-        a: 'Para reparos (colisão, vidros), o prazo médio é de 7 a 15 dias úteis dependendo da oficina. Para indenização por perda total (roubo/furto), o prazo é de 15 a 30 dias após a entrega de toda documentação.',
+        q: 'Qual o prazo para receber a indenização?',
+        a: 'O contrato prevê até 90 dias corridos após a entrega de toda a documentação. Na prática, a 21Go vem pagando as indenizações em menos de 60 dias. Para reparos (colisão, vidros), o prazo depende da oficina credenciada.',
       },
       {
-        q: 'Existe carência para eventos?',
-        a: 'Sim. Há uma carência de 90 dias para eventos de roubo/furto e colisão após a ativação da proteção. A assistência (guincho, pane mecânica) fica disponível 72 horas após a ativação.',
+        q: 'Quando a proteção começa a valer?',
+        a: 'Imediatamente após o pagamento da taxa de ativação. A partir daí você já está protegido, sem período de espera.',
       },
     ],
   },
@@ -91,7 +91,7 @@ const categories = [
       },
       {
         q: 'Posso voltar depois de cancelar?',
-        a: 'Sim! Você pode se reassociar a qualquer momento. Será necessário fazer uma nova vistoria e o período de carência será reiniciado.',
+        a: 'Sim! Você pode se reassociar a qualquer momento. Será necessário fazer uma nova vistoria e pagar a taxa de ativação novamente.',
       },
     ],
   },
