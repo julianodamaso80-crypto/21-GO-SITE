@@ -1751,7 +1751,7 @@ export default function CotacaoPage() {
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-baseline justify-between">
-                          <span className="text-xs text-[#64748B] font-semibold">À vista no cartão</span>
+                          <span className="text-xs text-[#64748B] font-semibold">À vista no Pix</span>
                           <span className="font-extrabold text-[#F2911D] text-xl">R$ {formatPrice(ativacaoAvista)}</span>
                         </div>
                         {mostraParcelamento && (
@@ -1763,6 +1763,10 @@ export default function CotacaoPage() {
                       </div>
                       <p className="text-[13px] text-[#DC2626] font-extrabold mt-2.5 leading-tight">
                         Pagamento único de ativação do plano
+                      </p>
+                      {/* O valor acima e o do Pix; no cartao entram os juros da operadora. */}
+                      <p className="text-[11px] text-[#64748B] mt-1 leading-tight">
+                        Também no cartão, com juros
                       </p>
                     </div>
                     )}

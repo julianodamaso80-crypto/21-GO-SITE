@@ -1,5 +1,5 @@
 import 'server-only'
-import { lerPlanosDoPower, type PlanoLidoDoPower } from './powercrm-planos.regras'
+import { lerPlanosDoPower, type DadosDaMoto, type PlanoLidoDoPower } from './powercrm-planos.regras'
 
 /**
  * Pergunta ao PowerCRM quais planos ELE daria para um veiculo — a mesma resposta que o
@@ -87,7 +87,7 @@ export interface ConsultaDePlanos {
 export async function planosDoPowerAoVivo(
   carModelId: number | string | null | undefined,
   carModelYearId: number | string | null | undefined,
-  opcoes?: { cityId?: number | null; cilindrada?: number },
+  opcoes?: { cityId?: number | null; moto?: DadosDaMoto | null },
 ): Promise<ConsultaDePlanos> {
   const modelo = Number(carModelId)
   const ano = Number(carModelYearId)
@@ -99,13 +99,13 @@ export async function planosDoPowerAoVivo(
 
   const normal = await consultar(modelo, ano, cidade, false)
   if (normal === null) return mudo
-  const daNormal = lerPlanosDoPower(normal, opcoes?.cilindrada)
+  const daNormal = lerPlanosDoPower(normal, opcoes?.moto)
   if (daNormal.length > 0) return { planos: daNormal, tabelaDeTrabalho: false }
 
   const trabalho = await consultar(modelo, ano, cidade, true)
   // A primeira resposta ja foi conclusiva: sem protecao na tabela normal e sem segunda opiniao.
   if (trabalho === null) return { planos: [], tabelaDeTrabalho: false }
-  const daTrabalho = lerPlanosDoPower(trabalho, opcoes?.cilindrada)
+  const daTrabalho = lerPlanosDoPower(trabalho, opcoes?.moto)
   return { planos: daTrabalho, tabelaDeTrabalho: daTrabalho.length > 0 }
 }
 

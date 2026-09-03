@@ -233,8 +233,10 @@ export function buildContratarMessage(input: QuoteMessageInput): string {
     ...(input.ocultarAtivacao
       ? []
       : [
-          `Ativação: R$ ${input.ativacaoAvistaFormatted} à vista no cartão${
-            input.ativacao12xFormatted ? ` ou 12x de R$ ${input.ativacao12xFormatted}` : ''
+          // O valor e o do Pix. No cartao a operadora cobra juros, entao ele nao pode sair
+          // escrito como "a vista no cartao" (ordem do dono, 03/09/2026).
+          `Ativação: R$ ${input.ativacaoAvistaFormatted} à vista no Pix ou no cartão com juros${
+            input.ativacao12xFormatted ? ` (12x de R$ ${input.ativacao12xFormatted})` : ''
           }`,
         ]),
   ]

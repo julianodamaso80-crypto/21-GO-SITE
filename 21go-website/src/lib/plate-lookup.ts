@@ -38,7 +38,7 @@
  * ╚══════════════════════════════════════════════════════════════════════════╝
  */
 
-import { PRICING_TABLES, findPrice, type QuotePlan } from '@/data/pricing'
+import { PRICING_TABLES, findPrice, resolveMotoCc, type QuotePlan } from '@/data/pricing'
 import { lookupFipeDirect } from './fipe-direct'
 import { lookupApiBrasilByPlate, isApiBrasilConfigured } from './apibrasil-lookup'
 import { aceitaAno, decidirElegibilidade } from './elegibilidade.regras'
@@ -478,7 +478,8 @@ export async function lookupPlate(
   // ═══════════════════════════════════════════════════════════════════════════
   const consulta = await planosDoPowerAoVivo(internals.mdl, internals.mdlYr, {
     cityId: internals.cityId,
-    cilindrada,
+    // Marca junto da cilindrada: a tabela barata do Power e "HONDA E YAMAHA ATE 400 CC".
+    moto: { marca, cilindrada: resolveMotoCc(cilindrada, modelo) },
   })
 
   const veredicto = decidirElegibilidade({

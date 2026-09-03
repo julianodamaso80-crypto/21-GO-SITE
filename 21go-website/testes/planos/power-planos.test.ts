@@ -79,9 +79,9 @@ test('preco zerado ou ausente nao entra — plano sem preco nao pode ir pra tela
 })
 
 test('moto: o Power tem uma tabela so, a cilindrada escolhe as coberturas', () => {
-  const p125 = lerPlanosDoPower([{ name: 'VIP MOTOS', priceValue: 112.88 }], 125)
+  const p125 = lerPlanosDoPower([{ name: 'VIP MOTOS', priceValue: 112.88 }], { cilindrada: 125 })
   assert.deepEqual(p125.map((p) => p.id), ['moto-400'])
-  const p900 = lerPlanosDoPower([{ name: 'VIP MOTOS', priceValue: 237.2 }], 900)
+  const p900 = lerPlanosDoPower([{ name: 'VIP MOTOS', priceValue: 237.2 }], { cilindrada: 900 })
   assert.deepEqual(p900.map((p) => p.id), ['moto-1000'])
 })
 
@@ -89,4 +89,68 @@ test('rastreador continua fora do criterio de "fazemos"', () => {
   assert.equal(ePlanoDeProtecao('ROUBO E FURTO + Ass 24h + Monitoramento'), false)
   assert.equal(ePlanoDeProtecao('Monitoramento'), false)
   assert.equal(ePlanoDeProtecao('VIP ESPECIAIS'), true)
+})
+
+/*
+ * Kawasaki Versys 650cc 2011 — print de cliente de 03/09/2026: o site ofereceu
+ * "VIP Moto ate 400cc" por R$ 257,40 para uma moto de 650cc.
+ *
+ * Resposta REAL do POST /api/plans/ (cityId 3658) medida no mesmo dia: o Power
+ * devolve as DUAS tabelas de moto, e a de 400 e nominalmente de Honda/Yamaha.
+ */
+const VERSYS_650 = [
+  { name: 'VIP MOTOS (HONDA E YAMAHA ATÉ 400 CC)', priceValue: 257.4 },
+  { name: 'VIP MOTOS (MOTOS ATÉ 1.000 CC)', priceValue: 282.9 },
+  { name: 'ROUBO E FURTO + ass 24h + Monitoramento', priceValue: 274.5 },
+  { name: 'Monitoramento 24h Moto', priceValue: 49.9 },
+]
+
+test('Versys 650cc: moto de 650 pega a tabela ate 1.000cc, com o preco dela', () => {
+  const planos = lerPlanosDoPower(VERSYS_650, { marca: 'KAWASAKI', cilindrada: 650 })
+  assert.deepEqual(
+    planos.map((p) => [p.id, p.monthly]),
+    [['moto-1000', 282.9]],
+  )
+})
+
+test('Versys 650cc: sem cilindrada, a marca ja tira a moto da tabela Honda/Yamaha', () => {
+  const planos = lerPlanosDoPower(VERSYS_650, { marca: 'KAWASAKI' })
+  assert.deepEqual(
+    planos.map((p) => [p.id, p.monthly]),
+    [['moto-1000', 282.9]],
+  )
+})
+
+test('CG 160 da Honda continua na tabela de ate 400cc', () => {
+  const planos = lerPlanosDoPower(
+    [
+      { name: 'VIP MOTOS (HONDA E YAMAHA ATÉ 400 CC)', priceValue: 130.68 },
+      { name: 'VIP MOTOS (MOTOS ATÉ 1.000 CC)', priceValue: 155.78 },
+      { name: 'Monitoramento 24h Moto', priceValue: 49.9 },
+    ],
+    { marca: 'HONDA', cilindrada: 162 },
+  )
+  assert.deepEqual(
+    planos.map((p) => [p.id, p.monthly]),
+    [['moto-400', 130.68]],
+  )
+})
+
+test('CB 500F: Honda acima de 400cc sai da tabela de 400', () => {
+  const planos = lerPlanosDoPower(
+    [
+      { name: 'VIP MOTOS (HONDA E YAMAHA ATÉ 400 CC)', priceValue: 308.72 },
+      { name: 'VIP MOTOS (MOTOS ATÉ 1.000 CC)', priceValue: 333.7 },
+    ],
+    { marca: 'HONDA', cilindrada: 471 },
+  )
+  assert.deepEqual(
+    planos.map((p) => [p.id, p.monthly]),
+    [['moto-1000', 333.7]],
+  )
+})
+
+test('moto continua com um plano so — nunca as duas tabelas na tela', () => {
+  const planos = lerPlanosDoPower(VERSYS_650, { marca: 'KAWASAKI', cilindrada: 650 })
+  assert.equal(planos.length, 1)
 })

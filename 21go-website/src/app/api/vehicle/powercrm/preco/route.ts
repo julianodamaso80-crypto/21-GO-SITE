@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listYearsPowerCrm } from '@/lib/powercrm-lookup'
 import { lookupFipeDirect } from '@/lib/fipe-direct'
-import { isLeilaoOrigin, type QuotePlan } from '@/data/pricing'
+import { isLeilaoOrigin, resolveMotoCc, type QuotePlan } from '@/data/pricing'
 import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
 import { planosDoPowerAoVivo } from '@/lib/powercrm-planos'
 import { planosDoPowerParaTela } from '@/lib/planos-para-tela'
@@ -132,7 +132,16 @@ export async function POST(req: NextRequest) {
   //    dele (ordem do dono, 31/08/2026, depois de o site mostrar "SUV R$ 377,50" pra uma BMW X1
   //    que o Power cota como carro comum com VIP R$ 359,04). A tabela local so entra quando o
   //    Power fica mudo.
-  const consulta = await planosDoPowerAoVivo(modelId, mdlYr)
+  //    Moto: sem placa nao ha cilindrada do DENATRAN, e ela sai do nome do modelo do proprio
+  //    Power ("Versys 650cc" -> 650). Sem isso as duas tabelas de moto dele viravam a mesma
+  //    coisa e ficava sempre a primeira — uma Versys 650 saiu por R$ 257,40, o preco da
+  //    tabela de Honda/Yamaha ate 400 (print de cliente, 03/09/2026).
+  const consulta = await planosDoPowerAoVivo(modelId, mdlYr, {
+    moto:
+      tipo === 'moto'
+        ? { marca: brandText, cilindrada: resolveMotoCc(0, modelText) }
+        : null,
+  })
 
   const veredicto = decidirElegibilidade({
     ano: Number(yearStr),

@@ -480,11 +480,11 @@ function renderComparisonPage(
     <section class="entrada">
       <div class="entrada-left">
         <span class="entrada-label">Taxa de ativação</span>
-        <span class="entrada-sub">Pagamento único · contratação do plano</span>
+        <span class="entrada-sub">Pagamento único · no cartão, com juros</span>
       </div>
       <div class="entrada-vals">
         <div class="entrada-vals-item">
-          <span class="entrada-vals-tag">À vista</span>
+          <span class="entrada-vals-tag">À vista no Pix</span>
           <span class="entrada-vals-num">R$ ${formatBRL(taxaAvista)}</span>
         </div>${mostraParcelamento ? `
         <div class="entrada-vals-item">

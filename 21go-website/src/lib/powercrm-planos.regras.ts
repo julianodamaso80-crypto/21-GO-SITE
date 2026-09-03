@@ -33,12 +33,60 @@ export function mapearPlanoDoPower(nome: string): PlanId | null {
   if (!ePlanoDeProtecao(n)) return null
   if (n.includes('especia')) return 'especial'
   if (n.includes('suv') || n.includes('pick') || n.includes('caminhonete')) return 'suv'
-  if (n.includes('moto')) return 'moto-400' // a cilindrada corrige em `lerPlanosDoPower`
+  if (n.includes('moto')) return faixaDeMotoNoNome(n) ?? 'moto-400'
   if (n.includes('premium')) return 'premium'
   if (n.includes('jeito')) return 'do-seu-jeito'
   if (n.includes('vip')) return 'vip'
   if (n.includes('básico') || n.includes('basico')) return 'basico'
   return null
+}
+
+type PlanoDeMoto = 'moto-400' | 'moto-1000'
+
+const EH_MOTO = (id: PlanId): id is PlanoDeMoto => id === 'moto-400' || id === 'moto-1000'
+
+/**
+ * Qual das duas tabelas de moto o Power esta nomeando — `null` quando o nome nao diz a faixa
+ * ("VIP MOTOS" seco), caso em que quem decide e a moto, nao o nome.
+ *
+ * Medido em 03/09/2026: o Power devolve as DUAS tabelas pra toda moto que ele cota,
+ * "VIP MOTOS (HONDA E YAMAHA ATÉ 400 CC)" e "VIP MOTOS (MOTOS ATÉ 1.000 CC)".
+ */
+export function faixaDeMotoNoNome(nome: string): PlanoDeMoto | null {
+  const n = (nome || '').toLowerCase()
+  if (!n.includes('moto')) return null
+  if (/400/.test(n)) return 'moto-400'
+  if (/1[.\s]?000|1000/.test(n)) return 'moto-1000'
+  return null
+}
+
+/**
+ * Dados da moto que decidem a tabela. A cilindrada vem da placa (DENATRAN) ou de
+ * `resolveMotoCc` sobre o nome do modelo — quem chama resolve, este modulo nao importa
+ * `pricing` pra continuar rodando no `node --test` sem transpilar.
+ */
+export interface DadosDaMoto {
+  marca?: string | null
+  cilindrada?: number | null
+}
+
+/**
+ * Em qual tabela do Power essa moto entra.
+ *
+ * A tabela barata e nominalmente "HONDA E YAMAHA ATÉ 400 CC" — as duas condicoes valem, e nao
+ * so a cilindrada. Uma Kawasaki Versys 650 saiu do site com ela por R$ 257,40 em 03/09/2026
+ * (a tabela dela e a de ate 1.000 cc, R$ 282,90).
+ *
+ * Sem marca conhecida decide so a cilindrada, e cilindrada indeterminada de Honda/Yamaha fica
+ * na tabela de 400 — e onde esta a esmagadora maioria delas, e chutar a de cima cobraria a
+ * mais de quem faz CG e Factor.
+ */
+export function tabelaDeMoto(moto?: DadosDaMoto | null): PlanoDeMoto {
+  const cc = Number(moto?.cilindrada) || 0
+  if (cc > 400) return 'moto-1000'
+  const marca = (moto?.marca || '').toLowerCase()
+  if (marca && !/honda|yamaha/.test(marca)) return 'moto-1000'
+  return 'moto-400'
 }
 
 /** Ordem em que os planos aparecem na tela — a mesma da cotacao do consultor. */
@@ -74,12 +122,12 @@ export interface PlanoLidoDoPower {
  * propria (categoria adivinhada por palavra no nome do modelo) e errava — um Tiida 2009 de
  * R$ 28 mil esta em VEICULOS ESPECIAIS no Power, e a BMW X1 sDrive20i nao e SUV pra ele.
  *
- * @param cilindrada so pra escolher entre as duas fichas de moto; o preco continua sendo o do
- *                   Power, que tem uma tabela de motocicletas so.
+ * @param moto marca/modelo/cilindrada da moto — so pra escolher entre as duas tabelas de
+ *             motocicleta do Power. O preco continua sendo o dele, o da tabela escolhida.
  */
 export function lerPlanosDoPower(
   planos: PlanoCruDoPower[] | null | undefined,
-  cilindrada?: number,
+  moto?: DadosDaMoto | null,
 ): PlanoLidoDoPower[] {
   if (!Array.isArray(planos)) return []
 
@@ -89,15 +137,42 @@ export function lerPlanosDoPower(
     const preco = Number(p?.priceValue)
     // Plano sem preco nao pode ir pra tela: preco 0 vira "gratis" na cara do cliente.
     if (!nome || !Number.isFinite(preco) || preco <= 0) continue
-    let id = mapearPlanoDoPower(nome)
+    const id = mapearPlanoDoPower(nome)
     if (!id) continue
-    if (id === 'moto-400' && (cilindrada || 0) >= 450) id = 'moto-1000'
     // O Power repete a mesma tabela em respostas diferentes; fica a primeira.
     if (lidos.some((x) => x.id === id)) continue
     lidos.push({ id, nomePower: nome, monthly: preco })
   }
 
-  return lidos.sort((a, b) => ORDEM.indexOf(a.id) - ORDEM.indexOf(b.id))
+  return resolverMoto(lidos, moto).sort((a, b) => ORDEM.indexOf(a.id) - ORDEM.indexOf(b.id))
+}
+
+/**
+ * Moto tem UM plano so (regra oficial 21Go), mas o Power devolve as duas tabelas. Escolhe a
+ * da moto e devolve com o preco DELA — pegar a primeira da lista era o que fazia a Versys 650
+ * sair por R$ 257,40, o preco da tabela de Honda/Yamaha ate 400.
+ *
+ * Quando o Power manda uma tabela de moto so, ela fica com o preco que veio: o rotulo se
+ * ajusta a moto (o nome generico "VIP MOTOS" nao diz faixa), o valor nunca.
+ */
+function resolverMoto(
+  lidos: PlanoLidoDoPower[],
+  moto?: DadosDaMoto | null,
+): PlanoLidoDoPower[] {
+  const motos = lidos.filter((p) => EH_MOTO(p.id))
+  if (motos.length === 0) return lidos
+  const outros = lidos.filter((p) => !EH_MOTO(p.id))
+
+  const alvo = tabelaDeMoto(moto)
+  if (motos.length === 1) {
+    const unico = motos[0]
+    // Nome sem faixa: quem diz as coberturas e a moto. Com faixa, respeita o que o Power deu.
+    const id = faixaDeMotoNoNome(unico.nomePower) ? unico.id : alvo
+    return [...outros, { ...unico, id }]
+  }
+
+  const escolhido = motos.find((p) => p.id === alvo) || motos[0]
+  return [...outros, escolhido]
 }
 
 /**
