@@ -36,7 +36,7 @@ const categories = [
       },
       {
         q: 'Quais são os planos disponíveis?',
-        a: 'Para carros: Básico (roubo/furto + assistência 24h), Do Seu Jeito (personalizável), VIP (proteção completa, mais escolhido) e Premium (máxima proteção com rastreamento). Para SUVs/pick-ups temos plano específico. Para motos: VIP até 400cc e VIP 450-1000cc. Para elétricos ou veículos acima de R$150 mil: plano Veículos Especiais.',
+        a: 'Para carros: Básico (roubo/furto + assistência 24h), Do Seu Jeito (personalizável), VIP (proteção completa, mais escolhido) e Premium (máxima proteção com rastreamento). Para SUVs/pick-ups temos plano específico. Para motos: VIP até 400cc (Honda e Yamaha) e VIP até 1.000cc. Para elétricos ou veículos acima de R$150 mil: plano Veículos Especiais.',
       },
       {
         q: 'Posso trocar de plano depois?',

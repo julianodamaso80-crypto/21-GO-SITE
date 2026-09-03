@@ -381,8 +381,8 @@ export const PLAN_INFO: Record<PlanId, PlanInfo> = {
   },
   'moto-1000': {
     id: 'moto-1000',
-    name: 'VIP Moto 450-1000cc',
-    description: 'Proteção completa para motos de 450 a 1000cc',
+    name: 'VIP Moto até 1.000cc',
+    description: 'Proteção completa para motos de até 1.000cc',
     features: [
       { text: 'Roubo', included: true },
       { text: 'Furto', included: true },
@@ -528,8 +528,11 @@ export function resolveMotoCc(cilindrada?: number, modelo?: string): number {
 
 /**
  * MOTO SEMPRE TEM UM PLANO SÓ — depende da cilindrada (regra oficial 21Go).
- * 450cc ou mais -> VIP Moto 450-1000cc; abaixo disso (e default quando
+ * 450cc ou mais -> VIP Moto até 1.000cc; abaixo disso (e default quando
  * indeterminável) -> VIP Moto até 400cc, que cobre a esmagadora maioria.
+ *
+ * Só o FALLBACK local (Power mudo). Com o Power no ar quem escolhe a tabela é
+ * `tabelaDeMoto` em powercrm-planos.regras.ts, que também olha a marca.
  */
 export function motoPlanId(cc: number): 'moto-400' | 'moto-1000' {
   return cc >= 450 ? 'moto-1000' : 'moto-400'
@@ -537,7 +540,7 @@ export function motoPlanId(cc: number): 'moto-400' | 'moto-1000' {
 
 const MOTO_PLAN_NAME: Record<'moto-400' | 'moto-1000', string> = {
   'moto-400': 'VIP Moto até 400cc',
-  'moto-1000': 'VIP Moto 450-1000cc',
+  'moto-1000': 'VIP Moto até 1.000cc',
 }
 
 /**

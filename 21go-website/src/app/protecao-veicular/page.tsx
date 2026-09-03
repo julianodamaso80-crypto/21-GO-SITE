@@ -124,7 +124,7 @@ const planFAQ = [
   },
   {
     q: 'Quais são os planos disponíveis?',
-    a: 'Para carros: Básico, Do Seu Jeito (personalizável), VIP (mais escolhido) e Premium. Para SUVs/pick-ups temos plano específico. Para motos: VIP até 400cc e VIP 450-1000cc. Para elétricos ou veículos acima de R$150 mil: Veículos Especiais.',
+    a: 'Para carros: Básico, Do Seu Jeito (personalizável), VIP (mais escolhido) e Premium. Para SUVs/pick-ups temos plano específico. Para motos: VIP até 400cc (Honda e Yamaha) e VIP até 1.000cc. Para elétricos ou veículos acima de R$150 mil: Veículos Especiais.',
   },
   {
     q: 'Como é calculada a mensalidade?',

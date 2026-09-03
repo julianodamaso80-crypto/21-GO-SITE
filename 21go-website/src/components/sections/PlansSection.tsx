@@ -109,7 +109,7 @@ const plansByCategory: Record<Category, {
       ],
     },
     {
-      name: 'VIP Moto 450-1000cc',
+      name: 'VIP Moto até 1.000cc',
       desc: 'Para motos de alta cilindrada',
       delay: 0.1,
       features: [
