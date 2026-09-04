@@ -12,6 +12,11 @@ import {
   type QuotePlanFull,
   type PlanId,
 } from '@/data/pricing'
+import {
+  planosDaTelaParaPdf,
+  planoEscolhidoNaLista,
+  type PlanoDaTela,
+} from './planos-do-pdf.regras'
 import { LOGO_21GO_BASE64 } from './assets/logo-base64'
 import { temParcelamento } from './consultores-parcelamento'
 import { ativacaoDoConsultor } from './consultores-ativacao'
@@ -55,6 +60,14 @@ export interface QuotePdfInput {
   motoTerceiros?: boolean | null
   /** Seguro/proteção atual do veículo (texto livre — ex: "Porto Seguro", "Allianz"). */
   seguroAtual?: string | null
+  /**
+   * Os planos que o cliente VIU na tela — os do PowerCRM, com o preço dele e o leilão já
+   * descontado pelo servidor. É esta lista que o PDF imprime.
+   *
+   * Ausente só em lead gravado antes de 04/09/2026, quando esta informação não era guardada;
+   * aí o PDF cai na tabela local, que é o comportamento que produzia a divergência.
+   */
+  planos?: PlanoDaTela[] | null
 }
 
 /** Carro de app: +R$ 20/mes em todos os planos exibidos. */
@@ -172,6 +185,11 @@ export function resolvePlans(input: QuotePdfInput): QuotePlanFull[] {
   // percentual aplicado por fora. Reflete em planos, referência e ativação.
   const isLeilao = isLeilaoOrigin(input.leilao)
 
+  // Caminho normal: imprime os planos que o cliente viu, que são os do PowerCRM. Nada é
+  // recalculado aqui — o desconto de leilão já veio aplicado do servidor, no preço dele.
+  const doPower = planosDaTelaParaPdf(input.planos)
+  if (doPower) return aplicarExtras(doPower, input)
+
   // 1) Defesa primária: identificar plano pelo valor exato
   const detected = detectPlanByValue(input.fipe, input.mensalidade, isLeilao)
 
@@ -219,11 +237,18 @@ export function resolvePlans(input: QuotePdfInput): QuotePlanFull[] {
       }]
     : plansRaw
 
+  return aplicarExtras(plans, input)
+}
+
+/**
+ * Adicionais que o cliente marcou na tela e que NÃO vêm do Power: ele não sabe de danos a
+ * terceiros de moto nem de carro de aplicativo. Mesma ordem e mesmos valores do site
+ * (`cotacao/page.tsx`) — se divergir aqui, o PDF volta a não bater com a tela.
+ */
+function aplicarExtras(plans: QuotePlanFull[], input: QuotePdfInput): QuotePlanFull[] {
   let out = plans
 
   // Moto com Danos a Terceiros opcional: soma +R$ 22/mês SÓ nos planos de moto.
-  // Aplica depois do preço de leilão e antes do extra de carro de app, igual
-  // ao site (cotacao/page.tsx). Reflete em planos, referência e ativação.
   if (input.motoTerceiros) {
     out = out.map((p) =>
       p.id === 'moto-400' || p.id === 'moto-1000'
@@ -573,8 +598,14 @@ function renderHTML(input: QuotePdfInput): string {
   // Identifica o plano selecionado pelo valor primeiro (defesa robusta),
   // caindo no nome só se não houver match por valor. Usa valor PURO (sem
   // o extra de carroApp) pois o detectPlanByValue cruza com PRICING_TABLES.
+  // Ordem das fontes: a lista do Power primeiro (é dela que a mensalidade saiu), depois o
+  // cruzamento com a tabela local, e só então o nome. Casar pelo VALOR e não pelo nome porque
+  // rótulo muda — "VIP Moto ate 1.000cc" já quebrou o casamento por nome em 03/09/2026.
+  // Compara com a lista SEM os extras: `input.mensalidade` também vem sem eles.
   const planoEscolhidoId =
-    detectPlanByValue(input.fipe, input.mensalidade) || planIdFromName(input.planoNome)
+    planoEscolhidoNaLista(planosDaTelaParaPdf(input.planos), input.mensalidade) ||
+    detectPlanByValue(input.fipe, input.mensalidade) ||
+    planIdFromName(input.planoNome)
 
   // Ordena: plano escolhido primeiro, depois os outros
   const ordered = [...planosAplicaveis].sort((a, b) => {

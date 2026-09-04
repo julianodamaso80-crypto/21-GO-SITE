@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { generateQuotePdf } from '@/lib/pdf-quote'
+import { generateQuotePdf, type QuotePdfInput } from '@/lib/pdf-quote'
 import { resolverConsultor } from '@/lib/consultor'
 
 export const runtime = 'nodejs'
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
   const { data, error } = await supa
     .from('leads')
     .select(
-      'id, nome, telefone, whatsapp, email, placa_interesse, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado, cotacao_plano, cotacao_valor, carro_app, leilao, seguro_atual, consultor_slug',
+      'id, nome, telefone, whatsapp, email, placa_interesse, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado, cotacao_plano, cotacao_valor, cotacao_planos, carro_app, leilao, seguro_atual, consultor_slug',
     )
     .eq('id', id)
     .maybeSingle()
@@ -78,6 +78,12 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
       carroApp: !!data.carro_app,
       leilao: data.leilao as string | null,
       seguroAtual: data.seguro_atual as string | null,
+      // Os planos que o cliente viu, como o Power os deu. ESTE e o PDF que ele abre pelo link
+      // do "Quero contratar": sem esta lista o comparativo era recalculado pela tabela local e
+      // podia sair com outro plano e outro preco (Saveiro CROSS: 4 planos do Power viravam um
+      // "SUV / Caminhonete" R$ 18,42 mais caro). Lead antigo nao tem a coluna e segue no
+      // caminho antigo.
+      planos: (data.cotacao_planos as QuotePdfInput['planos']) ?? null,
     })
 
     return new NextResponse(pdf as unknown as ArrayBuffer, {

@@ -136,6 +136,12 @@ interface LeadInput {
   cilindrada?: number | null
   plano?: string | null
   valorMensal?: number
+  /**
+   * A lista inteira de planos que a tela mostrou, como o PowerCRM os devolveu (id/name/monthly,
+   * ja com o leilao descontado). Guardada porque e ela que o PDF imprime — sem isso o PDF
+   * recalculava o comparativo pela tabela local e divergia do que o cliente escolheu.
+   */
+  planos?: { id?: string; name?: string; monthly?: number; popular?: boolean }[] | null
   carroApp?: boolean
   motoTerceiros?: boolean
   leilao?: 'nao' | 'leilao' | 'remarcado' | string
@@ -475,6 +481,7 @@ async function persistLeadInSupabase(args: {
 
     plano: body.plano ?? null,
     valor_mensal: body.valorMensal ?? null,
+    planos: body.planos ?? null,
 
     cidade: body.cidade ?? null,
     estado: body.estado ?? null,
@@ -904,6 +911,7 @@ async function sendBydQuoteWithPdf(
     fipe: body.valorFipe!,
     planoNome: body.plano!,
     mensalidade: body.valorMensal!,
+    planos: body.planos ?? null,
     // BYD é elétrico — categoria/combustível mudam a tabela usada no PDF.
     categoria: body.categoria ?? null,
     combustivel: body.combustivel ?? null,
@@ -1072,6 +1080,7 @@ async function sendConsultorQuoteWithPdf(
     fipe: body.valorFipe!,
     planoNome: body.plano!,
     mensalidade: body.valorMensal!,
+    planos: body.planos ?? null,
     categoria: body.categoria ?? null,
     combustivel: body.combustivel ?? null,
     cilindrada: body.cilindrada ?? null,

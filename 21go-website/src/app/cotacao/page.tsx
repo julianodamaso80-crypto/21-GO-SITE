@@ -655,6 +655,15 @@ export default function CotacaoPage() {
           combustivel: v.combustivel,
           plano: defaultPlan.name,
           valorMensal: defaultPlan.monthly,
+          // A lista inteira que a tela esta mostrando, do jeito que o Power devolveu. E ela
+          // que o PDF imprime — mandar so o plano escolhido fazia o PDF recalcular os outros
+          // pela tabela local e sair com plano e preco que o cliente nunca viu.
+          planos: finalPlans.map((p) => ({
+            id: p.id,
+            name: p.name,
+            monthly: p.monthly,
+            popular: !!p.popular,
+          })),
           carroApp: form.carroApp === 'sim',
           motoTerceiros: form.danosTerceiros === 'sim',
           seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,

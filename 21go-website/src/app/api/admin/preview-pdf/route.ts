@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateQuotePdf } from '@/lib/pdf-quote'
+import { generateQuotePdf, type QuotePdfInput } from '@/lib/pdf-quote'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -75,6 +75,9 @@ export async function POST(req: NextRequest) {
     leilao: body.leilao as string | null | undefined,
     motoTerceiros: body.motoTerceiros as boolean | undefined,
     seguroAtual: body.seguroAtual as string | null | undefined,
+    // Os planos que a tela mostrou (os do PowerCRM). Sem isto o preview cai no caminho antigo
+    // e nao representa o PDF que o cliente recebe.
+    planos: body.planos as QuotePdfInput['planos'],
   }
 
   try {

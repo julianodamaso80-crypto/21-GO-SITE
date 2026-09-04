@@ -68,6 +68,8 @@ export interface UpsertLeadInput {
   // Plano
   plano?: string | null
   valor_mensal?: number | null
+  /** Planos exibidos na simulacao, como o PowerCRM os devolveu. Fonte do comparativo do PDF. */
+  planos?: unknown
 
   // Contexto
   cidade?: string | null
@@ -141,6 +143,7 @@ export async function upsertLead(input: UpsertLeadInput): Promise<{ id: string; 
     valor_fipe_consultado: input.valor_fipe ?? null,
     cotacao_plano: input.plano ?? null,
     cotacao_valor: input.valor_mensal ?? null,
+    cotacao_planos: input.planos ?? null,
     cotacao_enviada: !!input.plano,
     cotacao_data: input.plano ? new Date().toISOString() : null,
     cidade: input.cidade ?? null,
