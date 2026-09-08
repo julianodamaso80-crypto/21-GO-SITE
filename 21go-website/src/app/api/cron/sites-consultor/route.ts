@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { esquecerConsultor } from '@/lib/consultor'
-import { cancelarAssinatura, cobrancaEmAberto, situacaoDeCobranca, saudeDoWebhook } from '@/lib/asaas'
+import {
+  cancelarAssinatura,
+  cobrancaEmAberto,
+  situacaoDeCobranca,
+  saudeDoWebhook,
+  MENSALIDADE,
+} from '@/lib/asaas'
 import {
   avisar,
   avisarDono,
   saudeDoCanal,
   textoPrimeiroAviso,
   textoUltimoDia,
-  textoVesperaDoVencimento,
 } from '@/lib/whatsapp-avisos'
 import { entregarSeOTestePassar } from '@/lib/entregar-site'
 
@@ -18,21 +23,24 @@ export const dynamic = 'force-dynamic'
 /**
  * O ciclo de cobranca do site do consultor, uma vez por dia.
  *
- * ─── O calendario, ordem do dono (21/08/2026) ────────────────────────────────
+ * ─── O calendario, ordem do dono (08/09/2026) ────────────────────────────────
  *
- *   *"VC ENVIA SO O PAGAMENTO 5 DIAS ANTES DE VENCER CADA CLIENTE, EXEMPLO SE
- *   VENCE DIA 5 VC ENVIA DIA 1, DEPOIS ENVIA NO DIA 4, E SE NAO PAGOU FALA QUE
- *   E ULTIMO DIA NO DIA 5. E SE NAO PAGOU VC CANCELA O SITE SEM MAIS NENHUMA
- *   MENSAGEM 2 DIAS DEPOIS. CADA UM TEM SEU DIA DE VENCIMENTO, VC TEM QUE
- *   COBRAR O CLIENTE NA DATA CERTA E NAO DATA ERRADA."*
+ *   *"vc pode enviar sempre 3 dias antes do vencimento e no dia quem nao tiver
+ *   pago vc enviar novamente cobrando o pagamento"* — e a do dia *"falando que
+ *   hj e ultimo dia de pagamento que site vai sair do ar caso o pagamento nao
+ *   seja realizado, manda de maneira educada"*.
  *
- *   D-4  primeiro aviso, com o link (o "dia 1" do exemplo dele)
- *   D-1  vespera
- *   D0   ultimo dia
+ *   D-3  primeiro aviso, com o link e a data por extenso
+ *   D0   ultimo dia — diz que o site sai do ar se nao pagar
  *   D+2  corta o site, MUDO — nenhuma mensagem
  *
- * Nada sai fora dessas quatro marcas. Antes de D-4 e cedo demais, entre D0 e
- * D+2 ja foi dito tudo, e depois do corte nao se fala mais nada.
+ * Nada sai fora dessas marcas. Antes de D-3 e cedo demais, entre D0 e D+2 ja foi
+ * dito tudo, e depois do corte nao se fala mais nada.
+ *
+ * ⚠️ Substitui o calendario de 21/08/2026 (D-4, D-1, D0). A vespera saiu: sao
+ * duas mensagens agora. A regra que NAO mudou e a que importa — *"cada um tem
+ * seu dia de vencimento, vc tem que cobrar o cliente na data certa e nao data
+ * errada"*.
  *
  * ─── A data que manda ────────────────────────────────────────────────────────
  *
@@ -48,14 +56,14 @@ export const dynamic = 'force-dynamic'
 /** Dias DEPOIS do vencimento ate o corte. Ordem do dono: 2. */
 const DIAS_ATE_CORTAR = 2
 
-/** Antecedencia do primeiro aviso, em dias. O "vence dia 5 → avisa dia 1". */
-const PRIMEIRO_AVISO_DIAS = 4
+/** Antecedencia do primeiro aviso, em dias. Ordem do dono: 3. */
+const PRIMEIRO_AVISO_DIAS = 3
 
 /** Pra onde vai o alerta quando a cobranca para de funcionar. */
 const DONO = '5521992208062'
 
-/** As tres mensagens do ciclo, na ordem em que saem. */
-type Etapa = 'd4' | 'd1' | 'd0'
+/** As duas mensagens do ciclo, na ordem em que saem. */
+type Etapa = 'd3' | 'd0'
 
 interface Linha {
   slug: string
@@ -66,6 +74,8 @@ interface Linha {
   asaas_subscription_id: string | null
   aviso_etapas: string | null
   isento: boolean | null
+  /** O preco DESTE consultor. Nem todo mundo paga 80 — ver migration 284. */
+  mensalidade: number | string | null
 }
 
 export async function GET(req: NextRequest) {
@@ -81,7 +91,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supa
     .from('sites_consultor')
     .select(
-      'slug, nome, whatsapp, status, proximo_vencimento, asaas_subscription_id, aviso_etapas, isento',
+      'slug, nome, whatsapp, status, proximo_vencimento, asaas_subscription_id, aviso_etapas, isento, mensalidade',
     )
     .in('status', ['pendente', 'ativo', 'inadimplente'])
 
@@ -256,19 +266,19 @@ export async function GET(req: NextRequest) {
 /**
  * Qual mensagem o dia de hoje pede — ou nenhuma.
  *
- * ⚠️ D-1 e D0 sao dias EXATOS, nao faixas, de proposito. "Vence amanha" e "hoje
- * e o ultimo dia" sao afirmacoes sobre uma data especifica: mandadas com um dia
- * de atraso viram cobranca em data errada, que e exatamente o que nao pode
- * acontecer. Se o cron nao rodar naquele dia, a mensagem simplesmente nao sai.
+ * ⚠️ D0 e dia EXATO, nao faixa, de proposito. "Hoje e o ultimo dia" e uma
+ * afirmacao sobre uma data especifica: mandada com um dia de atraso vira
+ * cobranca em data errada, que e exatamente o que nao pode acontecer. Se o cron
+ * nao rodar naquele dia, a mensagem simplesmente nao sai.
  *
- * O primeiro aviso e o unico com faixa (D-4 a D-2) porque o texto dele diz a
- * data por extenso ("vence em 05/09"), entao continua correto em qualquer dia
- * da janela — e nunca antes dos 5 dias que o dono estipulou.
+ * O primeiro aviso tem faixa (D-3 a D-1) porque o texto dele diz a data por
+ * extenso ("vence em 10/09"), entao continua correto em qualquer dia da janela —
+ * e nunca antes dos 3 dias que o dono estipulou. A faixa e o que salva o aviso
+ * quando o cron falha um dia; sem ela, um dia perdido calaria o ciclo inteiro.
  */
 function etapaDoDia(faltam: number): Etapa | null {
   if (faltam === 0) return 'd0'
-  if (faltam === 1) return 'd1'
-  if (faltam >= 2 && faltam <= PRIMEIRO_AVISO_DIAS) return 'd4'
+  if (faltam >= 1 && faltam <= PRIMEIRO_AVISO_DIAS) return 'd3'
   return null
 }
 
@@ -300,12 +310,15 @@ async function avisarEtapa(
 ): Promise<void> {
   const supa = supabaseAdmin()
 
+  // ⚠️ O valor vem da LINHA, nunca de uma constante. Um consultor esta em R$ 100
+  // (andersonagripino, 08/09/2026) e os outros em 80: texto com numero fixo
+  // diria um preco e a assinatura cobraria outro.
+  const valor = Number(s.mensalidade ?? MENSALIDADE) || MENSALIDADE
+
   const texto =
-    etapa === 'd4'
-      ? textoPrimeiroAviso(s.nome, s.slug, vencimento, link)
-      : etapa === 'd1'
-        ? textoVesperaDoVencimento(s.nome, s.slug, link)
-        : textoUltimoDia(s.nome, s.slug, link)
+    etapa === 'd3'
+      ? textoPrimeiroAviso(s.nome, s.slug, vencimento, link, valor)
+      : textoUltimoDia(s.nome, s.slug, link, valor)
 
   const saiu = await avisar(s.whatsapp, texto)
 

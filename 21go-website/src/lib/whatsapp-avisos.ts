@@ -244,54 +244,89 @@ export function textoSiteNoAr(nome: string, slug: string): string {
 }
 
 /**
- * O calendario de cobranca, ordem do dono (21/08/2026):
+ * O calendario de cobranca, ordem do dono (08/09/2026):
  *
- *   *"VC ENVIA SO O PAGAMENTO 5 DIAS ANTES DE VENCER CADA CLIENTE, EXEMPLO SE
- *   VENCE DIA 5 VC ENVIA DIA 1, DEPOIS ENVIA NO DIA 4, E SE NAO PAGOU FALA QUE
- *   E ULTIMO DIA NO DIA 5. E SE NAO PAGOU VC CANCELA O SITE SEM MAIS NENHUMA
- *   MENSAGEM 2 DIAS DEPOIS."*
+ *   *"vc pode enviar sempre 3 dias antes do vencimento e no dia quem nao tiver
+ *   pago vc enviar novamente cobrando o pagamento (...) [no dia] falando que hj
+ *   e ultimo dia de pagamento que site vai sair do ar caso o pagamento nao seja
+ *   realizado, manda de maneira educada"*
  *
- * Sao tres mensagens e so tres, cada uma no dia de vencimento DAQUELA pessoa —
- * nunca numa data fixa do mes. O corte no D+2 e mudo.
+ * Sao DUAS mensagens agora — D-3 e D0 — cada uma no dia de vencimento DAQUELA
+ * pessoa, nunca numa data fixa do mes. O corte no D+2 continua mudo.
  *
- * ⚠️ O exemplo dele ("vence dia 5 → avisa dia 1") e o que manda na primeira
- * mensagem: sao 4 dias de antecedencia, dentro da janela de "5 dias antes".
+ * ⚠️ Isto substitui o calendario de 21/08/2026 (D-4, D-1, D0). A vespera saiu
+ * por decisao dele: menos mensagem, e a do dia passou a carregar o aviso de que
+ * o site sai do ar — o que a de vespera nao dizia.
  */
 export function textoPrimeiroAviso(
   nome: string,
   slug: string,
   vencimento: string,
   link: string | null,
+  valor: number,
 ): string {
   return (
     `Oi, ${primeiroNome(nome)}! Sua mensalidade do site 21Go ` +
     `(21go.com.br/${slug}) vence em ${dataCurta(vencimento)}.\n\n` +
-    `São R$ 80,00 — já deixo o pagamento aqui pra você adiantar quando puder:\n` +
+    `São ${reais(valor)} — já deixo o pagamento aqui pra você adiantar quando puder:\n` +
     (link ? `${link}\n\n` : '\n') +
     `Qualquer coisa é só me chamar por aqui.`
   )
 }
 
+/**
+ * ⚠️ FORA DE USO desde 08/09/2026. O dono tirou a vespera do calendario: ficaram
+ * so o D-3 e o D0.
+ *
+ * Fica aqui, e nao apagada, pelo mesmo motivo do `textoCancelado`: e uma decisao
+ * de ritmo que ja mudou uma vez. Se ele quiser o lembrete de volta, e so o cron
+ * ter de novo a etapa `d1`.
+ */
 export function textoVesperaDoVencimento(
   nome: string,
   slug: string,
   link: string | null,
+  valor: number,
 ): string {
   return (
     `Oi, ${primeiroNome(nome)}! Lembrete rápido: a mensalidade do seu site ` +
-    `(21go.com.br/${slug}) vence amanhã — R$ 80,00.\n\n` +
+    `(21go.com.br/${slug}) vence amanhã — ${reais(valor)}.\n\n` +
     (link ? `${link}\n\n` : '') +
     `Se já pagou, pode ignorar essa mensagem. 🙂`
   )
 }
 
-export function textoUltimoDia(nome: string, slug: string, link: string | null): string {
+/**
+ * A ULTIMA mensagem — depois dela so vem o corte, calado.
+ *
+ * Ordem do dono: tem que dizer que hoje e o ultimo dia E que o site sai do ar se
+ * nao pagar, *"de maneira educada"*. O texto anterior so prometia o lado bom
+ * ("pagando hoje continua no ar") e nunca dizia a consequencia — quem parava de
+ * ler no meio perdia o site sem ter sido avisado do que ia acontecer.
+ */
+export function textoUltimoDia(
+  nome: string,
+  slug: string,
+  link: string | null,
+  valor: number,
+): string {
   return (
-    `Oi, ${primeiroNome(nome)}! Hoje é o último dia da mensalidade do seu site ` +
-    `(21go.com.br/${slug}) — R$ 80,00.\n\n` +
+    `Oi, ${primeiroNome(nome)}! Hoje é o último dia pra pagar a mensalidade do seu site ` +
+    `(21go.com.br/${slug}) — ${reais(valor)}.\n\n` +
     (link ? `${link}\n\n` : '') +
-    `Pagando hoje, seu site continua no ar normalmente. Se já pagou, é só ignorar.`
+    `Preciso te avisar com transparência: sem o pagamento, o site sai do ar nos ` +
+    `próximos dias e o link para de funcionar pra quem você já divulgou.\n\n` +
+    `Se já pagou, é só ignorar essa mensagem. E se precisar de um prazo, me chama aqui ` +
+    `que a gente conversa. 🙂`
   )
+}
+
+/** "R$ 100,00" — o valor de CADA UM, nunca um numero fixo no texto. */
+function reais(valor: number): string {
+  return `R$ ${valor.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
 }
 
 /** "2026-09-05" -> "05/09". As mensagens falam a data dele, nao um ISO. */
