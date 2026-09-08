@@ -29,7 +29,7 @@ export type Elegibilidade =
    * Nao fazemos: `model` = o Power negou; `ano` = anterior a 2006; `byd_leilao` = BYD de
    * leilao/remarcado. A tela agradece e encerra.
    */
-  | { acao: 'nao_fazemos'; motivo: 'model' | 'ano' | 'byd_leilao' }
+  | { acao: 'nao_fazemos'; motivo: 'model' | 'ano' | 'byd_leilao' | 'modelo_excluido' }
   /** Nao deu pra confirmar. Cliente vai pro WhatsApp do consultor, nunca dispensado. */
   | { acao: 'consultor'; motivo: 'elegibilidade_indisponivel' }
 
@@ -62,6 +62,37 @@ export function ehBydDeLeilao(
   return /\bbyd\b/i.test(`${marca || ''} ${modelo || ''}`)
 }
 
+/**
+ * Modelos que a 21Go NAO faz, mesmo com o Power cotando.
+ *
+ * Ordem do dono (08/09/2026), com o print na mao: um Fiat Idea ELX 1.4 2009 (placa HJG6I52,
+ * FIPE R$ 26.624) saiu do site com os quatro planos e o cliente escolheu o Premium —
+ * *"nenhum veiculo ideia faz, msm se tiver no power ta errado, pode tirar ideia de todos
+ * sites"*.
+ *
+ * ⚠️ Isto NAO e a volta da lista por nome banida em 06/08/2026. Aquela lista dizia quem PODE
+ * cotar e derrubava venda de veiculo que a 21Go faz — 713 versoes auditadas depois, zero
+ * divergencia a favor dela. Esta aqui so tira o que o dono mandou tirar, um nome por vez, e
+ * cada entrada tem que vir de ordem dele. Nao inferir, nao "completar" a lista.
+ *
+ * Casa contra marca e modelo JUNTOS porque nem todo fluxo separa os dois: o que chega pode ser
+ * a descricao inteira no campo do modelo. `\b` nas pontas pra "Idea" nao pegar "Idealle".
+ */
+const MODELOS_EXCLUIDOS: { nome: string; padrao: RegExp }[] = [
+  // O dono escreveu "ideia"; a Fiat escreve "Idea". As duas grafias barram.
+  { nome: 'Fiat Idea', padrao: /\bide(i)?a\b/i },
+]
+
+/** O veiculo esta na lista de excluidos? Vale acima da resposta do Power. */
+export function ehModeloExcluido(
+  marca: string | null | undefined,
+  modelo: string | null | undefined,
+): boolean {
+  const texto = `${marca || ''} ${modelo || ''}`.trim()
+  if (!texto) return false
+  return MODELOS_EXCLUIDOS.some((m) => m.padrao.test(texto))
+}
+
 export interface EntradaElegibilidade {
   /** Ano-modelo do veiculo. `null` quando nao deu pra resolver. */
   ano: number | null
@@ -78,8 +109,11 @@ export interface EntradaElegibilidade {
 }
 
 export function decidirElegibilidade(e: EntradaElegibilidade): Elegibilidade {
-  // Antes do Power de proposito: sao as duas regras do site que vencem a resposta dele.
+  // Antes do Power de proposito: sao as tres regras do site que vencem a resposta dele.
   if (!aceitaAno(e.ano)) return { acao: 'nao_fazemos', motivo: 'ano' }
+  if (ehModeloExcluido(e.marca, e.modelo)) {
+    return { acao: 'nao_fazemos', motivo: 'modelo_excluido' }
+  }
   if (ehBydDeLeilao(e.marca, e.modelo, e.origem)) {
     return { acao: 'nao_fazemos', motivo: 'byd_leilao' }
   }

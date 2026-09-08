@@ -147,6 +147,9 @@ export async function POST(req: NextRequest) {
     ano: Number(yearStr),
     powerAoVivo: consulta.planos === null ? null : consulta.planos.length > 0,
     allowlist: planoNoPowerCrm(modelId),
+    // Mesmo motivo do plate-lookup: sem marca e modelo os excluidos por nome nunca barram.
+    marca: brandText,
+    modelo: modelText,
   })
 
   if (veredicto.acao === 'consultor') {

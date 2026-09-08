@@ -83,7 +83,7 @@ export interface PlateErrorResponse {
   requires_human_support?: boolean
   /** Veículo que a 21Go não aceita — não é falha de consulta, não vai pra humano */
   excluded?: true
-  reason?: 'ano' | 'model' | 'byd_leilao'
+  reason?: 'ano' | 'model' | 'byd_leilao' | 'modelo_excluido'
 }
 
 const apiHeaders = {
@@ -486,11 +486,16 @@ export async function lookupPlate(
     ano: Number(year),
     powerAoVivo: consulta.planos === null ? null : consulta.planos.length > 0,
     allowlist: planoNoPowerCrm(internals.mdl),
+    // ⚠️ Marca e modelo NAO sao decorativos aqui: sao o que barra os modelos que o dono tirou
+    // (Fiat Idea, 08/09/2026). Sem eles a regra existe e nunca dispara — foi assim que um Idea
+    // ELX 2009 saiu cotado com quatro planos.
+    marca,
+    modelo,
   })
 
   if (veredicto.acao === 'nao_fazemos') {
     console.log(
-      `[plate-lookup] EXCLUIDO pelo Power placa=${normalized} mdl=${internals.mdl} mdlYr=${internals.mdlYr} motivo=${veredicto.motivo}`,
+      `[plate-lookup] EXCLUIDO placa=${normalized} mdl=${internals.mdl} mdlYr=${internals.mdlYr} motivo=${veredicto.motivo}`,
     )
     return {
       success: false,

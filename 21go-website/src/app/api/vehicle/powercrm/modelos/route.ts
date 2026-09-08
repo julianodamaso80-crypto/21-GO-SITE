@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listModelsPowerCrm } from '@/lib/powercrm-lookup'
+import { ehModeloExcluido } from '@/lib/elegibilidade.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,8 +16,11 @@ export async function GET(req: NextRequest) {
   }
   try {
     const data = await listModelsPowerCrm(marca, ano)
+    // O que o dono tirou nao chega a aparecer na lista. Barrar so na hora do preco tambem
+    // funciona, mas faz a pessoa escolher o carro pra ouvir "nao fazemos" no passo seguinte.
+    const disponiveis = data.filter((m) => !ehModeloExcluido(marca, m.text))
     // Mapeia pro formato consumido pelo FipeSelect ({code, name, codFipe})
-    const mapped = data.map((m) => ({
+    const mapped = disponiveis.map((m) => ({
       code: String(m.id),
       name: m.text,
       codFipe: m.back || null,
