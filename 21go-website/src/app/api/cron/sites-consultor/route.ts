@@ -65,6 +65,7 @@ interface Linha {
   proximo_vencimento: string | null
   asaas_subscription_id: string | null
   aviso_etapas: string | null
+  isento: boolean | null
 }
 
 export async function GET(req: NextRequest) {
@@ -79,7 +80,9 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supa
     .from('sites_consultor')
-    .select('slug, nome, whatsapp, status, proximo_vencimento, asaas_subscription_id, aviso_etapas')
+    .select(
+      'slug, nome, whatsapp, status, proximo_vencimento, asaas_subscription_id, aviso_etapas, isento',
+    )
     .in('status', ['pendente', 'ativo', 'inadimplente'])
 
   if (error) {
@@ -88,7 +91,14 @@ export async function GET(req: NextRequest) {
   }
 
   const linhas = (data || []) as Linha[]
-  const relatorio = { olhados: linhas.length, avisados: 0, cortados: 0, erros: 0, entregues: 0 }
+  const relatorio = {
+    olhados: linhas.length,
+    avisados: 0,
+    cortados: 0,
+    erros: 0,
+    entregues: 0,
+    isentos: 0,
+  }
 
   // ─── Quem pagou mas ainda nao recebeu o link ──────────────────────────────
   // Este e o "arrumar ate cair no Power ideal": enquanto o teste nao passar, o
@@ -116,6 +126,16 @@ export async function GET(req: NextRequest) {
   }
 
   for (const s of linhas) {
+    // ─── Isento: nao se cobra, nao se corta ──────────────────────────────────
+    // A conta da casa nao foi vendida — cobrar dela seria mandar aviso de
+    // vencimento pro proprio numero da 21Go e, dois dias depois, cortar o site
+    // da operacao. Sai do laco antes de qualquer ida ao Asaas: nao ha cobranca
+    // pra ler nem data pra corrigir.
+    if (s.isento) {
+      relatorio.isentos++
+      continue
+    }
+
     // ─── A verdade vem do Asaas, nao da coluna ───────────────────────────────
     // `proximo_vencimento` e uma copia, e copia envelhece: ate 15/08/2026 o
     // webhook nao a atualizava no pagamento, entao ela ficava congelada na
