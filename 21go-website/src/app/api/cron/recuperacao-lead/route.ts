@@ -38,10 +38,10 @@ export const maxDuration = 300
  *
  * ─── O alcance ───────────────────────────────────────────────────────────────
  *
- * DDD 21 sempre. Outro DDD só quando a ativação alcança R$ 500 — decisão do
- * dono em 09/09/2026. Não é regra de cobertura (a 21Go atende o Brasil inteiro
- * e nada aqui barra quem procura a gente): é a fila de quem vale procurar
- * primeiro. Ver `alcance-recuperacao.ts`.
+ * O estado do Rio inteiro (21, 22, 24). Outro DDD só quando a ativação alcança
+ * R$ 500 — decisão do dono, 09/09/2026. Não é regra de cobertura (a 21Go atende
+ * o Brasil inteiro e nada aqui barra quem procura a gente): é a fila de quem
+ * vale procurar primeiro. Ver `alcance-recuperacao.ts`.
  *
  * ─── A janela de 24h ─────────────────────────────────────────────────────────
  *
@@ -203,7 +203,7 @@ export async function GET(req: NextRequest) {
 
     const telefone = formatPhone(bruto)
 
-    /* DDD 21 sempre; fora do RJ, só quando a ativação alcança o piso. */
+    /* RJ inteiro (21, 22, 24); fora dele, só quando a ativação alcança o piso. */
     const alcance = dentroDoAlcance({
       telefone,
       marca: lead.marca_interesse,

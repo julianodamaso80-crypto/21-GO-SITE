@@ -1,6 +1,6 @@
 /**
- * Quem entra no alcance da abordagem: DDD 21, e o resto do Brasil só quando o
- * negócio paga a viagem.
+ * Quem entra no alcance da abordagem: o estado do Rio inteiro, e o resto do
+ * Brasil só quando o negócio paga a viagem.
  *
  * A 21Go atende o país inteiro — isto NÃO é regra de cobertura, e nada aqui
  * bloqueia quem procura a gente. É só o critério de quem vale a pena procurar
@@ -15,10 +15,14 @@
 import { calcActivation } from '@/data/pricing'
 import type { PlanoDaTela } from '@/lib/mensagem-recuperacao'
 
-/** O DDD de casa. Todo lead daqui é abordado, valha o que valer. */
-export const DDD_DA_CASA = '21'
+/**
+ * Casa é o estado do Rio inteiro, não só a capital: 21 (Rio e Baixada), 22
+ * (Campos, Macaé, região dos Lagos) e 24 (Volta Redonda, Petrópolis, Angra).
+ * Todo lead daqui é abordado, valha o que valer.
+ */
+export const DDDS_DO_RJ = new Set(['21', '22', '24'])
 
-/** Fora do 21, a ativação tem que alcançar isto (decisão do dono, 09/09/2026). */
+/** Fora do RJ, a ativação tem que alcançar isto (decisão do dono, 09/09/2026). */
 export const ATIVACAO_MINIMA_FORA_DO_RJ = 500
 
 /** DDD de um telefone com DDI (5521999999999 → "21"). Vazio se não der pra ler. */
@@ -62,8 +66,8 @@ export function dentroDoAlcance(input: {
   const ddd = dddDe(input.telefone)
   const ativacao = ativacaoDaSimulacao(input)
 
-  if (ddd === DDD_DA_CASA) {
-    return { dentro: true, ddd, ativacao, motivo: 'ddd 21' }
+  if (DDDS_DO_RJ.has(ddd)) {
+    return { dentro: true, ddd, ativacao, motivo: `ddd ${ddd} (RJ)` }
   }
   if (ativacao >= ATIVACAO_MINIMA_FORA_DO_RJ) {
     return { dentro: true, ddd, ativacao, motivo: `ativação R$ ${ativacao.toFixed(2)}` }
@@ -72,6 +76,6 @@ export function dentroDoAlcance(input: {
     dentro: false,
     ddd,
     ativacao,
-    motivo: `ddd ${ddd || '?'} fora do 21 e ativação R$ ${ativacao.toFixed(2)} abaixo de ${ATIVACAO_MINIMA_FORA_DO_RJ}`,
+    motivo: `ddd ${ddd || '?'} fora do RJ e ativação R$ ${ativacao.toFixed(2)} abaixo de ${ATIVACAO_MINIMA_FORA_DO_RJ}`,
   }
 }
