@@ -61,17 +61,7 @@ export function chaveDo(chip: ChipRecuperacao): string {
   return process.env[chip.envChave] || ''
 }
 
-/* ───────────────── Janela de horário ───────────────── */
-
-/** Hora de Brasília agora, como número (0–23). */
-export function horaDeBrasilia(agora = new Date()): number {
-  const h = new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    hour: '2-digit',
-    hour12: false,
-  }).format(agora)
-  return parseInt(h, 10)
-}
+/* ───────────────── O dia, pro teto diário ───────────────── */
 
 /** Data de Brasília no formato AAAA-MM-DD — a chave do teto diário. */
 export function diaDeBrasilia(agora = new Date()): string {
@@ -81,15 +71,6 @@ export function diaDeBrasilia(agora = new Date()): string {
     month: '2-digit',
     day: '2-digit',
   }).format(agora)
-}
-
-export const HORA_ABRE = 8
-export const HORA_FECHA = 20 // último envio começa às 20h59
-
-/** Mensagem comercial fora do horário comercial é denúncia fácil. */
-export function dentroDaJanela(agora = new Date()): boolean {
-  const h = horaDeBrasilia(agora)
-  return h >= HORA_ABRE && h <= HORA_FECHA
 }
 
 /* ───────────────── Rampa de aquecimento ───────────────── */

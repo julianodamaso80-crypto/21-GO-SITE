@@ -7,7 +7,6 @@ import { saudeDosChips } from '@/lib/chip-saude'
 import { dentroDoAlcance } from '@/lib/alcance-recuperacao'
 import {
   chaveDo,
-  dentroDaJanela,
   diaDeBrasilia,
   tetoDiario,
   LOTE_POR_EXECUCAO,
@@ -43,10 +42,14 @@ export const maxDuration = 300
  * o Brasil inteiro e nada aqui barra quem procura a gente): é a fila de quem
  * vale procurar primeiro. Ver `alcance-recuperacao.ts`.
  *
- * ─── A janela de 24h ─────────────────────────────────────────────────────────
+ * ─── Sem hora marcada ────────────────────────────────────────────────────────
  *
- * Só lead de até 24 horas. Passou disso, a simulação esfriou e a mensagem vira
- * abordagem fria de estranho — que é exatamente o padrão que o WhatsApp pune.
+ * Roda 24 horas por dia: quem simula de madrugada é chamado de madrugada. A
+ * janela comercial saiu por ordem do dono em 09/09/2026 — ela era uma escolha
+ * minha, vinda da pesquisa de anti-ban, e estava segurando lead.
+ *
+ * A janela de 24h de idade do lead fica, como rede: se o cron passar horas
+ * fora do ar, ele volta e ainda alcança quem estava esperando.
  */
 
 const ESPERA_MINUTOS = 5
@@ -55,14 +58,12 @@ const JANELA_HORAS = 24
 const DEDUP_DIAS = 30
 
 /**
- * Nada anterior a isto é abordado — 00h de 09/09/2026 (Brasília), o dia em que
- * a rotina entrou no ar. Decisão do dono: quem simulou antes fica onde está.
+ * Nada anterior a isto é abordado. Ordem do dono em 09/09/2026, à noite: a fila
+ * acumulada não precisa ser chamada — vale de agora em diante.
  *
- * A janela de 24h já cuidaria disso a partir de amanhã; este corte é o que
- * garante hoje, e continua valendo se alguém um dia aumentar a janela.
  * Gravado em UTC porque `created_at` é timestamp sem timezone, em UTC.
  */
-const NAO_ANTES_DE = '2026-09-09T03:00:00'
+const NAO_ANTES_DE = '2026-09-09T23:52:58'
 
 /** ISO em UTC sem sufixo — `created_at` é timestamp sem timezone, em UTC. */
 function utcSem(ms: number): string {
@@ -107,9 +108,6 @@ export async function GET(req: NextRequest) {
   const simular = new URL(req.url).searchParams.get('simular') === '1'
 
   const agora = new Date()
-  if (!dentroDaJanela(agora) && !simular) {
-    return NextResponse.json({ ok: true, pulou: 'fora_da_janela' })
-  }
 
   const supa = supabaseAdmin()
   const relatorio = {
