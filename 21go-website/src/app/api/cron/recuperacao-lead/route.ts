@@ -149,7 +149,10 @@ export async function GET(req: NextRequest) {
     .is('consultor_slug', null)
     .eq('whatsapp_clicado', false)
     .eq('follow_up_enviado', false)
-    .neq('whatsapp_valido', false)
+    // `whatsapp_valido` só é `false` pra quem o WhatsApp disse que não existe.
+    // Tem que ser `or` com `is.null`: em SQL, `!= false` descarta NULL — e NULL
+    // é justamente o estado de todo mundo que ainda não foi checado.
+    .or('whatsapp_valido.is.null,whatsapp_valido.is.true')
     .lte('created_at', utcSem(agora.getTime() - ESPERA_MINUTOS * 60_000))
     .gte('created_at', utcSem(agora.getTime() - JANELA_HORAS * 3_600_000))
     .order('created_at', { ascending: false })
