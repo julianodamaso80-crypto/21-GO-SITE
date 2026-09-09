@@ -4,6 +4,7 @@ import { sendText, sendPresence, sleep, randInt, formatPhone } from '@/lib/whats
 import { numeroExisteNoWhatsApp } from '@/lib/whatsapp-existe'
 import { montarMensagemRecuperacao, type PlanoDaTela } from '@/lib/mensagem-recuperacao'
 import { saudeDosChips } from '@/lib/chip-saude'
+import { dentroDoAlcance } from '@/lib/alcance-recuperacao'
 import {
   chaveDo,
   dentroDaJanela,
@@ -34,6 +35,13 @@ export const maxDuration = 300
  * pessoa e vira lead roubado de quem pagou pelo site. São 216 dos 993 leads dos
  * últimos 30 dias — a maior fatia que este cron deixa passar, e está certo
  * assim.
+ *
+ * ─── O alcance ───────────────────────────────────────────────────────────────
+ *
+ * DDD 21 sempre. Outro DDD só quando a ativação alcança R$ 500 — decisão do
+ * dono em 09/09/2026. Não é regra de cobertura (a 21Go atende o Brasil inteiro
+ * e nada aqui barra quem procura a gente): é a fila de quem vale procurar
+ * primeiro. Ver `alcance-recuperacao.ts`.
  *
  * ─── A janela de 24h ─────────────────────────────────────────────────────────
  *
@@ -108,6 +116,7 @@ export async function GET(req: NextRequest) {
     enviados: 0,
     semWhatsApp: 0,
     semPreco: 0,
+    foraDoAlcance: 0,
     jaAbordado: 0,
     falhas: 0,
     chips: [] as { instancia: string; saldo: number; motivo: string }[],
@@ -118,6 +127,7 @@ export async function GET(req: NextRequest) {
     telefone: string
     chip: string
     numeroNoWhatsApp: string
+    alcance: string
     mensagem: string
   }[] = []
 
@@ -193,6 +203,18 @@ export async function GET(req: NextRequest) {
 
     const telefone = formatPhone(bruto)
 
+    /* DDD 21 sempre; fora do RJ, só quando a ativação alcança o piso. */
+    const alcance = dentroDoAlcance({
+      telefone,
+      marca: lead.marca_interesse,
+      planos: lead.cotacao_planos,
+      valorEscolhido: lead.cotacao_valor,
+    })
+    if (!alcance.dentro) {
+      relatorio.foraDoAlcance++
+      continue
+    }
+
     /* Mesmo telefone já abordado? Uma vez por pessoa, não uma por simulação. */
     const { count: jaFalamos } = await supa
       .from('leads')
@@ -252,6 +274,7 @@ export async function GET(req: NextRequest) {
         telefone,
         chip: emUso.chip.instancia,
         numeroNoWhatsApp: existe,
+        alcance: alcance.motivo,
         mensagem,
       })
       relatorio.enviados++
