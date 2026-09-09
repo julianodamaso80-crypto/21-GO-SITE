@@ -46,9 +46,24 @@ const JANELA_HORAS = 24
 /** Não abordar duas vezes o mesmo telefone dentro desse prazo. */
 const DEDUP_DIAS = 30
 
+/**
+ * Nada anterior a isto é abordado — 00h de 09/09/2026 (Brasília), o dia em que
+ * a rotina entrou no ar. Decisão do dono: quem simulou antes fica onde está.
+ *
+ * A janela de 24h já cuidaria disso a partir de amanhã; este corte é o que
+ * garante hoje, e continua valendo se alguém um dia aumentar a janela.
+ * Gravado em UTC porque `created_at` é timestamp sem timezone, em UTC.
+ */
+const NAO_ANTES_DE = '2026-09-09T03:00:00'
+
 /** ISO em UTC sem sufixo — `created_at` é timestamp sem timezone, em UTC. */
 function utcSem(ms: number): string {
   return new Date(ms).toISOString().replace('Z', '')
+}
+
+/** O mais recente entre dois instantes ISO — ordem lexicográfica basta aqui. */
+function maisRecente(a: string, b: string): string {
+  return a > b ? a : b
 }
 
 interface LeadElegivel {
@@ -154,7 +169,10 @@ export async function GET(req: NextRequest) {
     // é justamente o estado de todo mundo que ainda não foi checado.
     .or('whatsapp_valido.is.null,whatsapp_valido.is.true')
     .lte('created_at', utcSem(agora.getTime() - ESPERA_MINUTOS * 60_000))
-    .gte('created_at', utcSem(agora.getTime() - JANELA_HORAS * 3_600_000))
+    .gte('created_at', maisRecente(
+      utcSem(agora.getTime() - JANELA_HORAS * 3_600_000),
+      NAO_ANTES_DE,
+    ))
     .order('created_at', { ascending: false })
     .limit(20)
 
