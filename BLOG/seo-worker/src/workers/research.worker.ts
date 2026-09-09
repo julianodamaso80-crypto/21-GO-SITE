@@ -12,6 +12,7 @@ import { insertRecommendation } from '../db/repositories/indexing.js';
 import { lexicalOverlap } from '../lib/similarity.js';
 import { agent01 } from '../agents/01-keyword-research.js';
 import { agent02 } from '../agents/02-seo-strategist.js';
+import { agent03 } from '../agents/03-anti-repetition.js';
 import { agent04 } from '../agents/04-briefing.js';
 import type { TopicRow } from '../db/repositories/topics.js';
 
@@ -23,12 +24,18 @@ interface JobData {
   dry_run?: boolean;
   /** Sprint 6: refill focado em uma categoria especifica (carros/motos/frotas) */
   focus_category?: 'carros' | 'motos' | 'frotas' | 'educativo';
+  /** Categorias carentes que dispararam o refill — priorizam o reaproveitamento de pautas orfas. */
+  categorias?: string[];
+  /** Teto de pautas orfas briefadas nesta execucao (0 desliga). */
+  orfas_limit?: number;
 }
 
 interface WorkerResult {
   keywords_inserted: number;
   topics_approved: number;
   briefings_created: number;
+  /** Briefings gerados a partir de pautas aprovadas em lotes anteriores. */
+  briefings_de_orfas: number;
   /** Pautas duplicadas roteadas pro Agente 14 (refresh) em vez de virar artigo canibal. */
   refresh_queued: number;
   total_cost_usd: number;
@@ -160,10 +167,105 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
     }
   }
 
+
+  // ===== Pautas aprovadas que ficaram sem briefing =====
+  // O Agente 04 acima so roda nos topics aprovados DESTE lote. Pauta aprovada num
+  // lote anterior e nao briefada no mesmo dia ficava presa pra sempre: em 09/09/2026
+  // eram 202 topics nessa situacao (56 deles BYD) enquanto o daily reclamava todo dia
+  // "slot obrigatorio sem briefing disponivel" e o Agente 01 gastava DataForSEO pra
+  // trazer keyword nova. Aqui o estoque ja pago volta pra esteira.
+  //
+  // Elas foram aprovadas ha semanas, entao o corpus mudou: cada uma passa de novo pelo
+  // Agente 03 (embedder local, custo zero). Se hoje canibaliza um artigo que ja existe,
+  // vira refresh do artigo em vez de briefing — mesmo roteamento das duplicadas do lote.
+  const alvoOrfas = job.data.orfas_limit ?? 12;
+  let orfas_briefadas = 0;
+  let orfas_viraram_refresh = 0;
+  if (!dry_run && alvoOrfas > 0) {
+    const { listApprovedWithoutBriefing, updateDecision } = await import('../db/repositories/topics.js');
+    const candidatas = await listApprovedWithoutBriefing(alvoOrfas * 5, job.data.categorias);
+    const titulosDoLote = [...approvedTitles];
+
+    for (const topic of candidatas) {
+      if (orfas_briefadas >= alvoOrfas) break;
+      try {
+        const irma = titulosDoLote.find((t) => lexicalOverlap(topic.title, t) >= 0.5);
+        if (irma) {
+          log.info({ titulo: topic.title, colide_com: irma }, 'pauta orfa irma no mesmo lote — adiada');
+          continue;
+        }
+
+        const antiRep = await agent03.run(
+          {
+            title: topic.title,
+            main_keyword: topic.main_keyword_text ?? topic.title,
+            category: topic.category,
+            intent: topic.intent ?? undefined,
+          },
+          ctx,
+        );
+        const canibal = antiRep.output.cannibal_with;
+        const colisaoSlug = antiRep.output.slug_collision;
+
+        if (canibal || colisaoSlug) {
+          const alvoArtigo = canibal?.article_id ?? colisaoSlug!.article_id;
+          const motivo = canibal
+            ? `canibal com "${canibal.title}" (similarity ${canibal.similarity.toFixed(3)})`
+            : `slug ja existe: ${colisaoSlug!.slug}`;
+          await updateDecision(topic.id, 'ATUALIZAR_ARTIGO_EXISTENTE', `revalidada no reaproveitamento: ${motivo}`, {
+            anti_repetition_score: antiRep.output.anti_repetition_score,
+            target_article_id: alvoArtigo,
+          });
+          await insertRecommendation({
+            type: 'expand_content',
+            article_id: alvoArtigo,
+            priority: 3,
+            recommendation: topic.title,
+            reason: `pauta antiga sem briefing revalidada — ${motivo}`,
+            data: { angle: topic.title, topic_id: topic.id, source: 'research:orfas' },
+          });
+          orfas_viraram_refresh++;
+          refreshQueued++;
+          log.info({ titulo: topic.title, motivo }, 'pauta orfa canibalizou — virou refresh');
+          continue;
+        }
+
+        const r = await withRun(
+          { agent_id: '04-briefing', triggered_by: 'research:orfas', input: { topic_id: topic.id } },
+          async () => {
+            const res = await agent04.run({ topic }, ctx);
+            total_cost += res.output.llm_cost_usd ?? 0;
+            return {
+              result: res,
+              finish: {
+                output: { briefing_id: res.output.briefing_id },
+                llm_provider: 'anthropic',
+                llm_cost_usd: res.output.llm_cost_usd ?? 0,
+              },
+            };
+          },
+        );
+        if (r.output.briefing_id) {
+          orfas_briefadas++;
+          briefings++;
+          titulosDoLote.push(topic.title);
+        }
+      } catch (e) {
+        errors.push(`orfa topic=${topic.id}: ${(e as Error).message}`);
+      }
+    }
+
+    log.info(
+      { candidatas: candidatas.length, briefadas: orfas_briefadas, viraram_refresh: orfas_viraram_refresh },
+      'reaproveitamento de pautas sem briefing',
+    );
+  }
+
   const result: WorkerResult = {
     keywords_inserted: keywordsResult.output.inserted,
     topics_approved: approvedTopicIds.length,
     briefings_created: briefings,
+    briefings_de_orfas: orfas_briefadas,
     refresh_queued: refreshQueued,
     total_cost_usd: Number(total_cost.toFixed(6)),
     errors,

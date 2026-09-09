@@ -24,6 +24,9 @@ const RunBody = z.object({
   // publicacao em lote (manual): afrouxa o teto por categoria do write worker
   lote: z.boolean().optional(),
   teto_por_categoria: z.number().int().positive().max(10).optional(),
+  // /runs/weekly: dirige o reaproveitamento de pautas aprovadas que ficaram sem briefing
+  categorias: z.array(z.enum(['carros', 'motos', 'frotas', 'byd', 'educativo'])).optional(),
+  orfas_limit: z.number().int().min(0).max(40).optional(),
 }).strict();
 
 export async function runsRoutes(app: FastifyInstance): Promise<void> {
@@ -35,7 +38,13 @@ export async function runsRoutes(app: FastifyInstance): Promise<void> {
 
     const job = await queueResearch.add(
       'manual-weekly-research',
-      { triggered_by: 'manual', limit: body.data.limit ?? config.WEEKLY_KEYWORD_LIMIT, dry_run: body.data.dry_run ?? false },
+      {
+        triggered_by: 'manual',
+        limit: body.data.limit ?? config.WEEKLY_KEYWORD_LIMIT,
+        dry_run: body.data.dry_run ?? false,
+        categorias: body.data.categorias,
+        orfas_limit: body.data.orfas_limit,
+      },
     );
     log.info({ jobId: job.id }, 'manual weekly disparado');
     return reply.code(202).send({ enqueued: 'seo-research', jobId: job.id });

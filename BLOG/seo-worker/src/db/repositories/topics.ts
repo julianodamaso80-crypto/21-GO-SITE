@@ -93,3 +93,42 @@ export async function listApproved(limit = 10): Promise<TopicRow[]> {
 export async function getById(id: string): Promise<TopicRow | null> {
   return queryOne<TopicRow>(`SELECT * FROM seo.topics WHERE id=$1`, [id]);
 }
+
+/**
+ * Pautas aprovadas que nunca ganharam briefing.
+ *
+ * O Agente 04 so rodava nos topics aprovados DO LOTE da vez: pauta aprovada num
+ * lote e nao briefada no mesmo dia ficava presa pra sempre. Em 09/09/2026 havia
+ * 202 topics nessa situacao (56 deles BYD) enquanto o daily reclamava todo dia
+ * "slot obrigatorio sem briefing disponivel". Estoque ja pago, parado.
+ *
+ * Ordena pelo volume de busca da keyword — aproveita primeiro o que vale mais.
+ */
+export interface TopicSemBriefing extends TopicRow {
+  /** Texto da keyword principal — o Agente 03 precisa dele pra montar o probe. */
+  main_keyword_text: string | null;
+}
+
+export async function listApprovedWithoutBriefing(
+  limit: number,
+  categories?: string[],
+): Promise<TopicSemBriefing[]> {
+  const params: unknown[] = [config.COMPANY_ID, limit];
+  let filtroCat = '';
+  if (categories && categories.length > 0) {
+    params.push(categories);
+    filtroCat = `AND t.category = ANY($3::text[])`;
+  }
+  return query<TopicSemBriefing>(
+    `SELECT t.*, k.keyword AS main_keyword_text FROM seo.topics t
+     LEFT JOIN seo.briefings b ON b.topic_id = t.id
+     LEFT JOIN seo.keywords k ON k.id = t.main_keyword_id
+     WHERE t.company_id=$1
+       AND t.decision='APROVAR_ARTIGO_NOVO'
+       AND b.id IS NULL
+       ${filtroCat}
+     ORDER BY COALESCE(k.search_volume, 0) DESC, t.created_at DESC
+     LIMIT $2`,
+    params,
+  );
+}

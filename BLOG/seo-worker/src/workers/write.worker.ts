@@ -139,7 +139,7 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
       const { queueResearch } = await import('../queue.js');
       await queueResearch.add(
         'refill-consolidado',
-        { limit: 20, triggered_by: `refill:${catsSemEstoque.join('+')}` },
+        { limit: 20, triggered_by: `refill:${catsSemEstoque.join('+')}`, categorias: catsSemEstoque },
         { jobId: `refill-${new Date().toISOString().slice(0, 10)}` }, // 1x por dia, idempotente
       );
     } catch (e) {
