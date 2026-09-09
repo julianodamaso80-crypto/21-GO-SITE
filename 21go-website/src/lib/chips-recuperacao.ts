@@ -30,6 +30,14 @@ export interface ChipRecuperacao {
   envChave: string
   /** Dia em que o chip entrou nesta rota (ISO). Base da rampa de aquecimento. */
   entrouEm: string
+  /**
+   * Chip com histórico real de conversa já está aquecido — a rampa não se
+   * aplica. `disparo_xHH2aIEs_site21go` tem 84 mil mensagens e manda mais de
+   * cem por dia no atendimento normal; tratá-lo como número novo só deixaria
+   * lead sem resposta. Chip novo (`Leticya_Boletos`, 348 mensagens) sobe pela
+   * rampa, que é onde o risco de verdade mora.
+   */
+  aquecido: boolean
 }
 
 export const CHIPS: ChipRecuperacao[] = [
@@ -38,12 +46,14 @@ export const CHIPS: ChipRecuperacao[] = [
     numero: '5521980214882',
     envChave: 'EVOLUTION_KEY_DISPARO',
     entrouEm: '2026-09-09',
+    aquecido: true,
   },
   {
     instancia: 'Leticya_Boletos',
     numero: '5521969620781',
     envChave: 'EVOLUTION_KEY_BOLETOS',
     entrouEm: '2026-09-09',
+    aquecido: false,
   },
 ]
 
@@ -89,6 +99,7 @@ export function dentroDaJanela(agora = new Date()): boolean {
  * Sobe devagar: o peso do risco está nos primeiros dias de um número novo.
  */
 export function tetoDiario(chip: ChipRecuperacao, agora = new Date()): number {
+  if (chip.aquecido) return TETO_CHIP_AQUECIDO
   const inicio = new Date(`${chip.entrouEm}T00:00:00-03:00`).getTime()
   const dias = Math.floor((agora.getTime() - inicio) / 86_400_000)
   if (dias < 0) return 0
@@ -97,10 +108,17 @@ export function tetoDiario(chip: ChipRecuperacao, agora = new Date()): number {
   return 30
 }
 
+/**
+ * Teto de um chip já aquecido. Dimensionado pela demanda real: ~21 leads por
+ * dia entram no alcance, e o dono quer falar com todos. A folga cobre o pico
+ * sem virar disparo em massa.
+ */
+export const TETO_CHIP_AQUECIDO = 45
+
 /* ───────────────── Ritmo ───────────────── */
 
 /** Quantos leads no máximo por execução do cron (roda de 5 em 5 minutos). */
-export const LOTE_POR_EXECUCAO = 2
+export const LOTE_POR_EXECUCAO = 3
 
 /** Intervalo entre dois envios da mesma execução, em milissegundos. */
 export const INTERVALO_MIN_MS = 30_000
