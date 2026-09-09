@@ -57,12 +57,18 @@ export interface SimilarityHit {
  */
 const TERMOS_ONIPRESENTES = new Set([
   'protecao', 'proteger', 'proteja', 'protege', 'veicular', 'veiculo', 'veiculos', 'patrimonial',
+  'carro', 'carros',
   'rj', 'rio', 'janeiro', '21go', '21', 'go',
   'guia', 'completo', 'completa', 'tudo', 'sobre', 'entenda', 'saiba', 'conheca', 'dicas',
   'seu', 'sua', 'seus', 'suas', 'para', 'com', 'como', 'que', 'quais', 'qual', 'the',
   'no', 'na', 'nos', 'nas', 'de', 'do', 'da', 'dos', 'das', 'em', 'um', 'uma', 'os', 'as',
   'e', 'o', 'a', 'ou', 'se', 'ao', 'aos', 'por', 'pra', 'pro', 'mais', 'menos',
   '2024', '2025', '2026', '2027',
+  // Termos do cluster BYD: aparecem em quase todo titulo de eletrico, entao contavam
+  // como "distintivo" e faziam "Guincho de Carro Eletrico" parecer irmao de "Protecao
+  // Veicular para Carro Eletrico Uber" (lexical 0.67, acima do 0.50 de pares que sao
+  // canibais de verdade). Mesmo motivo de 'protecao'/'veicular' estarem nesta lista.
+  'eletrico', 'eletricos', 'eletrica', 'eletricas', 'hibrido', 'hibridos',
 ]);
 
 function tokensDistintivos(s: string): Set<string> {
