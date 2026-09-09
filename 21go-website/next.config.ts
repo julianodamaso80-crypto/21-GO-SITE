@@ -66,6 +66,18 @@ const BLOG_CONSOLIDACOES = Object.entries({
   // a keyword inteira ("protecao veicular sem adesao") promete o que nao existe.
   'protecao-veicular-sem-adesao-no-rj-economia-e-seguranca':
     'quanto-custa-protecao-veicular',
+  // -- duplicatas de 09/09: artigo escrito a mao x artigo da esteira sobre o MESMO
+  //    tema. O guard anti-canibalizacao nao pegou porque artigo escrito a mao nao
+  //    entra em seo.articles, entao o Agente 03 nunca o compara. Quem fica em cada
+  //    par foi decidido pelo GSC, nao pelo texto:
+  //      ipva  -> o escrito a mao (202 impressoes / 12 cliques / pos 6.4)
+  //               contra 105 / 3 / 8.7 do da esteira
+  //      crlv  -> o da esteira (149 / 20 cliques / pos 8.0)
+  //               contra 327 impressoes e ZERO clique do escrito a mao
+  'ipva-atrasado-rj-multas-juros-e-regularizacao-de-veiculos-2':
+    'ipva-atrasado-rj-multa-juros-e-como-regularizar',
+  'crlv-digital-rj-como-emitir-e-baixar-passo-a-passo':
+    'crlv-digital-rj-guia-completo-para-imprimir-e-utilizar',
 }).map(([de, para]) => ({
   source: `/blog/${de}`,
   destination: `/blog/${para}`,

@@ -98,6 +98,7 @@ async function main(): Promise<void> {
 
   let imported = 0;
   let updated = 0;
+  let skipped = 0;
   let embeddings_generated = 0;
   let errors = 0;
   const byCategory: Record<string, number> = { carros: 0, motos: 0, frotas: 0, educativo: 0 };
@@ -115,26 +116,20 @@ async function main(): Promise<void> {
       );
 
       if (existing) {
-        byCategory[post.category] = (byCategory[post.category] ?? 0) + 1;
-        // Update sem regenerar embedding (mantem o existente)
-        await exec(
-          `UPDATE seo.articles SET
-             title=$2, meta_description=$3, category=$4,
-             main_keyword=$5, secondary_keywords=$6,
-             mdx_path=$7, word_count=$8, read_time_min=$9,
-             status='published', published_at=COALESCE(published_at, $10::timestamptz)
-           WHERE id=$1`,
-          [
-            existing.id, post.title, post.description, post.category,
-            post.main_keyword, post.secondary_keywords,
-            post.mdx_path, post.word_count, post.read_time_min,
-            post.date + 'T00:00:00Z',
-          ],
-        );
-        updated++;
-        byCategory[post.category] = (byCategory[post.category] ?? 0) + 1;
-        logger.debug({ slug: post.slug, category: post.category }, 'updated');
-      } else {
+        // Artigo que a esteira ja conhece: NAO tocar.
+        //
+        // A versao anterior fazia UPDATE de title/category/status. Isso quebrava duas
+        // coisas de uma vez: a heuristica local so tem 4 categorias e nao conhece 'byd',
+        // entao os ~30 artigos do cluster eletrico voltavam como 'carros' e a cota
+        // diaria de BYD parava de ser contada; e o status voltava pra 'published',
+        // ressuscitando artigo arquivado numa consolidacao 301.
+        //
+        // O objetivo do script e um so: dar embedding ao artigo escrito a mao, que
+        // nunca passou pela esteira e por isso e invisivel pro Agente 03.
+        skipped++;
+        continue;
+      }
+      {
         // Insert + embedding novo
         const inserted = await queryOne<{ id: string }>(
           `INSERT INTO seo.articles
@@ -189,6 +184,7 @@ async function main(): Promise<void> {
     mdx_files: mdxFiles.length,
     inserted: imported,
     updated,
+    skipped,
     embeddings_generated,
     errors,
     by_category: byCategory,
