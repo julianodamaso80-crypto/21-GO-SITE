@@ -149,11 +149,18 @@ export async function GET(req: NextRequest) {
       .eq('evolution_instance', s.chip.instancia)
       .gte('follow_up_data', inicioDoDia)
 
-    const saldo = tetoDiario(s.chip, agora) - (count || 0)
+    // Em simulação o teto do dia não vale: ela não envia nada, e serve
+    // justamente pra conferir a fila e o texto a qualquer hora — inclusive
+    // depois de o chip ter fechado a cota.
+    const saldo = simular
+      ? LOTE_POR_EXECUCAO
+      : tetoDiario(s.chip, agora) - (count || 0)
     relatorio.chips.push({
       instancia: s.chip.instancia,
       saldo: Math.max(0, saldo),
-      motivo: saldo > 0 ? 'ok' : 'teto do dia atingido',
+      motivo: simular
+        ? `simulação (enviados hoje: ${count || 0}/${tetoDiario(s.chip, agora)})`
+        : saldo > 0 ? 'ok' : 'teto do dia atingido',
     })
     if (saldo > 0) disponiveis.push({ chip: s.chip, saldo, falhas: 0 })
   }
