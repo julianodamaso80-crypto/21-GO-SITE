@@ -1,0 +1,110 @@
+/**
+ * Os chips que falam com o lead que simulou e não clicou em "Quero contratar".
+ *
+ * ─── Por que não é o chip do site ────────────────────────────────────────────
+ *
+ * `site4824` é o número que ATENDE quem clica. Se ele também fizesse a
+ * abordagem fria, um bloqueio de quem não gostou da mensagem derrubaria o
+ * número que recebe todo mundo que clicou — o canal que funciona. Abordagem
+ * fria e atendimento moram em chips diferentes de propósito.
+ *
+ * ─── Os limites não são decoração ────────────────────────────────────────────
+ *
+ * O que o WhatsApp pesa em 2026 é comportamento, não a biblioteca: taxa de
+ * bloqueio, proporção de resposta, distância no grafo de contatos e
+ * regularidade robótica de horário. Daí a janela comercial, o teto por dia com
+ * rampa de aquecimento, o intervalo aleatório e o disjuntor por falha.
+ *
+ * `Leticya_Boletos` tinha 348 mensagens no histórico quando entrou aqui — é
+ * chip praticamente novo, e número novo é o que mais cai nos primeiros dias.
+ * Por isso a rampa vale por chip, contada a partir da entrada dele nesta rota.
+ */
+
+/** Um chip do rodízio. A chave nunca fica no repositório. */
+export interface ChipRecuperacao {
+  /** Nome da instância na Evolution. */
+  instancia: string
+  /** Só pra log e diagnóstico — quem assina a mensagem. */
+  numero: string
+  /** Env que guarda a chave da instância. */
+  envChave: string
+  /** Dia em que o chip entrou nesta rota (ISO). Base da rampa de aquecimento. */
+  entrouEm: string
+}
+
+export const CHIPS: ChipRecuperacao[] = [
+  {
+    instancia: 'disparo_xHH2aIEs_site21go',
+    numero: '5521980214882',
+    envChave: 'EVOLUTION_KEY_DISPARO',
+    entrouEm: '2026-09-09',
+  },
+  {
+    instancia: 'Leticya_Boletos',
+    numero: '5521969620781',
+    envChave: 'EVOLUTION_KEY_BOLETOS',
+    entrouEm: '2026-09-09',
+  },
+]
+
+export function chaveDo(chip: ChipRecuperacao): string {
+  return process.env[chip.envChave] || ''
+}
+
+/* ───────────────── Janela de horário ───────────────── */
+
+/** Hora de Brasília agora, como número (0–23). */
+export function horaDeBrasilia(agora = new Date()): number {
+  const h = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    hour12: false,
+  }).format(agora)
+  return parseInt(h, 10)
+}
+
+/** Data de Brasília no formato AAAA-MM-DD — a chave do teto diário. */
+export function diaDeBrasilia(agora = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(agora)
+}
+
+export const HORA_ABRE = 8
+export const HORA_FECHA = 20 // último envio começa às 20h59
+
+/** Mensagem comercial fora do horário comercial é denúncia fácil. */
+export function dentroDaJanela(agora = new Date()): boolean {
+  const h = horaDeBrasilia(agora)
+  return h >= HORA_ABRE && h <= HORA_FECHA
+}
+
+/* ───────────────── Rampa de aquecimento ───────────────── */
+
+/**
+ * Quantas mensagens este chip pode mandar hoje.
+ * Sobe devagar: o peso do risco está nos primeiros dias de um número novo.
+ */
+export function tetoDiario(chip: ChipRecuperacao, agora = new Date()): number {
+  const inicio = new Date(`${chip.entrouEm}T00:00:00-03:00`).getTime()
+  const dias = Math.floor((agora.getTime() - inicio) / 86_400_000)
+  if (dias < 0) return 0
+  if (dias < 3) return 8
+  if (dias < 7) return 15
+  return 30
+}
+
+/* ───────────────── Ritmo ───────────────── */
+
+/** Quantos leads no máximo por execução do cron (roda de 5 em 5 minutos). */
+export const LOTE_POR_EXECUCAO = 2
+
+/** Intervalo entre dois envios da mesma execução, em milissegundos. */
+export const INTERVALO_MIN_MS = 30_000
+export const INTERVALO_MAX_MS = 90_000
+
+/** Falhas seguidas no mesmo chip antes de tirá-lo desta rodada. */
+export const FALHAS_ATE_DESLIGAR = 3

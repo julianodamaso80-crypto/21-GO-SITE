@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { trackCotacaoInicio, trackCotacaoCompleta, trackPedidoOrcamento, trackWhatsAppClick, trackPageView, getTrackingData } from '@/lib/tracking'
 import { useConsultor } from '@/components/ConsultorProvider'
 import { getIndicacao } from '@/lib/cookies'
+import { validarFormatoWhatsApp } from '@/lib/whatsapp-numero'
 import {
   ArrowRight,
   ArrowLeft,
@@ -103,14 +104,13 @@ function cleanPhone(v: string): string {
 }
 
 /** Valida WhatsApp: DDD (11-99) + 9 dígitos começando com 9 */
+/**
+ * Formato do celular. A lista de DDDs que existem de fato e a checagem de
+ * sequência repetida moram em `whatsapp-numero.ts`, compartilhadas com o
+ * servidor — o número que passa daqui é o mesmo que o cron vai tentar abordar.
+ */
 function isValidWhatsApp(v: string): string | null {
-  const digits = v.replace(/\D/g, '')
-  if (digits.length < 11) return 'WhatsApp incompleto. Informe DDD + 9 dígitos'
-  const ddd = parseInt(digits.slice(0, 2))
-  if (ddd < 11 || ddd > 99) return 'DDD inválido'
-  if (digits[2] !== '9') return 'Celular deve começar com 9 depois do DDD'
-  if (digits.length !== 11) return 'WhatsApp incompleto. Informe DDD + 9 dígitos'
-  return null // válido
+  return validarFormatoWhatsApp(v)
 }
 
 function maskPlaca(v: string) {
@@ -687,8 +687,40 @@ export default function CotacaoPage() {
     }
   }
 
+  /**
+   * O número existe no WhatsApp? Pergunta feita uma vez, no submit.
+   * Só barra quando a resposta é um "não existe" explícito — se a checagem
+   * falhar ou demorar, o cliente segue. Formulário travado por indisponibilidade
+   * nossa custa mais caro que o número errado que isto evita.
+   */
+  async function whatsappExiste(): Promise<boolean> {
+    try {
+      const ctrl = new AbortController()
+      const timeout = setTimeout(() => ctrl.abort(), 8000)
+      const res = await fetch(`${API_BASE}/api/vehicle/valida-whatsapp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ whatsapp: form.whatsapp }),
+        signal: ctrl.signal,
+      })
+      clearTimeout(timeout)
+      const data = await res.json()
+      if (data?.bloqueia) {
+        setErrors(e => ({ ...e, whatsapp: data.erro || 'Confira seu WhatsApp' }))
+        return false
+      }
+      return true
+    } catch {
+      return true
+    }
+  }
+
   async function next() {
     if (!validate()) return
+    setLoading(true)
+    const numeroOk = await whatsappExiste()
+    setLoading(false)
+    if (!numeroOk) return
     // Fluxo único: PowerCRM (marca/ano/modelo). Placa é opcional, vai junto se preenchida.
     await handlePowerCrmQuote()
   }
