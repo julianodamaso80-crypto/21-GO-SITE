@@ -23,6 +23,7 @@
  */
 
 import crypto from 'crypto'
+import { ativacaoDaSimulacao } from '@/lib/alcance-recuperacao'
 
 export interface PlanoDaTela {
   id: string
@@ -64,10 +65,10 @@ const SAUDACOES: ((n: string) => string)[] = [
 
 const INTROS: ((v: string, p: string) => string)[] = [
   (v, p) => `Aqui é da 21Go. Vi que você fez uma simulação ${p} *${v}* no nosso site.`,
-  (v, p) => `Quem fala é do time da 21Go — você simulou ${p} *${v}* aqui com a gente.`,
+  (v, p) => `Quem fala é do time da 21Go — você fez a simulação ${p} *${v}* aqui com a gente.`,
   (v, p) => `Aqui é da 21Go 🙂 Sua simulação ${p} *${v}* ficou registrada com a gente.`,
   (v, p) => `Sou do time da 21Go. Você deixou uma cotação ${p} *${v}* no nosso site.`,
-  (v, p) => `Aqui quem fala é da 21Go. Passou pelo site e simulou ${p} *${v}*, né?`,
+  (v, p) => `Aqui quem fala é da 21Go. Você passou pelo site e fez a cotação ${p} *${v}*, né?`,
 ]
 
 const VALORES: ((n: string, m: string) => string)[] = [
@@ -75,6 +76,19 @@ const VALORES: ((n: string, m: string) => string)[] = [
   (n, m) => `💙 *${n}* — *R$ ${m}/mês*, do jeitinho que apareceu na tela.`,
   (n, m) => `📌 O valor que apareceu pra você: *${n}*, *R$ ${m}/mês*.`,
   (n, m) => `Sua mensalidade no *${n}* deu *R$ ${m}*.`,
+  (n, m) => `✅ *${n}*: mensalidade de *R$ ${m}*.`,
+]
+
+/**
+ * A ativação (adesão), sempre à vista — o parcelamento saiu dos sites em
+ * 25/08/2026 e só sobrevive em consultor específico, que não entra aqui.
+ */
+const ATIVACOES: ((a: string) => string)[] = [
+  (a) => `✅ *Ativação*: R$ ${a} à vista (paga uma vez só).`,
+  (a) => `📄 A *adesão* fica em *R$ ${a}* à vista — é uma vez só, não se repete.`,
+  (a) => `💳 *Ativação*: *R$ ${a}* à vista.`,
+  (a) => `E a *ativação* é *R$ ${a}*, à vista e uma única vez.`,
+  (a) => `📌 *Adesão*: R$ ${a} à vista.`,
 ]
 
 const FECHOS: string[] = [
@@ -130,6 +144,16 @@ export function montarMensagemRecuperacao(d: DadosRecuperacao): string | null {
   if (d.placa) linhas.push(``, `Placa *${d.placa}*.`)
 
   linhas.push(``, pick(VALORES, d.seed, 'valor')(plano.nome, brl(plano.valor)))
+
+  // Ativação pela regra oficial, com o MESMO plano de referência da tela.
+  const ativacao = ativacaoDaSimulacao({
+    marca: d.marca,
+    planos: d.planos,
+    valorEscolhido: d.valorEscolhido,
+  })
+  if (ativacao > 0) {
+    linhas.push(pick(ATIVACOES, d.seed, 'ativacao')(brl(ativacao)))
+  }
 
   if (d.linkPdf) {
     linhas.push(``, `Sua simulação completa: ${d.linkPdf}`)

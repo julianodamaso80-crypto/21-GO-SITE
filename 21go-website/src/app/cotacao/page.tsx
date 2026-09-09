@@ -346,21 +346,40 @@ export default function CotacaoPage() {
     setOrigin(window.location.origin)
   }, [])
 
-  // Helper: notify WhatsApp click to API (legado + backend/CRM com envio imediato de PDF)
+  /**
+   * Avisa que o cliente clicou em "Quero contratar".
+   *
+   * `sendBeacon`, não `fetch`: o clique abre o WhatsApp e o navegador do celular
+   * vai pro segundo plano no mesmo instante — requisição em voo nessa hora é
+   * descartada, e o clique some. O beacon existe pra exatamente este caso: o
+   * navegador se compromete a entregar mesmo depois da página sair de cena.
+   *
+   * Isso não é métrica, é decisão: quem clicou está conversando, e é esse
+   * registro que impede o cron de recuperação de abordar quem já está na mão do
+   * atendimento.
+   */
   const notifyWhatsAppClick = useCallback(() => {
     whatsappClicked.current = true
-    // Tracking legado (in-memory no Next — mantido por compat)
-    fetch('/api/whatsapp-clicked', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadId, whatsapp: form.whatsapp }),
-    }).catch(() => {})
-    // Backend CRM: cancela follow-up agendado e dispara envio imediato do PDF
-    if (leadId) {
-      fetch(`${API_BASE}/api/vehicle/lead/${leadId}/whatsapp-click`, {
+
+    const avisar = (url: string, corpo: unknown) => {
+      const dados = JSON.stringify(corpo)
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        const ok = navigator.sendBeacon(url, new Blob([dados], { type: 'application/json' }))
+        if (ok) return
+      }
+      // Sem beacon: `keepalive` é o que mais perto chega disso no fetch.
+      fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: dados,
+        keepalive: true,
       }).catch(() => {})
+    }
+
+    avisar('/api/whatsapp-clicked', { leadId, whatsapp: form.whatsapp })
+    // Backend CRM: cancela follow-up agendado e dispara envio imediato do PDF
+    if (leadId) {
+      avisar(`${API_BASE}/api/vehicle/lead/${leadId}/whatsapp-click`, { leadId })
     }
   }, [leadId, form.whatsapp])
 
