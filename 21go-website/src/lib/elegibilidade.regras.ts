@@ -81,6 +81,8 @@ export function ehBydDeLeilao(
 const MODELOS_EXCLUIDOS: { nome: string; padrao: RegExp }[] = [
   // O dono escreveu "ideia"; a Fiat escreve "Idea". As duas grafias barram.
   { nome: 'Fiat Idea', padrao: /\bide(i)?a\b/i },
+  // 10/09/2026, com um Meriva Maxx 1.4 2012 na mao: "nenhum meriva faz ... tirar de todos site".
+  { nome: 'Chevrolet Meriva', padrao: /\bmeriva\b/i },
 ]
 
 /** O veiculo esta na lista de excluidos? Vale acima da resposta do Power. */

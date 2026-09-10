@@ -55,6 +55,35 @@ test('a exclusao vence o Power, igual ao corte de ano e ao BYD de leilao', () =>
   assert.deepEqual(v, { acao: 'nao_fazemos', motivo: 'modelo_excluido' })
 })
 
+/*
+ * Chevrolet Meriva: ordem do dono em 10/09/2026, com um Meriva Maxx 1.4 2012 na mao —
+ * "nenhum meriva faz".
+ */
+
+test('o Meriva do print: cotado pelo Power, barrado aqui', () => {
+  assert.deepEqual(
+    decidirElegibilidade({
+      ano: 2012,
+      powerAoVivo: true,
+      allowlist: true,
+      marca: 'GM - Chevrolet',
+      modelo: 'Meriva Maxx 1.4 MPFI 8V ECONOFLEX 5p',
+    }),
+    { acao: 'nao_fazemos', motivo: 'modelo_excluido' },
+  )
+})
+
+test('qualquer Meriva barra, com ou sem marca separada', () => {
+  assert.equal(ehModeloExcluido('Chevrolet', 'MERIVA JOY 1.8 MPFI 8V FLEXPOWER'), true)
+  assert.equal(ehModeloExcluido(null, 'GM - Chevrolet Meriva Premium 1.8 Easytronic'), true)
+})
+
+test('outros Chevrolet continuam passando', () => {
+  assert.equal(ehModeloExcluido('GM - Chevrolet', 'Onix 1.0 Flex 8V 5p'), false)
+  assert.equal(ehModeloExcluido('GM - Chevrolet', 'Spin LTZ 1.8'), false)
+  assert.equal(ehModeloExcluido('GM - Chevrolet', 'Corsa Hatch Maxx 1.4'), false)
+})
+
 test('Power mudo com modelo excluido: barra antes de mandar pro consultor', () => {
   const v = decidirElegibilidade({
     ano: 2015,
