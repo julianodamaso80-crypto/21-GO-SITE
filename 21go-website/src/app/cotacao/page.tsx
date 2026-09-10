@@ -52,6 +52,8 @@ interface FormData {
   danosTerceiros: 'nao' | 'sim'
   temSeguro: 'nao' | 'sim'
   nomeSeguro: string
+  /** Como a pessoa chegou até a gente. '' = não respondeu, e tudo bem: é opcional. */
+  comoConheceu: '' | 'google' | 'instagram' | 'tiktok' | 'youtube'
 }
 
 interface VehicleData {
@@ -184,6 +186,7 @@ export default function CotacaoPage() {
     danosTerceiros: 'nao',
     temSeguro: 'nao',
     nomeSeguro: '',
+    comoConheceu: '',
   })
 
   const set = useCallback((field: keyof FormData, value: string) => {
@@ -530,6 +533,7 @@ export default function CotacaoPage() {
         carroApp: form.carroApp === 'sim',
         motoTerceiros: form.danosTerceiros === 'sim',
         seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
+        comoConheceu: form.comoConheceu || undefined,
         requires_human_support: true,
         human_support_reason: reason,
         ...tracking.utms,
@@ -686,6 +690,7 @@ export default function CotacaoPage() {
           carroApp: form.carroApp === 'sim',
           motoTerceiros: form.danosTerceiros === 'sim',
           seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
+          comoConheceu: form.comoConheceu || undefined,
           // IDs PowerCRM já mapeados — backend usa direto, sem adivinhar
           powercrmBrandId: data.powercrm?.brandId,
           powercrmModelId: data.powercrm?.modelId,
@@ -1526,6 +1531,39 @@ export default function CotacaoPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Como chegou até a 21Go — opcional, uma opção só.
+                      Serve pra saber de onde vem lead de verdade, sem depender de
+                      UTM (que se perde quando a pessoa abre o link fora do app). */}
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1A2754] mb-2">
+                      Como você conheceu a 21Go? <span className="font-normal text-[#64748B]">(opcional)</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        { value: 'google', label: 'Google' },
+                        { value: 'instagram', label: 'Instagram' },
+                        { value: 'tiktok', label: 'TikTok' },
+                        { value: 'youtube', label: 'YouTube' },
+                      ] as const).map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          disabled={loading}
+                          // Clicar na opção já marcada desmarca: o campo é opcional,
+                          // e sem isso quem clica por engano fica preso na resposta.
+                          onClick={() => set('comoConheceu', form.comoConheceu === opt.value ? '' : opt.value)}
+                          className={`py-3.5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 disabled:opacity-50 ${
+                            form.comoConheceu === opt.value
+                              ? 'border-[#293C82] bg-[#293C82]/10 text-[#293C82] shadow-sm'
+                              : 'border-[#D1DFFA] bg-[#F7F8FC] text-[#64748B] hover:border-[#293C82]/40'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {/* API Error */}
@@ -1673,7 +1711,7 @@ export default function CotacaoPage() {
                     setExcluded(false)
                     setVehicle(null)
                     setPlans([])
-                    setForm({ nome: '', whatsapp: '', email: '', condicao: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' })
+                    setForm({ nome: '', whatsapp: '', email: '', condicao: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '', comoConheceu: '' })
                     setPlateId({ status: 'idle' })
                     setPlateCandidates(null)
                     setManualVehicle(false)
@@ -1947,7 +1985,7 @@ export default function CotacaoPage() {
                   className="inline-flex items-center gap-2 text-sm text-[#64748B] hover:text-[#1A2754] transition-colors">
                   <ArrowLeft className="w-4 h-4" /> Editar dados
                 </button>
-                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', condicao: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setFipeMarcaCode(''); setFipeMarcaText(''); setFipeModeloCode(''); setFipeModeloText(''); setFipeModeloCodFipe(''); setFipeAnoCode(''); setPlateId({ status: 'idle' }); setPlateCandidates(null); setManualVehicle(false); setPlacaConfirmada(''); whatsappClicked.current = false }}
+                <button onClick={() => { setStep(1); setForm({ nome: '', whatsapp: '', email: '', condicao: '', placa: '', leilao: 'nao', carroApp: 'nao', danosTerceiros: 'nao', temSeguro: 'nao', nomeSeguro: '', comoConheceu: '' }); setVehicle(null); setPlans([]); setRequiresHumanSupport(false); setExcluded(false); setFipeMarcaCode(''); setFipeMarcaText(''); setFipeModeloCode(''); setFipeModeloText(''); setFipeModeloCodFipe(''); setFipeAnoCode(''); setPlateId({ status: 'idle' }); setPlateCandidates(null); setManualVehicle(false); setPlacaConfirmada(''); whatsappClicked.current = false }}
                   className="text-sm text-[#293C82] hover:text-[#3D72DE] transition-colors">
                   Nova simulação
                 </button>

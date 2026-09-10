@@ -77,6 +77,8 @@ export interface UpsertLeadInput {
   carro_app?: boolean
   leilao?: string | null
   seguro_atual?: string | null
+  /** De onde o cliente diz que veio (Google, Instagram, TikTok, YouTube). */
+  origem_declarada?: string | null
 
   // Tracking
   origem?: string | null
@@ -151,6 +153,7 @@ export async function upsertLead(input: UpsertLeadInput): Promise<{ id: string; 
     carro_app: !!input.carro_app,
     leilao: input.leilao ?? null,
     seguro_atual: input.seguro_atual ?? null,
+    origem_declarada: input.origem_declarada ?? null,
     qualificado_por: 'site',
     score_qualificacao: 0,
     etapa_funil: input.etapa_funil ?? 'novo',

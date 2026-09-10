@@ -146,6 +146,8 @@ interface LeadInput {
   motoTerceiros?: boolean
   leilao?: 'nao' | 'leilao' | 'remarcado' | string
   seguroAtual?: string | null
+  /** Como o cliente diz que chegou até a 21Go. Campo opcional do formulário. */
+  comoConheceu?: string | null
   cidade?: string | null
   estado?: string | null
   /** Slug do site de consultor por onde o lead entrou (21go.com.br/<slug>). */
@@ -488,6 +490,7 @@ async function persistLeadInSupabase(args: {
     carro_app: !!body.carroApp,
     leilao: body.leilao ?? null,
     seguro_atual: body.seguroAtual ?? null,
+    origem_declarada: body.comoConheceu ?? null,
 
     // Quem indicou. Guardado como veio (codigo cru): se um dia chegar um codigo
     // que nao existe, da pra ver o valor errado em vez de perder a pista.
