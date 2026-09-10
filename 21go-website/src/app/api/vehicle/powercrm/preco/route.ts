@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listYearsPowerCrm } from '@/lib/powercrm-lookup'
 import { lookupFipeDirect } from '@/lib/fipe-direct'
+import { valorFipeDoPowerCrm } from '@/lib/powercrm-lookup'
 import { isLeilaoOrigin, resolveMotoCc, type QuotePlan } from '@/data/pricing'
 import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
 import { planosDoPowerAoVivo } from '@/lib/powercrm-planos'
@@ -182,16 +183,30 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // 3) Pega valor FIPE da Parallelum (fonte de verdade do VALOR — PowerCRM não devolve)
-  const direct = await lookupFipeDirect({
-    brand: brandText,
-    model: modelText,
-    year: Number(yearStr),
-    codFipe: codFipe || undefined,
-    categoria: tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL',
-  })
+  // 3) Valor FIPE — o PRÓPRIO PowerCRM já devolve, junto do modelo.
+  //
+  // Era a Parallelum que respondia por isto, com a premissa (errada) de que o
+  // Power "não devolve o valor". Devolve: é a Cotação FIPE nativa dele, e bate
+  // exatamente com a tabela. Em 09/09/2026 essa dependência derrubou o site —
+  // a Parallelum passou a responder `429 limite de taxa excedido` e 9 de cada
+  // 10 cotações viraram "fale com a consultora".
+  //
+  // A Parallelum fica como plano B, para o caso raro de o Power vir sem valor.
+  const doPower = await valorFipeDoPowerCrm(brandId, yearStr, modelId)
 
-  if (!direct || !direct.fipeValue || direct.fipeValue <= 0) {
+  const direct = doPower
+    ? null
+    : await lookupFipeDirect({
+        brand: brandText,
+        model: modelText,
+        year: Number(yearStr),
+        codFipe: codFipe || undefined,
+        categoria: tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL',
+      })
+
+  const fipeValue = doPower?.valor ?? direct?.fipeValue ?? 0
+
+  if (fipeValue <= 0) {
     return NextResponse.json({
       success: false,
       requires_human_support: true,
@@ -215,7 +230,7 @@ export async function POST(req: NextRequest) {
   const categoria = tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL'
   const plans: QuotePlan[] = planosDoPowerParaTela(
     consulta.planos || [],
-    direct.fipeValue,
+    fipeValue,
     isLeilaoOrigin(body.leilao),
   )
 
@@ -225,10 +240,10 @@ export async function POST(req: NextRequest) {
       marca: brandText,
       modelo: modelText,
       ano: yearStr,
-      fipeValue: direct.fipeValue,
-      fipeCode: codFipe || direct.codeFipe || null,
+      fipeValue,
+      fipeCode: codFipe || doPower?.codFipe || direct?.codeFipe || null,
       categoria,
-      combustivel: combustivel || direct.matchedYear,
+      combustivel: combustivel || direct?.matchedYear || null,
     },
     powercrm: {
       brandId: Number(brandId),

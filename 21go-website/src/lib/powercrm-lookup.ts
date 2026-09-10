@@ -24,8 +24,10 @@ export type PowerCrmKind = 'carro' | 'moto'
 export interface PowerCrmItem {
   id: number
   text: string
+  /** Código FIPE do modelo (ex: "005490-9"). */
   back?: string | null
-  value?: string | null
+  /** Valor FIPE que o Power já calculou. Chega como número no JSON. */
+  value?: string | number | null
 }
 
 type CacheEntry<T> = { value: T; expiresAt: number }
@@ -95,6 +97,35 @@ export async function listModelsPowerCrm(
   list.sort((a, b) => (a.text || '').localeCompare(b.text || '', 'pt-BR'))
   setCached(key, list, TTL_LIST)
   return list
+}
+
+/**
+ * O valor FIPE que o PROPRIO PowerCRM devolve, junto do modelo.
+ *
+ * O `/cmby` sempre trouxe `value` e `back` (codFipe) em cada modelo — é a
+ * "Cotação FIPE" nativa do Power, a mesma que a 21Go usa pra cotar. O site
+ * ignorava esse campo e ia buscar o mesmo número na Parallelum, o que custava
+ * 3 a 4 chamadas externas por cotação.
+ *
+ * Em 09/09/2026 isso quebrou o site: a Parallelum passou a responder
+ * `429 limite de taxa excedido` e 90% das cotações caíram na tela de "fale com
+ * a consultora". Conferido no Gol 1.0 Flex 12V 5p 2020: Power 44472.0 e
+ * Parallelum R$ 44.472,00, mesmo codFipe `005490-9`.
+ *
+ * Reaproveita o cache de modelos (7 dias), então não custa chamada nova.
+ */
+export async function valorFipeDoPowerCrm(
+  brandId: number | string,
+  year: number | string,
+  modelId: number | string,
+): Promise<{ valor: number; codFipe: string | null } | null> {
+  const modelos = await listModelsPowerCrm(brandId, year)
+  const achado = modelos.find((m) => String(m.id) === String(modelId))
+  if (!achado) return null
+  // `value` chega como número no JSON, mas o tipo aceita string — normaliza.
+  const bruto = typeof achado.value === 'string' ? Number(achado.value) : achado.value
+  if (!bruto || !Number.isFinite(bruto) || bruto <= 0) return null
+  return { valor: bruto, codFipe: achado.back || null }
 }
 
 export async function listYearsPowerCrm(modelId: number | string): Promise<PowerCrmItem[]> {
