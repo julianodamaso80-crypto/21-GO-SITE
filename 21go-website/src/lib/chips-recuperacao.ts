@@ -76,11 +76,17 @@ export function diaDeBrasilia(agora = new Date()): string {
 /* ───────────────── Rampa de aquecimento ───────────────── */
 
 /**
- * Quantas mensagens este chip pode mandar hoje.
- * Sobe devagar: o peso do risco está nos primeiros dias de um número novo.
+ * Quantas mensagens este chip pode mandar hoje — ou `null` quando não há teto.
+ *
+ * Chip aquecido NÃO tem teto: o freio dele é o ritmo (uma de cada vez, com
+ * intervalo aleatório), não um número por dia. Teto por dia deixa lead sem
+ * atendimento, que é o oposto do que esta rotina existe pra fazer.
+ *
+ * Chip NOVO mantém a rampa, porque aí o risco é real: número recém-conectado
+ * é o que mais cai, e a rampa é técnica de aquecimento, não limite comercial.
  */
-export function tetoDiario(chip: ChipRecuperacao, agora = new Date()): number {
-  if (chip.aquecido) return TETO_CHIP_AQUECIDO
+export function tetoDiario(chip: ChipRecuperacao, agora = new Date()): number | null {
+  if (chip.aquecido) return null
   const inicio = new Date(`${chip.entrouEm}T00:00:00-03:00`).getTime()
   const dias = Math.floor((agora.getTime() - inicio) / 86_400_000)
   if (dias < 0) return 0
@@ -88,13 +94,6 @@ export function tetoDiario(chip: ChipRecuperacao, agora = new Date()): number {
   if (dias < 7) return 15
   return 30
 }
-
-/**
- * Teto de um chip já aquecido. Dimensionado pela demanda real: ~21 leads por
- * dia entram no alcance, e o dono quer falar com todos. A folga cobre o pico
- * sem virar disparo em massa.
- */
-export const TETO_CHIP_AQUECIDO = 45
 
 /* ───────────────── Ritmo ───────────────── */
 

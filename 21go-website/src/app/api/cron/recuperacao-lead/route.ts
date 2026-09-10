@@ -150,15 +150,20 @@ export async function GET(req: NextRequest) {
     // Em simulação o teto do dia não vale: ela não envia nada, e serve
     // justamente pra conferir a fila e o texto a qualquer hora — inclusive
     // depois de o chip ter fechado a cota.
+    const teto = tetoDiario(s.chip, agora)
     const saldo = simular
       ? LOTE_POR_EXECUCAO
-      : tetoDiario(s.chip, agora) - (count || 0)
+      : teto === null
+        ? LOTE_POR_EXECUCAO // sem teto: o freio é o ritmo, não a cota do dia
+        : teto - (count || 0)
     relatorio.chips.push({
       instancia: s.chip.instancia,
       saldo: Math.max(0, saldo),
       motivo: simular
-        ? `simulação (enviados hoje: ${count || 0}/${tetoDiario(s.chip, agora)})`
-        : saldo > 0 ? 'ok' : 'teto do dia atingido',
+        ? `simulação (enviados hoje: ${count || 0}${teto === null ? ', sem teto' : `/${teto}`})`
+        : teto === null
+          ? `sem teto (enviados hoje: ${count || 0})`
+          : saldo > 0 ? 'ok' : 'teto do dia atingido',
     })
     if (saldo > 0) disponiveis.push({ chip: s.chip, saldo, falhas: 0 })
   }
