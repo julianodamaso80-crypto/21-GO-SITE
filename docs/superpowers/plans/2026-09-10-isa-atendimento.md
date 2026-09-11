@@ -165,6 +165,14 @@ Protocolo fixo de deploy (chamado "PD" abaixo): baseline curl (5 URLs) → env n
 
 ### FASE 6 — Entradas de cliente (ainda atrás da trava)
 
+> **Feito em 10/09/2026** (commits 0081279, 3739eaa, 80b8aa7, c8a653d), tudo desligado. Diferenças do
+> texto abaixo: regras em `popup.regras.ts`/`PopupSaida.tsx`; a chave é `ISA_POPUP` de **runtime**
+> (lida por `/api/isa/config` — `NEXT_PUBLIC_*` não chega ao build do Lightsail); o template dos 5 min
+> virou `simulacao_concluida_isa` (o `simulacao_pronta_isa` foi reclassificado como MARKETING pela
+> Meta) com botões *Ver detalhamento* / *Tenho uma dúvida*, e o envio só manda APPROVED + UTILITY;
+> estado global em `isa_config` (migração 288). Testado com puppeteer em produção (lead mockado):
+> desktop, celular 45 s, "uma vez", quem clicou em contratar, sem a chave e `/manghi` (nunca).
+
 **6.1 Mensagem pronta pro popup.** `src/lib/isa/mensagem-popup.ts`: `Quero meu desconto! 🙂` + nome, veículo, FIPE, plano, ativação, link PDF → `wa.me/5521980040964?text=`. Teste unitário (encoding).
 **6.2 Popup em `cotacao/page.tsx`.** Só na tela de planos, só se `!consultorSlug && hostname ∈ {21go.site, 21goconsultoraleticya.site}` (lido em efeito, nunca `usePathname`), só se não clicou "Quero contratar" (o mesmo sinal do `sendBeacon`), uma vez por lead (localStorage + flag no lead). Desktop: `mouseleave` pelo topo. Mobile: 45 s parado (sem scroll/toque). Texto sem valor: *"Espera, {nome}! 👋 Fale com um dos nossos consultores e ganhe um desconto na sua ativação."* Botão → wa.me da Isa; grava `entrada='popup'` via beacon. Atrás de `NEXT_PUBLIC_ISA_POPUP=on` (default off). PD com flag off; teste com puppeteer (`testes/`) simulando as duas condições; ligar flag só na Fase 7.
 **6.3 Mensagem dos 5 min.** Worker: leads dos .site (origem site, `consultor_slug` nulo, `whatsapp_clicado=false`, `entrada` nula, criado há ≥ 5 min, ≤ 24 h, telefone válido, sem desconto e sem mensagem prévia), 8h–22h, uma por lead. Template novo `simulacao_pronta_isa` (UTILITY, botões *Ver o que meu plano cobre* / *Tenho uma dúvida*, **sem palavra de oferta**, com link do PDF) — criar e esperar aprovação. Ao toque: Isa responde coberturas do plano + R$ 50 (frase antes/depois). Grava `entrada='5min'`. Atrás de `ISA_5MIN=on` (default off). Teste: lead do dono. PD.
@@ -174,8 +182,8 @@ Protocolo fixo de deploy (chamado "PD" abaixo): baseline curl (5 URLs) → env n
 
 **7.1** Dono valida no painel e no WhatsApp: 10 conversas simuladas cobrindo cotação por placa, sem placa, cota, desconto (popup/5min/meio), documento, associado, robô, xingamento, áudio, fora do horário.
 **7.2** `ISA_MODO_TESTE=false` no `.env-site` → redeploy → primeiro dia com o dono acompanhando o painel. Popup e 5 min **ainda off**.
-**7.3** `NEXT_PUBLIC_ISA_POPUP=on` → 2 dias de observação (bloqueios, qualidade).
-**7.4** `ISA_5MIN=on` → observação diária da qualidade por 1 semana.
+**7.3** `ISA_POPUP=on` no `.env-site` → redeploy → 2 dias de observação (bloqueios, qualidade).
+**7.4** `ISA_5MIN=on` (depois de `simulacao_concluida_isa` APPROVED/UTILITY; antes, testar em modo teste com lead do dono) → observação diária da qualidade por 1 semana. Só lead criado depois de ligar.
 **7.5** Rollback de qualquer etapa = voltar a flag + redeploy (≤ 10 min, sem queda).
 
 ---
