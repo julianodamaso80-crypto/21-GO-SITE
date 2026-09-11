@@ -156,3 +156,8 @@ test('beneficio ou pessoa ligada a 21Go (lavagem, pastor) nao e fora do assunto'
   assert.match(p, /lavagem/)
   assert.match(p, /NÃO é fora do assunto/)
 })
+
+test('audio que falhou no meio de outros: responde os outros e so no fim pede o que faltou', () => {
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
+  assert.match(p, /responda TODAS elas normalmente e só no fim diga que um dos áudios não deu pra entender/)
+})
