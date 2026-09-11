@@ -1,15 +1,18 @@
 /**
  * Mensagem dos 5 min (Isa, fase 6): quem simulou no site da casa, nao clicou em nada e sumiu
- * recebe o template `simulacao_pronta_isa` (UTILITY, sem palavra de oferta — a Meta recategoriza
- * pra MARKETING). O desconto de R$ 50 so aparece depois, quando o cliente toca num botao e a
- * janela de 24 h abre. Logica pura.
+ * recebe o template `simulacao_concluida_isa` (UTILITY, sem palavra de oferta). O desconto de
+ * R$ 50 so aparece depois, quando o cliente toca num botao e a janela de 24 h abre. Logica pura.
+ *
+ * O primeiro texto ("separei um resumo do que o seu plano cobre. Toque abaixo pra ver 👇",
+ * `simulacao_pronta_isa`) foi reclassificado pela Meta como MARKETING ainda na analise, em
+ * 10/09/2026 — o dono quer so utilidade. O texto atual e de atualizacao da transacao, sem convite.
  */
 
 import type { PlanoFatos } from './fatos.regras'
 
 type PlanoResumo = Pick<PlanoFatos, 'id' | 'nome' | 'mensal' | 'cobre'>
 
-export const TEMPLATE_5MIN = 'simulacao_pronta_isa'
+export const TEMPLATE_5MIN = 'simulacao_concluida_isa'
 export const PAYLOAD_COBRE = 'isa-5min:cobre'
 export const PAYLOAD_DUVIDA = 'isa-5min:duvida'
 
@@ -43,9 +46,10 @@ export function variaveisDoTemplate(l: {
 /** O que fica gravado no painel — o mesmo texto do template aprovado na Meta. */
 export function textoDoTemplate([nome, veiculo]: [string, string]): string {
   return (
-    `Sua simulação 21Go\n\nOi ${nome}! Aqui é a Isa, da 21Go 🙂\n` +
-    `Sua simulação do ${veiculo} ficou pronta e eu separei um resumo do que o seu plano cobre. Toque abaixo pra ver 👇\n\n` +
-    '[Ver o que meu plano cobre] [Tenho uma dúvida]'
+    `Simulação concluída\n\nOlá, ${nome}. Aqui é a Isa, da 21Go.\n` +
+    `A simulação que você fez para o ${veiculo} foi concluída e o resultado ficou registrado.\n` +
+    'Se quiser, envio por aqui o detalhamento do plano simulado.\n\n' +
+    '[Ver detalhamento] [Tenho uma dúvida]'
   )
 }
 
@@ -72,6 +76,11 @@ export function mensagemCobertura(p: { abertura: string | null; plano: PlanoResu
 export function mensagemDuvida(abertura: string | null): string {
   const t = 'claro, me conta qual é a sua dúvida 😃'
   return abertura ? `${abertura}\n\n${t}` : t
+}
+
+/** So manda template aprovado E de utilidade — marketing nunca sai, mesmo que a Meta aprove. */
+export function templatePodeSair(t: { status: string | null; categoria: string | null }): boolean {
+  return t.status === 'APPROVED' && t.categoria === 'UTILITY'
 }
 
 /** quality_rating da Meta: GREEN, YELLOW, RED (UNKNOWN em numero novo). */

@@ -10,6 +10,7 @@ import {
   mensagemCobertura,
   mensagemDuvida,
   qualidadeRuim,
+  templatePodeSair,
 } from '../../src/lib/isa/abordagem.regras.ts'
 import { mensagemDesconto50 } from '../../src/lib/isa/dono.regras.ts'
 
@@ -34,9 +35,11 @@ test('variaveis do template: primeiro nome e veiculo curto, sem nome = nao manda
 
 test('o texto gravado no painel e o do template aprovado', () => {
   const t = textoDoTemplate(['Juliano', 'Jeep Compass 2022'])
-  assert.match(t, /^Sua simulação 21Go\n\nOi Juliano! Aqui é a Isa, da 21Go 🙂/)
-  assert.match(t, /Sua simulação do Jeep Compass 2022 ficou pronta/)
-  assert.match(t, /\[Ver o que meu plano cobre\] \[Tenho uma dúvida\]$/)
+  assert.match(t, /^Simulação concluída\n\nOlá, Juliano\. Aqui é a Isa, da 21Go\./)
+  assert.match(t, /A simulação que você fez para o Jeep Compass 2022 foi concluída/)
+  assert.match(t, /\[Ver detalhamento\] \[Tenho uma dúvida\]$/)
+  // texto de utilidade: nada de desconto, oferta ou promocao
+  assert.doesNotMatch(t, /desconto|oferta|promo|grátis|ganhe/i)
   assert.notEqual(PAYLOAD_COBRE, PAYLOAD_DUVIDA)
 })
 
@@ -76,4 +79,11 @@ test('qualidade do numero: amarelo ou vermelho suspende a mensagem dos 5 min', (
   assert.equal(qualidadeRuim('YELLOW'), true)
   assert.equal(qualidadeRuim('RED'), true)
   assert.equal(qualidadeRuim('red'), true)
+})
+
+test('template so sai aprovado e como UTILITY (a Meta recategoriza pra MARKETING)', () => {
+  assert.equal(templatePodeSair({ status: 'APPROVED', categoria: 'UTILITY' }), true)
+  assert.equal(templatePodeSair({ status: 'APPROVED', categoria: 'MARKETING' }), false)
+  assert.equal(templatePodeSair({ status: 'PENDING', categoria: 'UTILITY' }), false)
+  assert.equal(templatePodeSair({ status: null, categoria: null }), false)
 })

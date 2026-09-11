@@ -92,6 +92,22 @@ export async function qualidadeDoNumero(): Promise<{ rating: string | null; limi
   return { rating: j.quality_rating ?? null, limite: j.messaging_limit_tier ?? null }
 }
 
+// WABA de vendas (a do 98004-0964). Nao e segredo; o env so existe pra trocar sem deploy.
+const WABA_VENDAS = '932143313296745'
+
+/** Status e categoria de um template. A Meta recategoriza sozinha (UTILITY vira MARKETING). */
+export async function statusDoTemplate(nome: string): Promise<{ status: string | null; categoria: string | null }> {
+  const waba = process.env.WA_WABA_ID || WABA_VENDAS
+  const res = await fetch(graph(`${waba}/message_templates?name=${encodeURIComponent(nome)}&fields=name,status,category`), {
+    headers: { Authorization: `Bearer ${token()}` },
+    signal: AbortSignal.timeout(10_000),
+  })
+  if (!res.ok) throw new Error(`Cloud API ${res.status} ao ler o template ${nome}`)
+  const j = (await res.json()) as { data?: { name?: string; status?: string; category?: string }[] }
+  const t = j.data?.find((x) => x.name === nome)
+  return { status: t?.status ?? null, categoria: t?.category ?? null }
+}
+
 /** Tique azul + "digitando...". Melhor esforco: nunca derruba a resposta. */
 export async function marcarLidaEDigitando(wamid: string): Promise<void> {
   try {

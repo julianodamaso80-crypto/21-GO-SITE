@@ -1,7 +1,7 @@
 import 'server-only'
 import { upsertConversation, upsertMessage, phoneToJid } from '@/lib/supabase-store'
 import { sql, registrarEvento } from '@/lib/isa/banco'
-import { enviarTemplate, destinoPermitido, qualidadeDoNumero, numeroDeAlerta, EnvioBloqueado } from '@/lib/isa/cloud'
+import { enviarTemplate, destinoPermitido, qualidadeDoNumero, statusDoTemplate, numeroDeAlerta, EnvioBloqueado } from '@/lib/isa/cloud'
 import { alertarDono } from '@/lib/isa/alertas'
 import { dentroDoHorario } from '@/lib/isa/hora.regras'
 import {
@@ -12,11 +12,12 @@ import {
   variaveisDoTemplate,
   textoDoTemplate,
   qualidadeRuim,
+  templatePodeSair,
 } from '@/lib/isa/abordagem.regras'
 
 /**
  * Mensagem dos 5 min: quem simulou num .site da casa, nao clicou em "Quero contratar" nem em
- * "Tenho uma duvida" (nem no popup) e passou 5 min recebe o template `simulacao_pronta_isa`.
+ * "Tenho uma duvida" (nem no popup) e passou 5 min recebe o template `simulacao_concluida_isa`.
  *
  * Travas:
  *   - ISA_5MIN=on no env (padrao desligado) e so das 8h as 22h;
@@ -74,6 +75,7 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
     await gravarConfig('5min', { ligado_em: agora.toISOString() })
     return { enviados: 0, motivo: 'ligou_agora' }
   }
+  if (!(await templateLiberado())) return { enviados: 0, motivo: 'template_nao_liberado' }
 
   // leads.created_at e timestamp sem fuso gravado em UTC.
   const candidatos = await sql<LeadAbordagem>(
@@ -152,6 +154,35 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
     }
   }
   return { enviados }
+}
+
+interface EstadoTemplate {
+  status: string | null
+  categoria: string | null
+  verificado_em?: string
+}
+
+/**
+ * O template so sai APPROVED e UTILITY (dono: "tem que ser sempre utilidade"). A Meta recategoriza
+ * sozinha — o primeiro texto virou MARKETING ainda na analise — entao confere de 10 em 10 min e,
+ * se deixar de poder sair, para e avisa o dono uma vez.
+ */
+async function templateLiberado(): Promise<boolean> {
+  const antes = await lerConfig<EstadoTemplate>('template5min')
+  if (antes?.verificado_em && Date.now() - Date.parse(antes.verificado_em) < 10 * 60_000) return templatePodeSair(antes)
+  const agora = await statusDoTemplate(TEMPLATE_5MIN)
+  await gravarConfig('template5min', { ...agora, verificado_em: new Date().toISOString() })
+  const pode = templatePodeSair(agora)
+  if (!pode && antes && templatePodeSair(antes)) {
+    await registrarEvento('sistema', 'template_5min_bloqueado', agora, 'sistema')
+    await alertarDono({
+      telefone: numeroDeAlerta() ?? 'sistema',
+      nome: 'Isa',
+      motivo: 'template',
+      detalhe: `o template ${TEMPLATE_5MIN} ficou ${agora.status}/${agora.categoria} na Meta — a mensagem dos 5 min parou`,
+    })
+  }
+  return pode
 }
 
 /**
