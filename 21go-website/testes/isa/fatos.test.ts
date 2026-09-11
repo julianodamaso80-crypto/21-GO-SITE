@@ -116,3 +116,9 @@ test('Veiculos Especiais tem os mesmos beneficios do VIP (dono, 11/09/2026)', as
   assert.equal(planoDosBeneficios('vip'), 'vip')
   assert.equal(planoDosBeneficios('basico'), 'basico')
 })
+
+test('indicacao: R$ 50 no pix e 10% no proximo boleto podem ser ditos (dono, 11/09/2026)', () => {
+  const f = montarFatos(base)
+  assert.ok(f.numerosPermitidos.dinheiro.includes(50), 'R$ 50 da indicacao')
+  assert.ok(f.numerosPermitidos.pct.includes(10), '10% da indicacao')
+})

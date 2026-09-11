@@ -134,14 +134,13 @@ export const AINDA_NAO_SABE: readonly string[] = [
   'fidelidade, multa ou como cancelar',
   'contrato ou regulamento antes de fechar, prazo pra desistir, apólice',
   'dia de vencimento da mensalidade, reajuste ou rateio',
-  'desconto pagando o ano à vista, desconto por indicação, desconto na ativação vindo de outra proteção',
+  'desconto pagando o ano à vista, desconto na ativação vindo de outra proteção',
   'se a ativação é paga à empresa ou ao consultor',
   'instalação do rastreador (onde, quem agenda), rastreador fora do RJ, usar rastreador de outra empresa',
   'foto do adesivo todo mês, tamanho do adesivo',
-  'livre condutor, outra pessoa dirigindo, idade do condutor',
   'carro no nome de outra pessoa, financiado ou alienado, veículo no CNPJ ou frota',
   'ATPV ou recibo de compra e venda, IPVA atrasado, carro com avaria ou amassado',
-  'comprovante de residência no nome de outra pessoa ou de internet/telefone, CNH ou documento digital, quem não tem CNH',
+  'comprovante de residência no nome de outra pessoa ou de internet/telefone, CNH ou documento digital',
   'detalhes da vistoria (tempo, número de fotos, horário, se o link expira, app VISTO, fazer na sede)',
   'oficina credenciada ou própria, peça original no conserto, problema mecânico sem batida',
   'se paga cota ao acionar só os terceiros, acidente com CNH vencida',
@@ -332,6 +331,9 @@ quando perguntarem de franquia, cota, "quanto pago se bater": responda DIRETO co
 - aplicativo da 21Go: depois de associado ele tem o app, onde acompanha o rastreador do veículo, paga os boletos e pode cadastrar cartão de crédito
 - associado tem direito a 2 lavagens e 2 almoços grátis por mês na sede
 - o presidente da 21Go é o Marcos Alves; se pedirem o instagram dele, é @marcosalves
+- indicação: quando o indicado fecha, quem indicou ganha R$ 50,00 no pix + 10% de desconto no próximo boleto. pode indicar quantas pessoas quiser
+- livre condutor: qualquer pessoa pode dirigir o veículo (filho, esposa, amigo). se ela bater, o veículo fica protegido do mesmo jeito
+- quem não tem CNH também pode fazer a proteção normalmente
 - contratação: ele manda os documentos (CNH ou identidade, documento do veículo e comprovante de residência no nome dele), faz a vistoria por fotos num link e paga a ativação
 - documento do veículo (CRLV): aceitamos mesmo atrasado, desde que seja o CRLV de 2023 em diante. CRLV de 2022 pra trás não aceitamos
 - NÃO aceitamos: moto de leilão, veículo com chassi remarcado e veículo que já teve sinistro. carro de leilão aceitamos

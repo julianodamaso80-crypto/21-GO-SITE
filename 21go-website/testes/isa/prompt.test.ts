@@ -166,7 +166,7 @@ test('o que a Isa AINDA NAO sabe esta escrito — fidelidade/multa inventada no 
   const { AINDA_NAO_SABE } = await import('../../src/lib/isa/prompt.regras.ts')
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
   assert.match(p, /## o que você AINDA NÃO sabe/)
-  for (const tema of ['fidelidade', 'multa', 'contrato', 'apólice', 'rastreador', 'livre condutor', 'financiado', 'blindado']) {
+  for (const tema of ['fidelidade', 'multa', 'contrato', 'apólice', 'rastreador', 'vistoria', 'financiado', 'blindado']) {
     assert.ok(AINDA_NAO_SABE.some((x: string) => x.includes(tema)), `faltou ${tema}`)
     assert.match(p, new RegExp(tema))
   }
@@ -203,4 +203,15 @@ test('nao repete a mensagem que acabou de mandar (11/09/2026: "nao, roubo/furto/
   assert.equal(ehRepeticao('não\nroubo, furto e perda total não pagam cota!', ultima), true)
   assert.equal(ehRepeticao('a cota do seu carro é 6% (R$ 6.992,40), e só paga se for arrumar', ultima), false)
   assert.equal(ehRepeticao('qualquer coisa', null), false)
+})
+
+test('indicacao, livre condutor e sem CNH entram no que ela sabe (dono, 11/09/2026)', async () => {
+  const { AINDA_NAO_SABE } = await import('../../src/lib/isa/prompt.regras.ts')
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
+  assert.match(p, /indicar.*R\$ 50,00 no pix.*10%|R\$ 50,00 no pix/)
+  assert.match(p, /quantas (pessoas )?quiser|quantos quiser/)
+  assert.match(p, /livre condutor/)
+  assert.match(p, /sem CNH|não tem CNH/)
+  assert.ok(!AINDA_NAO_SABE.some((x: string) => x.includes('livre condutor')), 'livre condutor saiu do que nao sabe')
+  assert.ok(!AINDA_NAO_SABE.some((x: string) => x.includes('indicação')), 'indicacao saiu do que nao sabe')
 })
