@@ -104,3 +104,8 @@ test('planos que a Isa oferece: Especiais sozinho; moto um so; o resto como o Po
   // nunca acrescenta plano que o Power nao mandou
   assert.deepEqual(ids([{ id: 'basico' }]), ['basico'])
 })
+
+test('limites do rastreador obrigatorio (R$ 15/35/50 mil) podem ser ditos — sao do gabarito', () => {
+  const f = montarFatos(base)
+  for (const v of [15000, 35000, 50000]) assert.ok(f.numerosPermitidos.dinheiro.includes(v), `faltou R$ ${v}`)
+})

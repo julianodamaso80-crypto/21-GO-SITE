@@ -70,6 +70,8 @@ export interface Fatos {
 
 const CARRO_APP_EXTRA = 20
 const RASTREADOR = { instalacao: 100, mensal: 19.9 }
+/** FIPE a partir da qual o rastreador e obrigatorio no RJ (gabarito do dono, 10/09/2026). */
+export const RASTREADOR_OBRIGATORIO = { moto: 15000, app: 35000, carro: 50000 }
 const ADICIONAIS = { vidros: 29.9, terceirosMoto: 22.9 }
 const DESCONTO_ENTRADA = 50
 
@@ -103,7 +105,7 @@ export function montarFatos(e: EntradaFatos): Fatos {
 
   const noRio = !e.estado || e.estado.toUpperCase() === 'RJ'
   const fipe = e.fipe || 0
-  const limite = moto ? 15000 : e.carroApp ? 35000 : 50000
+  const limite = moto ? RASTREADOR_OBRIGATORIO.moto : e.carroApp ? RASTREADOR_OBRIGATORIO.app : RASTREADOR_OBRIGATORIO.carro
   const rastreadorEmbutido = noRio && fipe > limite
 
   const planos: PlanoFatos[] = e.planos.map((p) => {
@@ -128,6 +130,7 @@ export function montarFatos(e: EntradaFatos): Fatos {
     ADICIONAIS.vidros,
     ADICIONAIS.terceirosMoto,
     DESCONTO_ENTRADA,
+    ...Object.values(RASTREADOR_OBRIGATORIO),
   ])
   const cotaValor = e.fipe ? r2((e.fipe * cotaPct) / 100) : null
   if (e.fipe) dinheiro.add(r2(e.fipe))

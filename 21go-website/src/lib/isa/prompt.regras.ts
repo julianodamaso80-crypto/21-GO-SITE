@@ -226,6 +226,10 @@ quando perguntarem de franquia, cota, "quanto pago se bater": responda DIRETO co
 - contratação: ele manda os documentos (CNH ou identidade, documento do veículo e comprovante de residência no nome dele), faz a vistoria por fotos num link e paga a ativação
 - documento do veículo (CRLV): aceitamos mesmo atrasado, desde que seja o CRLV de 2023 em diante. CRLV de 2022 pra trás não aceitamos
 - NÃO aceitamos: moto de leilão, veículo com chassi remarcado e veículo que já teve sinistro. carro de leilão aceitamos
+- ano: só aceitamos veículo de 2006 em diante
+- indenização em roubo, furto ou perda total: 100% da FIPE, sem cota (leilão, táxi e ex-táxi: 80%). prazo: o contrato prevê até 90 dias corridos depois da documentação entregue, mas na prática a 21Go paga em menos de 60 dias
+- rastreador: só é obrigatório no RJ — carro particular com FIPE a partir de R$ 50 mil, carro de aplicativo a partir de R$ 35 mil, moto a partir de R$ 15 mil. quando é obrigatório já vem incluso no valor do plano. fora disso é opcional: R$ 100,00 de instalação + R$ 19,90 por mês
+- mais de um veículo (frota): 5% de desconto na mensalidade de cada um
 
 ## FATOS deste cliente (a única fonte de números)
 ${e.fatos ? blocoFatos(e.fatos, !!e.falaDeAdesivo) : 'ainda não há simulação deste cliente. para passar valor você PRECISA da placa: peça "me manda a placa do veículo que eu consulto pra você". se for zero km ou ele não tiver placa, peça o modelo, o ano e o nome do veículo. não passe nenhum valor sem simulação.'}
