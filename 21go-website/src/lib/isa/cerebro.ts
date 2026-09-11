@@ -1,5 +1,5 @@
 import 'server-only'
-import { montarPrompt, comporResposta, abertura, tirarCumprimento, tirarNomeRepetido, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
+import { montarPrompt, comporResposta, abertura, tirarCumprimento, tirarNomeRepetido, ehRepeticao, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
 import { validarNumeros, type Permitidos } from '@/lib/isa/validador.regras'
 import { cumprimento } from '@/lib/isa/hora.regras'
 import type { Fatos } from '@/lib/isa/fatos.regras'
@@ -154,6 +154,20 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
         reprovados: [],
       }
     }
+  }
+
+  // Ia repetir o que acabou de mandar (11/09/2026: "roubo, furto e PT nao pagam cota" 3x enquanto
+  // o cliente perguntava o VALOR da cota). Refaz uma vez, respondendo a pergunta nova.
+  const ultimaNossa = [...e.historico].reverse().find((m) => m.direction === 'outbound')?.content
+  if (saida.resposta && ehRepeticao(saida.resposta, ultimaNossa)) {
+    console.warn('[isa] resposta repetida — refazendo')
+    conversa.push({ role: 'assistant', content: bruto })
+    conversa.push({
+      role: 'user',
+      content: '(instrução interna, não é o cliente) você acabou de mandar essa mesma resposta. o cliente perguntou OUTRA coisa: responda exatamente o que ele perguntou agora (se for valor, dê o número dos FATOS), sem repetir. mesmo formato JSON.',
+    })
+    bruto = await chamarIA(conversa)
+    saida = lerSaida(bruto, aberturaDoCodigo, nome)
   }
 
   // "Nao soube" so vale se ele perguntou e a Isa disse que vai confirmar (11/09/2026: um "oie"

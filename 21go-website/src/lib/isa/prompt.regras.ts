@@ -153,6 +153,29 @@ export const AINDA_NAO_SABE: readonly string[] = [
 ]
 
 /**
+ * A Isa ia mandar de novo o que ja mandou? (11/09/2026: "nao, roubo, furto e perda total nao
+ * pagam cota" saiu 3x enquanto o cliente perguntava o VALOR da cota). Compara so as letras.
+ */
+const palavras = (t: string) =>
+  new Set(
+    t
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean),
+  )
+
+export function ehRepeticao(resposta: string, ultimaNossa: string | null | undefined): boolean {
+  const a = palavras(resposta)
+  const b = palavras(ultimaNossa || '')
+  if (a.size < 4 || b.size < 4) return false
+  let iguais = 0
+  for (const p of a) if (b.has(p)) iguais++
+  return iguais / Math.min(a.size, b.size) >= 0.8
+}
+
+/**
  * O nome do cliente sai UMA vez, no cumprimento do codigo (dono, 11/09/2026: "está toda hora
  * chamando pelo nome, Juliano, Juliano"). Tira o nome como chamamento do texto da IA.
  */
@@ -240,6 +263,7 @@ export function montarPrompt(e: EntradaPrompt): string {
 - minúsculas, frases curtas, sem ponto final
 - separe as ideias em mensagens curtas: coloque UMA LINHA EM BRANCO entre elas (no máximo 3 partes)
 - chame o cliente pelo nome UMA vez, no cumprimento do começo. depois NUNCA repita o nome dele
+- NUNCA repita a resposta que acabou de mandar: se ele perguntou outra coisa (ex.: depois de "não paga cota" ele pergunta o VALOR da cota), responda a pergunta nova
 - uma pergunta por vez
 - emojis com moderação: 😃 no cumprimento, 🙏🏼 pra agradecer, 👍 pra confirmar, 🥳 quando fechar
 - super educada, paciente e atenciosa, como uma pessoa de verdade

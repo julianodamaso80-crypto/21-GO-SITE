@@ -195,3 +195,12 @@ test('app, lavagem/almoço e o presidente entram no que ela sabe (dono, 11/09/20
   assert.match(p, /paga bem antes disso/)
   assert.match(p, /@marcosalves/)
 })
+
+test('nao repete a mensagem que acabou de mandar (11/09/2026: "nao, roubo/furto/PT nao pagam cota" 3x)', async () => {
+  const { ehRepeticao } = await import('../../src/lib/isa/prompt.regras.ts')
+  const ultima = 'não, Juliano\nroubo, furto e perda total não pagam cota'
+  assert.equal(ehRepeticao('não, Juliano roubo, furto e perda total não pagam cota', ultima), true)
+  assert.equal(ehRepeticao('não\nroubo, furto e perda total não pagam cota!', ultima), true)
+  assert.equal(ehRepeticao('a cota do seu carro é 6% (R$ 6.992,40), e só paga se for arrumar', ultima), false)
+  assert.equal(ehRepeticao('qualquer coisa', null), false)
+})
