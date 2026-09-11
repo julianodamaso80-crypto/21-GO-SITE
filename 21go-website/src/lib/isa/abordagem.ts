@@ -4,6 +4,7 @@ import { sql, registrarEvento } from '@/lib/isa/banco'
 import { enviarTemplate, destinoPermitido, qualidadeDoNumero, statusDoTemplate, numeroDeAlerta, EnvioBloqueado } from '@/lib/isa/cloud'
 import { alertarDono } from '@/lib/isa/alertas'
 import { dentroDoHorario } from '@/lib/isa/hora.regras'
+import { numerosDeTeste } from '@/lib/isa/dono.regras'
 import {
   TEMPLATE_5MIN,
   telefoneDeAbordagem,
@@ -76,6 +77,9 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
   }
   if (!(await templateLiberado())) return { enviados: 0, motivo: 'template_nao_liberado' }
 
+  // Numeros de teste do dono: recebem de novo a cada /reiniciar (cliente, uma vez so).
+  const teste = numerosDeTeste({ allowlist: process.env.ISA_ALLOWLIST, alerta: numeroDeAlerta() })
+
   // leads.created_at e timestamp sem fuso gravado em UTC.
   const candidatos = await sql<LeadAbordagem>(
     `SELECT DISTINCT ON (l.telefone) l.id, l.nome, l.telefone, l.marca_interesse, l.modelo_interesse, l.ano_interesse
@@ -88,7 +92,11 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
        AND l.created_at < (now() AT TIME ZONE 'UTC') - interval '5 minutes'
        AND l.created_at > (now() AT TIME ZONE 'UTC') - interval '24 hours'
        AND l.created_at > ($1::timestamptz AT TIME ZONE 'UTC')
-       AND NOT EXISTS (SELECT 1 FROM public.isa_contatos c WHERE c.telefone = l.telefone)
+       AND NOT EXISTS (
+         SELECT 1 FROM public.isa_contatos c WHERE c.telefone = l.telefone
+           -- numero de teste do dono recebe de novo depois de cada /reiniciar
+           AND NOT (c.telefone = ANY($4::text[]) AND c.abordagem5min_em IS NULL)
+       )
        AND NOT EXISTS (
          SELECT 1 FROM public.leads o
          WHERE o.telefone = l.telefone AND o.whatsapp_clicado
@@ -96,7 +104,7 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
        )
      ORDER BY l.telefone, l.created_at DESC
      LIMIT $2`,
-    [cfg.ligado_em, POR_RODADA * 4, ORIGENS_DO_SITE],
+    [cfg.ligado_em, POR_RODADA * 4, ORIGENS_DO_SITE, teste],
   )
 
   let enviados = 0
@@ -113,8 +121,10 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
     const reivindicou = await sql(
       `INSERT INTO public.isa_contatos (telefone, lead_id, nome, entrada, abordagem5min_em)
        VALUES ($1, $2, $3, '5min', now())
-       ON CONFLICT (telefone) DO NOTHING RETURNING telefone`,
-      [tel, l.id, l.nome],
+       ON CONFLICT (telefone) DO UPDATE SET entrada = '5min', abordagem5min_em = now(), lead_id = EXCLUDED.lead_id, updated_at = now()
+         WHERE isa_contatos.telefone = ANY($4::text[]) AND isa_contatos.abordagem5min_em IS NULL
+       RETURNING telefone`,
+      [tel, l.id, l.nome, teste],
     )
     if (reivindicou.length === 0) continue
 
