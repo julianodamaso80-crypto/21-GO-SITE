@@ -106,7 +106,8 @@ export async function concederDesconto50(
   if (c.desconto50_em) return null
   const lead = await leadDoCliente(c.telefone, leadId ?? c.lead_id, c.reiniciada_em).catch(() => null)
   if (!lead) return null
-  const fatos = fatosDoLead(lead, null)
+  // A ativacao que o cliente VIU no site: lista inteira, nao so os planos que a Isa oferece.
+  const fatos = fatosDoLead(lead, null, { todosOsPlanos: true })
   const plano = planoDoCliente(fatos.planos, planoNaTela ?? lead.cotacao_plano ?? null)
   const de = plano?.ativacao ?? fatos.ativacaoReferencia
   if (!de || de <= 50) return null

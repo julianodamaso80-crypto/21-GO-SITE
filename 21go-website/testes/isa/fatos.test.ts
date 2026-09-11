@@ -91,3 +91,16 @@ test('cota em reais e valores dos beneficios oficiais tambem sao permitidos', ()
   assert.deepEqual(f.planos[0].cobre, ['Danos a Terceiros R$50.000'])
   assert.deepEqual(f.planos[0].naoCobre, ['Todos os Vidros'])
 })
+
+test('planos que a Isa oferece: Especiais sozinho; moto um so; o resto como o Power devolveu', async () => {
+  const { planosQueAparecem } = await import('../../src/lib/isa/fatos.regras.ts')
+  const ids = (xs: { id: string }[]) => planosQueAparecem(xs).map((p) => p.id)
+  assert.deepEqual(ids([{ id: 'basico' }, { id: 'suv' }, { id: 'especial' }]), ['especial'])
+  assert.deepEqual(ids([{ id: 'basico' }, { id: 'do-seu-jeito' }, { id: 'especial' }, { id: 'premium' }, { id: 'vip' }]), ['especial'])
+  assert.deepEqual(ids([{ id: 'basico' }, { id: 'do-seu-jeito' }, { id: 'vip' }, { id: 'premium' }]), ['basico', 'do-seu-jeito', 'vip', 'premium'])
+  assert.deepEqual(ids([{ id: 'basico' }, { id: 'suv' }]), ['basico', 'suv'])
+  assert.deepEqual(ids([{ id: 'moto-400' }]), ['moto-400'])
+  assert.deepEqual(ids([{ id: 'moto-1000' }]), ['moto-1000'])
+  // nunca acrescenta plano que o Power nao mandou
+  assert.deepEqual(ids([{ id: 'basico' }]), ['basico'])
+})

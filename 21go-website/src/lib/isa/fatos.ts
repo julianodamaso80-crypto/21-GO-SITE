@@ -1,7 +1,7 @@
 import 'server-only'
 import { sql } from '@/lib/isa/banco'
 import { calcActivation, isLeilaoOrigin, PLAN_INFO, type PlanId } from '@/data/pricing'
-import { montarFatos, type Fatos, type PlanoEntrada } from '@/lib/isa/fatos.regras'
+import { montarFatos, planosQueAparecem, type Fatos, type PlanoEntrada } from '@/lib/isa/fatos.regras'
 import { extrairNumeros } from '@/lib/isa/validador.regras'
 
 /**
@@ -57,8 +57,11 @@ export async function leadDoCliente(telefone: string, leadId: string | null, des
   return r[0] ?? null
 }
 
-export function ativacoesDoLead(lead: LeadIsa): { referencia: number | null; porPlano: Record<string, number> } {
-  const planos = lead.cotacao_planos || []
+export function ativacoesDoLead(
+  lead: LeadIsa,
+  o: { todosOsPlanos?: boolean } = {},
+): { referencia: number | null; porPlano: Record<string, number> } {
+  const planos = o.todosOsPlanos ? lead.cotacao_planos || [] : planosQueAparecem(lead.cotacao_planos || [])
   const moto = planos.some((p) => p.id === 'moto-400' || p.id === 'moto-1000')
   const extraApp = lead.carro_app && !moto ? 20 : 0
   const ref = ORDEM_REFERENCIA.map((id) => planos.find((p) => p.id === id)).find(Boolean) || planos[0]
@@ -70,8 +73,17 @@ export function ativacoesDoLead(lead: LeadIsa): { referencia: number | null; por
   return { referencia: calcActivation(base, isBYD), porPlano }
 }
 
-export function fatosDoLead(lead: LeadIsa, desconto50: { de: number; para: number } | null): Fatos {
-  const planos: PlanoEntrada[] = (lead.cotacao_planos || []).map((p) => ({
+/**
+ * `todosOsPlanos`: a lista inteira que o SITE mostrou (pro desconto do popup/5 min partir da
+ * ativacao que o cliente viu). Sem ele, so os planos que a Isa oferece (planosQueAparecem).
+ */
+export function fatosDoLead(
+  lead: LeadIsa,
+  desconto50: { de: number; para: number } | null,
+  o: { todosOsPlanos?: boolean } = {},
+): Fatos {
+  const lista = lead.cotacao_planos || []
+  const planos: PlanoEntrada[] = (o.todosOsPlanos ? lista : planosQueAparecem(lista)).map((p) => ({
     id: p.id,
     nome: p.name,
     mensal: Number(p.monthly),
@@ -80,7 +92,7 @@ export function fatosDoLead(lead: LeadIsa, desconto50: { de: number; para: numbe
   const numerosDosBeneficios = planos.flatMap((p) =>
     (p.beneficios || []).flatMap((b) => extrairNumeros(b.text).dinheiro),
   )
-  const at = ativacoesDoLead(lead)
+  const at = ativacoesDoLead(lead, o)
   return montarFatos({
     marca: lead.marca_interesse,
     modelo: lead.modelo_interesse,

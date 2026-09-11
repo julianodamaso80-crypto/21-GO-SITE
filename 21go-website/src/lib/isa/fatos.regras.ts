@@ -162,3 +162,17 @@ export function montarFatos(e: EntradaFatos): Fatos {
     numerosPermitidos: { dinheiro: [...dinheiro], pct: [...pct] },
   }
 }
+
+/**
+ * Quais planos a Isa oferece, dentre os que o Power devolveu (dono, 11/09/2026):
+ *  - tem Veiculos Especiais → SO Especiais (nada de Basico/VIP junto);
+ *  - moto → so o plano da cilindrada (o site ja escolhe um: ate 400 cc ou acima);
+ *  - o resto → Basico, Do Seu Jeito, VIP/VIP SUV (e Premium, quando o Power devolve).
+ * Nunca acrescenta plano que o Power nao devolveu — preco inventado e proibido.
+ */
+export function planosQueAparecem<T extends { id: string }>(planos: T[]): T[] {
+  if (planos.some((p) => p.id === 'especial')) return planos.filter((p) => p.id === 'especial')
+  const motos = planos.filter((p) => p.id === 'moto-400' || p.id === 'moto-1000')
+  if (motos.length) return motos.slice(0, 1)
+  return planos.filter((p) => ['basico', 'do-seu-jeito', 'vip', 'suv', 'premium'].includes(p.id))
+}
