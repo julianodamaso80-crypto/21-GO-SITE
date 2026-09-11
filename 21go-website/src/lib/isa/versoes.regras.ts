@@ -26,24 +26,52 @@ export function acharMarca<T extends ItemPower>(lista: T[], dito: string): T | n
 /** Mais que isso a Isa nao lista: pede um detalhe (cortar a lista esconderia a versao dele). */
 export const MAX_OPCOES = 6
 
-/** Versoes cujo nome tem as palavras que o cliente disse, as mais parecidas primeiro (todas). */
+// O cliente fala "manual", "automatico", "turbo", "sedan", "premier"; o Power escreve "Mec.",
+// "Aut.", "TB", "SED.", "PREM.". Os dois lados passam por aqui antes de comparar.
+const SINONIMOS: Record<string, string> = {
+  MANUAL: 'MEC', MECANICO: 'MEC', MECANICA: 'MEC', MT: 'MEC',
+  AUTOMATICO: 'AUT', AUTOMATICA: 'AUT', AUTO: 'AUT', AT: 'AUT',
+  TURBO: 'TB', SEDAN: 'SED', PREMIER: 'PREM', PREMIERE: 'PREM',
+}
+const palavrasDe = (s: string) => norm(s).split(' ').filter((p) => p.length >= 2).map((p) => SINONIMOS[p] ?? p)
+
+/**
+ * Versoes que batem com o que o cliente disse.
+ *  1) Todas as palavras da versao estao no que ele disse (ele mandou o nome completo, com ou sem
+ *     marca e ano) → so a mais especifica. Teste do dono de 11/09/2026: mandou "ONIX HATCH ACTIV
+ *     1.0 12V TB Flex 5p Aut." e a Isa achou 14 e pediu o nome de novo.
+ *  2) Senao, so as que MAIS batem (empate no topo), nunca tudo que tem uma palavra em comum.
+ * O nome do modelo (1a palavra da versao) tem que ter sido dito — "plus" sozinho nao acha um Onix.
+ */
 export function filtrarVersoes<T extends ItemPower>(modelos: T[], dito: string): T[] {
-  const palavras = norm(dito).split(' ').filter((p) => p.length >= 2)
+  const palavras = palavrasDe(dito)
   if (palavras.length === 0) return []
-  const pontuados = modelos
-    .map((m) => {
-      const nome = ` ${norm(m.text)} `
-      const pontos = palavras.filter((p) => nome.includes(` ${p} `) || nome.includes(p)).length
-      // a primeira palavra (o modelo) tem que estar — "plus" sozinho nao acha um Onix
-      return { m, pontos, temModelo: nome.includes(palavras[0]) }
-    })
-    .filter((x) => x.temModelo && x.pontos > 0)
-  pontuados.sort((a, b) => b.pontos - a.pontos || a.m.text.localeCompare(b.m.text))
-  return pontuados.map((x) => x.m)
+  const disse = new Set(palavras)
+  const comModelo = modelos
+    .map((m) => ({ m, nome: palavrasDe(m.text) }))
+    // o nome do modelo da versao (1a palavra: ONIX) tem que ter sido dito — com ou sem a marca antes
+    .filter((x) => x.nome.length > 0 && disse.has(x.nome[0]))
+
+  const completas = comModelo.filter((x) => x.nome.length > 0 && x.nome.every((p) => disse.has(p)))
+  if (completas.length) {
+    const maior = Math.max(...completas.map((x) => x.nome.length))
+    return completas.filter((x) => x.nome.length === maior).map((x) => x.m)
+  }
+
+  const pontuados = comModelo
+    .map((x) => ({ m: x.m, pontos: palavras.filter((p) => x.nome.includes(p)).length }))
+    .filter((x) => x.pontos > 0)
+  if (pontuados.length === 0) return []
+  const topo = Math.max(...pontuados.map((x) => x.pontos))
+  return pontuados
+    .filter((x) => x.pontos === topo)
+    .sort((a, b) => a.m.text.localeCompare(b.m.text))
+    .map((x) => x.m)
 }
 
 export function mensagemDetalhe(modelo: string, ano: number | null): string {
-  return `tem várias versões do ${modelo}${ano ? ` ${ano}` : ''} aqui 😃 me fala o nome completo da versão, do jeito que tá no documento, que eu acho a sua certinho`
+  // zero km nao tem documento: pede o que o cliente sabe (cambio e nome da versao)
+  return `tem várias versões do ${modelo}${ano ? ` ${ano}` : ''} aqui 😃 me fala se é manual ou automático e o nome da versão que eu acho a sua certinho`
 }
 
 const EMOJI_NUM = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']

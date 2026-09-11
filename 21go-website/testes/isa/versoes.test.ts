@@ -55,3 +55,32 @@ test('mensagem com as versoes numeradas', () => {
   assert.match(m, /1️⃣ ONIX HATCH LT 1\.0/)
   assert.match(m, /3️⃣ ONIX SEDAN Plus LTZ/)
 })
+
+// Lista REAL do Power, Onix 2027 (11/09/2026)
+const ONIX_2027 = [
+  'ONIX HATCH 1.0 12V Flex 5p Mec.', 'ONIX HATCH 1.0 12V TB 5p Mec.', 'ONIX HATCH 1.0 12V TB Flex 5p Aut.',
+  'ONIX HATCH ACTIV 1.0 12V TB Flex 5p Aut.', 'ONIX HATCH ECO 1.0 12V TB 5p Aut.', 'ONIX HATCH PREM. 1.0 12V TB Flex 5p Aut.',
+  'ONIX HATCH PRO 1.0 12V 5p Mec.', 'ONIX HATCH RS 1.0 TB 12V Flex 5p Aut.', 'ONIX SED. Plus PREM. 1.0 12V TB Flex Aut',
+  'ONIX SEDAN Plus 1.0 12V Mec.',
+].map((text, id) => ({ id, text, back: null }))
+
+test('nome completo igual ao do Power vai direto pra versao certa (teste do dono, 11/09)', () => {
+  const v = filtrarVersoes(ONIX_2027, 'ONIX HATCH ACTIV 1.0 12V TB Flex 5p Aut.')
+  assert.deepEqual(v.map((m) => m.text), ['ONIX HATCH ACTIV 1.0 12V TB Flex 5p Aut.'])
+  // com a marca e o ano junto, do jeito que ele mandou
+  assert.equal(filtrarVersoes(ONIX_2027, 'GM - Chevrolet ONIX HATCH ACTIV 1.0 12V TB Flex 5p Aut. 2027').length, 1)
+})
+
+test('entende manual/automatico/turbo/sedan/premier do jeito que o cliente fala', () => {
+  const manual = filtrarVersoes(ONIX_2027, 'onix manual').map((m) => m.text)
+  assert.ok(manual.length > 0 && manual.every((t) => /Mec\./.test(t)), manual.join(' | '))
+  const turboManual = filtrarVersoes(ONIX_2027, 'onix 1.0 turbo manual').map((m) => m.text)
+  assert.deepEqual(turboManual, ['ONIX HATCH 1.0 12V TB 5p Mec.'])
+  const sedanPremier = filtrarVersoes(ONIX_2027, 'onix sedan premier').map((m) => m.text)
+  assert.deepEqual(sedanPremier, ['ONIX SED. Plus PREM. 1.0 12V TB Flex Aut'])
+})
+
+test('so fica o que mais bate, nao tudo que tem uma palavra em comum', () => {
+  const rs = filtrarVersoes(ONIX_2027, 'onix rs').map((m) => m.text)
+  assert.deepEqual(rs, ['ONIX HATCH RS 1.0 TB 12V Flex 5p Aut.'])
+})
