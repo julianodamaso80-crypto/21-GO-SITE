@@ -23,9 +23,10 @@ export function acharMarca<T extends ItemPower>(lista: T[], dito: string): T | n
   return lista.find((m) => norm(m.text).split(' ').includes(alvo) || norm(m.text).includes(alvo)) ?? null
 }
 
-const MAX_OPCOES = 6
+/** Mais que isso a Isa nao lista: pede um detalhe (cortar a lista esconderia a versao dele). */
+export const MAX_OPCOES = 6
 
-/** Versoes cujo nome tem as palavras que o cliente disse, as mais parecidas primeiro. */
+/** Versoes cujo nome tem as palavras que o cliente disse, as mais parecidas primeiro (todas). */
 export function filtrarVersoes<T extends ItemPower>(modelos: T[], dito: string): T[] {
   const palavras = norm(dito).split(' ').filter((p) => p.length >= 2)
   if (palavras.length === 0) return []
@@ -38,7 +39,11 @@ export function filtrarVersoes<T extends ItemPower>(modelos: T[], dito: string):
     })
     .filter((x) => x.temModelo && x.pontos > 0)
   pontuados.sort((a, b) => b.pontos - a.pontos || a.m.text.localeCompare(b.m.text))
-  return pontuados.slice(0, MAX_OPCOES).map((x) => x.m)
+  return pontuados.map((x) => x.m)
+}
+
+export function mensagemDetalhe(modelo: string, ano: number | null): string {
+  return `tem várias versões do ${modelo}${ano ? ` ${ano}` : ''} aqui 😃 me fala o nome completo da versão, do jeito que tá no documento, que eu acho a sua certinho`
 }
 
 const EMOJI_NUM = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']

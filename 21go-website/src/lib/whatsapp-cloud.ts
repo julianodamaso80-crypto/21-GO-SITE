@@ -28,6 +28,8 @@ export interface MensagemRecebida {
   tipo: string
   texto: string | null
   mediaId: string | null
+  /** Botao de template (quick reply): o codigo que a Isa pos no botao ao mandar o alerta. */
+  payload: string | null
   timestamp: string
 }
 
@@ -66,6 +68,7 @@ export function mensagensDoNumero(payload: unknown, phoneNumberId: string): Mens
           tipo,
           texto: str(corpo?.body) ?? str(corpo?.caption) ?? str(corpo?.text) ?? null,
           mediaId: str(corpo?.id),
+          payload: str(corpo?.payload),
           timestamp: str(m.timestamp) ?? '',
         })
       }

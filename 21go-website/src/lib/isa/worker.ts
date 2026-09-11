@@ -11,10 +11,14 @@ import {
   gravarTranscricao,
   registrarEvento,
   atualizarContato,
+  contatosParaRetomar,
   type ContatoIsa,
   type MensagemHistorico,
 } from '@/lib/isa/banco'
 import { pensar } from '@/lib/isa/cerebro'
+import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono } from '@/lib/isa/acoes'
+import { alertarDono } from '@/lib/isa/alertas'
+import { entradaPopup } from '@/lib/isa/dono.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import {
   enviarTexto,
@@ -30,7 +34,7 @@ import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hor
 import { abertura } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
-import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes } from '@/lib/isa/versoes.regras'
+import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
 import { isLeilaoOrigin } from '@/data/pricing'
 
@@ -55,6 +59,7 @@ export interface ResultadoFila {
 export async function processarFila(): Promise<ResultadoFila> {
   const agora = new Date()
   if (!dentroDoHorario(agora)) return { processados: 0, respondidos: 0, foraDoHorario: true }
+  await retomarSumidos().catch((err) => console.error('[isa] retomada:', err))
 
   const contatos = await reivindicarPendentes({ silencioSeg: SILENCIO_SEG, lockSeg: LOCK_SEG, limite: LIMITE })
   const resultados = await Promise.all(contatos.map((c) => atender(c).catch(async (err) => {
@@ -64,6 +69,18 @@ export async function processarFila(): Promise<ResultadoFila> {
     return false
   })))
   return { processados: contatos.length, respondidos: resultados.filter(Boolean).length }
+}
+
+/** Uma retomada por silencio, so pra quem ja recebeu cotacao (ver contatosParaRetomar). */
+async function retomarSumidos(): Promise<void> {
+  for (const c of await contatosParaRetomar()) {
+    if (!destinoPermitido(c.telefone)) continue
+    const nome = primeiroNomeDe(c.nome)
+    const texto = `${abertura(cumprimento(new Date()), nome)}\n\nconseguiu ver a sua simulação? 🙏🏼\n\nqualquer dúvida é só me chamar por aqui`
+    const enviou = await enviarComoGente(c, texto, undefined, c.ultimo_inbound_em)
+    await registrarEvento(c.telefone, 'retomada', { enviou })
+    if (enviou) await liberar(c.telefone, null, true)
+  }
 }
 
 /** Devolve true se respondeu o cliente. */
@@ -77,8 +94,10 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const novas = await inboundsNovas(c.conversation_id, c.processado_ate)
   await transcreverAudios(novas)
 
-  // O numero de alertas do dono conversa com a Isa pelo mesmo canal, mas nao e cliente.
+  // O numero de alertas do dono conversa com a Isa pelo mesmo canal, mas nao e cliente: e a
+  // resposta dele a um pedido de desconto (botao Autorizar/Recusar ou o valor em texto).
   if (c.telefone === numeroDeAlerta()) {
+    await atenderDono(c, novas)
     await liberar(c.telefone, visto, false)
     return false
   }
@@ -104,11 +123,30 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const agora = new Date()
   const ultimaInbound = novas[novas.length - 1]?.whatsapp_message_id
 
-  // Documento (foto de CNH, CRLV, comprovante) = o cliente quer fechar: o time assume.
+  const enviar = (partes: string[]) => enviarComoGente(c, partes, ultimaInbound, visto)
+
+  // Documento (foto de CNH, CRLV, comprovante) = o cliente quer fechar: transfere pro 4824 e pausa.
   if (novas.some((m) => m.message_type === 'document' || m.message_type === 'image')) {
-    await pausar(c.telefone, 'documento', { mensagens: novas.length })
-    await liberar(c.telefone, visto, false)
-    return false
+    await transferir(c, 'documento', enviar)
+    await liberar(c.telefone, visto, true)
+    return true
+  }
+
+  // Entrada pelo popup ("Quero meu desconto!"): R$ 50 na ativacao, uma vez, com o antes e o depois.
+  const popup = entradaPopup(novas[0]?.content ?? '')
+  if (popup.popup && !c.desconto50_em) {
+    await atualizarContato(c.telefone, { entrada: 'popup', ...(popup.leadId ? { lead_id: popup.leadId } : {}) })
+    const frase = await concederDesconto50(c, popup.leadId)
+    if (frase) {
+      const hist0 = await historico(c.conversation_id, 5)
+      const nossa0 = [...hist0].reverse().find((m) => m.direction === 'outbound')
+      const ab = precisaCumprimentar(nossa0 ? new Date(nossa0.criada_em) : null, agora)
+        ? `${abertura(cumprimento(agora), primeiroNomeDe(c.nome))}\n\n`
+        : ''
+      const enviou = await enviarComoGente(c, `${ab}${frase}`, ultimaInbound, visto)
+      await liberar(c.telefone, visto, enviou)
+      return enviou
+    }
   }
 
   // Respondeu o numero da versao (cotacao sem placa): cota direto, sem passar pela IA.
@@ -158,9 +196,17 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     })
   }
 
-  // Gatilhos que calam a Isa: o time assume a conversa.
+  // Associado (boleto, sinistro, reboque...): a Isa so vende — transfere pro 4824 e pausa.
+  if (saida.gatilho === 'associado') {
+    await transferir(c, 'associado', enviar)
+    await liberar(c.telefone, visto, true)
+    return true
+  }
+
+  // Robo, xingamento, numero que nao confere: a Isa fica calada e o dono e avisado.
   if (saida.gatilho && GATILHOS_SILENCIOSOS.has(saida.gatilho)) {
-    await pausar(c.telefone, saida.gatilho, { reprovados: saida.reprovados })
+    const detalhe = saida.gatilho === 'validador' ? `numeros barrados: ${saida.reprovados.join(', ')}` : ultimoTexto.slice(0, 200)
+    await pausarEAvisar(c, saida.gatilho, detalhe)
     await liberar(c.telefone, visto, false)
     return false
   }
@@ -203,10 +249,11 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   const enviou = saida.resposta ? await enviarComoGente(c, saida.resposta, ultimaInbound, visto) : false
 
-  // Desconto: a Isa ja disse "vou confirmar com meu supervisor" e fica esperando o dono.
-  if (saida.gatilho === 'desconto') {
-    await pausar(c.telefone, 'desconto', {})
-    await atualizarContato(c.telefone, { aguardando_dono: 'desconto' })
+  // Desconto: a Isa ja disse "vou confirmar com meu supervisor"; pausa e manda o alerta com botoes.
+  if (saida.gatilho === 'desconto') await pedirDescontoAoDono(c)
+  // Nao soube responder: respondeu "vou confirmar" e o dono fica sabendo (a Isa segue ligada).
+  if (saida.gatilho === 'sem_informacao') {
+    await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_informacao', detalhe: ultimoTexto.slice(0, 200) })
   }
 
   await liberar(c.telefone, visto, enviou)
@@ -255,9 +302,10 @@ async function orcarEEnviar(
   if (orc.tipo === 'placa_invalida') {
     return enviarComoGente(c, ['essa placa não parece certa 🤔 confere pra mim, por favor?'], p.ultimaInbound, p.visto)
   }
-  // Nenhuma fonte achou o veiculo nem a FIPE: a Isa nao chuta — o time assume.
-  await pausar(c.telefone, 'sem_preco', { placa: p.placa, motivo: orc.motivo })
-  return false
+  // Nenhuma fonte achou o veiculo nem a FIPE: a Isa nao chuta — transfere pro 4824.
+  await registrarEvento(c.telefone, 'sem_preco', { placa: p.placa, motivo: orc.motivo })
+  await transferir(c, 'sem_preco', (partes) => enviarComoGente(c, partes, p.ultimaInbound, p.visto))
+  return true
 }
 
 /** Acha a marca (carro, depois moto), filtra as versoes do ano e manda a lista numerada. */
@@ -269,15 +317,21 @@ async function listarVersoesEEnviar(
   const ab = p.cumprimentar ? `${abertura(cumprimento(new Date()), primeiroNomeDe(p.nome))}\n\n` : ''
   const ano = sp.ano as number
   const marcaDita = sp.marca || sp.modelo.split(' ')[0]
+  // Carro primeiro; se a marca nao existir ali OU nao tiver o modelo (Honda carro x Honda moto),
+  // procura nas motos.
   let tipo: 'carro' | 'moto' = 'carro'
   let marca = acharMarca(await listBrandsPowerCrm('carro'), marcaDita)
-  if (!marca) {
-    marca = acharMarca(await listBrandsPowerCrm('moto'), marcaDita)
-    tipo = 'moto'
+  let opcoes = marca ? filtrarVersoes(await listModelsPowerCrm(marca.id, ano), sp.modelo) : []
+  if (opcoes.length === 0) {
+    const marcaMoto = acharMarca(await listBrandsPowerCrm('moto'), marcaDita)
+    const opcoesMoto = marcaMoto ? filtrarVersoes(await listModelsPowerCrm(marcaMoto.id, ano), sp.modelo) : []
+    if (opcoesMoto.length) {
+      marca = marcaMoto
+      opcoes = opcoesMoto
+      tipo = 'moto'
+    }
   }
-  const modelos = marca ? await listModelsPowerCrm(marca.id, ano) : []
-  const opcoes = filtrarVersoes(modelos, sp.modelo)
-  await registrarEvento(c.telefone, 'versoes', { marca: marca?.text ?? null, ano, modelo: sp.modelo, achadas: opcoes.length })
+  await registrarEvento(c.telefone, 'versoes', { marca: marca?.text ?? null, tipo, ano, modelo: sp.modelo, achadas: opcoes.length })
 
   if (!marca || opcoes.length === 0) {
     return enviarComoGente(
@@ -286,6 +340,9 @@ async function listarVersoesEEnviar(
       p.ultimaInbound,
       p.visto,
     )
+  }
+  if (opcoes.length > MAX_OPCOES) {
+    return enviarComoGente(c, [`${ab}${mensagemDetalhe(sp.modelo, ano)}`], p.ultimaInbound, p.visto)
   }
   if (opcoes.length === 1) {
     return cotarModeloEEnviar(c, {
@@ -327,8 +384,9 @@ async function cotarModeloEEnviar(
     return enviarComoGente(c, partes, p.ultimaInbound, p.visto)
   }
   if (orc.tipo === 'nao_fazemos') return enviarComoGente(c, [mensagemNaoFazemos(orc.motivo)], p.ultimaInbound, p.visto)
-  await pausar(c.telefone, 'sem_preco', { modelo: p.modelText, ano: p.ano, motivo: orc.tipo === 'humano' ? orc.motivo : orc.tipo })
-  return false
+  await registrarEvento(c.telefone, 'sem_preco', { modelo: p.modelText, ano: p.ano, motivo: orc.tipo === 'humano' ? orc.motivo : orc.tipo })
+  await transferir(c, 'sem_preco', (partes) => enviarComoGente(c, partes, p.ultimaInbound, p.visto))
+  return true
 }
 
 function primeiroNomeDe(nome: string | null): string | null {
@@ -337,10 +395,6 @@ function primeiroNomeDe(nome: string | null): string | null {
   return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase()
 }
 
-async function pausar(telefone: string, motivo: string, detalhe: Record<string, unknown>): Promise<void> {
-  await atualizarContato(telefone, { ligada: false, pausa_motivo: motivo, pausa_por: 'isa', pausada_em: new Date().toISOString() })
-  await registrarEvento(telefone, 'pausou', { motivo, ...detalhe })
-}
 
 async function transcreverAudios(novas: MensagemHistorico[]): Promise<void> {
   const phoneId = process.env.WA_PHONE_ID ?? ''

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes } from '../../src/lib/isa/versoes.regras.ts'
+import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '../../src/lib/isa/versoes.regras.ts'
 
 const marcas = [
   { id: 1, text: 'CHEVROLET' },
@@ -32,9 +32,11 @@ test('filtra as versoes pelo que o cliente disse — nunca escolhe por ele', () 
   assert.deepEqual(filtrarVersoes(modelos, 'fusca'), [])
 })
 
-test('no maximo 6 opcoes', () => {
+test('com mais de 6 versoes a Isa nao corta a lista: pede um detalhe', () => {
   const muitos = Array.from({ length: 12 }, (_, i) => ({ id: i, text: `ONIX VERSAO ${i}`, back: null }))
-  assert.equal(filtrarVersoes(muitos, 'onix').length, 6)
+  assert.equal(filtrarVersoes(muitos, 'onix').length, 12)
+  assert.ok(12 > MAX_OPCOES)
+  assert.match(mensagemDetalhe('Onix', 2020), /tem várias versões do Onix 2020/)
 })
 
 test('entende a escolha: "2", "2️⃣", "o 3"; numero fora da lista nao vale', () => {

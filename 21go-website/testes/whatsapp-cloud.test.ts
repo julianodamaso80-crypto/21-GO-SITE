@@ -39,7 +39,7 @@ caso('extrai texto do numero da Isa', () => {
   const [m] = mensagensDoNumero(texto, ISA)
   assert.deepEqual(m, {
     id: 'wamid.A', from: '5521992208062', nome: 'Juliano', tipo: 'text',
-    texto: 'Oie, valor do ônix', mediaId: null, timestamp: '1789076100',
+    texto: 'Oie, valor do ônix', mediaId: null, payload: null, timestamp: '1789076100',
   })
 })
 caso('ignora mensagem de outro numero (CRM)', () => assert.equal(mensagensDoNumero(texto, CRM).length, 0))
@@ -58,6 +58,7 @@ caso('clique em botao vira texto', () => {
     messages: [{ from: '5521965774240', id: 'wamid.C', timestamp: '1', type: 'button', button: { text: 'Autorizar desconto', payload: 'x' } }],
   }), ISA)
   assert.equal(m.texto, 'Autorizar desconto')
+  assert.equal(m.payload, 'x')
 })
 caso('payload torto nao explode', () => {
   assert.equal(mensagensDoNumero(null, ISA).length, 0)

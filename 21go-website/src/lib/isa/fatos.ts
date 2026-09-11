@@ -35,7 +35,8 @@ const COLUNAS = `id, nome, marca_interesse, modelo_interesse, ano_interesse, val
 /** A simulacao mais recente do telefone (ou a do lead_id que a propria Isa gravou). */
 export async function leadDoCliente(telefone: string, leadId: string | null): Promise<LeadIsa | null> {
   if (leadId) {
-    const r = await sql<LeadIsa>(`SELECT ${COLUNAS} FROM public.leads WHERE id = $1 LIMIT 1`, [leadId])
+    // Lead de consultor nunca entra, nem pelo link do popup (REGRA 0.1).
+    const r = await sql<LeadIsa>(`SELECT ${COLUNAS} FROM public.leads WHERE id = $1 AND consultor_slug IS NULL LIMIT 1`, [leadId])
     if (r[0]?.cotacao_planos?.length) return r[0]
   }
   const r = await sql<LeadIsa>(

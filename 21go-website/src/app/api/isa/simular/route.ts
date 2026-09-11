@@ -3,7 +3,7 @@ import { pensar } from '@/lib/isa/cerebro'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import { lookupPlate } from '@/lib/plate-lookup'
 import { mensagensDaSimulacao } from '@/lib/isa/entrega.regras'
-import { acharMarca, filtrarVersoes, mensagemVersoes } from '@/lib/isa/versoes.regras'
+import { acharMarca, filtrarVersoes, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
 import type { MensagemHistorico } from '@/lib/isa/banco'
 
@@ -39,10 +39,16 @@ export async function POST(req: NextRequest) {
   // Modo sem placa: mostra as versoes que a Isa listaria (nada e gravado).
   if (b.semPlaca) {
     const { marca: m, modelo, ano } = b.semPlaca
-    let marca = acharMarca(await listBrandsPowerCrm('carro'), m || modelo.split(' ')[0])
-    if (!marca) marca = acharMarca(await listBrandsPowerCrm('moto'), m || modelo.split(' ')[0])
-    const versoes = marca ? filtrarVersoes(await listModelsPowerCrm(marca.id, ano), modelo) : []
-    return NextResponse.json({ marca: marca?.text ?? null, versoes: versoes.map((v) => v.text), mensagem: versoes.length ? mensagemVersoes(modelo, ano, versoes) : null })
+    const dita = m || modelo.split(' ')[0]
+    let marca = acharMarca(await listBrandsPowerCrm('carro'), dita)
+    let versoes = marca ? filtrarVersoes(await listModelsPowerCrm(marca.id, ano), modelo) : []
+    if (versoes.length === 0) {
+      const moto = acharMarca(await listBrandsPowerCrm('moto'), dita)
+      const vm = moto ? filtrarVersoes(await listModelsPowerCrm(moto.id, ano), modelo) : []
+      if (vm.length) { marca = moto; versoes = vm }
+    }
+    const mensagem = versoes.length === 0 ? null : versoes.length > MAX_OPCOES ? mensagemDetalhe(modelo, ano) : mensagemVersoes(modelo, ano, versoes)
+    return NextResponse.json({ marca: marca?.text ?? null, total: versoes.length, versoes: versoes.slice(0, 10).map((v) => v.text), mensagem })
   }
 
   // Modo placa: mostra as 2 mensagens da simulacao SEM gravar lead e SEM criar cotacao no Power.

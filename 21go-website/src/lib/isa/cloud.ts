@@ -63,20 +63,22 @@ export async function enviarTexto(to: string, texto: string): Promise<string> {
   return postarMensagem({ to, type: 'text', text: { body: texto, preview_url: true } })
 }
 
-/** Template aprovado (UTILITY). `variaveis` na ordem dos {{1}}, {{2}}... do corpo. */
-export async function enviarTemplate(to: string, nome: string, variaveis: string[]): Promise<string> {
+/**
+ * Template aprovado (UTILITY). `variaveis` na ordem dos {{1}}, {{2}}... do corpo; `payloads`, um
+ * por botao de resposta rapida — volta no webhook quando alguem toca no botao.
+ */
+export async function enviarTemplate(to: string, nome: string, variaveis: string[], payloads: string[] = []): Promise<string> {
   if (!destinoPermitido(to)) throw new EnvioBloqueado(`destino fora da allowlist: ${to.slice(0, 6)}***`)
-  return postarMensagem({
-    to,
-    type: 'template',
-    template: {
-      name: nome,
-      language: { code: 'pt_BR' },
-      components: variaveis.length
-        ? [{ type: 'body', parameters: variaveis.map((v) => ({ type: 'text', text: v.slice(0, 900) })) }]
-        : [],
-    },
-  })
+  const components: Record<string, unknown>[] = []
+  if (variaveis.length) {
+    // A Meta recusa variavel com quebra de linha, tab ou mais de 4 espacos seguidos.
+    const limpa = (v: string) => v.replace(/[\n\t]+/g, ' · ').replace(/ {4,}/g, ' ').slice(0, 900)
+    components.push({ type: 'body', parameters: variaveis.map((v) => ({ type: 'text', text: limpa(v) || '-' })) })
+  }
+  payloads.forEach((payload, index) =>
+    components.push({ type: 'button', sub_type: 'quick_reply', index: String(index), parameters: [{ type: 'payload', payload }] }),
+  )
+  return postarMensagem({ to, type: 'template', template: { name: nome, language: { code: 'pt_BR' }, components } })
 }
 
 /** Tique azul + "digitando...". Melhor esforco: nunca derruba a resposta. */
