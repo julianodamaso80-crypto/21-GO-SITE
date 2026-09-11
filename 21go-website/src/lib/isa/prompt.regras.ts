@@ -58,8 +58,24 @@ export function abertura(cumprimento: string, primeiroNome: string | null): stri
 }
 
 /** Se a IA cumprimentou mesmo proibida, tira a linha — senao sai "boa tarde" duas vezes. */
+const SAUDACAO = '(?:oi+|ol[aá]|bom dia|boa tarde|boa noite)'
+// Linha que e SO cumprimento: "oi juliano, tudo bem", "boa tarde rafael 😃", "oi juliano, boa noite".
+const LINHA_SO_SAUDACAO = new RegExp(
+  `^\\s*${SAUDACAO}(?:[\\s,]+\\p{L}+)?(?:[\\s,]+${SAUDACAO})?(?:[\\s,]+tudo bem)?[\\s,!.?\\p{Extended_Pictographic}\\u{1F3FB}-\\u{1F3FF}]*$`,
+  'iu',
+)
+const PREFIXO_SAUDACAO = new RegExp(`^${SAUDACAO}(?:\\s+\\p{L}+)?\\s*[,!.]\\s*`, 'iu')
+
 export function tirarCumprimento(resposta: string): string {
-  return resposta.replace(/^\s*(oi+|ol[aá]|bom dia|boa tarde|boa noite)\b[^\n]{0,30}(\n+|$)/i, '').trim()
+  // Tira so linha que e APENAS cumprimento. Bug de 10/09/2026: a versao anterior apagava
+  // qualquer linha curta que COMECASSE com cumprimento — "oi juliano, qual processo?" virava
+  // resposta vazia e o cliente ficava sem resposta.
+  const linhas = resposta.split('\n')
+  while (linhas.length && (!linhas[0].trim() || LINHA_SO_SAUDACAO.test(linhas[0]))) linhas.shift()
+  const r = linhas.join('\n').trim()
+  // Cumprimento colado no comeco da frase: "oi juliano, como posso te ajudar?" → "como posso..."
+  const semPrefixo = r.replace(PREFIXO_SAUDACAO, '')
+  return semPrefixo || r
 }
 
 export type Genero = 'm' | 'f' | null

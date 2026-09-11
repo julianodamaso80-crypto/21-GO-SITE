@@ -23,6 +23,17 @@ test('se a IA cumprimentar mesmo assim, a linha sai (senao fica "boa tarde" duas
   assert.equal(tirarCumprimento('a cota é 6%'), 'a cota é 6%')
   // "boa" no meio da frase nao e cumprimento
   assert.equal(tirarCumprimento('essa é uma boa escolha'), 'essa é uma boa escolha')
+  // cumprimento colado na frase (visto em producao, 10/09 22h06)
+  assert.equal(tirarCumprimento('oi juliano, como posso te ajudar com o processo?'), 'como posso te ajudar com o processo?')
+  assert.equal(tirarCumprimento('boa tarde! qual a placa?'), 'qual a placa?')
+  // a causa do silencio das 21h55: frase curta que comeca com "oi" NUNCA pode sumir inteira
+  assert.equal(tirarCumprimento('oi juliano, qual processo?'), 'qual processo?')
+  assert.equal(tirarCumprimento('oi, qual a placa?'), 'qual a placa?')
+  assert.equal(tirarCumprimento('oi juliano, tudo bem?\n\npode me mandar a placa?'), 'pode me mandar a placa?')
+  assert.equal(tirarCumprimento('oi juliano, boa noite\n\no que você precisa?'), 'o que você precisa?')
+  assert.equal(tirarCumprimento('boa tarde rafael 😃\n\nme manda a placa'), 'me manda a placa')
+  // so cumprimento, sem conteudo: some (o codigo ja cumprimenta)
+  assert.equal(tirarCumprimento('oi juliano'), '')
 })
 
 test('moto leva cota de 15% no prompt, nunca 6%', () => {
