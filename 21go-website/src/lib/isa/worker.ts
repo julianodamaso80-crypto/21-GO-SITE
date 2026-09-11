@@ -43,6 +43,7 @@ import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
 import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
+import { identifyPlate } from '@/lib/plate-identify'
 import { isLeilaoOrigin } from '@/data/pricing'
 
 /**
@@ -416,7 +417,10 @@ async function orcarEEnviar(
   // "quem faz a cotacao e voce"). Pede pra conferir a placa ou fazer pelo modelo; o dono e avisado.
   await registrarEvento(c.telefone, 'sem_preco', { placa: p.placa, motivo: orc.motivo })
   await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_preco', detalhe: `placa ${p.placa}: ${orc.motivo}`.slice(0, 200) })
-  return enviarComoGente(c, [mensagemPlacaNaoAchada()], p.ultimaInbound, p.visto)
+  // O que o DENATRAN mostra dessa placa (mesma identificacao da tela do site), pro cliente conferir.
+  const id = await identifyPlate(p.placa).catch(() => null)
+  const comoAparece = id && (id.status === 'found' || id.status === 'partial') && id.label ? id.label : null
+  return enviarComoGente(c, [mensagemPlacaNaoAchada(comoAparece)], p.ultimaInbound, p.visto)
 }
 
 /** Acha a marca (carro, depois moto), filtra as versoes do ano e manda a lista numerada. */

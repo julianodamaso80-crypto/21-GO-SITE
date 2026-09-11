@@ -48,7 +48,12 @@ export function mensagensDaSimulacao(p: {
  * manda pro 4824 (dono, 11/09/2026: "quem faz a cotacao e voce"). Pede pra conferir e oferece
  * fazer pelo modelo e ano.
  */
-export function mensagemPlacaNaoAchada(): string {
+export function mensagemPlacaNaoAchada(comoApareceNoDenatran: string | null = null): string {
+  // A placa existe mas nao deu preco (ex.: RKW7J62 e uma carreta): dizer o que o DENATRAN mostra
+  // faz o cliente perceber se digitou errado — "nao achei" parecia que a placa nao existia.
+  if (comoApareceNoDenatran) {
+    return `essa placa aparece registrada como ${comoApareceNoDenatran} 🤔\n\nconfere pra mim se é essa mesmo? se for outro veículo, me manda a placa certinha ou o modelo e o ano que eu faço a simulação`
+  }
   return 'não consegui achar essa placa aqui 🤔\n\nconfere pra mim se tá certinha? se preferir, me fala o modelo e o ano do veículo que eu faço a simulação por eles'
 }
 

@@ -73,3 +73,14 @@ test('escolheu o plano: reconhece o jeito que o cliente fala e pede os documento
   assert.match(mensagemPedidoDocumentos(), /documento do veículo/)
   assert.match(mensagemPedidoDocumentos(), /comprovante de residência/)
 })
+
+test('placa que existe mas nao tem preco: a Isa diz como ela aparece no DENATRAN (caso RKW7J62, uma carreta)', async () => {
+  const { mensagemPlacaNaoAchada } = await import('../../src/lib/isa/entrega.regras.ts')
+  const m = mensagemPlacaNaoAchada('ND CARRETAS FZ 1E · 2021')
+  assert.match(m, /essa placa aparece registrada como ND CARRETAS FZ 1E · 2021/)
+  assert.match(m, /confere/)
+  assert.doesNotMatch(m, /não consegui achar/)
+  assert.doesNotMatch(m, /wa\.me|4824/)
+  // sem nada do DENATRAN, continua o texto de conferir
+  assert.match(mensagemPlacaNaoAchada(null), /não consegui achar essa placa/)
+})
