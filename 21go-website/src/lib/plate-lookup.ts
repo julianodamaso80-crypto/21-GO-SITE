@@ -38,7 +38,7 @@
  * ╚══════════════════════════════════════════════════════════════════════════╝
  */
 
-import { PRICING_TABLES, findPrice, resolveMotoCc, type QuotePlan } from '@/data/pricing'
+import { PRICING_TABLES, findPrice, getApplicablePlans, resolveMotoCc, type QuotePlan } from '@/data/pricing'
 import { lookupFipeDirect } from './fipe-direct'
 import { lookupApiBrasilByPlate, isApiBrasilConfigured } from './apibrasil-lookup'
 import { aceitaAno, decidirElegibilidade } from './elegibilidade.regras'
@@ -308,9 +308,23 @@ async function resolvePowerInternals(
   return { mdl, mdlYr, cityId }
 }
 
+/**
+ * Opcoes que SO a Isa (robo de atendimento) passa. Sem elas o comportamento e o do site, igual.
+ *
+ * - tabelaSePowerMudo: decisao do dono em 10/09/2026, so para a Isa — Power mudo cota pela
+ *   tabela local em vez de mandar pro consultor. O site continua com a regra de 31/08/2026.
+ * - isLeilao: aplica o desconto de leilao (desce uma faixa) como a tela faz.
+ * Com opcoes o cache e ignorado: o resultado depende delas.
+ */
+export interface OpcoesLookupIsa {
+  tabelaSePowerMudo?: boolean
+  isLeilao?: boolean
+}
+
 export async function lookupPlate(
   placa: string,
-): Promise<PlateResponse | PlateErrorResponse> {
+  opcoes?: OpcoesLookupIsa,
+): Promise<(PlateResponse & { planos_da_tabela?: boolean }) | PlateErrorResponse> {
   const normalized = placa.toUpperCase().replace(/[^A-Z0-9]/g, '')
   if (normalized.length !== 7) {
     return { success: false, error: 'Placa deve ter 7 caracteres' }
@@ -319,7 +333,7 @@ export async function lookupPlate(
     return { success: false, error: 'Serviço de consulta indisponível no momento.' }
   }
 
-  const cached = getCached(normalized)
+  const cached = opcoes ? null : getCached(normalized)
   if (cached) return cached
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -505,13 +519,16 @@ export async function lookupPlate(
     }
   }
 
-  if (veredicto.acao === 'consultor') {
+  const pelaTabela = veredicto.acao === 'consultor' && !!opcoes?.tabelaSePowerMudo
+  if (veredicto.acao === 'consultor' && !pelaTabela) {
     return humanSupportResponse('elegibilidade_indisponivel', normalized)
   }
 
-  // Sem ramo local: chegar aqui exige `veredicto.acao === 'cotar'`, que só acontece com o
-  // Power tendo respondido com plano. Power mudo virou consultor logo acima.
-  const plans = planosDoPowerParaTela(consulta.planos || [], fipeValue)
+  // Sem ramo local para o site: chegar aqui exige `veredicto.acao === 'cotar'`, que só acontece
+  // com o Power tendo respondido com plano. So a Isa (pelaTabela) cota pela tabela no Power mudo.
+  const plans = pelaTabela
+    ? getApplicablePlans(fipeValue, categoria, combustivel, cilindrada, modelo, !!opcoes?.isLeilao)
+    : planosDoPowerParaTela(consulta.planos || [], fipeValue, !!opcoes?.isLeilao)
 
   if (plans.length === 0) {
     // FIPE válido mas fora das faixas das tabelas (ex: caminhão pesado, especial fora de regra)
@@ -560,6 +577,7 @@ export async function lookupPlate(
     },
   }
 
+  if (opcoes) return pelaTabela ? { ...response, planos_da_tabela: true } : response
   setCached(normalized, response)
   return response
 }

@@ -25,6 +25,8 @@ export interface LeadIsa {
   leilao: string | null
   estado: string | null
   placa_interesse: string | null
+  /** So vem da consulta de placa da Isa (o lead do site nao grava) — ajuda a achar eletrico. */
+  combustivel?: string | null
 }
 
 const COLUNAS = `id, nome, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado,
@@ -77,7 +79,7 @@ export function fatosDoLead(lead: LeadIsa, desconto50: { de: number; para: numbe
     modelo: lead.modelo_interesse,
     ano: lead.ano_interesse,
     fipe: lead.valor_fipe_consultado,
-    combustivel: null,
+    combustivel: lead.combustivel ?? null,
     leilao: isLeilaoOrigin(lead.leilao),
     carroApp: !!lead.carro_app,
     estado: lead.estado || null,

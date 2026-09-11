@@ -26,7 +26,11 @@ import {
 } from '@/lib/isa/cloud'
 import { transcrever } from '@/lib/isa/transcrever'
 import { dividirEmPartes, pausaEntreSegundos } from '@/lib/isa/envio.regras'
-import { dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
+import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
+import { abertura } from '@/lib/isa/prompt.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos } from '@/lib/isa/entrega.regras'
+import { orcarPorPlaca } from '@/lib/isa/orcamento'
+import { isLeilaoOrigin } from '@/data/pricing'
 
 /**
  * A fila da Isa. Roda disparada pelo webhook (10,5 s depois da mensagem) e por um cron de 1 em
@@ -142,6 +146,30 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return false
   }
 
+  // Placa nova (ou o cliente corrigiu leilao/aplicativo): a Isa consulta e manda a simulacao.
+  const placaAtual = (lead?.placa_interesse || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  const leilaoAtual = lead ? isLeilaoOrigin(lead.leilao) : false
+  const appAtual = !!lead?.carro_app
+  const placaNova = saida.placa && saida.placa !== placaAtual ? saida.placa : null
+  const corrigiu =
+    !!placaAtual &&
+    ((saida.leilao !== null && saida.leilao !== leilaoAtual) || (saida.app !== null && saida.app !== appAtual))
+  if (placaNova || corrigiu) {
+    const enviouOrcamento = await orcarEEnviar(c, {
+      placa: placaNova ?? placaAtual,
+      leilao: saida.leilao ?? (placaNova ? false : leilaoAtual),
+      app: saida.app ?? (placaNova ? false : appAtual),
+      assumido: saida.leilao === null && saida.app === null && !!placaNova,
+      nome: c.nome ?? lead?.nome ?? null,
+      cumprimentar: precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora),
+      desconto,
+      ultimaInbound,
+      visto,
+    })
+    await liberar(c.telefone, visto, enviouOrcamento)
+    return enviouOrcamento
+  }
+
   const enviou = saida.resposta ? await enviarComoGente(c, saida.resposta, ultimaInbound, visto) : false
 
   // Desconto: a Isa ja disse "vou confirmar com meu supervisor" e fica esperando o dono.
@@ -155,6 +183,57 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 }
 
 const GATILHOS_SILENCIOSOS = new Set(['robo', 'hostil', 'associado', 'validador'])
+
+const SITE = 'https://21go.site'
+
+/** "perai que vou consultar" → consulta → as 2 mensagens do dono (ou o motivo de nao fazermos). */
+async function orcarEEnviar(
+  c: ContatoIsa,
+  p: {
+    placa: string
+    leilao: boolean
+    app: boolean
+    assumido: boolean
+    nome: string | null
+    cumprimentar: boolean
+    desconto: { de: number; para: number } | null
+    ultimaInbound: string | undefined
+    visto: string | null
+  },
+): Promise<boolean> {
+  const nome = primeiroNomeDe(p.nome)
+  const ab = p.cumprimentar ? abertura(cumprimento(new Date()), nome) : null
+  await enviarComoGente(c, [ab ? `${ab}\n\nperai que vou consultar aqui 🙏🏼` : 'perai que vou consultar aqui 🙏🏼'], p.ultimaInbound, p.visto)
+
+  const orc = await orcarPorPlaca({ telefone: c.telefone, nome: p.nome, placa: p.placa, leilao: p.leilao, carroApp: p.app })
+  await registrarEvento(c.telefone, 'orcamento', { placa: p.placa, resultado: orc.tipo, tabela: orc.tipo === 'ok' ? orc.tabela : undefined })
+
+  if (orc.tipo === 'ok') {
+    await atualizarContato(c.telefone, { lead_id: orc.lead.id, preco_da_tabela: orc.tabela })
+    const fatos = fatosDoLead(orc.lead, p.desconto)
+    const partes = mensagensDaSimulacao({
+      abertura: null,
+      nome,
+      fatos,
+      pdfUrl: `${SITE}/api/pdfs/${orc.lead.id}`,
+      leilaoOuAppAssumido: p.assumido,
+    })
+    return enviarComoGente(c, partes, p.ultimaInbound, p.visto)
+  }
+  if (orc.tipo === 'nao_fazemos') return enviarComoGente(c, [mensagemNaoFazemos(orc.motivo)], p.ultimaInbound, p.visto)
+  if (orc.tipo === 'placa_invalida') {
+    return enviarComoGente(c, ['essa placa não parece certa 🤔 confere pra mim, por favor?'], p.ultimaInbound, p.visto)
+  }
+  // Nenhuma fonte achou o veiculo nem a FIPE: a Isa nao chuta — o time assume.
+  await pausar(c.telefone, 'sem_preco', { placa: p.placa, motivo: orc.motivo })
+  return false
+}
+
+function primeiroNomeDe(nome: string | null): string | null {
+  const n = (nome || '').trim().split(/\s+/)[0]
+  if (!n || n.length < 2) return null
+  return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase()
+}
 
 async function pausar(telefone: string, motivo: string, detalhe: Record<string, unknown>): Promise<void> {
   await atualizarContato(telefone, { ligada: false, pausa_motivo: motivo, pausa_por: 'isa', pausada_em: new Date().toISOString() })
@@ -183,12 +262,13 @@ async function transcreverAudios(novas: MensagemHistorico[]): Promise<void> {
  */
 export async function enviarComoGente(
   c: ContatoIsa,
-  texto: string,
+  texto: string | string[],
   ultimaInboundWamid: string | undefined,
   visto: string | null,
   sender = 'isa',
 ): Promise<boolean> {
-  const partes = dividirEmPartes(texto)
+  // Lista = partes ja montadas (a simulacao vai inteira numa mensagem); texto = divide na linha em branco.
+  const partes = Array.isArray(texto) ? texto.filter(Boolean) : dividirEmPartes(texto)
   if (partes.length === 0) return false
 
   if (ultimaInboundWamid) await marcarLidaEDigitando(ultimaInboundWamid)

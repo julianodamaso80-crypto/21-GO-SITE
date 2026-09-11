@@ -168,5 +168,9 @@ ${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativa
 - "sem_informacao": perguntou algo que você não sabe responder com certeza
 
 ## saída — responda SÓ com JSON válido, sem texto fora dele
-{"resposta": "texto pro cliente, com linha em branco entre as partes, sem cumprimento", "pronta": null ou "susep"|"susep_numero"|"cooperativa"|"cnh_vencida"|"vip_x_do_seu_jeito", "gatilho": null ou "desconto"|"robo"|"hostil"|"associado"|"sem_informacao", "genero": null ou "m"|"f", "placa": null ou "ABC1D23", "sem_placa": null ou {"modelo": "...", "ano": 2020}}`
+{"resposta": "texto pro cliente, com linha em branco entre as partes, sem cumprimento", "pronta": null ou "susep"|"susep_numero"|"cooperativa"|"cnh_vencida"|"vip_x_do_seu_jeito", "gatilho": null ou "desconto"|"robo"|"hostil"|"associado"|"sem_informacao", "genero": null ou "m"|"f", "placa": null ou "ABC1D23", "sem_placa": null ou {"marca": "...", "modelo": "...", "ano": 2020}, "leilao": null ou true|false, "app": null ou true|false}
+
+- "placa": SÓ se o cliente mandou uma placa nas mensagens NOVAS (não repita placa antiga do histórico). quando vier placa, o sistema consulta e manda a simulação sozinho — deixe "resposta" vazia
+- "sem_placa": zero km ou ele não tem/não sabe a placa e já disse marca, modelo e ano
+- "leilao" e "app": SÓ se o cliente disse, nesta conversa, se o veículo é de leilão/remarcado e se é carro de aplicativo (uber/99). não pergunte isso antes de ter a placa`
 }

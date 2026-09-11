@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pensar } from '@/lib/isa/cerebro'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
+import { lookupPlate } from '@/lib/plate-lookup'
+import { mensagensDaSimulacao } from '@/lib/isa/entrega.regras'
 import type { MensagemHistorico } from '@/lib/isa/banco'
 
 export const runtime = 'nodejs'
@@ -12,6 +14,7 @@ export const dynamic = 'force-dynamic'
  * hora, antes de a Isa falar com cliente de verdade.
  *
  * POST { mensagens: [{ de: 'cliente'|'isa', texto }], telefone?, leadId?, nome?, genero?, hora? }
+ *   ou { placa, leilao?, app?, nome? } — so consulta e monta as mensagens, sem gravar nada.
  */
 export async function POST(req: NextRequest) {
   const segredo = process.env.CRON_SECRET
@@ -26,7 +29,33 @@ export async function POST(req: NextRequest) {
     genero?: 'm' | 'f' | null
     hora?: string
     desconto50?: { de: number; para: number } | null
+    placa?: string
+    leilao?: boolean
+    app?: boolean
   }
+  // Modo placa: mostra as 2 mensagens da simulacao SEM gravar lead e SEM criar cotacao no Power.
+  if (b.placa) {
+    const inicio = Date.now()
+    const r = await lookupPlate(b.placa, { tabelaSePowerMudo: true, isLeilao: !!b.leilao })
+    if (!r.success) return NextResponse.json({ ms: Date.now() - inicio, consulta: r })
+    const fatos = fatosDoLead(
+      {
+        id: 'simulacao', nome: b.nome ?? null, marca_interesse: r.vehicle.marca, modelo_interesse: r.vehicle.modelo,
+        ano_interesse: Number(r.vehicle.ano) || null, valor_fipe_consultado: r.vehicle.fipeValue,
+        cotacao_planos: r.plans.map((p) => ({ id: p.id, name: p.name, monthly: p.monthly })),
+        carro_app: !!b.app, leilao: b.leilao ? 'leilao' : 'nao', estado: null, placa_interesse: b.placa,
+        combustivel: r.vehicle.combustivel || null,
+      },
+      null,
+    )
+    return NextResponse.json({
+      ms: Date.now() - inicio,
+      tabela: 'planos_da_tabela' in r ? !!r.planos_da_tabela : false,
+      cota: fatos.cotaPct,
+      mensagens: mensagensDaSimulacao({ abertura: null, nome: b.nome ?? null, fatos, pdfUrl: '(link do PDF)', leilaoOuAppAssumido: !b.leilao && !b.app }),
+    })
+  }
+
   const lead = b.telefone || b.leadId ? await leadDoCliente(b.telefone ?? '', b.leadId ?? null) : null
   const fatos = lead ? fatosDoLead(lead, b.desconto50 ?? null) : null
   const historico: MensagemHistorico[] = (b.mensagens || []).map((m, i) => ({

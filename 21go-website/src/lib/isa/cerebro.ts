@@ -20,7 +20,9 @@ export interface SaidaCerebro {
   gatilho: Gatilho
   genero: Genero
   placa: string | null
-  semPlaca: { modelo: string; ano: number | null } | null
+  semPlaca: { marca: string | null; modelo: string; ano: number | null } | null
+  leilao: boolean | null
+  app: boolean | null
   reprovados: string[]
 }
 
@@ -75,7 +77,7 @@ function lerSaida(bruto: string, aberturaDoCodigo: string | null): Omit<SaidaCer
   const gat = typeof j.gatilho === 'string' && GATILHOS.has(j.gatilho) ? (j.gatilho as Gatilho) : null
   const gen = j.genero === 'm' || j.genero === 'f' ? j.genero : null
   const placa = typeof j.placa === 'string' ? j.placa.toUpperCase().replace(/[^A-Z0-9]/g, '') : null
-  const sp = j.sem_placa as { modelo?: unknown; ano?: unknown } | null | undefined
+  const sp = j.sem_placa as { marca?: unknown; modelo?: unknown; ano?: unknown } | null | undefined
   const pronta = typeof j.pronta === 'string' ? j.pronta : null
   return {
     // Resposta pronta: a IA so aponta a chave; o texto do dono entra aqui, exato.
@@ -86,8 +88,10 @@ function lerSaida(bruto: string, aberturaDoCodigo: string | null): Omit<SaidaCer
     placa: placa && /^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(placa) ? placa : null,
     semPlaca:
       sp && typeof sp.modelo === 'string' && sp.modelo.trim()
-        ? { modelo: sp.modelo.trim(), ano: Number(sp.ano) || null }
+        ? { marca: typeof sp.marca === 'string' ? sp.marca.trim() : null, modelo: sp.modelo.trim(), ano: Number(sp.ano) || null }
         : null,
+    leilao: typeof j.leilao === 'boolean' ? j.leilao : null,
+    app: typeof j.app === 'boolean' ? j.app : null,
   }
 }
 
