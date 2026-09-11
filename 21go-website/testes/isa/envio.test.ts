@@ -63,6 +63,10 @@ test('audio que nao deu pra entender: a Isa pede pra repetir, nunca adivinha (te
   assert.equal(ehInaudivel(''), true)
   assert.equal(ehInaudivel(null), true)
   assert.equal(ehInaudivel('Bom dia, queria uma cotação'), false)
+  // audios reais do teste de 11/09/2026 transcritos pelo Gemini 3.1 Pro
+  assert.equal(ehInaudivel('[INAUDIVEL] falar [INAUDIVEL] aí [INAUDIVEL] garante [INAUDIVEL] aos benefícios que [INAUDIVEL]'), true)
+  assert.equal(ehInaudivel('É bom dia. Queria uma ajuda com uma cotação veicular. Vocês [INAUDIVEL]'), false)
+  assert.equal(ehInaudivel('Eu não falei nada de [INAUDIVEL]. Eu falei quais os benefícios que tem no plano de... como que funciona o plano.'), false)
   assert.match(AUDIO_INAUDIVEL, /não deu pra entender o áudio/)
   assert.match(mensagemAudioNaoEntendido(null), /não consegui entender seu áudio/)
   assert.match(mensagemAudioNaoEntendido(null), /repetir|mandar de novo/)

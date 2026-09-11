@@ -58,7 +58,9 @@ export const AUDIO_INAUDIVEL = '🎤 [não deu pra entender o áudio]'
 
 export function ehInaudivel(transcricao: string | null | undefined): boolean {
   const t = (transcricao || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
-  return !t || /^\[?\s*inaudivel\s*\]?\.?$/.test(t)
+  if (!t || /^\[?\s*inaudivel\s*\]?\.?$/.test(t)) return true
+  // Trecho que nao ficou claro vem marcado; com 3 ou mais buracos, o que sobra e palpite.
+  return (t.match(/\[inaudivel\]/g) ?? []).length >= 3
 }
 
 export function mensagemAudioNaoEntendido(abertura: string | null): string {

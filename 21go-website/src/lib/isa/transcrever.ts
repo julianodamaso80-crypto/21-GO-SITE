@@ -1,15 +1,17 @@
 import 'server-only'
 
 /**
- * Audio do cliente → texto, pelo OpenRouter (Gemini 2.5 Flash aceita audio na entrada).
- * Ordem do dono: o modelo mais em conta que entregue qualidade. ~US$ 0,10 por milhao de tokens
- * de entrada; um audio de 30 s fica em ~1 mil tokens.
+ * Audio do cliente → texto, pelo OpenRouter.
+ * Dono (11/09/2026): "use uma llm melhor se essa tiver alucinando". Comparados nos audios reais do
+ * teste: o 2.5 Flash inventava ("nada de Alex"), o Lite trocava o sentido ("eu to entendendo" no
+ * lugar de "eu NAO to entendendo"); o 3.1 Pro transcreve o que ouviu e marca o resto. Com
+ * raciocinio baixo: 8-14 s e ~US$ 0,01 por audio.
  *
  * O audio nunca e gravado: vira base64 so para esta chamada e vai embora.
  */
 
-// Flash (nao o Lite): o Lite "completava" audio cortado com palavra que o cliente nao disse.
-const MODELO = 'google/gemini-2.5-flash'
+// O OpenRouter passa pro seguinte da lista se o primeiro falhar (o Pro ainda e preview).
+const MODELOS = ['google/gemini-3.1-pro-preview', 'google/gemini-3.8-flash']
 
 function formatoDoMime(mime: string): string {
   const m = mime.toLowerCase()
@@ -29,7 +31,8 @@ export async function transcrever(bytes: Buffer, mime: string): Promise<string |
       method: 'POST',
       headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: MODELO,
+        models: MODELOS,
+        reasoning: { effort: 'low' },
         temperature: 0,
         messages: [
           {
@@ -42,8 +45,9 @@ export async function transcrever(bytes: Buffer, mime: string): Promise<string |
                 text:
                   'Transcreva este audio em portugues do Brasil, exatamente como foi falado. ' +
                   'NAO complete frases, NAO corrija e NAO adivinhe palavras que nao ficaram claras. ' +
-                  'Se o audio estiver cortado, sem fala, com ruido, ou se voce nao tiver certeza do que foi dito, ' +
-                  'responda exatamente [INAUDIVEL]. Devolva so o texto transcrito, sem comentarios.',
+                  'Se uma palavra ou trecho nao ficou claro, escreva [INAUDIVEL] no lugar dele. ' +
+                  'Se nao der pra entender nada (cortado, sem fala, so ruido), responda exatamente [INAUDIVEL]. ' +
+                  'Devolva so o texto transcrito, sem comentarios.',
               },
               { type: 'input_audio', input_audio: { data: bytes.toString('base64'), format: formatoDoMime(mime) } },
             ],
