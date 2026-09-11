@@ -13,13 +13,14 @@ import {
   atualizarContato,
   contatosParaRetomar,
   reiniciarContato,
+  humanoFalouDepois,
   type ContatoIsa,
   type MensagemHistorico,
 } from '@/lib/isa/banco'
 import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono } from '@/lib/isa/acoes'
 import { alertarDono } from '@/lib/isa/alertas'
-import { entradaPopup, mensagemDesconto50, ehReiniciar, numeroDeTeste, respostaDeSupervisor } from '@/lib/isa/dono.regras'
+import { entradaPopup, mensagemDesconto50, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import {
@@ -60,17 +61,29 @@ export interface ResultadoFila {
 
 export async function processarFila(): Promise<ResultadoFila> {
   const agora = new Date()
-  if (!dentroDoHorario(agora)) return { processados: 0, respondidos: 0, foraDoHorario: true }
-  await retomarSumidos().catch((err) => console.error('[isa] retomada:', err))
+  const noHorario = dentroDoHorario(agora)
+  // Fora do horario so os numeros de teste do dono (ele testa 24 h); cliente espera as 8h.
+  const teste = numerosDeTeste({ allowlist: process.env.ISA_ALLOWLIST, alerta: numeroDeAlerta() })
+  if (!noHorario && teste.length === 0) return { processados: 0, respondidos: 0, foraDoHorario: true }
+  if (noHorario) await retomarSumidos().catch((err) => console.error('[isa] retomada:', err))
 
-  const contatos = await reivindicarPendentes({ silencioSeg: SILENCIO_SEG, lockSeg: LOCK_SEG, limite: LIMITE })
+  const contatos = await reivindicarPendentes({
+    silencioSeg: SILENCIO_SEG,
+    lockSeg: LOCK_SEG,
+    limite: LIMITE,
+    somente: noHorario ? null : teste,
+  })
   const resultados = await Promise.all(contatos.map((c) => atender(c).catch(async (err) => {
     console.error('[isa] erro atendendo', c.telefone.slice(0, 6), err)
     await registrarEvento(c.telefone, 'erro', { mensagem: err instanceof Error ? err.message : String(err) }, 'sistema')
     await liberar(c.telefone, c.ultimo_inbound_em, false).catch(() => {})
     return false
   })))
-  return { processados: contatos.length, respondidos: resultados.filter(Boolean).length }
+  return {
+    processados: contatos.length,
+    respondidos: resultados.filter(Boolean).length,
+    ...(noHorario ? {} : { foraDoHorario: true }),
+  }
 }
 
 /** Uma retomada por silencio, so pra quem ja recebeu cotacao (ver contatosParaRetomar). */
@@ -121,6 +134,13 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return false
   }
 
+  // Alguem do time respondeu depois da ultima mensagem do cliente: quem atende agora e a pessoa.
+  // A Isa nao manda nada por cima; volta quando o cliente escrever de novo (dono, 11/09/2026).
+  if (await humanoFalouDepois(c.telefone, visto)) {
+    await liberar(c.telefone, visto, false)
+    return false
+  }
+
   // Modo teste: quem nao esta na allowlist fica gravado e sem resposta. Marca como processado
   // de proposito — quando a trava sair, a Isa nao responde mensagem de dias atras.
   if (!destinoPermitido(c.telefone)) {
@@ -129,7 +149,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return false
   }
 
-  if (!dentroDoHorario(new Date())) {
+  if (!dentroDoHorario(new Date()) && !numeroDeTeste(c.telefone, { allowlist: process.env.ISA_ALLOWLIST, alerta: numeroDeAlerta() })) {
     await soltarSemProcessar(c.telefone)
     return false
   }
@@ -490,6 +510,11 @@ export async function enviarComoGente(
   for (let i = 0; i < partes.length; i++) {
     if (i > 0 && (await chegouMensagemNova(c.telefone, visto))) {
       await registrarEvento(c.telefone, 'interrompida', { enviadas, total: partes.length })
+      break
+    }
+    // Alguem do time escreveu enquanto a Isa preparava a resposta: a pessoa assume, sem mensagem por cima.
+    if (sender === 'isa' && (await humanoFalouDepois(c.telefone, visto))) {
+      await registrarEvento(c.telefone, 'interrompida', { enviadas, total: partes.length, por: 'humano' })
       break
     }
     try {

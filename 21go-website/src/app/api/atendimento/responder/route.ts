@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
-import { sql, atualizarContato, registrarEvento, type ContatoIsa } from '@/lib/isa/banco'
+import { sql, registrarEvento, type ContatoIsa } from '@/lib/isa/banco'
 import { enviarTexto, EnvioBloqueado } from '@/lib/isa/cloud'
 import { upsertMessage, phoneToJid } from '@/lib/supabase-store'
 
@@ -8,9 +8,12 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
- * Resposta humana pelo 98004-0964. Fora da janela de 24 h a Meta so aceita template — o painel
- * avisa em vez de tentar. Quem responde assume a conversa: a Isa desliga naquele contato (senao o
- * cliente responde ao humano e a Isa entra no meio). Religar e a chave do painel.
+ * Resposta humana pelo 98004-0964 (painel ou CRM). Fora da janela de 24 h a Meta so aceita
+ * template — o painel avisa em vez de tentar.
+ *
+ * Responder NAO desliga a Isa (dono, 11/09/2026): grava `humano_em` e a Isa nao manda nada por
+ * cima dessa mensagem ate o cliente responder. Se o cliente responder e a Isa estiver ligada, ela
+ * segue; quem quer atender sozinho desliga a chave.
  */
 export async function POST(req: NextRequest) {
   const s = sessaoDoRequest(req)
@@ -48,9 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: err instanceof Error ? err.message : 'falha ao enviar' }, { status: 502 })
   }
 
-  if (c.ligada) {
-    await atualizarContato(telefone, { ligada: false, pausa_motivo: 'humano_assumiu', pausa_por: s.u, pausada_em: new Date().toISOString() })
-    await registrarEvento(telefone, 'desligou', { motivo: 'humano_assumiu' }, s.u)
-  }
+  await sql(`UPDATE public.isa_contatos SET humano_em = now(), updated_at = now() WHERE telefone = $1`, [telefone])
+  await registrarEvento(telefone, 'humano_respondeu', { isa: c.ligada ? 'ligada' : 'desligada' }, s.u)
   return NextResponse.json({ ok: true })
 }

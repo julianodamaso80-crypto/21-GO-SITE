@@ -11,6 +11,7 @@ import {
   entradaPopup,
   ehReiniciar,
   numeroDeTeste,
+  numerosDeTeste,
   respostaDeSupervisor,
 } from '../../src/lib/isa/dono.regras.ts'
 
@@ -86,4 +87,10 @@ test('o 4240 so e supervisor com pedido de desconto aberto ou tocando no botao d
   assert.equal(respostaDeSupervisor({ aguardandoDono: null, payloads: ['isa-desc:5521992208062:sim'] }), true)
   // 'desconto' sozinho e o estado do 4240 como CLIENTE esperando a resposta — nao e supervisor
   assert.equal(respostaDeSupervisor({ aguardandoDono: 'desconto', payloads: [] }), false)
+})
+
+test('fora do horario a Isa atende so os numeros de teste (allowlist + alertas, sem repetir)', () => {
+  assert.deepEqual(numerosDeTeste({ allowlist: '5521992208062', alerta: '5521965774240' }), ['5521992208062', '5521965774240'])
+  assert.deepEqual(numerosDeTeste({ allowlist: '5521992208062,5521965774240', alerta: '5521965774240' }), ['5521992208062', '5521965774240'])
+  assert.deepEqual(numerosDeTeste({ allowlist: undefined, alerta: null }), [])
 })

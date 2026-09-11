@@ -21,6 +21,7 @@ export interface ItemLista {
   ultima_direcao: string | null
   ultima_em: string | null
   janela_ate: string | null
+  etiquetas: string[]
 }
 
 const FILTRO: Record<Aba, string> = {
@@ -32,11 +33,11 @@ const FILTRO: Record<Aba, string> = {
   transferidos: 'c.transferido_em IS NOT NULL',
 }
 
-export async function listarContatos(aba: Aba, busca: string): Promise<ItemLista[]> {
+export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Promise<ItemLista[]> {
   const termo = busca.trim()
   return sql<ItemLista>(
     `SELECT c.telefone, COALESCE(c.nome, cv.pushname) AS nome, c.ligada, c.pausa_motivo, c.transferido_em,
-            c.aguardando_dono, c.preco_da_tabela, c.janela_ate,
+            c.aguardando_dono, c.preco_da_tabela, c.janela_ate, c.etiquetas,
             u.content AS ultima, u.direction AS ultima_direcao, (u.created_at AT TIME ZONE 'UTC') AS ultima_em
      FROM public.isa_contatos c
      LEFT JOIN public.conversations cv ON cv.id = c.conversation_id
@@ -49,9 +50,10 @@ export async function listarContatos(aba: Aba, busca: string): Promise<ItemLista
        AND c.telefone <> $1
        AND (${FILTRO[aba]})
        AND ($2 = '' OR c.telefone LIKE '%' || $2 || '%' OR COALESCE(c.nome, cv.pushname, '') ILIKE '%' || $2 || '%')
+       AND ($3 = '' OR $3 = ANY(c.etiquetas))
      ORDER BY u.created_at DESC NULLS LAST
      LIMIT 200`,
-    [numeroDeAlerta() ?? '', termo],
+    [numeroDeAlerta() ?? '', termo, etiqueta],
   )
 }
 
@@ -89,7 +91,7 @@ export async function abrirConversa(telefone: string): Promise<{ contato: Contat
   )
   const evs = await sql<{ em: string; tipo: string; detalhe: unknown; por: string | null }>(
     `SELECT created_at AS em, tipo, detalhe, por FROM public.isa_eventos
-     WHERE telefone = $1 AND tipo NOT IN ('cerebro') ORDER BY id DESC LIMIT 100`,
+     WHERE telefone = $1 AND tipo NOT IN ('cerebro', 'etiquetas', 'humano_respondeu') ORDER BY id DESC LIMIT 100`,
     [telefone],
   )
   const itens: ItemConversa[] = [

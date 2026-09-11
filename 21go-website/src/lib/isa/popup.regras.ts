@@ -40,7 +40,9 @@ export function mensagemDoPopup(p: {
   ativacao: number | null
   pdfUrl: string | null
 }): string {
-  const linhas = ['Quero meu desconto! 🙂', `Nome: ${p.nome.trim()}`, `Veículo: ${p.veiculo}`]
+  // Sem emoji: o 🙂 chegou como "�" no WhatsApp do dono (teste de 11/09/2026) — o wa.me nao e
+  // confiavel com emoji em todos os aparelhos.
+  const linhas = ['Quero meu desconto!', `Nome: ${p.nome.trim()}`, `Veículo: ${p.veiculo}`]
   if (p.fipe) linhas.push(`FIPE: ${brl(p.fipe)}`)
   if (p.plano && p.mensal) linhas.push(`Plano: ${p.plano} · ${brl(p.mensal)}/mês`)
   if (p.ativacao) linhas.push(`Ativação: ${brl(p.ativacao)}`)

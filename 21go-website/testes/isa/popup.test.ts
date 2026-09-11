@@ -38,7 +38,8 @@ test('a mensagem pronta traz tudo e a Isa reconhece a entrada + o lead', () => {
     nome: 'Juliano Damaso', veiculo: 'Jeep COMPASS 2022', fipe: 116540, plano: 'Básico', mensal: 437,
     ativacao: 557, pdfUrl: 'https://21go.site/api/pdfs/lead_b4a6d7cb5bc1ee3d',
   })
-  assert.match(msg, /^Quero meu desconto! 🙂/)
+  assert.match(msg, /^Quero meu desconto!\n/)
+  assert.doesNotMatch(msg, /\p{Extended_Pictographic}/u)
   assert.match(msg, /Nome: Juliano Damaso/)
   assert.match(msg, /FIPE: R\$ 116\.540,00/)
   assert.match(msg, /Plano: Básico · R\$ 437,00\/mês/)

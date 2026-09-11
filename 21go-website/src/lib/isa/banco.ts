@@ -64,6 +64,10 @@ export interface ContatoIsa {
   opcoes_versao: OpcoesVersao | null
   /** /reiniciar (numeros de teste): a Isa ignora historico e simulacoes de antes disto. */
   reiniciada_em: string | null
+  /** Etiquetas do painel/CRM (etiquetas.regras.ts). */
+  etiquetas: string[]
+  /** Ultima mensagem de alguem do time pelo painel/CRM — a Isa nao fala por cima ate o cliente responder. */
+  humano_em: string | null
 }
 
 /** Versoes que a Isa listou (cotacao sem placa), esperando o cliente responder o numero. */
@@ -105,7 +109,13 @@ export async function registrarInbound(p: { telefone: string; conversationId: st
  * cliente parou de digitar ha `silencioSeg`. Um UPDATE so, com SKIP LOCKED — dois workers nunca
  * pegam o mesmo telefone. O lock expira em `lockSeg` (worker que morreu no meio de um deploy).
  */
-export async function reivindicarPendentes(p: { silencioSeg: number; lockSeg: number; limite: number }): Promise<ContatoIsa[]> {
+export async function reivindicarPendentes(p: {
+  silencioSeg: number
+  lockSeg: number
+  limite: number
+  /** Fora do horario so os numeros de teste do dono sao atendidos (ele testa 24 h). */
+  somente?: string[] | null
+}): Promise<ContatoIsa[]> {
   return sql<ContatoIsa>(
     `UPDATE public.isa_contatos c SET processando_desde = now()
      WHERE c.telefone IN (
@@ -114,12 +124,13 @@ export async function reivindicarPendentes(p: { silencioSeg: number; lockSeg: nu
          AND ultimo_inbound_em > COALESCE(processado_ate, '-infinity'::timestamptz)
          AND ultimo_inbound_em < now() - make_interval(secs => $1)
          AND (processando_desde IS NULL OR processando_desde < now() - make_interval(secs => $2))
+         AND ($4::text[] IS NULL OR telefone = ANY($4::text[]))
        ORDER BY ultimo_inbound_em
        LIMIT $3
        FOR UPDATE SKIP LOCKED
      )
      RETURNING c.*`,
-    [p.silencioSeg, p.lockSeg, p.limite],
+    [p.silencioSeg, p.lockSeg, p.limite, p.somente ?? null],
   )
 }
 
@@ -142,6 +153,19 @@ export async function liberar(telefone: string, processadoAte: string | null, re
 /** Solta sem marcar nada como respondido (fora do horario): fica pendente pra fila das 8h. */
 export async function soltarSemProcessar(telefone: string): Promise<void> {
   await sql(`UPDATE public.isa_contatos SET processando_desde = NULL WHERE telefone = $1`, [telefone])
+}
+
+/**
+ * Alguem do time respondeu pelo painel/CRM depois de `desde` (o ultimo_inbound_em visto)? Entao
+ * quem esta atendendo e a pessoa: a Isa nao manda nada por cima (dono, 11/09/2026).
+ */
+export async function humanoFalouDepois(telefone: string, desde: string | null): Promise<boolean> {
+  const r = await sql<{ falou: boolean }>(
+    `SELECT humano_em IS NOT NULL AND humano_em >= COALESCE($2::timestamptz, '-infinity'::timestamptz) AS falou
+     FROM public.isa_contatos WHERE telefone = $1`,
+    [telefone, desde],
+  )
+  return !!r[0]?.falou
 }
 
 /** Chegou mensagem nova depois de `desde`? A Isa para no meio da resposta e rele tudo. */
@@ -207,7 +231,7 @@ export async function reiniciarContato(telefone: string): Promise<void> {
        pausada_em = NULL, transferido_em = NULL, entrada = NULL, desconto50_em = NULL,
        desconto50_de = NULL, desconto50_para = NULL, aguardando_dono = NULL, genero = NULL,
        preco_da_tabela = false, retomada_em = NULL, abordagem5min_em = NULL, opcoes_versao = NULL,
-       ultima_resposta_em = NULL, updated_at = now()
+       ultima_resposta_em = NULL, humano_em = NULL, updated_at = now()
      WHERE telefone = $1`,
     [telefone],
   )
@@ -265,6 +289,7 @@ export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
          AND ultima_resposta_em < now() - interval '4 hours'
          AND janela_ate > now() + interval '10 minutes'
          AND (retomada_em IS NULL OR (retomada_em < ultima_resposta_em AND retomada_em < now() - interval '24 hours'))
+         AND (humano_em IS NULL OR humano_em < ultima_resposta_em)
          AND processando_desde IS NULL
        LIMIT $1
        FOR UPDATE SKIP LOCKED

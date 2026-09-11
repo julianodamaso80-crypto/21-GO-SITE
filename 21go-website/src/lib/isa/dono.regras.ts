@@ -92,8 +92,13 @@ export function ehReiniciar(texto: string | null): boolean {
  * que reiniciasse ganharia outro desconto de R$ 50.
  */
 export function numeroDeTeste(telefone: string, p: { allowlist: string | undefined; alerta: string | null }): boolean {
+  return numerosDeTeste(p).includes(telefone)
+}
+
+/** Os numeros de teste do dono — tambem os unicos que a Isa atende fora do horario (24 h de teste). */
+export function numerosDeTeste(p: { allowlist: string | undefined; alerta: string | null }): string[] {
   const lista = (p.allowlist ?? '').split(',').map((n) => n.trim()).filter(Boolean)
-  return lista.includes(telefone) || (!!p.alerta && telefone === p.alerta)
+  return p.alerta && !lista.includes(p.alerta) ? [...lista, p.alerta] : lista
 }
 
 /**

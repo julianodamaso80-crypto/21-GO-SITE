@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
 import { listarContatos, contarPrecisa, type Aba } from '@/lib/isa/painel-dados'
+import { etiquetaValida } from '@/lib/isa/etiquetas.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -12,6 +13,8 @@ export async function GET(req: NextRequest) {
   const aba = req.nextUrl.searchParams.get('aba') || 'todos'
   if (!ABAS.has(aba)) return NextResponse.json({ erro: 'aba invalida' }, { status: 400 })
   const busca = (req.nextUrl.searchParams.get('q') || '').slice(0, 60)
-  const [contatos, precisa] = await Promise.all([listarContatos(aba as Aba, busca), contarPrecisa()])
+  const e = req.nextUrl.searchParams.get('e') || ''
+  const etiqueta = etiquetaValida(e) ? e : ''
+  const [contatos, precisa] = await Promise.all([listarContatos(aba as Aba, busca, etiqueta), contarPrecisa()])
   return NextResponse.json({ contatos, precisa })
 }

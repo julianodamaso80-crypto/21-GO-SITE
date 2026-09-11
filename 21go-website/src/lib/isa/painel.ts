@@ -64,8 +64,25 @@ export function lerSessao(token: string | undefined): SessaoIsa | null {
   }
 }
 
+/**
+ * Sessao do painel (cookie) OU do CRM (crm21go.site e o app). O CRM chama estas mesmas APIs pelo
+ * servidor dele, com a chave ATENDIMENTO_CRM_CHAVE e o usuario do painel que aquela pessoa e
+ * (so os de PAINEL_ISA_USUARIOS). Quem decide QUEM no CRM ve o WhatsApp e o proprio CRM.
+ */
 export function sessaoDoRequest(req: NextRequest): SessaoIsa | null {
-  return lerSessao(req.cookies.get(COOKIE_ISA)?.value)
+  const doCookie = lerSessao(req.cookies.get(COOKIE_ISA)?.value)
+  if (doCookie) return doCookie
+  return sessaoDoCrm(req.headers.get('x-atendimento-chave'), req.headers.get('x-atendimento-usuario'))
+}
+
+export function sessaoDoCrm(chave: string | null, usuario: string | null): SessaoIsa | null {
+  const esperada = process.env.ATENDIMENTO_CRM_CHAVE || ''
+  if (esperada.length < 32 || !chave || !usuario) return null
+  const a = Buffer.from(chave)
+  const b = Buffer.from(esperada)
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null
+  const u = usuario.trim().toLowerCase()
+  return usuarios().has(u) ? { u, exp: Date.now() + 60_000 } : null
 }
 
 // Tentativas de login por IP: 5 a cada 15 min. Em memoria de proposito — so 2 usuarios.

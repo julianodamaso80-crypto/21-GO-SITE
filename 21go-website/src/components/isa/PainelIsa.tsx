@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ETIQUETAS } from '@/lib/isa/etiquetas.regras'
 
 /**
  * Painel de atendimento da Isa — mesa de despacho da 21Go.
@@ -24,6 +25,7 @@ interface ItemLista {
   ultima_direcao: string | null
   ultima_em: string | null
   janela_ate: string | null
+  etiquetas: string[]
 }
 
 interface ItemConversa {
@@ -50,6 +52,7 @@ interface Contato {
   preco_da_tabela: boolean
   janela_ate: string | null
   genero: string | null
+  etiquetas: string[]
 }
 
 interface Simulacao {
@@ -93,11 +96,30 @@ const EVENTO: Record<string, string> = {
   retomada: 'retomada enviada',
   versoes: 'versões listadas',
   sem_preco: 'sem preço',
-  interrompida: 'resposta interrompida (cliente escreveu)',
+  interrompida: 'resposta interrompida',
   envio_falhou: 'envio falhou',
   envio_bloqueado: 'bloqueado (modo teste)',
   silenciado_modo_teste: 'silenciado (modo teste)',
+  reiniciou: 'conversa reiniciada (teste)',
+  '5min': 'mensagem dos 5 min enviada',
+  botao_5min: 'tocou no botão dos 5 min',
   erro: 'erro',
+}
+
+const ETIQUETA_POR_ID = new Map(ETIQUETAS.map((e) => [e.id, e]))
+
+function ChipEtiqueta({ id, ativa = true, onClick }: { id: string; ativa?: boolean; onClick?: () => void }) {
+  const e = ETIQUETA_POR_ID.get(id)
+  if (!e) return null
+  const estilo: React.CSSProperties = ativa
+    ? { backgroundColor: e.cor, color: e.claro ? '#141d45' : '#fff', borderColor: e.cor }
+    : { borderColor: `${e.cor}88`, color: e.cor }
+  const cls = `rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide [font-family:var(--fonte-rotulo)] ${onClick ? 'transition hover:brightness-110' : ''}`
+  return onClick ? (
+    <button type="button" onClick={onClick} style={estilo} className={cls}>{e.nome}</button>
+  ) : (
+    <span style={estilo} className={cls}>{e.nome}</span>
+  )
 }
 
 const brl = (v: number | null | undefined) =>
@@ -213,6 +235,7 @@ function Login({ aoEntrar }: { aoEntrar: (u: string) => void }) {
 function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
   const [aba, setAba] = useState<Aba>('todos')
   const [busca, setBusca] = useState('')
+  const [etiqueta, setEtiqueta] = useState('')
   const [lista, setLista] = useState<ItemLista[]>([])
   const [precisa, setPrecisa] = useState(0)
   const [sel, setSel] = useState<string | null>(null)
@@ -225,13 +248,15 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
 
   const carregar = useCallback(async () => {
     try {
-      const r = await api<{ contatos: ItemLista[]; precisa: number }>(`/api/atendimento/contatos?aba=${aba}&q=${encodeURIComponent(busca)}`)
+      const r = await api<{ contatos: ItemLista[]; precisa: number }>(
+        `/api/atendimento/contatos?aba=${aba}&q=${encodeURIComponent(busca)}&e=${encodeURIComponent(etiqueta)}`,
+      )
       setLista(r.contatos)
       setPrecisa(r.precisa)
     } catch (err) {
       if ((err as { status?: number }).status === 401) aoSair()
     }
-  }, [aba, busca, aoSair])
+  }, [aba, busca, etiqueta, aoSair])
 
   useEffect(() => {
     carregar()
@@ -281,6 +306,21 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
           })}
         </nav>
 
+        {/* filtro por etiqueta */}
+        <div className="flex gap-1.5 overflow-x-auto px-4 pb-3 [scrollbar-width:none]">
+          <button onClick={() => setEtiqueta('')}
+            className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide [font-family:var(--fonte-rotulo)] ${
+              etiqueta ? 'border-white/15 text-white/45' : 'border-white/60 bg-white/10 text-white'
+            }`}>
+            todas
+          </button>
+          {ETIQUETAS.map((e) => (
+            <span key={e.id} className="shrink-0">
+              <ChipEtiqueta id={e.id} ativa={etiqueta === e.id} onClick={() => setEtiqueta(etiqueta === e.id ? '' : e.id)} />
+            </span>
+          ))}
+        </div>
+
         <ul className="flex-1 overflow-y-auto">
           {lista.length === 0 && <li className="px-5 py-10 text-center text-sm text-white/35">nada por aqui</li>}
           {lista.map((c) => {
@@ -301,11 +341,12 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
                       {c.ultima_direcao === 'outbound' && <span className="text-white/35">↳ </span>}
                       {c.ultima || '—'}
                     </span>
-                    {(precisaGente || c.transferido_em || c.preco_da_tabela) && (
+                    {(precisaGente || c.transferido_em || c.preco_da_tabela || c.etiquetas?.length > 0) && (
                       <span className="mt-1.5 flex flex-wrap gap-1">
                         {precisaGente && <Etiqueta tom="laranja">{c.aguardando_dono ? 'esperando você' : MOTIVO[c.pausa_motivo || ''] || c.pausa_motivo}</Etiqueta>}
                         {c.transferido_em && <Etiqueta tom="azul">no 4824</Etiqueta>}
                         {c.preco_da_tabela && <Etiqueta tom="cinza">preço da tabela</Etiqueta>}
+                        {(c.etiquetas || []).map((id) => <ChipEtiqueta key={id} id={id} />)}
                       </span>
                     )}
                   </span>
@@ -466,6 +507,22 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             {!contato?.ligada && contato?.pausa_motivo && <Etiqueta tom="laranja">pausada: {MOTIVO[contato.pausa_motivo] || contato.pausa_motivo}</Etiqueta>}
           </div>
         )}
+
+        {contato && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            <span className="mr-0.5 text-[11px] uppercase tracking-[0.16em] text-white/35 [font-family:var(--fonte-rotulo)]">etiquetas</span>
+            {ETIQUETAS.map((e) => {
+              const tem = (contato.etiquetas || []).includes(e.id)
+              return (
+                <ChipEtiqueta key={e.id} id={e.id} ativa={tem} onClick={() => {
+                  if (ocupado) return
+                  const nova = tem ? contato.etiquetas.filter((x) => x !== e.id) : [...(contato.etiquetas || []), e.id]
+                  acao('/api/atendimento/etiquetas', { etiquetas: nova })
+                }} />
+              )
+            })}
+          </div>
+        )}
       </header>
 
       {/* mensagens */}
@@ -487,7 +544,11 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
         }}
         className="border-t border-white/[0.07] bg-[#141d45]/90 px-3 py-3 md:px-6">
         {aviso && <p className="mb-2 rounded-md bg-red-500/15 px-3 py-1.5 text-sm text-red-200">{aviso}</p>}
-        {contato?.ligada && <p className="mb-2 text-[12px] text-white/40">se você responder, a Isa desliga nesta conversa (você assume). religue pela chave quando quiser.</p>}
+        <p className="mb-2 text-[12px] text-white/40">
+          {contato?.ligada
+            ? 'a Isa não manda nada por cima da sua mensagem. se o cliente responder, ela segue — pra atender sozinho, desligue a chave.'
+            : 'Isa desligada: quem atende esta conversa é você.'}
+        </p>
         <div className="flex items-end gap-2">
           <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={1}
             disabled={jan.tom === 'fechada'}
@@ -562,7 +623,9 @@ function Evento({ it }: { it: ItemConversa }) {
         ? `${brl(Number(d.de))} → ${brl(Number(d.para))}`
         : it.evento === 'orcamento'
           ? String(d.placa ?? d.modelo ?? '') + (d.resultado ? ` · ${String(d.resultado)}` : '')
-          : ''
+          : it.evento === 'interrompida'
+            ? d.por === 'humano' ? 'alguém do time escreveu' : 'cliente escreveu'
+            : ''
   const grave = it.evento === 'alerta_falhou' || it.evento === 'erro' || it.evento === 'envio_falhou'
   return (
     <p className="my-2 text-center">
