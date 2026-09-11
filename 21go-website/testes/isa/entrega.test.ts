@@ -52,3 +52,13 @@ test('nao fazemos: ano antes de 2006 explica o motivo; resto e generico', () => 
   assert.match(mensagemNaoFazemos('ano'), /anterior a 2006/)
   assert.match(mensagemNaoFazemos('model'), /não estamos aceitando esse veículo/)
 })
+
+test('placa/modelo sem preco: a Isa pede pra conferir e oferece fazer pelo modelo — NUNCA manda pro 4824', async () => {
+  const { mensagemPlacaNaoAchada, mensagemModeloSemPreco } = await import('../../src/lib/isa/entrega.regras.ts')
+  for (const m of [mensagemPlacaNaoAchada(), mensagemModeloSemPreco()]) {
+    assert.doesNotMatch(m, /wa\.me|4824|leticya/i)
+  }
+  assert.match(mensagemPlacaNaoAchada(), /confere/)
+  assert.match(mensagemPlacaNaoAchada(), /modelo e o ano/)
+  assert.match(mensagemModeloSemPreco(), /modelo e o ano|placa/)
+})

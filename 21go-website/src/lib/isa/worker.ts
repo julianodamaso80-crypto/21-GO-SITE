@@ -38,7 +38,7 @@ import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type
 import { dividirEmPartes, pausaEntreSegundos } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -404,10 +404,11 @@ async function orcarEEnviar(
   if (orc.tipo === 'placa_invalida') {
     return enviarComoGente(c, ['essa placa não parece certa 🤔 confere pra mim, por favor?'], p.ultimaInbound, p.visto)
   }
-  // Nenhuma fonte achou o veiculo nem a FIPE: a Isa nao chuta — transfere pro 4824.
+  // Nenhuma fonte achou o veiculo nem a FIPE: a Isa nao chuta e NAO transfere (dono, 11/09/2026:
+  // "quem faz a cotacao e voce"). Pede pra conferir a placa ou fazer pelo modelo; o dono e avisado.
   await registrarEvento(c.telefone, 'sem_preco', { placa: p.placa, motivo: orc.motivo })
-  await transferir(c, 'sem_preco', (partes) => enviarComoGente(c, partes, p.ultimaInbound, p.visto))
-  return true
+  await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_preco', detalhe: `placa ${p.placa}: ${orc.motivo}`.slice(0, 200) })
+  return enviarComoGente(c, [mensagemPlacaNaoAchada()], p.ultimaInbound, p.visto)
 }
 
 /** Acha a marca (carro, depois moto), filtra as versoes do ano e manda a lista numerada. */
@@ -486,9 +487,10 @@ async function cotarModeloEEnviar(
     return enviarComoGente(c, partes, p.ultimaInbound, p.visto)
   }
   if (orc.tipo === 'nao_fazemos') return enviarComoGente(c, [mensagemNaoFazemos(orc.motivo)], p.ultimaInbound, p.visto)
-  await registrarEvento(c.telefone, 'sem_preco', { modelo: p.modelText, ano: p.ano, motivo: orc.tipo === 'humano' ? orc.motivo : orc.tipo })
-  await transferir(c, 'sem_preco', (partes) => enviarComoGente(c, partes, p.ultimaInbound, p.visto))
-  return true
+  const motivo = orc.tipo === 'humano' ? orc.motivo : orc.tipo
+  await registrarEvento(c.telefone, 'sem_preco', { modelo: p.modelText, ano: p.ano, motivo })
+  await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_preco', detalhe: `${p.modelText} ${p.ano}: ${motivo}`.slice(0, 200) })
+  return enviarComoGente(c, [mensagemModeloSemPreco()], p.ultimaInbound, p.visto)
 }
 
 /** "bom dia, Fulano 😃" quando a Isa ainda nao falou hoje (ou ha 4 h); senao null. */

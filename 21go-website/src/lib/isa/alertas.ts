@@ -17,7 +17,7 @@ const PAINEL = 'https://21go.site/painel'
 const MOTIVO_LEGIVEL: Record<string, string> = {
   documento: 'cliente mandou documento (transferido pro 4824)',
   associado: 'associado pedindo suporte (transferido pro 4824)',
-  sem_preco: 'sem preco pra esse veiculo (transferido pro 4824)',
+  sem_preco: 'a Isa nao achou preco pra esse veiculo e pediu pra conferir placa/modelo',
   robo: 'cliente perguntou se e robo',
   hostil: 'cliente xingou ou ameacou',
   validador: 'a Isa ia passar um numero que nao confere — segurei a mensagem',

@@ -43,6 +43,20 @@ export function mensagensDaSimulacao(p: {
   return partes
 }
 
+/**
+ * Placa que nenhuma fonte achou (Power sem dado, API Brasil fora). Quem simula e a Isa — NUNCA
+ * manda pro 4824 (dono, 11/09/2026: "quem faz a cotacao e voce"). Pede pra conferir e oferece
+ * fazer pelo modelo e ano.
+ */
+export function mensagemPlacaNaoAchada(): string {
+  return 'não consegui achar essa placa aqui 🤔\n\nconfere pra mim se tá certinha? se preferir, me fala o modelo e o ano do veículo que eu faço a simulação por eles'
+}
+
+/** Modelo escolhido que nao deu preco: pede pra confirmar, nunca transfere. */
+export function mensagemModeloSemPreco(): string {
+  return 'não consegui simular esse veículo aqui 🤔\n\nme confirma o modelo e o ano? se tiver a placa, pode me mandar também'
+}
+
 /** Mesmo texto da tela do site quando a 21Go nao faz o veiculo. */
 export function mensagemNaoFazemos(motivo: string): string {
   if (motivo === 'ano') {
