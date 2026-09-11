@@ -245,6 +245,13 @@ export async function reiniciarContato(telefone: string): Promise<void> {
      WHERE telefone = $1`,
     [telefone],
   )
+  // Pedido de desconto deste contato que ficou esperando o supervisor (4240): sem isto, o 4240
+  // continua em "modo supervisor" e para de conversar como cliente (teste de 11/09/2026).
+  await sql(
+    `UPDATE public.isa_contatos SET aguardando_dono = NULL, updated_at = now()
+     WHERE aguardando_dono IN ('desconto:' || $1, 'valor:' || $1)`,
+    [telefone],
+  )
 }
 
 /** Troca o "[imagem]"/"[documento]" pelo que a Isa leu — o arquivo em si nunca e gravado. */
