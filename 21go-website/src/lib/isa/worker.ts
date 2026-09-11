@@ -9,6 +9,7 @@ import {
   inboundsNovas,
   historico,
   gravarTranscricao,
+  gravarLeitura,
   registrarEvento,
   atualizarContato,
   contatosParaRetomar,
@@ -32,6 +33,8 @@ import {
   EnvioBloqueado,
 } from '@/lib/isa/cloud'
 import { transcrever } from '@/lib/isa/transcrever'
+import { lerMidia } from '@/lib/isa/ler-midia'
+import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura } from '@/lib/isa/ler-midia.regras'
 import { dividirEmPartes, pausaEntreSegundos } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura } from '@/lib/isa/prompt.regras'
@@ -159,11 +162,17 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   const enviar = (partes: string[]) => enviarComoGente(c, partes, ultimaInbound, visto)
 
-  // Documento (foto de CNH, CRLV, comprovante) = o cliente quer fechar: transfere pro 4824 e pausa.
-  if (novas.some((m) => m.message_type === 'document' || m.message_type === 'image')) {
-    await transferir(c, 'documento', enviar)
-    await liberar(c.telefone, visto, true)
-    return true
+  // Foto, print, PDF: a Isa le (dono, 11/09/2026). CNH, CRLV e comprovante = o cliente quer
+  // fechar: transfere pro 4824 e pausa (regra de 10/09). Arquivo que nao deu pra ler tambem
+  // transfere — e o que acontecia com todo arquivo antes da leitura existir.
+  const midias = novas.filter((m) => m.message_type === 'document' || m.message_type === 'image')
+  if (midias.length) {
+    const leituras = await lerMidias(c, midias)
+    if (leituras.some((l) => !l || DOC_DE_FECHAMENTO.has(l.tipo))) {
+      await transferir(c, 'documento', enviar)
+      await liberar(c.telefone, visto, true)
+      return true
+    }
   }
 
   // Entrada pelo popup ("Quero meu desconto!"): R$ 50 na ativacao, uma vez, com o antes e o depois.
@@ -473,6 +482,26 @@ function primeiroNomeDe(nome: string | null): string | null {
   return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase()
 }
 
+
+/** Le cada foto/PDF, troca o conteudo pelo que foi lido (banco e memoria) e devolve as leituras. */
+async function lerMidias(c: ContatoIsa, midias: MensagemHistorico[]): Promise<(Leitura | null)[]> {
+  const phoneId = process.env.WA_PHONE_ID ?? ''
+  const out: (Leitura | null)[] = []
+  for (const m of midias) {
+    const original = mensagensDoNumero(m.raw_payload, phoneId).find((x) => x.id === m.whatsapp_message_id)
+    const arquivo = original?.mediaId ? await baixarMidia(original.mediaId).catch(() => null) : null
+    const formato = arquivo ? formatoLegivel(arquivo.mime) : null
+    const leitura = arquivo && formato && arquivo.bytes.length <= TAMANHO_MAXIMO ? await lerMidia(arquivo.bytes, arquivo.mime, formato) : null
+    if (leitura) {
+      const texto = textoDaLeitura(original?.texto ?? null, leitura)
+      await gravarLeitura(m.id, texto)
+      m.content = texto
+    }
+    await registrarEvento(c.telefone, 'leitura', leitura ? { tipo: leitura.tipo, placa: leitura.placa } : { falhou: true, mime: arquivo?.mime ?? null })
+    out.push(leitura)
+  }
+  return out
+}
 
 async function transcreverAudios(novas: MensagemHistorico[]): Promise<void> {
   const phoneId = process.env.WA_PHONE_ID ?? ''

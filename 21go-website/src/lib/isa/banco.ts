@@ -247,6 +247,11 @@ export async function reiniciarContato(telefone: string): Promise<void> {
   )
 }
 
+/** Troca o "[imagem]"/"[documento]" pelo que a Isa leu — o arquivo em si nunca e gravado. */
+export async function gravarLeitura(messageId: string, texto: string): Promise<void> {
+  await sql(`UPDATE public.messages SET content = $2 WHERE id = $1 AND evolution_instance = 'cloud_isa'`, [messageId, texto])
+}
+
 /** Troca o "[áudio]" pela transcricao — o audio em si nunca e gravado no banco. */
 export async function gravarTranscricao(messageId: string, texto: string): Promise<void> {
   await sql(`UPDATE public.messages SET content = $2 WHERE id = $1 AND evolution_instance = 'cloud_isa'`, [

@@ -393,6 +393,8 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
   const [texto, setTexto] = useState('')
   const [aviso, setAviso] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  // No celular os detalhes (simulacao + etiquetas) comecam recolhidos: abertos, comiam metade da tela.
+  const [detalhes, setDetalhes] = useState(false)
   const [, setTique] = useState(0)
   const fim = useRef<HTMLDivElement>(null)
   const qtdAnterior = useRef(0)
@@ -460,6 +462,10 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             <p className="truncate text-lg font-bold leading-tight">{nome}</p>
             <p className="text-xs text-white/45 [font-family:var(--fonte-mono)]">{telefoneBonito(telefone)}</p>
           </div>
+          <button type="button" onClick={() => setDetalhes((d) => !d)}
+            className="rounded-md bg-white/[0.06] px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/60 md:hidden">
+            {detalhes ? 'detalhes ▴' : 'detalhes ▾'}
+          </button>
           <span className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wide [font-family:var(--fonte-rotulo)] ${
             jan.tom === 'ok' ? 'bg-white/[0.06] text-white/60' : jan.tom === 'alerta' ? 'bg-[#F2911D]/15 text-[#F2911D]' : 'bg-red-500/15 text-red-300'
           }`}>⏱ {jan.texto}</span>
@@ -482,6 +488,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
           )}
         </div>
 
+        <div className={detalhes ? 'block' : 'hidden md:block'}>
         {(sim || contato?.pausa_motivo || contato?.aguardando_dono) && (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px]">
             {sim && (
@@ -523,6 +530,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             })}
           </div>
         )}
+        </div>
       </header>
 
       {/* mensagens */}
@@ -591,8 +599,12 @@ function Balao({ it }: { it: ItemConversa }) {
         }`}>
           {temMidia ? (
             <a href={`/api/atendimento/midia?id=${encodeURIComponent(it.media_id!)}`} target="_blank" rel="noreferrer" className="font-semibold underline">
-              {it.mensagem_tipo === 'image' ? '🖼 abrir imagem' : `📄 ${it.conteudo || 'abrir documento'}`}
+              {it.mensagem_tipo === 'image' ? '🖼 abrir imagem' : '📄 abrir documento'}
             </a>
+          ) : null}
+          {/* O que a Isa leu da foto/PDF (ou a legenda) — o "[imagem]" cru nao aparece. */}
+          {temMidia ? (
+            it.conteudo && !/^\[[^\]]*\]$/.test(it.conteudo.trim()) && <span className="mt-1 block">{linkar(it.conteudo)}</span>
           ) : (
             linkar(it.conteudo || '')
           )}

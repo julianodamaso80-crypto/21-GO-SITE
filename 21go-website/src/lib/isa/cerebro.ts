@@ -1,5 +1,5 @@
 import 'server-only'
-import { montarPrompt, comporResposta, abertura, tirarCumprimento, type Genero } from '@/lib/isa/prompt.regras'
+import { montarPrompt, comporResposta, abertura, tirarCumprimento, vazaInterno, type Genero } from '@/lib/isa/prompt.regras'
 import { validarNumeros, type Permitidos } from '@/lib/isa/validador.regras'
 import { cumprimento } from '@/lib/isa/hora.regras'
 import type { Fatos } from '@/lib/isa/fatos.regras'
@@ -143,6 +143,12 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
         reprovados: [],
       }
     }
+  }
+
+  // Trava de assunto no codigo: falou do que existe por tras da Isa → sai a resposta de fora do assunto.
+  if (vazaInterno(saida.resposta)) {
+    console.warn('[isa] resposta barrada (vazamento/fora do assunto):', saida.resposta.slice(0, 200))
+    saida = { ...saida, resposta: comporResposta('fora_do_assunto', '', aberturaDoCodigo), gatilho: null }
   }
 
   let v = validarNumeros(saida.resposta, permitidos)

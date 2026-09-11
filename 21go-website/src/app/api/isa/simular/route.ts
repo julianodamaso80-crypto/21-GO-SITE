@@ -6,6 +6,8 @@ import { mensagensDaSimulacao } from '@/lib/isa/entrega.regras'
 import { acharMarca, filtrarVersoes, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
 import type { MensagemHistorico } from '@/lib/isa/banco'
+import { lerMidia } from '@/lib/isa/ler-midia'
+import { formatoLegivel, textoDaLeitura, DOC_DE_FECHAMENTO, TAMANHO_MAXIMO } from '@/lib/isa/ler-midia.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -35,6 +37,17 @@ export async function POST(req: NextRequest) {
     semPlaca?: { marca: string | null; modelo: string; ano: number }
     leilao?: boolean
     app?: boolean
+    midia?: { base64: string; mime: string }
+  }
+  // Modo leitura: o que a Isa entende de uma foto/print/PDF (nada e gravado).
+  if (b.midia?.base64 && b.midia.mime) {
+    const formato = formatoLegivel(b.midia.mime)
+    if (!formato) return NextResponse.json({ erro: `formato que a Isa nao le: ${b.midia.mime}` }, { status: 400 })
+    const bytes = Buffer.from(b.midia.base64, 'base64')
+    if (bytes.length > TAMANHO_MAXIMO) return NextResponse.json({ erro: 'arquivo grande demais' }, { status: 400 })
+    const t0 = Date.now()
+    const leitura = await lerMidia(bytes, b.midia.mime, formato)
+    return NextResponse.json({ ms: Date.now() - t0, leitura, texto: leitura ? textoDaLeitura(null, leitura) : null, fechamento: leitura ? DOC_DE_FECHAMENTO.has(leitura.tipo) : null })
   }
   // Modo sem placa: mostra as versoes que a Isa listaria (nada e gravado).
   if (b.semPlaca) {
