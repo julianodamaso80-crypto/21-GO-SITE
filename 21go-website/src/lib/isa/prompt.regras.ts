@@ -133,10 +133,9 @@ export function tirarCumprimento(resposta: string): string {
 export const AINDA_NAO_SABE: readonly string[] = [
   'fidelidade, multa ou como cancelar',
   'contrato ou regulamento antes de fechar, prazo pra desistir, apólice',
-  'como paga a mensalidade, dia de vencimento, reajuste ou rateio',
+  'dia de vencimento da mensalidade, reajuste ou rateio',
   'desconto pagando o ano à vista, desconto por indicação, desconto na ativação vindo de outra proteção',
   'se a ativação é paga à empresa ou ao consultor',
-  'aplicativo da 21Go',
   'instalação do rastreador (onde, quem agenda), rastreador fora do RJ, usar rastreador de outra empresa',
   'foto do adesivo todo mês, tamanho do adesivo',
   'livre condutor, outra pessoa dirigindo, idade do condutor',
@@ -146,12 +145,32 @@ export const AINDA_NAO_SABE: readonly string[] = [
   'detalhes da vistoria (tempo, número de fotos, horário, se o link expira, app VISTO, fazer na sede)',
   'oficina credenciada ou própria, peça original no conserto, problema mecânico sem batida',
   'se paga cota ao acionar só os terceiros, acidente com CNH vencida',
-  'carro blindado, kit gás (GNV), porcentagem do para-brisa, clube de benefícios, lavagem e almoço na sede',
+  'carro blindado, kit gás (GNV), porcentagem do para-brisa, clube de benefícios',
   'táxi (se aceita e quanto indeniza), se carro de aplicativo muda a indenização, autoescola, motorhome',
   'tempo de espera do reboque, se as saídas renovam por mês, reboque adicional, chaveiro, táxi quando reboca',
   'telefones (0800, recepção), endereço e horário da sede, CNPJ',
   'vender o carro e passar o plano pro novo',
 ]
+
+/**
+ * O nome do cliente sai UMA vez, no cumprimento do codigo (dono, 11/09/2026: "está toda hora
+ * chamando pelo nome, Juliano, Juliano"). Tira o nome como chamamento do texto da IA.
+ */
+export function tirarNomeRepetido(resposta: string, primeiroNome: string | null): string {
+  const n = (primeiroNome || '').trim()
+  if (!n) return resposta
+  const esc = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return resposta
+    .split('\n')
+    .map((linha) =>
+      linha
+        .replace(new RegExp(`^${esc}\\s*[,:!]\\s*`, 'i'), '')
+        .replace(new RegExp(`\\s*,\\s*${esc}\\b`, 'gi'), '')
+        .replace(new RegExp(`\\s+${esc}\\s*([!?.])`, 'gi'), '$1')
+        .trimEnd(),
+    )
+    .join('\n')
+}
 
 export type Genero = 'm' | 'f' | null
 
@@ -220,6 +239,7 @@ export function montarPrompt(e: EntradaPrompt): string {
 ## como você escreve (é assim que a Leticya atende)
 - minúsculas, frases curtas, sem ponto final
 - separe as ideias em mensagens curtas: coloque UMA LINHA EM BRANCO entre elas (no máximo 3 partes)
+- chame o cliente pelo nome UMA vez, no cumprimento do começo. depois NUNCA repita o nome dele
 - uma pergunta por vez
 - emojis com moderação: 😃 no cumprimento, 🙏🏼 pra agradecer, 👍 pra confirmar, 🥳 quando fechar
 - super educada, paciente e atenciosa, como uma pessoa de verdade
@@ -285,11 +305,14 @@ quando perguntarem de franquia, cota, "quanto pago se bater": responda DIRETO co
 - reboque: 1 saída pra colisão, 1 pra pane mecânica ou elétrica e 3 saídas pra emergência (pneu furado leva ao borracheiro, pane seca ao posto, num raio de 20km). carro amigo: se o motorista passar mal, raio de até 25km. região isolada: pode se hospedar e pedir no dia seguinte
 - atende o Brasil todo: suporte on-line pelo 0800, reboque terceirizado mais próximo, e pode levar numa oficina de confiança com CNPJ e preço justo que a 21Go cobre mediante a cota
 - adicionais (SÓ se pedir): proteção de vidro premium R$ 29,90/mês (todos os vidros, espelhos e só as LENTES dos faróis); danos a terceiros pra moto, 10 mil, R$ 22,90/mês
+- aplicativo da 21Go: depois de associado ele tem o app, onde acompanha o rastreador do veículo, paga os boletos e pode cadastrar cartão de crédito
+- associado tem direito a 2 lavagens e 2 almoços grátis por mês na sede
+- o presidente da 21Go é o Marcos Alves; se pedirem o instagram dele, é @marcosalves
 - contratação: ele manda os documentos (CNH ou identidade, documento do veículo e comprovante de residência no nome dele), faz a vistoria por fotos num link e paga a ativação
 - documento do veículo (CRLV): aceitamos mesmo atrasado, desde que seja o CRLV de 2023 em diante. CRLV de 2022 pra trás não aceitamos
 - NÃO aceitamos: moto de leilão, veículo com chassi remarcado e veículo que já teve sinistro. carro de leilão aceitamos
 - ano: só aceitamos veículo de 2006 em diante
-- indenização em roubo, furto ou perda total: 100% da FIPE, sem cota (leilão, táxi e ex-táxi: 80%). prazo: o contrato prevê até 90 dias corridos depois da documentação entregue, mas na prática a 21Go paga em menos de 60 dias
+- indenização em roubo, furto ou perda total: 100% da FIPE, sem cota (leilão, táxi e ex-táxi: 80%). prazo: o contrato prevê até 90 dias corridos depois da documentação entregue, mas na prática a 21Go paga em menos de 60 dias — complete dizendo que quem acompanha o nosso presidente, Marcos Alves, no instagram vê que ele paga bem antes disso
 - rastreador: só é obrigatório no RJ — carro particular com FIPE a partir de R$ 50 mil, carro de aplicativo a partir de R$ 35 mil, moto a partir de R$ 15 mil. quando é obrigatório já vem incluso no valor do plano. fora disso é opcional: R$ 100,00 de instalação + R$ 19,90 por mês
 - mais de um veículo (frota): 5% de desconto na mensalidade de cada um
 

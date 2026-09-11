@@ -1,5 +1,5 @@
 import 'server-only'
-import { montarPrompt, comporResposta, abertura, tirarCumprimento, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
+import { montarPrompt, comporResposta, abertura, tirarCumprimento, tirarNomeRepetido, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
 import { validarNumeros, type Permitidos } from '@/lib/isa/validador.regras'
 import { cumprimento } from '@/lib/isa/hora.regras'
 import type { Fatos } from '@/lib/isa/fatos.regras'
@@ -71,7 +71,7 @@ async function chamarIA(mensagens: MsgIA[]): Promise<string> {
   return j.choices?.[0]?.message?.content ?? ''
 }
 
-function lerSaida(bruto: string, aberturaDoCodigo: string | null): Omit<SaidaCerebro, 'reprovados'> {
+function lerSaida(bruto: string, aberturaDoCodigo: string | null, primeiroNome: string | null): Omit<SaidaCerebro, 'reprovados'> {
   const limpo = bruto.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim()
   const j = JSON.parse(limpo) as Record<string, unknown>
   const gat = typeof j.gatilho === 'string' && GATILHOS.has(j.gatilho) ? (j.gatilho as Gatilho) : null
@@ -82,7 +82,8 @@ function lerSaida(bruto: string, aberturaDoCodigo: string | null): Omit<SaidaCer
   return {
     // Resposta pronta: a IA so aponta a chave; o texto do dono entra aqui, exato.
     // O cumprimento e do codigo (hora certa do Rio), nunca da IA.
-    resposta: comporResposta(pronta, tirarCumprimento(typeof j.resposta === 'string' ? j.resposta : ''), aberturaDoCodigo),
+    // O nome so aparece no cumprimento do codigo (dono, 11/09/2026: nada de "Juliano" toda hora).
+    resposta: comporResposta(pronta, tirarNomeRepetido(tirarCumprimento(typeof j.resposta === 'string' ? j.resposta : ''), primeiroNome), aberturaDoCodigo),
     gatilho: gat,
     genero: gen,
     placa: placa && /^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(placa) ? placa : null,
@@ -123,7 +124,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
   const conversa: MsgIA[] = [{ role: 'system', content: sistema }, ...paraMensagensIA(e.historico)]
 
   let bruto = await chamarIA(conversa)
-  let saida = lerSaida(bruto, aberturaDoCodigo)
+  let saida = lerSaida(bruto, aberturaDoCodigo, nome)
   // O que o cliente mandou desde a ultima resposta da Isa.
   const iUltimaNossa = e.historico.map((m) => m.direction).lastIndexOf('outbound')
   const doCliente = e.historico.slice(iUltimaNossa + 1).filter((m) => m.direction === 'inbound').map((m) => m.content).join('\n')
@@ -139,7 +140,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
       content: '(instrução interna, não é o cliente) sua "resposta" veio vazia. responda o cliente em "resposta". se a pergunta for vaga, pergunte de forma curta o que ele quer saber. mesmo formato JSON.',
     })
     bruto = await chamarIA(conversa)
-    saida = lerSaida(bruto, aberturaDoCodigo)
+    saida = lerSaida(bruto, aberturaDoCodigo, nome)
     if (!saida.resposta && !saida.gatilho) {
       console.warn('[isa] vazia de novo — bruto:', bruto.slice(0, 400))
       // Sem pergunta (um "oie"), "vou confirmar" nao faz sentido e nao gera alerta.
@@ -165,7 +166,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
         content: '(instrução interna, não é o cliente) a última mensagem do cliente não é uma pergunta (é cumprimento ou confirmação). responda normalmente e curto, sem dizer que vai confirmar e sem gatilho. mesmo formato JSON.',
       })
       bruto = await chamarIA(conversa)
-      saida = lerSaida(bruto, aberturaDoCodigo)
+      saida = lerSaida(bruto, aberturaDoCodigo, nome)
     }
     if (saida.gatilho === 'sem_informacao' && !semInformacaoValido(doCliente, saida.resposta)) saida = { ...saida, gatilho: null }
   }
@@ -187,7 +188,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
       `(instrução interna, não é o cliente) sua resposta tinha números que NÃO estão nos FATOS: ${v.invalidos.join(', ')}. ` +
       'reescreva a resposta usando só números dos FATOS. se não tiver o número, diga que vai confirmar e marque "gatilho": "sem_informacao". mesmo formato JSON.',
   })
-  saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo)
+  saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo, nome)
   v = validarNumeros(saida.resposta, permitidos)
   if (v.ok) return { ...saida, reprovados: primeiraReprovacao }
 

@@ -166,8 +166,32 @@ test('o que a Isa AINDA NAO sabe esta escrito — fidelidade/multa inventada no 
   const { AINDA_NAO_SABE } = await import('../../src/lib/isa/prompt.regras.ts')
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
   assert.match(p, /## o que você AINDA NÃO sabe/)
-  for (const tema of ['fidelidade', 'multa', 'contrato', 'aplicativo', 'rastreador', 'livre condutor', 'financiado', 'lavagem']) {
+  for (const tema of ['fidelidade', 'multa', 'contrato', 'apólice', 'rastreador', 'livre condutor', 'financiado', 'blindado']) {
     assert.ok(AINDA_NAO_SABE.some((x: string) => x.includes(tema)), `faltou ${tema}`)
     assert.match(p, new RegExp(tema))
   }
+})
+
+test('o nome do cliente sai uma vez so, no cumprimento (dono, 11/09/2026: "toda hr juliano")', async () => {
+  const { tirarNomeRepetido } = await import('../../src/lib/isa/prompt.regras.ts')
+  assert.equal(tirarNomeRepetido('a 21Go atende no brasil todo, Juliano', 'Juliano'), 'a 21Go atende no brasil todo')
+  assert.equal(tirarNomeRepetido('a vistoria é por fotos, Juliano\nvocê recebe um link', 'Juliano'), 'a vistoria é por fotos\nvocê recebe um link')
+  assert.equal(tirarNomeRepetido('Juliano, hoje você tem proteção?', 'Juliano'), 'hoje você tem proteção?')
+  assert.equal(tirarNomeRepetido('não tem carência, Juliano!', 'Juliano'), 'não tem carência!')
+  // sem nome, ou nome no meio da frase que nao e chamamento: nao mexe
+  assert.equal(tirarNomeRepetido('tudo certo por aqui', 'Juliano'), 'tudo certo por aqui')
+  assert.equal(tirarNomeRepetido('a 21Go atende no brasil todo', null), 'a 21Go atende no brasil todo')
+})
+
+test('app, lavagem/almoço e o presidente entram no que ela sabe (dono, 11/09/2026)', async () => {
+  const { AINDA_NAO_SABE } = await import('../../src/lib/isa/prompt.regras.ts')
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
+  assert.match(p, /aplicativo da 21Go.*rastrea|rastrea.*aplicativo/i)
+  assert.match(p, /cartão de crédito/)
+  assert.match(p, /2 lavagens e 2 almoços/)
+  assert.match(p, /Marcos Alves/)
+  assert.ok(!AINDA_NAO_SABE.some((x: string) => x === 'aplicativo da 21Go'), 'app saiu da lista do que nao sabe')
+  assert.ok(!AINDA_NAO_SABE.some((x: string) => x.includes('lavagem')), 'lavagem saiu da lista do que nao sabe')
+  assert.match(p, /paga bem antes disso/)
+  assert.match(p, /@marcosalves/)
 })
