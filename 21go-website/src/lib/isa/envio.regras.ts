@@ -12,10 +12,19 @@ const TETO_PAUSA_S = 12
 
 /** Quebra nas linhas em branco; quebra de linha simples fica na mesma mensagem. */
 export function dividirEmPartes(texto: string): string[] {
+  const vistas = new Set<string>()
   const partes = texto
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean)
+    // A mesma frase duas vezes na mesma resposta (11/09/2026: "vou confirmar" 3x, uma por
+    // pergunta que ela nao sabia) fica com cara de robo — vai uma so.
+    .filter((p) => {
+      const chave = p.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
+      if (vistas.has(chave)) return false
+      vistas.add(chave)
+      return true
+    })
   if (partes.length <= MAX_PARTES) return partes
   return [...partes.slice(0, MAX_PARTES - 1), partes.slice(MAX_PARTES - 1).join('\n\n')]
 }

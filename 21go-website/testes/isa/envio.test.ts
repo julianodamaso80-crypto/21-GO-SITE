@@ -72,3 +72,11 @@ test('audio que nao deu pra entender: a Isa pede pra repetir, nunca adivinha (te
   assert.match(mensagemAudioNaoEntendido(null), /repetir|mandar de novo/)
   assert.match(mensagemAudioNaoEntendido('boa tarde, Juliano 😃'), /^boa tarde, Juliano 😃\n\nnão consegui entender/)
 })
+
+test('a mesma frase nao sai duas vezes na mesma resposta (11/09/2026: "vou confirmar" 3x seguidas)', async () => {
+  const { dividirEmPartes } = await import('../../src/lib/isa/envio.regras.ts')
+  const t = 'essa eu vou confirmar e já te retorno 🙏🏼\n\nnão, a cota é a mesma pra todos os carros\n\nessa eu vou confirmar e já te retorno 🙏🏼\n\nessa eu vou confirmar e já te retorno'
+  assert.deepEqual(dividirEmPartes(t), ['essa eu vou confirmar e já te retorno 🙏🏼', 'não, a cota é a mesma pra todos os carros'])
+  // partes diferentes continuam inteiras
+  assert.equal(dividirEmPartes('oi\n\ntudo bem?\n\nme manda a placa').length, 3)
+})
