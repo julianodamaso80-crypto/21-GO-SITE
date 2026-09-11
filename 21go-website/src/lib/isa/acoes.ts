@@ -59,20 +59,22 @@ async function gravarSaida(c: ContatoIsa, wamid: string, texto: string, sender =
 /** Documento, associado, sem preco: manda o link do 4824 com o resumo, pausa e avisa o dono. */
 export async function transferir(
   c: ContatoIsa,
-  motivo: 'documento' | 'associado' | 'sem_preco',
+  motivo: 'documento' | 'associado' | 'sem_preco' | 'manual',
   enviar: (partes: string[]) => Promise<boolean>,
+  opcoes: { avisarDono?: boolean; por?: string } = {},
 ): Promise<void> {
   const r = await resumoDoCliente(c)
   await enviar([mensagemTransferencia({ motivo, resumo: `${r.texto} | Motivo: ${motivo}` })])
   await atualizarContato(c.telefone, {
     ligada: false,
     pausa_motivo: motivo,
-    pausa_por: 'isa',
+    pausa_por: opcoes.por ?? 'isa',
     pausada_em: new Date().toISOString(),
     transferido_em: new Date().toISOString(),
   })
-  await registrarEvento(c.telefone, 'transferiu', { motivo, para: '4824' })
-  await alertarDono({ telefone: c.telefone, nome: c.nome, motivo, detalhe: r.texto })
+  await registrarEvento(c.telefone, 'transferiu', { motivo, para: '4824' }, opcoes.por ?? 'isa')
+  // Transferencia feita pelo proprio dono no painel nao precisa avisar ele mesmo.
+  if (opcoes.avisarDono !== false) await alertarDono({ telefone: c.telefone, nome: c.nome, motivo, detalhe: r.texto })
 }
 
 /** Robo, xingamento, validador: a Isa fica calada e o dono e avisado. */
