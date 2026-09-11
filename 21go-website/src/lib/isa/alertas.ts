@@ -6,10 +6,11 @@ import { payloadDesconto } from '@/lib/isa/dono.regras'
 /**
  * Avisos da Isa pro dono (21 96577-4240). Ordem do dono: "sempre utilidade".
  *
- * 1o o template UTILITY (unico jeito de falar com ele fora da janela de 24h). Se a Meta recusar
- * (template ainda em analise, por exemplo), cai pra texto comum — que so passa se o dono escreveu
- * pro 98004-0964 nas ultimas 24h. Se nada sair, fica o evento "alerta_falhou": alerta nunca some
- * em silencio (foi o que aconteceu com o canal de entrega dos sites, 21/08/2026).
+ * 1o TEXTO comum: dentro da janela de 24h ele e de graca, e quem recebe os alertas conversa com a
+ * Isa todo dia (dono, 11/09/2026: "gasta meu credito no Meta"). So quando o texto nao passa — a
+ * janela fechou — vai o template UTILITY, que e pago e e o unico jeito de falar fora da janela.
+ * Se nada sair, fica o evento "alerta_falhou": alerta nunca some em silencio (foi o que aconteceu
+ * com o canal de entrega dos sites, 21/08/2026).
  */
 
 const PAINEL = 'https://21go.site/painel'
@@ -34,19 +35,19 @@ export async function alertarDono(p: { telefone: string; nome: string | null; mo
   const motivo = MOTIVO_LEGIVEL[p.motivo] ?? p.motivo
   const detalhe = `${p.detalhe} — abrir: ${PAINEL}?c=${p.telefone}`
   try {
-    await enviarTemplate(para, 'alerta_atendimento_isa', [motivo, p.nome || 'sem nome', p.telefone, detalhe])
-    await registrarEvento(p.telefone, 'alerta', { motivo: p.motivo, via: 'template' }, 'sistema')
+    await enviarTexto(para, `⚠️ Aviso do atendimento - 21Go\n\nMotivo: ${motivo}\nCliente: ${p.nome || 'sem nome'}\nTelefone: ${p.telefone}\nDetalhe: ${detalhe}`)
+    await registrarEvento(p.telefone, 'alerta', { motivo: p.motivo, via: 'texto' }, 'sistema')
     return
   } catch (err) {
-    const erroTemplate = err instanceof Error ? err.message : String(err)
+    const erroTexto = err instanceof Error ? err.message : String(err)
     try {
-      await enviarTexto(para, `⚠️ Aviso do atendimento - 21Go\n\nMotivo: ${motivo}\nCliente: ${p.nome || 'sem nome'}\nTelefone: ${p.telefone}\nDetalhe: ${detalhe}`)
-      await registrarEvento(p.telefone, 'alerta', { motivo: p.motivo, via: 'texto', erroTemplate }, 'sistema')
+      await enviarTemplate(para, 'alerta_atendimento_isa', [motivo, p.nome || 'sem nome', p.telefone, detalhe])
+      await registrarEvento(p.telefone, 'alerta', { motivo: p.motivo, via: 'template', erroTexto }, 'sistema')
     } catch (err2) {
       await registrarEvento(p.telefone, 'alerta_falhou', {
         motivo: p.motivo,
-        erroTemplate,
-        erroTexto: err2 instanceof Error ? err2.message : String(err2),
+        erroTexto,
+        erroTemplate: err2 instanceof Error ? err2.message : String(err2),
       }, 'sistema')
     }
   }
