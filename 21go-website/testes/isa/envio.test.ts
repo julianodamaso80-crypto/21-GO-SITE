@@ -55,3 +55,16 @@ test('pre-mensagem ("perai"): nas 2 primeiras respostas, e depois so se as 2 ult
   assert.equal(precisaPreambulo({ esperasAnteriores: [3, 6, 7], ultimaFoiPreambulo: false }), true)
   assert.equal(precisaPreambulo({ esperasAnteriores: [], ultimaFoiPreambulo: true }), false)
 })
+
+test('audio que nao deu pra entender: a Isa pede pra repetir, nunca adivinha (teste do dono, 11/09/2026)', async () => {
+  const { ehInaudivel, AUDIO_INAUDIVEL, mensagemAudioNaoEntendido } = await import('../../src/lib/isa/envio.regras.ts')
+  assert.equal(ehInaudivel('[INAUDIVEL]'), true)
+  assert.equal(ehInaudivel('inaudível'), true)
+  assert.equal(ehInaudivel(''), true)
+  assert.equal(ehInaudivel(null), true)
+  assert.equal(ehInaudivel('Bom dia, queria uma cotação'), false)
+  assert.match(AUDIO_INAUDIVEL, /não deu pra entender o áudio/)
+  assert.match(mensagemAudioNaoEntendido(null), /não consegui entender seu áudio/)
+  assert.match(mensagemAudioNaoEntendido(null), /repetir|mandar de novo/)
+  assert.match(mensagemAudioNaoEntendido('boa tarde, Juliano 😃'), /^boa tarde, Juliano 😃\n\nnão consegui entender/)
+})

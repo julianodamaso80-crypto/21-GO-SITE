@@ -8,7 +8,6 @@ import {
   chegouMensagemNova,
   inboundsNovas,
   historico,
-  gravarTranscricao,
   gravarLeitura,
   registrarEvento,
   atualizarContato,
@@ -35,7 +34,7 @@ import {
 import { transcrever } from '@/lib/isa/transcrever'
 import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura } from '@/lib/isa/ler-midia.regras'
-import { dividirEmPartes, pausaEntreSegundos } from '@/lib/isa/envio.regras'
+import { dividirEmPartes, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos } from '@/lib/isa/entrega.regras'
@@ -169,6 +168,15 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const ultimaInbound = novas[novas.length - 1]?.whatsapp_message_id
 
   const enviar = (partes: string[]) => enviarComoGente(c, partes, ultimaInbound, visto)
+
+  // So chegou audio que nao deu pra entender: pede pra repetir, sem passar pela IA (ela
+  // "entendia" o que nao foi dito — teste do dono de 11/09/2026).
+  if (novas.length > 0 && novas.every((m) => m.content === AUDIO_INAUDIVEL)) {
+    await registrarEvento(c.telefone, 'audio_inaudivel', { quantos: novas.length })
+    const enviou = await enviarComoGente(c, [mensagemAudioNaoEntendido(await aberturaSePrecisa(c, agora))], ultimaInbound, visto)
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
 
   // Foto, print, PDF: a Isa le (dono, 11/09/2026). CNH, CRLV e comprovante = o cliente quer
   // fechar: transfere pro 4824 e pausa (regra de 10/09). Arquivo que nao deu pra ler tambem
@@ -558,10 +566,10 @@ async function transcreverAudios(novas: MensagemHistorico[]): Promise<void> {
     if (!original?.mediaId) continue
     const midia = await baixarMidia(original.mediaId)
     const texto = midia ? await transcrever(midia.bytes, midia.mime) : null
-    if (texto) {
-      await gravarTranscricao(m.id, texto)
-      m.content = `🎤 ${texto}`
-    }
+    // Cortado, sem fala, duvida do modelo ou falha: vira "nao deu pra entender" — nunca palpite.
+    const conteudo = ehInaudivel(texto) ? AUDIO_INAUDIVEL : `🎤 ${texto}`
+    await gravarLeitura(m.id, conteudo)
+    m.content = conteudo
   }
 }
 

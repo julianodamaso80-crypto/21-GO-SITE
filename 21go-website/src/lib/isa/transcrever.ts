@@ -1,14 +1,15 @@
 import 'server-only'
 
 /**
- * Audio do cliente → texto, pelo OpenRouter (Gemini Flash-Lite aceita audio na entrada).
+ * Audio do cliente → texto, pelo OpenRouter (Gemini 2.5 Flash aceita audio na entrada).
  * Ordem do dono: o modelo mais em conta que entregue qualidade. ~US$ 0,10 por milhao de tokens
  * de entrada; um audio de 30 s fica em ~1 mil tokens.
  *
  * O audio nunca e gravado: vira base64 so para esta chamada e vai embora.
  */
 
-const MODELO = 'google/gemini-2.5-flash-lite'
+// Flash (nao o Lite): o Lite "completava" audio cortado com palavra que o cliente nao disse.
+const MODELO = 'google/gemini-2.5-flash'
 
 function formatoDoMime(mime: string): string {
   const m = mime.toLowerCase()
@@ -36,12 +37,13 @@ export async function transcrever(bytes: Buffer, mime: string): Promise<string |
             content: [
               {
                 type: 'text',
+                // SEM lista de nomes de carro: no teste de 11/09/2026 o audio cortado virou "um Onix"
+                // e depois "Kwid" — os dois estavam na lista de exemplos. Na duvida, [INAUDIVEL].
                 text:
                   'Transcreva este audio em portugues do Brasil, exatamente como foi falado. ' +
-                  'E um cliente falando com uma empresa de protecao veicular no Rio de Janeiro: ' +
-                  'nomes de carros e motos (Onix, HB20, Gol, Compass, Kwid, Titan, CG, Fazer, BYD), ' +
-                  'placas e valores aparecem com frequencia — escreva-os do jeito certo. ' +
-                  'Devolva so o texto transcrito, sem comentarios. Se nao houver fala, devolva vazio.',
+                  'NAO complete frases, NAO corrija e NAO adivinhe palavras que nao ficaram claras. ' +
+                  'Se o audio estiver cortado, sem fala, com ruido, ou se voce nao tiver certeza do que foi dito, ' +
+                  'responda exatamente [INAUDIVEL]. Devolva so o texto transcrito, sem comentarios.',
               },
               { type: 'input_audio', input_audio: { data: bytes.toString('base64'), format: formatoDoMime(mime) } },
             ],

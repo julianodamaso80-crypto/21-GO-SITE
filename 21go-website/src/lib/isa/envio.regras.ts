@@ -47,3 +47,21 @@ export function precisaPreambulo(p: { esperasAnteriores: number[]; ultimaFoiPrea
   if (p.esperasAnteriores.length <= 2) return true
   return p.esperasAnteriores.slice(-2).every((s) => s >= 5)
 }
+
+/**
+ * Audio que nao deu pra entender (cortado, sem fala, ruido). Teste do dono de 11/09/2026: o
+ * audio saiu cortado e a transcricao "completou" com "um Onix" — a lista de carros do prompt de
+ * transcricao virava palpite. Agora: na duvida, a transcricao devolve [INAUDIVEL] e a Isa pede
+ * pra repetir; nunca adivinha.
+ */
+export const AUDIO_INAUDIVEL = '🎤 [não deu pra entender o áudio]'
+
+export function ehInaudivel(transcricao: string | null | undefined): boolean {
+  const t = (transcricao || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
+  return !t || /^\[?\s*inaudivel\s*\]?\.?$/.test(t)
+}
+
+export function mensagemAudioNaoEntendido(abertura: string | null): string {
+  const t = 'não consegui entender seu áudio 🙏🏼\n\npode mandar de novo ou escrever pra mim?'
+  return abertura ? `${abertura}\n\n${t}` : t
+}

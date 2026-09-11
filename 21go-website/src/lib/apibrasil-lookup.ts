@@ -5,7 +5,7 @@ import 'server-only'
  *
  * Esse é o MESMO endpoint que o backend do CRM (crm-21go) já usa em produção
  * (ver crm-21go/backend/src/modules/plate-lookup/plate-lookup.service.ts).
- * Custa R$ 0,10 por consulta, retorna FIPE oficial atualizado mensalmente.
+ * Tipo "fipe" (R$ 0,06 nesta conta). A de R$ 0,10 ("fipe-chassi") foi removida pra sempre.
  *
  * Usado como 2ª etapa da cascata em plate-lookup.ts quando o PowerCRM
  * encontra o veículo mas não retorna valor FIPE (`fipeValue: 0`).
@@ -50,27 +50,35 @@ interface ApiBrasilCreditsResponse {
   balance_before?: string
   tax?: string
   valor_consulta?: number
-  data?: {
-    resultados?: Array<{
-      anoFabricacao?: number
-      anoModelo?: string | number
-      categoria?: string
-      chassi?: string
-      codigoFipe?: string
-      combustivel?: string
-      cor?: string
-      historico?: Array<{ mes: string; valor: number }>
-      marca?: string
-      mesReferencia?: string
-      modelo?: string
-      principal?: boolean
-      valor?: number
-    }>
-  }
+  /** 'fipe' devolve a lista direto; o formato antigo ('fipe-chassi') vinha em `resultados`. */
+  data?: ResultadoApiBrasil[] | { resultados?: ResultadoApiBrasil[] }
 }
 
+interface ResultadoApiBrasil {
+  anoFabricacao?: number
+  anoModelo?: string | number
+  categoria?: string
+  chassi?: string
+  codigoFipe?: string
+  combustivel?: string
+  cor?: string
+  historico?: Array<{ mes: string; valor: number }>
+  marca?: string
+  mesReferencia?: string
+  modelo?: string
+  principal?: boolean
+  valor?: number
+}
+
+/**
+ * A consulta de R$ 0,10 ('fipe-chassi') foi removida pra sempre por ordem do dono (11/09/2026) —
+ * ele quer so a de R$ 0,03, que NAO existe nesta conta (tipos medidos: fipe R$ 0,06, fipe-chassi
+ * R$ 0,10, agregados-basica R$ 0,14). A 'fipe' fica pronta e DESLIGADA ate ele autorizar
+ * (APIBRASIL_FIPE=on). Desligada, a cascata segue sem API Brasil: Parallelum pelo codFipe do
+ * Power, senao atendimento/confirmacao.
+ */
 export function isApiBrasilConfigured(): boolean {
-  return Boolean(APIBRASIL_TOKEN)
+  return Boolean(APIBRASIL_TOKEN) && process.env.APIBRASIL_FIPE === 'on'
 }
 
 /**
@@ -106,7 +114,9 @@ export async function lookupApiBrasilByPlate(
         accept: 'application/json',
       },
       body: JSON.stringify({
-        tipo: 'fipe-chassi',
+        // NUNCA 'fipe-chassi' (R$ 0,10) — ordem do dono, 11/09/2026: "apaga isso pra sempre".
+        // 'fipe' custa R$ 0,06 nesta conta (medido em 11/09) e so roda com APIBRASIL_FIPE=on.
+        tipo: 'fipe',
         placa: normalized,
         homolog: false,
       }),
@@ -130,7 +140,8 @@ export async function lookupApiBrasilByPlate(
     return null
   }
 
-  const resultados = raw.data?.resultados
+  // 'fipe' devolve a lista direto em `data`; o formato antigo vinha em `data.resultados`.
+  const resultados = Array.isArray(raw.data) ? raw.data : raw.data?.resultados
   if (!resultados || resultados.length === 0) {
     console.warn('[apibrasil] sem resultados pra placa', normalized)
     return null
@@ -158,7 +169,7 @@ export async function lookupApiBrasilByPlate(
       : 'AUTOMOVEL'
 
   console.log(
-    `[apibrasil] OK placa=${normalized} fipe=R$${fipeValue} (${principal.marca} ${principal.modelo} ${ano}) custo=R$${raw.valor_consulta ?? '0,10'}`,
+    `[apibrasil] OK placa=${normalized} fipe=R$${fipeValue} (${principal.marca} ${principal.modelo} ${ano}) custo=R$${raw.tax ?? '0,06'}`,
   )
 
   return {
