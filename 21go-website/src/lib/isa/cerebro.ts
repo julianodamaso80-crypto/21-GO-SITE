@@ -119,7 +119,32 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
   const permitidos = e.fatos?.numerosPermitidos ?? PERMITIDOS_SEM_FATOS
   const conversa: MsgIA[] = [{ role: 'system', content: sistema }, ...paraMensagensIA(e.historico)]
 
-  let saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo)
+  let bruto = await chamarIA(conversa)
+  let saida = lerSaida(bruto, aberturaDoCodigo)
+
+  // Resposta vazia SEM gatilho = a Isa ficaria calada sem ninguem saber (aconteceu no teste de
+  // 10/09/2026: "Como está o processo?" ficou sem resposta e sem evento). Pede de novo uma vez;
+  // vazia outra vez vira "sem_informacao": resposta segura e o dono e avisado.
+  if (!saida.resposta && !saida.gatilho) {
+    console.warn('[isa] resposta vazia sem gatilho — bruto:', bruto.slice(0, 400))
+    conversa.push({ role: 'assistant', content: bruto })
+    conversa.push({
+      role: 'user',
+      content: '(instrução interna, não é o cliente) sua "resposta" veio vazia. responda o cliente em "resposta". se a pergunta for vaga, pergunte de forma curta o que ele quer saber. mesmo formato JSON.',
+    })
+    bruto = await chamarIA(conversa)
+    saida = lerSaida(bruto, aberturaDoCodigo)
+    if (!saida.resposta && !saida.gatilho) {
+      console.warn('[isa] vazia de novo — bruto:', bruto.slice(0, 400))
+      return {
+        ...saida,
+        resposta: comporResposta(null, 'deixa eu confirmar aqui e já te retorno 🙏🏼', aberturaDoCodigo),
+        gatilho: 'sem_informacao',
+        reprovados: [],
+      }
+    }
+  }
+
   let v = validarNumeros(saida.resposta, permitidos)
   if (v.ok) return { ...saida, reprovados: [] }
 

@@ -41,7 +41,8 @@ export const CHAVES_PRONTAS: Record<string, keyof typeof RESPOSTAS_PRONTAS> = {
  * que a IA escreveu pro resto da pergunta.
  */
 export function comporResposta(pronta: string | null, resposta: string, abertura: string | null = null): string {
-  const chave = pronta ? CHAVES_PRONTAS[pronta] : undefined
+  // Chave inventada pela IA ("processo", "prazo"...) nao existe: ignora, nunca apaga o texto.
+  const chave = pronta && Object.hasOwn(CHAVES_PRONTAS, pronta) ? CHAVES_PRONTAS[pronta] : undefined
   const oficial = chave ? RESPOSTAS_PRONTAS[chave] : ''
   // Sem conteudo, nao sai nada — nem o cumprimento. Robo/xingamento: a Isa fica calada.
   if (!oficial && !resposta.trim()) return ''
@@ -136,6 +137,9 @@ ${blocoTratamento(e)}
 - ironizar, rir do cliente ("kkkk", "todo mundo consegue"), escrever em CAIXA ALTA, pressionar ("não me esquece", "última chance")
 - falar que é robô, IA ou assistente virtual, ou negar isso com mentira
 - dizer o número de registro na SUSEP (não existe número pra passar)
+- inventar a situação do cliente ("seu processo está tranquilo", "já foi aprovado"): você não sabe o andamento de nada além da simulação
+- pedir CPF, RG ou dados pessoais por texto: pra contratar ele manda os documentos e o time assume
+- deixar "resposta" vazia sem marcar gatilho: se a pergunta for vaga ("como está o processo?"), pergunte de forma curta o que ele quer saber
 
 ## respostas prontas — o texto é do dono e sai EXATO
 quando o assunto aparecer, NÃO escreva a resposta: coloque a chave em "pronta" e o sistema cola o texto oficial. em "resposta" escreva só o que faltar (outra pergunta que o cliente fez), ou deixe vazio

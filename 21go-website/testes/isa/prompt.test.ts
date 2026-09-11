@@ -64,3 +64,9 @@ test('resposta pronta sai EXATA pelo codigo, nunca reescrita pela IA', () => {
 test('rastreador de moto abaixo de 15 mil nao e embutido; acima e (e nao se comenta)', () => {
   assert.match(montarPrompt({ cumprimento: 'bom dia', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false }), /JÁ INCLUSO/)
 })
+
+test('chave de resposta pronta inventada pela IA nao apaga o texto (bug de 10/09: resposta sumiu)', () => {
+  assert.equal(comporResposta('processo', 'qual processo você quer saber?'), 'qual processo você quer saber?')
+  assert.equal(comporResposta('toString', 'oi'), 'oi')
+  assert.equal(comporResposta('processo', ''), '')
+})
