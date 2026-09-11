@@ -143,3 +143,16 @@ test('"nao soube responder" so vale pra pergunta de verdade + resposta que diz q
   assert.equal(semInformacaoValido('cobre blindagem?', 'essa eu vou confirmar e já te retorno 🙏🏼'), true)
   assert.equal(semInformacaoValido('cobre blindagem?', 'cobre sim, a blindagem fica de fora'), false)
 })
+
+test('nome interno (chave de resposta pronta ou gatilho) nunca vai pro cliente (11/09/2026: saiu "fora_do_assunto")', () => {
+  const r = comporResposta('fora_do_assunto', 'fora_do_assunto', null)
+  assert.equal(r, RESPOSTAS_PRONTAS.foraDoAssunto)
+  assert.equal(comporResposta(null, 'sem_informacao', null), '')
+  assert.equal(comporResposta('susep', ' susep ', null), RESPOSTAS_PRONTAS.susep)
+})
+
+test('beneficio ou pessoa ligada a 21Go (lavagem, pastor) nao e fora do assunto', () => {
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
+  assert.match(p, /lavagem/)
+  assert.match(p, /NÃO é fora do assunto/)
+})
