@@ -10,6 +10,7 @@ import { aceitaAno, decidirElegibilidade, ehBydDeLeilao } from '@/lib/elegibilid
 import { upsertLead } from '@/lib/supabase-store'
 import { sql } from '@/lib/isa/banco'
 import type { LeadIsa } from '@/lib/isa/fatos'
+import { recusaMotoDeLeilao } from '@/lib/isa/entrega.regras'
 
 /**
  * Orcamento pela placa, feito pela Isa. Placa e primordial (dono, 10/09/2026).
@@ -52,6 +53,8 @@ export async function orcarPorPlaca(p: {
   }
 
   const v = r.vehicle
+  // Antes do lead e da cotacao no Power: moto de leilao nao se faz.
+  if (recusaMotoDeLeilao(v.categoria, p.leilao)) return { tipo: 'nao_fazemos', motivo: 'moto_leilao' }
   const ref = ORDEM_REFERENCIA.map((id) => r.plans.find((pl) => pl.id === id)).find(Boolean) || r.plans[0]
   // trk estavel por telefone+placa: se o cliente corrigir leilao/aplicativo, a Isa atualiza a
   // MESMA simulacao (e o PDF acompanha), em vez de criar outra.

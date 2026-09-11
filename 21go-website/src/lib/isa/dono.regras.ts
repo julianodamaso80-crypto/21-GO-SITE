@@ -77,6 +77,20 @@ export function mensagemTransferencia(p: { motivo: string; resumo: string }): st
   return `${frase}\n\né só tocar aqui que já cai com ela 👇\nhttps://wa.me/${NUMERO_4824}?text=${encodeURIComponent(texto)}`
 }
 
+/**
+ * "Voce e robo?" — texto do dono (11/09/2026). Antes a Isa ficava calada e o cliente achava que a
+ * conversa tinha morrido; agora ela diz o que e, oferece a Leticya (o mesmo link do 4824 da
+ * transferencia) e segue atendendo.
+ */
+export function mensagemRobo(p: { genero: 'm' | 'f' | null; resumo: string }): string {
+  const protegido = p.genero === 'f' ? 'protegida' : 'protegido'
+  const texto = `Oi Leticya! Vim do atendimento da Isa. ${p.resumo}`
+  return (
+    `sou uma atendente virtual inteligente 😊 tô aqui pra te ajudar com mais velocidade, pra você ficar ${protegido} o mais rápido possível\n\n` +
+    `mas se você quiser falar direto com a Leticya, é só tocar aqui 👇\nhttps://wa.me/${NUMERO_4824}?text=${encodeURIComponent(texto)}`
+  )
+}
+
 /** A mensagem pronta do popup comeca com "Quero meu desconto" e traz o link do PDF do lead. */
 export function entradaPopup(texto: string): { popup: boolean; leadId: string | null; plano: string | null } {
   const popup = /^\s*quero meu desconto/i.test(texto)

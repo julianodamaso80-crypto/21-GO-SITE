@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mensagensDaSimulacao, mensagemNaoFazemos } from '../../src/lib/isa/entrega.regras.ts'
+import { mensagensDaSimulacao, mensagemNaoFazemos, recusaMotoDeLeilao } from '../../src/lib/isa/entrega.regras.ts'
 import { montarFatos } from '../../src/lib/isa/fatos.regras.ts'
 import { validarNumeros } from '../../src/lib/isa/validador.regras.ts'
 
@@ -51,6 +51,13 @@ test('todo numero da mensagem passa no validador (montada so com fatos)', () => 
 test('nao fazemos: ano antes de 2006 explica o motivo; resto e generico', () => {
   assert.match(mensagemNaoFazemos('ano'), /anterior a 2006/)
   assert.match(mensagemNaoFazemos('model'), /não estamos aceitando esse veículo/)
+})
+
+test('moto de leilao a 21Go nao aceita (dono, 11/09/2026); carro de leilao aceita', () => {
+  assert.equal(recusaMotoDeLeilao('MOTOCICLETA', true), true)
+  assert.equal(recusaMotoDeLeilao('MOTOCICLETA', false), false)
+  assert.equal(recusaMotoDeLeilao('AUTOMOVEL', true), false)
+  assert.match(mensagemNaoFazemos('moto_leilao'), /não aceitamos moto de leilão/)
 })
 
 test('placa/modelo sem preco: a Isa pede pra conferir e oferece fazer pelo modelo — NUNCA manda pro 4824', async () => {

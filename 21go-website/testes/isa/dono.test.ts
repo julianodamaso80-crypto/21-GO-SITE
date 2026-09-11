@@ -8,6 +8,7 @@ import {
   mensagemDescontoDoDono,
   mensagemDonoRecusou,
   mensagemTransferencia,
+  mensagemRobo,
   entradaPopup,
   ehReiniciar,
   numeroDeTeste,
@@ -57,6 +58,17 @@ test('transferencia pro 4824 com o resumo pronto no link (quem escreve e o clien
   assert.match(m, /https:\/\/wa\.me\/5521969454824\?text=/)
   assert.match(decodeURIComponent(m.split('text=')[1]), /Nome: Juliano \| Jeep Compass 2022/)
   assert.match(mensagemTransferencia({ motivo: 'associado', resumo: 'x' }), /que cuida disso pra você/)
+})
+
+test('"voce e robo?": o texto do dono (11/09/2026) + o link do 4824 — e a Isa segue atendendo', () => {
+  const m = mensagemRobo({ genero: null, resumo: 'Nome: Juliano | Veículo: Ford Ka 2019' })
+  assert.match(m, /^sou uma atendente virtual inteligente/)
+  assert.match(m, /mais velocidade/)
+  assert.match(m, /protegido o mais rápido possível/)
+  assert.match(m, /falar direto com a Leticya/)
+  assert.match(m, /https:\/\/wa\.me\/5521969454824\?text=/)
+  assert.match(decodeURIComponent(m.split('text=')[1]), /Vim do atendimento da Isa\. Nome: Juliano/)
+  assert.match(mensagemRobo({ genero: 'f', resumo: 'x' }), /protegida o mais rápido/)
 })
 
 test('entrada pelo popup: "Quero meu desconto" + o lead do link do PDF', () => {

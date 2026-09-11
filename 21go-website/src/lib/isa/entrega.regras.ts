@@ -67,7 +67,13 @@ export function mensagemNaoFazemos(motivo: string): string {
   if (motivo === 'ano') {
     return 'infelizmente no momento não estamos aceitando veículos com ano anterior a 2006 🙏🏼'
   }
+  if (motivo === 'moto_leilao') return 'infelizmente não aceitamos moto de leilão 🙏🏼'
   return 'infelizmente no momento não estamos aceitando esse veículo 🙏🏼'
+}
+
+/** Dono, 11/09/2026: a 21Go nao aceita moto de leilao (carro de leilao aceita). */
+export function recusaMotoDeLeilao(categoria: string | null | undefined, leilao: boolean): boolean {
+  return leilao && categoria === 'MOTOCICLETA'
 }
 
 /**

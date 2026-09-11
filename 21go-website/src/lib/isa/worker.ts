@@ -18,9 +18,9 @@ import {
   type MensagemHistorico,
 } from '@/lib/isa/banco'
 import { pensar } from '@/lib/isa/cerebro'
-import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono } from '@/lib/isa/acoes'
+import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente } from '@/lib/isa/acoes'
 import { alertarDono } from '@/lib/isa/alertas'
-import { entradaPopup, mensagemDesconto50, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor } from '@/lib/isa/dono.regras'
+import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import {
@@ -304,7 +304,20 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return true
   }
 
-  // Robo, xingamento, numero que nao confere: a Isa fica calada e o dono e avisado.
+  // "Voce e robo?": o texto do dono + o link da Leticya, e a Isa SEGUE ligada (dono, 11/09/2026 —
+  // calada, o cliente achava que a conversa tinha morrido). Se ele perguntou outra coisa junto,
+  // essa resposta vai antes.
+  if (saida.gatilho === 'robo') {
+    const r = await resumoDoCliente(c)
+    const robo = mensagemRobo({ genero: ((c.genero ?? saida.genero) as 'm' | 'f' | null) ?? null, resumo: r.texto })
+    const ab = saida.resposta ? null : await aberturaSePrecisa(c, agora)
+    const partes = saida.resposta ? [...dividirEmPartes(saida.resposta), robo] : [ab ? `${ab}\n\n${robo}` : robo]
+    const enviou = await enviarComoGente(c, partes, ultimaInbound, visto)
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
+
+  // Xingamento, numero que nao confere: a Isa fica calada e o dono e avisado.
   if (saida.gatilho && GATILHOS_SILENCIOSOS.has(saida.gatilho)) {
     const detalhe = saida.gatilho === 'validador' ? `numeros barrados: ${saida.reprovados.join(', ')}` : ultimoTexto.slice(0, 200)
     await pausarEAvisar(c, saida.gatilho, detalhe)
@@ -379,7 +392,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   return enviou
 }
 
-const GATILHOS_SILENCIOSOS = new Set(['robo', 'hostil', 'associado', 'validador'])
+const GATILHOS_SILENCIOSOS = new Set(['hostil', 'associado', 'validador'])
 
 const SITE = 'https://21go.site'
 
