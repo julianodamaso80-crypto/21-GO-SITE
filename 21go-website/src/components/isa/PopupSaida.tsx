@@ -8,9 +8,9 @@ import { podeMostrarPopup, linkDoPopup } from '@/lib/isa/popup.regras'
  * Popup de saida da tela de planos (Isa, fase 6). Regras em popup.regras.ts.
  *
  * Desktop: o mouse sai pelo topo da janela. Celular: 45 s parado na tela de planos.
- * Nao fala valor — o desconto e a Isa que da, do outro lado. `?isa=teste` forca o popup (ignora
- * a chave do servidor e o "ja viu") pra o dono testar em producao; as travas de dominio e de
- * consultor continuam valendo.
+ * Nao fala valor — o desconto e a Isa que da, do outro lado. `?isa=teste` liga o popup mesmo com
+ * a chave do servidor desligada, pra o dono testar em producao; o "uma vez por simulacao" e as
+ * travas de dominio e de consultor continuam valendo.
  */
 
 const PARADO_NO_CELULAR_MS = 45_000
@@ -43,7 +43,6 @@ function marcarVisto(chave: string): void {
 export default function PopupSaida({ ativo, chave, temConsultor, jaClicou, mensagem, onAbrir }: Props) {
   const [ligado, setLigado] = useState(false)
   const [aberto, setAberto] = useState(false)
-  const teste = useRef(false)
   // A pagina recria estas funcoes a cada render; em ref, o relogio dos 45 s nao reinicia a toa.
   const jaClicouRef = useRef(jaClicou)
   jaClicouRef.current = jaClicou
@@ -51,8 +50,7 @@ export default function PopupSaida({ ativo, chave, temConsultor, jaClicou, mensa
   // A chave vem do servidor (ISA_POPUP), a cada visita.
   useEffect(() => {
     if (!ativo) return
-    teste.current = new URLSearchParams(window.location.search).get('isa') === 'teste'
-    if (teste.current) { setLigado(true); return }
+    if (new URLSearchParams(window.location.search).get('isa') === 'teste') { setLigado(true); return }
     let vivo = true
     fetch('/api/isa/config', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : { popup: false }))
@@ -68,7 +66,7 @@ export default function PopupSaida({ ativo, chave, temConsultor, jaClicou, mensa
       hostname: window.location.hostname,
       temConsultor: temConsultor || veioDeConsultor(),
       clicouContratar: jaClicouRef.current(),
-      jaViu: !teste.current && jaViu(chave),
+      jaViu: jaViu(chave),
       temPlanos: ativo,
     })
     if (!pode()) return
