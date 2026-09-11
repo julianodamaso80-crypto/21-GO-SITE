@@ -39,6 +39,18 @@ export function dentroDoHorario(agora: Date): boolean {
   return h >= ABRE && h < FECHA
 }
 
+/**
+ * Cumprimenta no comeco da conversa, no primeiro contato do dia (no Rio) e depois de 4 h sem
+ * falar. No meio da conversa, "boa tarde" a cada mensagem soa robo.
+ */
+export function precisaCumprimentar(ultimaRespostaEm: Date | null, agora: Date): boolean {
+  if (!ultimaRespostaEm) return true
+  const a = horaMinutoRio(ultimaRespostaEm)
+  const b = horaMinutoRio(agora)
+  if (a.ano !== b.ano || a.mes !== b.mes || a.dia !== b.dia) return true
+  return agora.getTime() - ultimaRespostaEm.getTime() > 4 * 60 * 60 * 1000
+}
+
 /** Quando a Isa pode falar de novo: agora, se esta no horario; senao, as 8h (hoje ou amanha). */
 export function proximaAbertura(agora: Date): Date {
   if (dentroDoHorario(agora)) return agora

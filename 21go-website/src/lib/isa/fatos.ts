@@ -1,0 +1,90 @@
+import 'server-only'
+import { sql } from '@/lib/isa/banco'
+import { calcActivation, isLeilaoOrigin, PLAN_INFO, type PlanId } from '@/data/pricing'
+import { montarFatos, type Fatos, type PlanoEntrada } from '@/lib/isa/fatos.regras'
+import { extrairNumeros } from '@/lib/isa/validador.regras'
+
+/**
+ * Liga o cliente do WhatsApp a simulacao que ele fez (lead) e monta os fatos com as MESMAS
+ * funcoes da tela: calcActivation (pricing.ts) com o plano de referencia na ordem oficial, e o
+ * texto de beneficios de PLAN_INFO. Lead de consultor nunca entra (REGRA 0.1).
+ */
+
+// Mesma ordem da tela e do pdf-quote: o "VIP" de cada tipo de veiculo e a base da ativacao.
+const ORDEM_REFERENCIA = ['vip', 'suv', 'moto-1000', 'moto-400', 'especial', 'premium', 'do-seu-jeito', 'basico']
+
+export interface LeadIsa {
+  id: string
+  nome: string | null
+  marca_interesse: string | null
+  modelo_interesse: string | null
+  ano_interesse: number | null
+  valor_fipe_consultado: number | null
+  cotacao_planos: { id: string; name: string; monthly: number }[] | null
+  carro_app: boolean | null
+  leilao: string | null
+  estado: string | null
+  placa_interesse: string | null
+}
+
+const COLUNAS = `id, nome, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado,
+  cotacao_planos, carro_app, leilao, estado, placa_interesse`
+
+/** A simulacao mais recente do telefone (ou a do lead_id que a propria Isa gravou). */
+export async function leadDoCliente(telefone: string, leadId: string | null): Promise<LeadIsa | null> {
+  if (leadId) {
+    const r = await sql<LeadIsa>(`SELECT ${COLUNAS} FROM public.leads WHERE id = $1 LIMIT 1`, [leadId])
+    if (r[0]?.cotacao_planos?.length) return r[0]
+  }
+  const r = await sql<LeadIsa>(
+    `SELECT ${COLUNAS} FROM public.leads
+     WHERE (telefone = $1 OR whatsapp = $1)
+       AND consultor_slug IS NULL
+       AND cotacao_planos IS NOT NULL
+       AND created_at > (now() AT TIME ZONE 'UTC') - interval '30 days'
+     ORDER BY created_at DESC LIMIT 1`,
+    [telefone],
+  )
+  return r[0] ?? null
+}
+
+export function ativacoesDoLead(lead: LeadIsa): { referencia: number | null; porPlano: Record<string, number> } {
+  const planos = lead.cotacao_planos || []
+  const moto = planos.some((p) => p.id === 'moto-400' || p.id === 'moto-1000')
+  const extraApp = lead.carro_app && !moto ? 20 : 0
+  const ref = ORDEM_REFERENCIA.map((id) => planos.find((p) => p.id === id)).find(Boolean) || planos[0]
+  if (!ref) return { referencia: null, porPlano: {} }
+  const isBYD = (lead.marca_interesse || '').trim().toUpperCase().startsWith('BYD')
+  const base = ref.monthly + extraApp
+  const porPlano: Record<string, number> = {}
+  for (const p of planos) porPlano[p.id] = calcActivation(base, isBYD, p.monthly + extraApp)
+  return { referencia: calcActivation(base, isBYD), porPlano }
+}
+
+export function fatosDoLead(lead: LeadIsa, desconto50: { de: number; para: number } | null): Fatos {
+  const planos: PlanoEntrada[] = (lead.cotacao_planos || []).map((p) => ({
+    id: p.id,
+    nome: p.name,
+    mensal: Number(p.monthly),
+    beneficios: PLAN_INFO[p.id as PlanId]?.features,
+  }))
+  const numerosDosBeneficios = planos.flatMap((p) =>
+    (p.beneficios || []).flatMap((b) => extrairNumeros(b.text).dinheiro),
+  )
+  const at = ativacoesDoLead(lead)
+  return montarFatos({
+    marca: lead.marca_interesse,
+    modelo: lead.modelo_interesse,
+    ano: lead.ano_interesse,
+    fipe: lead.valor_fipe_consultado,
+    combustivel: null,
+    leilao: isLeilaoOrigin(lead.leilao),
+    carroApp: !!lead.carro_app,
+    estado: lead.estado || null,
+    planos,
+    ativacaoReferencia: at.referencia,
+    ativacaoPorPlano: at.porPlano,
+    desconto50,
+    numerosDosBeneficios,
+  })
+}

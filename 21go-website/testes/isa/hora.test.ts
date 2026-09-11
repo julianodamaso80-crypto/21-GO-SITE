@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cumprimento, dentroDoHorario, proximaAbertura } from '../../src/lib/isa/hora.regras.ts'
+import { cumprimento, dentroDoHorario, proximaAbertura, precisaCumprimentar } from '../../src/lib/isa/hora.regras.ts'
 
 // O Rio e UTC-3 fixo (sem horario de verao desde 2019). Os instantes abaixo sao UTC.
 const rio = (hhmm: string, dia = '2026-09-10') => new Date(`${dia}T${hhmm}:00-03:00`)
@@ -33,6 +33,14 @@ test('proxima abertura: de madrugada e hoje as 8h; depois das 22h e amanha as 8h
   assert.equal(proximaAbertura(rio('23:10')).toISOString(), rio('08:00', '2026-09-11').toISOString())
   // Virada de mes
   assert.equal(proximaAbertura(rio('22:30', '2026-09-30')).toISOString(), rio('08:00', '2026-10-01').toISOString())
+})
+
+test('cumprimenta no comeco, no primeiro contato do dia e depois de 4 h — nao a cada mensagem', () => {
+  assert.equal(precisaCumprimentar(null, rio('10:00')), true)
+  assert.equal(precisaCumprimentar(rio('10:00'), rio('10:20')), false)
+  assert.equal(precisaCumprimentar(rio('10:00'), rio('14:30')), true)
+  // ontem 21h, hoje 8h: dia novo no Rio (mesmo que em UTC ainda fosse "o mesmo dia" em parte)
+  assert.equal(precisaCumprimentar(rio('21:00', '2026-09-10'), rio('08:05', '2026-09-11')), true)
 })
 
 test('dentro do horario a proxima abertura e agora', () => {

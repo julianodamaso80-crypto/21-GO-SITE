@@ -7,11 +7,15 @@ import {
   soltarSemProcessar,
   chegouMensagemNova,
   inboundsNovas,
+  historico,
   gravarTranscricao,
   registrarEvento,
+  atualizarContato,
   type ContatoIsa,
   type MensagemHistorico,
 } from '@/lib/isa/banco'
+import { pensar } from '@/lib/isa/cerebro'
+import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import {
   enviarTexto,
   marcarLidaEDigitando,
@@ -22,7 +26,7 @@ import {
 } from '@/lib/isa/cloud'
 import { transcrever } from '@/lib/isa/transcrever'
 import { dividirEmPartes, pausaEntreSegundos } from '@/lib/isa/envio.regras'
-import { cumprimento, dentroDoHorario } from '@/lib/isa/hora.regras'
+import { dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 
 /**
  * A fila da Isa. Roda disparada pelo webhook (10,5 s depois da mensagem) e por um cron de 1 em
@@ -91,17 +95,70 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return false
   }
 
-  const resposta = responderEco(novas)
+  const agora = new Date()
   const ultimaInbound = novas[novas.length - 1]?.whatsapp_message_id
-  const enviou = await enviarComoGente(c, resposta, ultimaInbound, visto)
+
+  // Documento (foto de CNH, CRLV, comprovante) = o cliente quer fechar: o time assume.
+  if (novas.some((m) => m.message_type === 'document' || m.message_type === 'image')) {
+    await pausar(c.telefone, 'documento', { mensagens: novas.length })
+    await liberar(c.telefone, visto, false)
+    return false
+  }
+
+  const lead = await leadDoCliente(c.telefone, c.lead_id).catch(() => null)
+  if (lead && lead.id !== c.lead_id) await atualizarContato(c.telefone, { lead_id: lead.id })
+  const desconto =
+    c.desconto50_em && c.desconto50_de && c.desconto50_para
+      ? { de: Number(c.desconto50_de), para: Number(c.desconto50_para) }
+      : null
+  const fatos = lead ? fatosDoLead(lead, desconto) : null
+
+  const hist = await historico(c.conversation_id, 30)
+  const ultimaNossa = [...hist].reverse().find((m) => m.direction === 'outbound')
+  const saida = await pensar({
+    nome: c.nome ?? lead?.nome ?? null,
+    genero: (c.genero as 'm' | 'f' | null) ?? null,
+    fatos,
+    jaGanhouDesconto: !!c.desconto50_em,
+    historico: hist,
+    agora,
+    cumprimentar: precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora),
+  })
+
+  if (saida.genero && !c.genero) await atualizarContato(c.telefone, { genero: saida.genero })
+  if (saida.gatilho || saida.reprovados.length || saida.placa || saida.semPlaca) {
+    await registrarEvento(c.telefone, 'cerebro', {
+      gatilho: saida.gatilho,
+      reprovados: saida.reprovados,
+      placa: saida.placa,
+      semPlaca: saida.semPlaca,
+    })
+  }
+
+  // Gatilhos que calam a Isa: o time assume a conversa.
+  if (saida.gatilho && GATILHOS_SILENCIOSOS.has(saida.gatilho)) {
+    await pausar(c.telefone, saida.gatilho, { reprovados: saida.reprovados })
+    await liberar(c.telefone, visto, false)
+    return false
+  }
+
+  const enviou = saida.resposta ? await enviarComoGente(c, saida.resposta, ultimaInbound, visto) : false
+
+  // Desconto: a Isa ja disse "vou confirmar com meu supervisor" e fica esperando o dono.
+  if (saida.gatilho === 'desconto') {
+    await pausar(c.telefone, 'desconto', {})
+    await atualizarContato(c.telefone, { aguardando_dono: 'desconto' })
+  }
+
   await liberar(c.telefone, visto, enviou)
   return enviou
 }
 
-/** FASE 1: so ecoa, pra provar fila, agrupamento, horario, digitando e partes. */
-function responderEco(novas: MensagemHistorico[]): string {
-  const textos = novas.map((m) => m.content).filter(Boolean)
-  return `${cumprimento(new Date())}! 😃\n\nrecebi ${textos.length} mensagem(ns):\n${textos.join('\n')}`
+const GATILHOS_SILENCIOSOS = new Set(['robo', 'hostil', 'associado', 'validador'])
+
+async function pausar(telefone: string, motivo: string, detalhe: Record<string, unknown>): Promise<void> {
+  await atualizarContato(telefone, { ligada: false, pausa_motivo: motivo, pausa_por: 'isa', pausada_em: new Date().toISOString() })
+  await registrarEvento(telefone, 'pausou', { motivo, ...detalhe })
 }
 
 async function transcreverAudios(novas: MensagemHistorico[]): Promise<void> {
