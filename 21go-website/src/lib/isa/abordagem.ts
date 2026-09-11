@@ -6,8 +6,6 @@ import { alertarDono } from '@/lib/isa/alertas'
 import { dentroDoHorario } from '@/lib/isa/hora.regras'
 import {
   TEMPLATE_5MIN,
-  PAYLOAD_COBRE,
-  PAYLOAD_DUVIDA,
   telefoneDeAbordagem,
   variaveisDoTemplate,
   textoDoTemplate,
@@ -17,7 +15,7 @@ import {
 
 /**
  * Mensagem dos 5 min: quem simulou num .site da casa, nao clicou em "Quero contratar" nem em
- * "Tenho uma duvida" (nem no popup) e passou 5 min recebe o template `simulacao_concluida_isa`.
+ * "Tenho uma duvida" (nem no popup) e passou 5 min recebe o template `resultado_simulacao_isa` (a entrega do resultado, com o PDF).
  *
  * Travas:
  *   - ISA_5MIN=on no env (padrao desligado) e so das 8h as 22h;
@@ -30,6 +28,7 @@ import {
  */
 
 const POR_RODADA = 5
+const SITE = 'https://21go.site'
 // Origens que o formulario do site grava (deriveOrigem). Fica de fora o que o CRM espelha
 // (power_crm, manual, seja_consultor) e o que a propria Isa cria (isa_whatsapp).
 const ORIGENS_DO_SITE = ['site_organico', 'google_ads', 'meta_ads', 'instagram', 'whatsapp', 'outro']
@@ -105,8 +104,9 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
     if (enviados >= POR_RODADA) break
     const tel = telefoneDeAbordagem(l.telefone)
     if (!tel || !destinoPermitido(tel)) continue
-    const vars = variaveisDoTemplate({ nome: l.nome, marca: l.marca_interesse, modelo: l.modelo_interesse, ano: l.ano_interesse })
-    if (!vars) continue
+    const nv = variaveisDoTemplate({ nome: l.nome, marca: l.marca_interesse, modelo: l.modelo_interesse, ano: l.ano_interesse })
+    if (!nv) continue
+    const vars: [string, string, string] = [...nv, `${SITE}/api/pdfs/${l.id}`]
 
     // O INSERT e a trava: dois workers nunca mandam pro mesmo telefone, e quem ja tem contato
     // com a Isa (conversou, recebeu antes) fica de fora.
@@ -128,7 +128,7 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
         lead_id: l.id,
       })
       await sql(`UPDATE public.isa_contatos SET conversation_id = $2, updated_at = now() WHERE telefone = $1`, [tel, conversa.id])
-      const wamid = await enviarTemplate(tel, TEMPLATE_5MIN, vars, [PAYLOAD_COBRE, PAYLOAD_DUVIDA])
+      const wamid = await enviarTemplate(tel, TEMPLATE_5MIN, vars)
       await upsertMessage({
         conversation_id: conversa.id,
         whatsapp_message_id: wamid,

@@ -1,18 +1,21 @@
 /**
  * Mensagem dos 5 min (Isa, fase 6): quem simulou no site da casa, nao clicou em nada e sumiu
- * recebe o template `simulacao_concluida_isa` (UTILITY, sem palavra de oferta). O desconto de
- * R$ 50 so aparece depois, quando o cliente toca num botao e a janela de 24 h abre. Logica pura.
+ * recebe o template `resultado_simulacao_isa` (UTILITY): a ENTREGA do resultado que o site
+ * promete ("Voce recebe o resultado da simulacao no seu WhatsApp"), com o link do PDF. O desconto
+ * de R$ 50 so aparece depois, quando o cliente responde e a janela de 24 h abre. Logica pura.
  *
- * O primeiro texto ("separei um resumo do que o seu plano cobre. Toque abaixo pra ver 👇",
- * `simulacao_pronta_isa`) foi reclassificado pela Meta como MARKETING ainda na analise, em
- * 10/09/2026 — o dono quer so utilidade. O texto atual e de atualizacao da transacao, sem convite.
+ * A Meta reclassificou como MARKETING, ainda na analise, os dois textos anteriores — e o dono quer
+ * so utilidade: `simulacao_pronta_isa` ("separei um resumo do que o seu plano cobre. Toque abaixo
+ * pra ver 👇") e `simulacao_concluida_isa` ("se quiser, envio por aqui o detalhamento", com botoes
+ * Ver detalhamento / Tenho uma duvida). Convite pra voltar a conversa = marketing, mesmo sem
+ * oferta. Por isso o atual so entrega o que foi pedido, sem botao e sem pergunta.
  */
 
 import type { PlanoFatos } from './fatos.regras'
 
 type PlanoResumo = Pick<PlanoFatos, 'id' | 'nome' | 'mensal' | 'cobre'>
 
-export const TEMPLATE_5MIN = 'simulacao_concluida_isa'
+export const TEMPLATE_5MIN = 'resultado_simulacao_isa'
 export const PAYLOAD_COBRE = 'isa-5min:cobre'
 export const PAYLOAD_DUVIDA = 'isa-5min:duvida'
 
@@ -44,12 +47,11 @@ export function variaveisDoTemplate(l: {
 }
 
 /** O que fica gravado no painel — o mesmo texto do template aprovado na Meta. */
-export function textoDoTemplate([nome, veiculo]: [string, string]): string {
+export function textoDoTemplate([nome, veiculo, pdfUrl]: [string, string, string]): string {
   return (
-    `Simulação concluída\n\nOlá, ${nome}. Aqui é a Isa, da 21Go.\n` +
-    `A simulação que você fez para o ${veiculo} foi concluída e o resultado ficou registrado.\n` +
-    'Se quiser, envio por aqui o detalhamento do plano simulado.\n\n' +
-    '[Ver detalhamento] [Tenho uma dúvida]'
+    `Resultado da sua simulação\n\nOlá, ${nome}. Conforme informado no site da 21Go, ` +
+    `segue o resultado da simulação que você fez para o ${veiculo}:\n${pdfUrl}\n\n` +
+    'Em caso de dúvida sobre a simulação, responda esta mensagem.'
   )
 }
 

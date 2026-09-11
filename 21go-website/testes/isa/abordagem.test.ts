@@ -34,12 +34,12 @@ test('variaveis do template: primeiro nome e veiculo curto, sem nome = nao manda
 })
 
 test('o texto gravado no painel e o do template aprovado', () => {
-  const t = textoDoTemplate(['Juliano', 'Jeep Compass 2022'])
-  assert.match(t, /^Simulação concluída\n\nOlá, Juliano\. Aqui é a Isa, da 21Go\./)
-  assert.match(t, /A simulação que você fez para o Jeep Compass 2022 foi concluída/)
-  assert.match(t, /\[Ver detalhamento\] \[Tenho uma dúvida\]$/)
-  // texto de utilidade: nada de desconto, oferta ou promocao
-  assert.doesNotMatch(t, /desconto|oferta|promo|grátis|ganhe/i)
+  const t = textoDoTemplate(['Juliano', 'Jeep Compass 2022', 'https://21go.site/api/pdfs/lead_x'])
+  assert.match(t, /^Resultado da sua simulação\n\nOlá, Juliano\. Conforme informado no site da 21Go/)
+  assert.match(t, /simulação que você fez para o Jeep Compass 2022:\nhttps:\/\/21go\.site\/api\/pdfs\/lead_x\n/)
+  assert.match(t, /responda esta mensagem\.$/)
+  // texto de utilidade: entrega do resultado, sem convite, sem oferta, sem botao
+  assert.doesNotMatch(t, /desconto|oferta|promo|grátis|ganhe|toque|se quiser|\[/i)
   assert.notEqual(PAYLOAD_COBRE, PAYLOAD_DUVIDA)
 })
 
