@@ -5,10 +5,10 @@ import { enviarTexto } from '@/lib/isa/cloud'
 import { alertarDono, alertarDesconto } from '@/lib/isa/alertas'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import { mensagensDoNumero } from '@/lib/whatsapp-cloud'
+import { planoDoCliente } from '@/lib/isa/abordagem.regras'
 import {
   interpretarDono,
   valorAutorizadoValido,
-  mensagemDesconto50,
   mensagemDescontoDoDono,
   mensagemDonoRecusou,
   mensagemTransferencia,
@@ -93,13 +93,22 @@ export async function pedirDescontoAoDono(c: ContatoIsa): Promise<void> {
 
 /**
  * R$ 50 na ativacao — so nas entradas popup e 5 min, uma vez por telefone. Grava de/para (a Isa
- * passa a falar o valor com desconto) e devolve a frase "em vez de pagar X, vai pagar Y".
+ * passa a falar o valor com desconto) e devolve os valores pra frase "em vez de pagar X, vai pagar Y".
+ *
+ * O "de" e a ativacao do plano que o cliente tinha na tela (Premium/Especiais pagam mais que o
+ * VIP): o do popup vem na propria mensagem; nos 5 min, o que o lead gravou.
  */
-export async function concederDesconto50(c: ContatoIsa, leadId: string | null): Promise<string | null> {
+export async function concederDesconto50(
+  c: ContatoIsa,
+  leadId: string | null,
+  planoNaTela: string | null = null,
+): Promise<{ de: number; para: number } | null> {
   if (c.desconto50_em) return null
   const lead = await leadDoCliente(c.telefone, leadId ?? c.lead_id).catch(() => null)
   if (!lead) return null
-  const de = fatosDoLead(lead, null).ativacaoReferencia
+  const fatos = fatosDoLead(lead, null)
+  const plano = planoDoCliente(fatos.planos, planoNaTela ?? lead.cotacao_plano ?? null)
+  const de = plano?.ativacao ?? fatos.ativacaoReferencia
   if (!de || de <= 50) return null
   const d = { de, para: Math.round((de - 50) * 100) / 100 }
   await atualizarContato(c.telefone, {
@@ -108,8 +117,8 @@ export async function concederDesconto50(c: ContatoIsa, leadId: string | null): 
     desconto50_de: d.de,
     desconto50_para: d.para,
   })
-  await registrarEvento(c.telefone, 'desconto', { tipo: 'entrada', de: d.de, para: d.para })
-  return mensagemDesconto50(d)
+  await registrarEvento(c.telefone, 'desconto', { tipo: 'entrada', de: d.de, para: d.para, plano: plano?.nome ?? null })
+  return d
 }
 
 /**

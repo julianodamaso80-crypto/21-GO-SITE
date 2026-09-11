@@ -18,7 +18,8 @@ import {
 import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono } from '@/lib/isa/acoes'
 import { alertarDono } from '@/lib/isa/alertas'
-import { entradaPopup } from '@/lib/isa/dono.regras'
+import { entradaPopup, mensagemDesconto50 } from '@/lib/isa/dono.regras'
+import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import {
   enviarTexto,
@@ -136,14 +137,32 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const popup = entradaPopup(novas[0]?.content ?? '')
   if (popup.popup && !c.desconto50_em) {
     await atualizarContato(c.telefone, { entrada: 'popup', ...(popup.leadId ? { lead_id: popup.leadId } : {}) })
-    const frase = await concederDesconto50(c, popup.leadId)
-    if (frase) {
-      const hist0 = await historico(c.conversation_id, 5)
-      const nossa0 = [...hist0].reverse().find((m) => m.direction === 'outbound')
-      const ab = precisaCumprimentar(nossa0 ? new Date(nossa0.criada_em) : null, agora)
-        ? `${abertura(cumprimento(agora), primeiroNomeDe(c.nome))}\n\n`
-        : ''
-      const enviou = await enviarComoGente(c, `${ab}${frase}`, ultimaInbound, visto)
+    const d = await concederDesconto50(c, popup.leadId, popup.plano)
+    if (d) {
+      const ab = await aberturaSePrecisa(c, agora)
+      const enviou = await enviarComoGente(c, `${ab ? `${ab}\n\n` : ''}${mensagemDesconto50(d)}`, ultimaInbound, visto)
+      await liberar(c.telefone, visto, enviou)
+      return enviou
+    }
+  }
+
+  // Toque num botao da mensagem dos 5 min: resposta montada pelo codigo (cobertura do plano ou
+  // "qual a sua duvida?") + os R$ 50, que so aqui podem aparecer — o template nao fala de oferta.
+  const botao = payloadsDe(novas).find((p) => p === PAYLOAD_COBRE || p === PAYLOAD_DUVIDA)
+  if (botao) {
+    const lead5 = await leadDoCliente(c.telefone, c.lead_id).catch(() => null)
+    const plano = lead5 ? planoDoCliente(fatosDoLead(lead5, null).planos, lead5.cotacao_plano ?? null) : null
+    if (botao === PAYLOAD_DUVIDA || (lead5 && plano)) {
+      const ab = await aberturaSePrecisa(c, agora)
+      const partes = [
+        botao === PAYLOAD_COBRE && lead5 && plano
+          ? mensagemCobertura({ abertura: ab, plano, pdfUrl: `${SITE}/api/pdfs/${lead5.id}` })
+          : mensagemDuvida(ab),
+      ]
+      const d = await concederDesconto50(c, lead5?.id ?? null)
+      if (d) partes.push(mensagemDesconto50(d, { perguntaSeFecha: botao === PAYLOAD_COBRE }))
+      await registrarEvento(c.telefone, 'botao_5min', { botao, desconto: d })
+      const enviou = await enviarComoGente(c, partes, ultimaInbound, visto)
       await liberar(c.telefone, visto, enviou)
       return enviou
     }
@@ -248,6 +267,12 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   }
 
   const enviou = saida.resposta ? await enviarComoGente(c, saida.resposta, ultimaInbound, visto) : false
+
+  // Respondeu a mensagem dos 5 min escrevendo, sem tocar no botao: os R$ 50 vem logo depois.
+  if (enviou && !saida.gatilho && c.entrada === '5min' && !c.desconto50_em) {
+    const d = await concederDesconto50(c, lead?.id ?? null)
+    if (d) await enviarComoGente(c, [mensagemDesconto50(d, { perguntaSeFecha: false })], ultimaInbound, visto)
+  }
 
   // Desconto: a Isa ja disse "vou confirmar com meu supervisor"; pausa e manda o alerta com botoes.
   if (saida.gatilho === 'desconto') await pedirDescontoAoDono(c)
@@ -387,6 +412,24 @@ async function cotarModeloEEnviar(
   await registrarEvento(c.telefone, 'sem_preco', { modelo: p.modelText, ano: p.ano, motivo: orc.tipo === 'humano' ? orc.motivo : orc.tipo })
   await transferir(c, 'sem_preco', (partes) => enviarComoGente(c, partes, p.ultimaInbound, p.visto))
   return true
+}
+
+/** "bom dia, Fulano 😃" quando a Isa ainda nao falou hoje (ou ha 4 h); senao null. */
+async function aberturaSePrecisa(c: ContatoIsa, agora: Date): Promise<string | null> {
+  const hist = await historico(c.conversation_id as string, 5)
+  const nossa = [...hist].reverse().find((m) => m.direction === 'outbound')
+  return precisaCumprimentar(nossa ? new Date(nossa.criada_em) : null, agora)
+    ? abertura(cumprimento(agora), primeiroNomeDe(c.nome))
+    : null
+}
+
+/** Payload dos botoes tocados (quick reply de template) — vem so no JSON cru da Meta. */
+function payloadsDe(novas: MensagemHistorico[]): string[] {
+  const phoneId = process.env.WA_PHONE_ID ?? ''
+  return novas
+    .filter((m) => m.message_type === 'button')
+    .map((m) => mensagensDoNumero(m.raw_payload, phoneId).find((x) => x.id === m.whatsapp_message_id)?.payload ?? '')
+    .filter(Boolean)
 }
 
 function primeiroNomeDe(nome: string | null): string | null {

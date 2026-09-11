@@ -81,6 +81,17 @@ export async function enviarTemplate(to: string, nome: string, variaveis: string
   return postarMensagem({ to, type: 'template', template: { name: nome, language: { code: 'pt_BR' }, components } })
 }
 
+/** Qualidade do numero na Meta (GREEN/YELLOW/RED/UNKNOWN) e o limite de conversas por dia. */
+export async function qualidadeDoNumero(): Promise<{ rating: string | null; limite: string | null }> {
+  const res = await fetch(graph(`${phoneId()}?fields=quality_rating,messaging_limit_tier`), {
+    headers: { Authorization: `Bearer ${token()}` },
+    signal: AbortSignal.timeout(10_000),
+  })
+  if (!res.ok) throw new Error(`Cloud API ${res.status} ao ler a qualidade do numero`)
+  const j = (await res.json()) as { quality_rating?: string; messaging_limit_tier?: string }
+  return { rating: j.quality_rating ?? null, limite: j.messaging_limit_tier ?? null }
+}
+
 /** Tique azul + "digitando...". Melhor esforco: nunca derruba a resposta. */
 export async function marcarLidaEDigitando(wamid: string): Promise<void> {
   try {

@@ -38,6 +38,8 @@ import { buildContratarMessage } from '@/lib/quote-message'
 import { temParcelamento } from '@/lib/consultores-parcelamento'
 import { ativacaoDoConsultor } from '@/lib/consultores-ativacao'
 import { isPlacaFormatValid, normalizePlaca, validatePlaca } from '@/lib/placa'
+import PopupSaida from '@/components/isa/PopupSaida'
+import { mensagemDoPopup } from '@/lib/isa/popup.regras'
 
 /* ─── Types ─── */
 interface FormData {
@@ -980,6 +982,9 @@ export default function CotacaoPage() {
           // trackWhatsAppClick (Contact), não trackPedidoOrcamento (Purchase):
           // dúvida não é pedido de contratação e não pode inflar o ROAS das
           // campanhas.
+          // Quem foi tirar dúvida também já está conversando: nada de popup
+          // nem de mensagem dos 5 min da Isa pra ele.
+          notifyWhatsAppClick()
           trackWhatsAppClick('cotacao_duvida', {
             plano: selectedPlan?.name,
             valor: price,
@@ -2020,6 +2025,30 @@ export default function CotacaoPage() {
         </div>
       </div>
 
+      {/* Isa: popup de saída, só na casa (ver popup.regras.ts). */}
+      <PopupSaida
+        ativo={step === 2 && !excluded && !!vehicle && plans.length > 0 && !!selectedPlan}
+        chave={leadId || vehicleLabel}
+        temConsultor={!!consultor}
+        jaClicou={() => whatsappClicked.current}
+        mensagem={() => mensagemDoPopup({
+          nome: form.nome,
+          veiculo: vehicleLabel,
+          fipe: vehicle?.fipeValue || null,
+          plano: selectedPlan?.name || null,
+          mensal: price || null,
+          ativacao: ativacaoAvista || null,
+          pdfUrl: leadId ? `${origin}/api/pdfs/${leadId}` : null,
+        })}
+        onAbrir={() => {
+          notifyWhatsAppClick()
+          trackWhatsAppClick('cotacao_popup_saida', {
+            plano: selectedPlan?.name,
+            valor: price,
+            buttonText: 'Quero meu desconto',
+          })
+        }}
+      />
     </div>
   )
 }

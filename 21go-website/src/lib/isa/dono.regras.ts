@@ -45,8 +45,10 @@ export function valorAutorizadoValido(valor: number, ativacaoAtual: number): boo
   return valor > 0 && valor < ativacaoAtual
 }
 
-export function mensagemDesconto50(d: { de: number; para: number }): string {
-  return `você acaba de ganhar um desconto na sua ativação 🎉\n\nem vez de pagar ${brl(d.de)}, você vai pagar ${brl(d.para)}\n\nquer que eu já siga com a sua proteção?`
+export function mensagemDesconto50(d: { de: number; para: number }, o: { perguntaSeFecha?: boolean } = {}): string {
+  const base = `você acaba de ganhar um desconto na sua ativação 🎉\n\nem vez de pagar ${brl(d.de)}, você vai pagar ${brl(d.para)}`
+  // Depois de "qual e a sua duvida?", perguntar se fecha atropela o cliente.
+  return o.perguntaSeFecha === false ? base : `${base}\n\nquer que eu já siga com a sua proteção?`
 }
 
 export function mensagemDescontoDoDono(d: { de: number; para: number }): string {
@@ -72,8 +74,10 @@ export function mensagemTransferencia(p: { motivo: string; resumo: string }): st
 }
 
 /** A mensagem pronta do popup comeca com "Quero meu desconto" e traz o link do PDF do lead. */
-export function entradaPopup(texto: string): { popup: boolean; leadId: string | null } {
+export function entradaPopup(texto: string): { popup: boolean; leadId: string | null; plano: string | null } {
   const popup = /^\s*quero meu desconto/i.test(texto)
   const m = texto.match(/api\/pdfs\/(lead_[A-Za-z0-9_]+)/)
-  return { popup, leadId: popup && m ? m[1] : null }
+  // "Plano: Premium · R$ 612,00/mês" — a ativacao do desconto e a do plano que estava na tela.
+  const pl = texto.match(/^Plano:\s*(.+?)\s*·/m)
+  return { popup, leadId: popup && m ? m[1] : null, plano: popup && pl ? pl[1] : null }
 }

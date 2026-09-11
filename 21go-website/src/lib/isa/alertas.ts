@@ -23,6 +23,7 @@ const MOTIVO_LEGIVEL: Record<string, string> = {
   validador: 'a Isa ia passar um numero que nao confere — segurei a mensagem',
   sem_informacao: 'cliente perguntou algo que a Isa nao soube responder',
   desconto: 'pedido de desconto',
+  qualidade: 'qualidade do numero caiu na Meta',
 }
 
 export async function alertarDono(p: { telefone: string; nome: string | null; motivo: string; detalhe: string }): Promise<void> {

@@ -57,7 +57,7 @@ test('transferencia pro 4824 com o resumo pronto no link (quem escreve e o clien
 
 test('entrada pelo popup: "Quero meu desconto" + o lead do link do PDF', () => {
   const txt = 'Quero meu desconto! 🙂\nNome: Juliano\nMinha simulação: https://21go.site/api/pdfs/lead_b4a6d7cb5bc1ee3d'
-  assert.deepEqual(entradaPopup(txt), { popup: true, leadId: 'lead_b4a6d7cb5bc1ee3d' })
-  assert.deepEqual(entradaPopup('quero meu desconto'), { popup: true, leadId: null })
-  assert.deepEqual(entradaPopup('quanto fica?'), { popup: false, leadId: null })
+  assert.deepEqual(entradaPopup(txt), { popup: true, leadId: 'lead_b4a6d7cb5bc1ee3d', plano: null })
+  assert.deepEqual(entradaPopup('quero meu desconto'), { popup: true, leadId: null, plano: null })
+  assert.deepEqual(entradaPopup('quanto fica?'), { popup: false, leadId: null, plano: null })
 })

@@ -25,12 +25,14 @@ export interface LeadIsa {
   leilao: string | null
   estado: string | null
   placa_interesse: string | null
+  /** Plano que estava selecionado na tela quando o lead salvou (so o site grava). */
+  cotacao_plano?: string | null
   /** So vem da consulta de placa da Isa (o lead do site nao grava) — ajuda a achar eletrico. */
   combustivel?: string | null
 }
 
 const COLUNAS = `id, nome, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado,
-  cotacao_planos, carro_app, leilao, estado, placa_interesse`
+  cotacao_planos, carro_app, leilao, estado, placa_interesse, cotacao_plano`
 
 /** A simulacao mais recente do telefone (ou a do lead_id que a propria Isa gravou). */
 export async function leadDoCliente(telefone: string, leadId: string | null): Promise<LeadIsa | null> {
