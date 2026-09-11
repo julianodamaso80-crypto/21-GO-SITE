@@ -80,6 +80,14 @@ const PALAVRAS_ELETRICO = /\b(ELETRIC|ELÉTRIC|ELECTRIC|EV|BEV|H[IÍ]BRID|HYBRID
 
 const r2 = (v: number) => Math.round(v * 100) / 100
 
+/**
+ * De qual plano a Isa tira a lista de beneficios. Dono (11/09/2026): "beneficios do plano
+ * especiais e igual do plano vip" — no site o Especiais esta sem o Taxi 100 km.
+ */
+export function planoDosBeneficios(id: string): string {
+  return id === 'especial' ? 'vip' : id
+}
+
 export function ehMoto(planos: PlanoEntrada[]): boolean {
   return planos.some((p) => p.id === 'moto-400' || p.id === 'moto-1000')
 }

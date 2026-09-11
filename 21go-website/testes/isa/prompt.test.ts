@@ -132,3 +132,14 @@ test('adesivo: so com DDD 21, e so colando na sede em Campo Grande (dono, 11/09/
   assert.match(fora, /NUNCA fale de adesivo/)
   assert.doesNotMatch(fora, /o desconto que dá pra ter nela é o do adesivo/)
 })
+
+test('"nao soube responder" so vale pra pergunta de verdade + resposta que diz que vai confirmar (11/09/2026: "oie" virou alerta)', async () => {
+  const { ehPergunta, semInformacaoValido } = await import('../../src/lib/isa/prompt.regras.ts')
+  for (const t of ['oie', 'oi', 'bom dia', 'tudo bem', 'ok', 'obrigado', 'top', 'rkm7j62']) assert.equal(ehPergunta(t), false, t)
+  for (const t of ['aceita documento atrasado?', 'quanto custa o rastreador', 'tem aplicativo', 'queria saber se cobre blindagem', 'pode ser no nome da minha mãe']) {
+    assert.equal(ehPergunta(t), true, t)
+  }
+  assert.equal(semInformacaoValido('oie', 'deixa eu confirmar aqui e já te retorno 🙏🏼'), false)
+  assert.equal(semInformacaoValido('cobre blindagem?', 'essa eu vou confirmar e já te retorno 🙏🏼'), true)
+  assert.equal(semInformacaoValido('cobre blindagem?', 'cobre sim, a blindagem fica de fora'), false)
+})

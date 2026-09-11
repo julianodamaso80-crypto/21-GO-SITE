@@ -1,7 +1,7 @@
 import 'server-only'
 import { sql } from '@/lib/isa/banco'
 import { calcActivation, isLeilaoOrigin, PLAN_INFO, type PlanId } from '@/data/pricing'
-import { montarFatos, planosQueAparecem, type Fatos, type PlanoEntrada } from '@/lib/isa/fatos.regras'
+import { montarFatos, planosQueAparecem, planoDosBeneficios, type Fatos, type PlanoEntrada } from '@/lib/isa/fatos.regras'
 import { extrairNumeros } from '@/lib/isa/validador.regras'
 
 /**
@@ -87,7 +87,7 @@ export function fatosDoLead(
     id: p.id,
     nome: p.name,
     mensal: Number(p.monthly),
-    beneficios: PLAN_INFO[p.id as PlanId]?.features,
+    beneficios: PLAN_INFO[planoDosBeneficios(p.id) as PlanId]?.features,
   }))
   const numerosDosBeneficios = planos.flatMap((p) =>
     (p.beneficios || []).flatMap((b) => extrairNumeros(b.text).dinheiro),

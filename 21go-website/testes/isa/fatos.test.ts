@@ -109,3 +109,10 @@ test('limites do rastreador obrigatorio (R$ 15/35/50 mil) podem ser ditos — sa
   const f = montarFatos(base)
   for (const v of [15000, 35000, 50000]) assert.ok(f.numerosPermitidos.dinheiro.includes(v), `faltou R$ ${v}`)
 })
+
+test('Veiculos Especiais tem os mesmos beneficios do VIP (dono, 11/09/2026)', async () => {
+  const { planoDosBeneficios } = await import('../../src/lib/isa/fatos.regras.ts')
+  assert.equal(planoDosBeneficios('especial'), 'vip')
+  assert.equal(planoDosBeneficios('vip'), 'vip')
+  assert.equal(planoDosBeneficios('basico'), 'basico')
+})

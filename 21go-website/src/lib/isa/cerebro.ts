@@ -1,5 +1,5 @@
 import 'server-only'
-import { montarPrompt, comporResposta, abertura, tirarCumprimento, vazaInterno, type Genero } from '@/lib/isa/prompt.regras'
+import { montarPrompt, comporResposta, abertura, tirarCumprimento, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
 import { validarNumeros, type Permitidos } from '@/lib/isa/validador.regras'
 import { cumprimento } from '@/lib/isa/hora.regras'
 import type { Fatos } from '@/lib/isa/fatos.regras'
@@ -124,6 +124,9 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
 
   let bruto = await chamarIA(conversa)
   let saida = lerSaida(bruto, aberturaDoCodigo)
+  // O que o cliente mandou desde a ultima resposta da Isa.
+  const iUltimaNossa = e.historico.map((m) => m.direction).lastIndexOf('outbound')
+  const doCliente = e.historico.slice(iUltimaNossa + 1).filter((m) => m.direction === 'inbound').map((m) => m.content).join('\n')
 
   // Resposta vazia SEM gatilho = a Isa ficaria calada sem ninguem saber (aconteceu no teste de
   // 10/09/2026: "Como está o processo?" ficou sem resposta e sem evento). Pede de novo uma vez;
@@ -139,6 +142,10 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
     saida = lerSaida(bruto, aberturaDoCodigo)
     if (!saida.resposta && !saida.gatilho) {
       console.warn('[isa] vazia de novo — bruto:', bruto.slice(0, 400))
+      // Sem pergunta (um "oie"), "vou confirmar" nao faz sentido e nao gera alerta.
+      if (!ehPergunta(doCliente)) {
+        return { ...saida, resposta: comporResposta(null, 'me diz, como posso te ajudar? 🙏🏼', aberturaDoCodigo), gatilho: null, reprovados: [] }
+      }
       return {
         ...saida,
         resposta: comporResposta(null, 'deixa eu confirmar aqui e já te retorno 🙏🏼', aberturaDoCodigo),
@@ -146,6 +153,21 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
         reprovados: [],
       }
     }
+  }
+
+  // "Nao soube" so vale se ele perguntou e a Isa disse que vai confirmar (11/09/2026: um "oie"
+  // virou "deixa eu confirmar aqui" e alerta a toa). Sem pergunta: refaz a resposta uma vez.
+  if (saida.gatilho === 'sem_informacao' && !semInformacaoValido(doCliente, saida.resposta)) {
+    if (!ehPergunta(doCliente)) {
+      conversa.push({ role: 'assistant', content: bruto })
+      conversa.push({
+        role: 'user',
+        content: '(instrução interna, não é o cliente) a última mensagem do cliente não é uma pergunta (é cumprimento ou confirmação). responda normalmente e curto, sem dizer que vai confirmar e sem gatilho. mesmo formato JSON.',
+      })
+      bruto = await chamarIA(conversa)
+      saida = lerSaida(bruto, aberturaDoCodigo)
+    }
+    if (saida.gatilho === 'sem_informacao' && !semInformacaoValido(doCliente, saida.resposta)) saida = { ...saida, gatilho: null }
   }
 
   // Trava de assunto no codigo: falou do que existe por tras da Isa → sai a resposta de fora do assunto.

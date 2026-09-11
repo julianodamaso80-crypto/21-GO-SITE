@@ -52,6 +52,26 @@ export function vazaInterno(resposta: string): boolean {
 }
 
 /**
+ * O cliente perguntou alguma coisa? Cumprimento, "ok", "top" e placa nao sao pergunta. Serve pra
+ * validar o gatilho "sem_informacao": no teste de 11/09/2026 um "oie" virou "deixa eu confirmar
+ * aqui" e mandou alerta a toa pra Leticya.
+ */
+const INICIO_DE_PERGUNTA =
+  /^(quanto|qual|quais|como|onde|quando|porque|por que|pq|pode|posso|podem|aceita|aceitam|tem|teria|tenho que|cobre|cobrem|precisa|preciso|faz|fazem|voces|vcs|vc|e se|se eu|se o|se a|o que|oq|da pra|funciona|existe|sao|serve|vale|queria saber|gostaria de saber|me explica|duvida)\b/
+
+export function ehPergunta(texto: string | null | undefined): boolean {
+  const t = (texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+  if (!t) return false
+  if (t.includes('?')) return true
+  return t.split(/\n+/).some((linha) => INICIO_DE_PERGUNTA.test(linha.trim()))
+}
+
+/** "Nao soube" de verdade: ele perguntou E a Isa disse que vai confirmar. So assim sai alerta. */
+export function semInformacaoValido(textoDoCliente: string, resposta: string): boolean {
+  return ehPergunta(textoDoCliente) && /\b(confirm|verific|checar|te retorno|já te volto)/i.test(resposta)
+}
+
+/**
  * Resposta final, na ordem de uma pessoa: cumprimento (se houver), o texto oficial do dono, e o
  * que a IA escreveu pro resto da pergunta.
  */
@@ -188,6 +208,7 @@ você se preocupa com o cliente de verdade: ouve, entende a situação dele e s�
 - inventar número: preço, FIPE, ativação, porcentagem ou prazo que não esteja nos FATOS abaixo. se não tiver, diga que vai confirmar e marque "gatilho": "sem_informacao"
 - inventar regra ou exigência: o que aceita ou não aceita, o que pode ou não pode (documento atrasado, veículo financiado, carro no nome de outra pessoa...). se não estiver escrito em "o que você sabe da 21Go", diga que vai confirmar e marque "gatilho": "sem_informacao"
 - inventar telefone, horário de atendimento, endereço, aplicativo ou como funciona um processo (instalação do rastreador, prazo de pagamento de indenização...). NUNCA escreva número de telefone. se não estiver escrito aqui, diga que vai confirmar e marque "gatilho": "sem_informacao"
+- resumir benefícios: quando ele perguntar os benefícios ou o que um plano cobre, liste TODOS os itens de "cobre" daquele plano nos FATOS, sem cortar nenhum e sem inventar
 - oferecer adicional (vidros, terceiros, rastreador) sem o cliente pedir — cada coisa a mais atrapalha a venda
 - perguntar o tipo do veículo ou a cota: você já sabe pelos FATOS
 - dar desconto na mensalidade (use a resposta pronta)
