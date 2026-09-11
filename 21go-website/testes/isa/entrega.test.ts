@@ -91,3 +91,30 @@ test('placa que existe mas nao tem preco: a Isa diz como ela aparece no DENATRAN
   // sem nada do DENATRAN, continua o texto de conferir
   assert.match(mensagemPlacaNaoAchada(null), /não consegui achar essa placa/)
 })
+
+test('placa chegou: pergunta leilao e aplicativo JUNTOS antes dos valores (dono, 11/09/2026)', async () => {
+  const { mensagemPerguntaLeilaoApp } = await import('../../src/lib/isa/entrega.regras.ts')
+  const m = mensagemPerguntaLeilaoApp(null)
+  assert.match(m, /antes de te passar os valores/)
+  assert.match(m, /leilão\?/)
+  assert.match(m, /aplicativo/)
+  assert.match(mensagemPerguntaLeilaoApp('boa tarde, Juliano 😃'), /^boa tarde, Juliano 😃\n\n/)
+})
+
+test('le a resposta de leilao/aplicativo na ordem da pergunta', async () => {
+  const { lerLeilaoApp } = await import('../../src/lib/isa/entrega.regras.ts')
+  const nn = { leilao: false, app: false }
+  for (const t of ['não', 'nao', 'Não e não', 'nao, nao', 'nenhum dos dois', 'nem um nem outro', 'não é leilão nem roda em app', 'não. uso particular']) {
+    assert.deepEqual(lerLeilaoApp(t), nn, t)
+  }
+  assert.deepEqual(lerLeilaoApp('sim e não'), { leilao: true, app: false })
+  assert.deepEqual(lerLeilaoApp('não e sim'), { leilao: false, app: true })
+  assert.deepEqual(lerLeilaoApp('sim, os dois'), { leilao: true, app: true })
+  assert.deepEqual(lerLeilaoApp('é de leilão'), { leilao: true, app: null })
+  assert.deepEqual(lerLeilaoApp('não é de leilão'), { leilao: false, app: null })
+  assert.deepEqual(lerLeilaoApp('rodo na uber'), { leilao: null, app: true })
+  assert.deepEqual(lerLeilaoApp('leilão não, mas trabalho no 99'), { leilao: false, app: true })
+  // "sim" sozinho nao diz qual dos dois; pergunta de outra coisa nao e resposta
+  assert.deepEqual(lerLeilaoApp('sim'), { leilao: null, app: null })
+  assert.deepEqual(lerLeilaoApp('quanto fica o vip?'), { leilao: null, app: null })
+})

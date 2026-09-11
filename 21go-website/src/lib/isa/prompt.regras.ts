@@ -248,5 +248,5 @@ ${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativa
 
 - "placa": SÓ se o cliente mandou uma placa nas mensagens NOVAS (não repita placa antiga do histórico). quando vier placa, o sistema consulta e manda a simulação sozinho — deixe "resposta" vazia
 - "sem_placa": zero km ou ele não tem/não sabe a placa e já disse marca, modelo e ano. se ele COMPLETAR a versão depois ("manual", "o LT", "turbo"), preencha de novo "sem_placa" com a marca, o modelo e o ano que ele já disse na conversa + o detalhe novo no "modelo" — não pergunte de novo o que ele já respondeu
-- "leilao" e "app": SÓ se o cliente disse, nesta conversa, se o veículo é de leilão e se é carro de aplicativo (uber/99). chassi remarcado NÃO é leilão: não aceitamos (diga isso e não marque "leilao"). não pergunte isso antes de ter a placa`
+- "leilao" e "app": SÓ se o cliente disse, nesta conversa, se o veículo é de leilão e se é carro de aplicativo (uber/99). chassi remarcado NÃO é leilão: não aceitamos (diga isso e não marque "leilao"). se você perguntou "o veículo é de leilão? e roda em aplicativo?" e ele respondeu, preencha os dois — resposta curta segue a ordem da pergunta ("não e sim" = não é leilão, roda em app; "não" = nenhum dos dois). se ele respondeu só "sim" sem dizer qual, pergunte qual dos dois não pergunte isso antes de ter a placa`
 }

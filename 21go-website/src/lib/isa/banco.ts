@@ -72,6 +72,8 @@ export interface ContatoIsa {
   janela_ate: string | null
   ultima_resposta_em: string | null
   opcoes_versao: OpcoesVersao | null
+  /** Placa esperando a resposta de leilao/aplicativo pra ser cotada. */
+  placa_pendente: string | null
   /** /reiniciar (numeros de teste): a Isa ignora historico e simulacoes de antes disto. */
   reiniciada_em: string | null
   /** Etiquetas do painel/CRM (etiquetas.regras.ts). */
@@ -240,7 +242,7 @@ export async function reiniciarContato(telefone: string): Promise<void> {
        reiniciada_em = now(), lead_id = NULL, ligada = true, pausa_motivo = NULL, pausa_por = NULL,
        pausada_em = NULL, transferido_em = NULL, entrada = NULL, desconto50_em = NULL,
        desconto50_de = NULL, desconto50_para = NULL, aguardando_dono = NULL, genero = NULL,
-       preco_da_tabela = false, retomada_em = NULL, abordagem5min_em = NULL, opcoes_versao = NULL,
+       preco_da_tabela = false, retomada_em = NULL, abordagem5min_em = NULL, opcoes_versao = NULL, placa_pendente = NULL,
        ultima_resposta_em = NULL, humano_em = NULL, updated_at = now()
      WHERE telefone = $1`,
     [telefone],
@@ -280,7 +282,7 @@ export async function registrarEvento(telefone: string, tipo: string, detalhe: u
 const CAMPOS_EDITAVEIS = new Set([
   'lead_id', 'nome', 'ligada', 'pausa_motivo', 'pausa_por', 'pausada_em', 'transferido_em', 'entrada',
   'desconto50_em', 'desconto50_de', 'desconto50_para', 'aguardando_dono', 'genero', 'preco_da_tabela',
-  'retomada_em', 'abordagem5min_em', 'opcoes_versao',
+  'retomada_em', 'abordagem5min_em', 'opcoes_versao', 'placa_pendente',
 ])
 
 export async function atualizarContato(telefone: string, campos: Record<string, unknown>): Promise<void> {

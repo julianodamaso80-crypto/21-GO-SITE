@@ -71,6 +71,42 @@ export function mensagemNaoFazemos(motivo: string): string {
   return 'infelizmente no momento não estamos aceitando esse veículo 🙏🏼'
 }
 
+/**
+ * Placa chegou: antes dos valores a Isa pergunta leilao e aplicativo JUNTOS (dono, 11/09/2026 —
+ * antes ela cotava assumindo "nao" e avisava depois, e o preco podia mudar na frente do cliente).
+ */
+export function mensagemPerguntaLeilaoApp(abertura: string | null): string {
+  const t = 'antes de te passar os valores, me confirma: o veículo é de leilão? e roda em aplicativo (uber, 99)?'
+  return abertura ? `${abertura}\n\n${t}` : t
+}
+
+const APP = /\b(uber|99|99pop|indriver|aplicativo|app)\b/
+const NAO_APP = /\b(nao|nem|nunca)\s+(\w+\s+){0,3}(uber|99|99pop|indriver|aplicativo|app)\b|\b(uber|99|aplicativo|app)\s+nao\b/
+const NAO_LEILAO = /\b(nao|nem|nunca)\s+(e\s+)?(de\s+)?leil|leil\w*\s+nao\b/
+
+/**
+ * Resposta a pergunta de leilao/aplicativo. `null` = o cliente nao disse (ai a IA le a conversa).
+ * Resposta curta segue a ordem da pergunta: "nao e sim" = nao e leilao, roda em app.
+ */
+export function lerLeilaoApp(texto: string | null | undefined): { leilao: boolean | null; app: boolean | null } {
+  const t = (texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+  const curto = t.replace(/[.!,;]+/g, ' ').replace(/\s+/g, ' ').trim()
+  if (/^(n|nao|nop|negativo|nao e nao|nao nao|os dois nao|nenhum( dos (dois|2))?|nenhuma( das duas)?|nem um nem outro)$/.test(curto)) {
+    return { leilao: false, app: false }
+  }
+  if (/^sim (e )?nao$/.test(curto)) return { leilao: true, app: false }
+  if (/^nao (e )?sim$/.test(curto)) return { leilao: false, app: true }
+  if (/^(sim (e )?sim|ambos|os dois sim|sim (os|as|pros|pras) (dois|duas|2))$/.test(curto)) return { leilao: true, app: true }
+
+  const r: { leilao: boolean | null; app: boolean | null } = { leilao: null, app: null }
+  if (/leil/.test(t)) r.leilao = !NAO_LEILAO.test(t)
+  if (APP.test(t)) r.app = !NAO_APP.test(t)
+  else if (/\bparticular\b/.test(t)) r.app = false
+  // "nao, trabalho no 99" / "nao. uso particular": o "nao" do comeco responde a 1a pergunta.
+  if (r.leilao === null && (r.app !== null) && /^nao\b/.test(t)) r.leilao = false
+  return r
+}
+
 /** Dono, 11/09/2026: a 21Go nao aceita moto de leilao (carro de leilao aceita). */
 export function recusaMotoDeLeilao(categoria: string | null | undefined, leilao: boolean): boolean {
   return leilao && categoria === 'MOTOCICLETA'

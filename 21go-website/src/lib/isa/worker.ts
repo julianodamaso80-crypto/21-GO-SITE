@@ -37,7 +37,7 @@ import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type
 import { dividirEmPartes, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -260,21 +260,31 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // sem consulta, sem lead no Power e sem PDF). Placa nova na mensagem = consulta direto.
   const placaDita = placaNoTexto(novas.map((m) => m.content).join('\n'))
   const placaDoLead = (lead?.placa_interesse || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  const textoNovas = novas.map((m) => m.content).join('\n')
+  const cumprimentarAgora = precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora)
   if (placaDita && placaDita !== placaDoLead) {
     await registrarEvento(c.telefone, 'placa', { placa: placaDita, por: 'codigo' })
-    const enviou = await orcarEEnviar(c, {
-      placa: placaDita,
-      leilao: false,
-      app: false,
-      assumido: true,
-      nome: c.nome ?? lead?.nome ?? null,
-      cumprimentar: precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora),
-      desconto: null,
-      ultimaInbound,
-      visto,
-    })
+    // Dono (11/09/2026): chegou a placa, pergunta leilao e aplicativo juntos ANTES dos valores —
+    // a nao ser que ele ja tenha dito na mesma mensagem.
+    const dito = lerLeilaoApp(textoNovas)
+    if (dito.leilao === null && dito.app === null) {
+      const enviou = await perguntarLeilaoApp(c, placaDita, { cumprimentar: cumprimentarAgora, nome: c.nome ?? lead?.nome ?? null, ultimaInbound, visto })
+      await liberar(c.telefone, visto, enviou)
+      return enviou
+    }
+    const enviou = await cotarPlacaPendente(c, placaDita, dito, { cumprimentar: cumprimentarAgora, nome: c.nome ?? lead?.nome ?? null, desconto: null, ultimaInbound, visto })
     await liberar(c.telefone, visto, enviou)
     return enviou
+  }
+
+  // Respondeu a pergunta de leilao/aplicativo: cota a placa que estava esperando.
+  if (c.placa_pendente) {
+    const dito = lerLeilaoApp(textoNovas)
+    if (dito.leilao !== null || dito.app !== null) {
+      const enviou = await cotarPlacaPendente(c, c.placa_pendente, dito, { cumprimentar: cumprimentarAgora, nome: c.nome ?? lead?.nome ?? null, desconto, ultimaInbound, visto })
+      await liberar(c.telefone, visto, enviou)
+      return enviou
+    }
   }
   const saida = await pensar({
     nome: c.nome ?? lead?.nome ?? null,
@@ -330,17 +340,32 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const leilaoAtual = lead ? isLeilaoOrigin(lead.leilao) : false
   const appAtual = !!lead?.carro_app
   const placaNova = saida.placa && saida.placa !== placaAtual ? saida.placa : null
+  const pendente = c.placa_pendente
+  const respondeu = saida.leilao !== null || saida.app !== null
+  // Placa que so a IA achou e sem leilao/aplicativo: pergunta antes dos valores (dono, 11/09/2026).
+  if (placaNova && !respondeu && placaNova !== pendente) {
+    const enviou = await perguntarLeilaoApp(c, placaNova, { cumprimentar: cumprimentarAgora, nome: c.nome ?? lead?.nome ?? null, ultimaInbound, visto })
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
+  const alvo = respondeu ? (placaNova ?? pendente) : null
+  if (alvo) {
+    const enviou = await cotarPlacaPendente(c, alvo, { leilao: saida.leilao, app: saida.app }, { cumprimentar: cumprimentarAgora, nome: c.nome ?? lead?.nome ?? null, desconto, ultimaInbound, visto })
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
   const corrigiu =
+    !pendente &&
     !!placaAtual &&
     ((saida.leilao !== null && saida.leilao !== leilaoAtual) || (saida.app !== null && saida.app !== appAtual))
-  if (placaNova || corrigiu) {
+  if (corrigiu) {
     const enviouOrcamento = await orcarEEnviar(c, {
-      placa: placaNova ?? placaAtual,
-      leilao: saida.leilao ?? (placaNova ? false : leilaoAtual),
-      app: saida.app ?? (placaNova ? false : appAtual),
-      assumido: saida.leilao === null && saida.app === null && !!placaNova,
+      placa: placaAtual,
+      leilao: saida.leilao ?? leilaoAtual,
+      app: saida.app ?? appAtual,
+      assumido: false,
       nome: c.nome ?? lead?.nome ?? null,
-      cumprimentar: precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora),
+      cumprimentar: cumprimentarAgora,
       desconto,
       ultimaInbound,
       visto,
@@ -395,6 +420,39 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 const GATILHOS_SILENCIOSOS = new Set(['hostil', 'associado', 'validador'])
 
 const SITE = 'https://21go.site'
+
+/** Guarda a placa e pergunta leilao e aplicativo juntos, antes de passar valores. */
+async function perguntarLeilaoApp(
+  c: ContatoIsa,
+  placa: string,
+  p: { cumprimentar: boolean; nome: string | null; ultimaInbound: string | undefined; visto: string | null },
+): Promise<boolean> {
+  await atualizarContato(c.telefone, { placa_pendente: placa })
+  await registrarEvento(c.telefone, 'perguntou_leilao_app', { placa })
+  const ab = p.cumprimentar ? abertura(cumprimento(new Date()), primeiroNomeDe(p.nome)) : null
+  return enviarComoGente(c, [mensagemPerguntaLeilaoApp(ab)], p.ultimaInbound, p.visto)
+}
+
+/** Cota a placa com o que o cliente respondeu. O que ele nao disse conta como "nao". */
+async function cotarPlacaPendente(
+  c: ContatoIsa,
+  placa: string,
+  dito: { leilao: boolean | null; app: boolean | null },
+  p: { cumprimentar: boolean; nome: string | null; desconto: { de: number; para: number } | null; ultimaInbound: string | undefined; visto: string | null },
+): Promise<boolean> {
+  if (c.placa_pendente) await atualizarContato(c.telefone, { placa_pendente: null })
+  return orcarEEnviar(c, {
+    placa,
+    leilao: dito.leilao ?? false,
+    app: dito.app ?? false,
+    assumido: false,
+    nome: p.nome,
+    cumprimentar: p.cumprimentar,
+    desconto: p.desconto,
+    ultimaInbound: p.ultimaInbound,
+    visto: p.visto,
+  })
+}
 
 /** "perai que vou consultar" → consulta → as 2 mensagens do dono (ou o motivo de nao fazermos). */
 async function orcarEEnviar(
