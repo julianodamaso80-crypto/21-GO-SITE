@@ -2030,6 +2030,7 @@ export default function CotacaoPage() {
         ativo={step === 2 && !excluded && !!vehicle && plans.length > 0 && !!selectedPlan}
         chave={leadId || vehicleLabel}
         temConsultor={!!consultor}
+        nome={form.nome}
         jaClicou={() => whatsappClicked.current}
         mensagem={() => mensagemDoPopup({
           nome: form.nome,

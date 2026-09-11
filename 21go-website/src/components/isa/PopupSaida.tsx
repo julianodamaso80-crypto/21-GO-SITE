@@ -21,6 +21,8 @@ interface Props {
   /** Identifica a simulacao pro "uma vez so" (leadId, ou o veiculo enquanto o lead nao salvou). */
   chave: string
   temConsultor: boolean
+  /** Primeiro nome do formulario, pro "Espera, Fulano!". */
+  nome: string
   jaClicou: () => boolean
   mensagem: () => string
   onAbrir: () => void
@@ -40,7 +42,7 @@ function marcarVisto(chave: string): void {
   try { localStorage.setItem(`isa_popup:${chave}`, '1') } catch {}
 }
 
-export default function PopupSaida({ ativo, chave, temConsultor, jaClicou, mensagem, onAbrir }: Props) {
+export default function PopupSaida({ ativo, chave, temConsultor, nome, jaClicou, mensagem, onAbrir }: Props) {
   const [ligado, setLigado] = useState(false)
   const [aberto, setAberto] = useState(false)
   // A pagina recria estas funcoes a cada render; em ref, o relogio dos 45 s nao reinicia a toa.
@@ -104,6 +106,8 @@ export default function PopupSaida({ ativo, chave, temConsultor, jaClicou, mensa
   }, [aberto])
 
   if (!aberto) return null
+  const p = nome.trim().split(/\s+/)[0] || ''
+  const primeiro = p.length >= 2 ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : null
 
   return (
     <div
@@ -137,7 +141,7 @@ export default function PopupSaida({ ativo, chave, temConsultor, jaClicou, mensa
             <Gift className="w-7 h-7 text-[#F2911D]" />
           </div>
           <h2 id="isa-popup-titulo" className="text-[22px] leading-tight font-extrabold text-[#1A2754]">
-            Espera, antes de sair!
+            {primeiro ? `Espera, ${primeiro}! 👋` : 'Espera! 👋'}
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-[#475569]">
             Fale com um dos nossos consultores e <strong className="text-[#293C82]">ganhe um desconto na sua ativação</strong>.
