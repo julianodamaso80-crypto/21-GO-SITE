@@ -228,6 +228,5 @@ test('nome de CAMPO do JSON tambem nunca vai pro cliente (11/09/2026: saiu "pron
 
 test('cumprimento ou mensagem truncada nao e fora do assunto (11/09/2026: "oi q")', () => {
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
-  assert.match(p, /cumprimento[^
-]*NÃO é fora do assunto/i)
+  assert.match(p, /cumprimento[^\n]*NÃO é fora do assunto/i)
 })
