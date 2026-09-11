@@ -41,6 +41,7 @@ import { abertura } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
+import { placaNoTexto } from '@/lib/isa/placa.regras'
 import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
 import { isLeilaoOrigin } from '@/data/pricing'
 
@@ -93,8 +94,14 @@ export async function processarFila(): Promise<ResultadoFila> {
 async function retomarSumidos(): Promise<void> {
   for (const c of await contatosParaRetomar()) {
     if (!destinoPermitido(c.telefone)) continue
+    // Dono (11/09/2026): conversa, nao cobranca — pergunta da situacao dele. O resto (quanto paga
+    // hoje, qual dos nossos planos gostou mais) segue pela IA quando ele responder.
     const nome = primeiroNomeDe(c.nome)
-    const texto = `${abertura(cumprimento(new Date()), nome)}\n\nconseguiu ver a sua simulação? 🙏🏼\n\nqualquer dúvida é só me chamar por aqui`
+    const agora = new Date()
+    const ab = precisaCumprimentar(c.ultima_resposta_em ? new Date(c.ultima_resposta_em) : null, agora)
+      ? `${abertura(cumprimento(agora), nome)}\n\n`
+      : ''
+    const texto = `${ab}${nome ? `${nome}, ` : ''}hoje você possui alguma proteção pro seu veículo?`
     const enviou = await enviarComoGente(c, texto, undefined, c.ultimo_inbound_em)
     await registrarEvento(c.telefone, 'retomada', { enviou })
     if (enviou) await liberar(c.telefone, null, true)
@@ -239,6 +246,27 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   const hist = await historico(c.conversation_id, 30, c.reiniciada_em)
   const ultimaNossa = [...hist].reverse().find((m) => m.direction === 'outbound')
+
+  // PLACA E ACHADA PELO CODIGO, nunca pela IA (bug de 11/09/2026: "Pyv8i13" virou um HB20 inventado,
+  // sem consulta, sem lead no Power e sem PDF). Placa nova na mensagem = consulta direto.
+  const placaDita = placaNoTexto(novas.map((m) => m.content).join('\n'))
+  const placaDoLead = (lead?.placa_interesse || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (placaDita && placaDita !== placaDoLead) {
+    await registrarEvento(c.telefone, 'placa', { placa: placaDita, por: 'codigo' })
+    const enviou = await orcarEEnviar(c, {
+      placa: placaDita,
+      leilao: false,
+      app: false,
+      assumido: true,
+      nome: c.nome ?? lead?.nome ?? null,
+      cumprimentar: precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora),
+      desconto: null,
+      ultimaInbound,
+      visto,
+    })
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
   const saida = await pensar({
     nome: c.nome ?? lead?.nome ?? null,
     genero: (c.genero as 'm' | 'f' | null) ?? null,
@@ -321,6 +349,11 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // Desconto: a Isa ja disse "vou confirmar com meu supervisor"; pausa e manda o alerta com botoes.
   if (saida.gatilho === 'desconto') await pedirDescontoAoDono(c)
   // Nao soube responder: respondeu "vou confirmar" e o dono fica sabendo (a Isa segue ligada).
+  // Escolheu o plano mas nao tem comprovante de residencia: a Isa pede CNH + documento do veiculo
+  // e o time e avisado (dono, 11/09/2026). Ela segue ligada.
+  if (saida.gatilho === 'sem_comprovante') {
+    await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_comprovante', detalhe: ultimoTexto.slice(0, 200) })
+  }
   if (saida.gatilho === 'sem_informacao') {
     await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_informacao', detalhe: ultimoTexto.slice(0, 200) })
   }
@@ -360,7 +393,7 @@ async function orcarEEnviar(
     const fatos = fatosDoLead(orc.lead, p.desconto)
     const partes = mensagensDaSimulacao({
       abertura: null,
-      nome,
+      nome: orc.lead.nome || p.nome,
       fatos,
       pdfUrl: `${SITE}/api/pdfs/${orc.lead.id}`,
       leilaoOuAppAssumido: p.assumido,
@@ -445,7 +478,7 @@ async function cotarModeloEEnviar(
     await atualizarContato(c.telefone, { lead_id: orc.lead.id, preco_da_tabela: orc.tabela })
     const partes = mensagensDaSimulacao({
       abertura: null,
-      nome: primeiroNomeDe(c.nome),
+      nome: orc.lead.nome || c.nome,
       fatos: fatosDoLead(orc.lead, null),
       pdfUrl: `${SITE}/api/pdfs/${orc.lead.id}`,
       leilaoOuAppAssumido: true,

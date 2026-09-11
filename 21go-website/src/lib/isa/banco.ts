@@ -296,9 +296,10 @@ export async function atualizarContato(telefone: string, campos: Record<string, 
 }
 
 /**
- * Quem sumiu depois da simulacao: ja recebeu cotacao, a Isa falou por ultimo ha 4 h ou mais, a
+ * Quem sumiu depois da simulacao: ja recebeu cotacao, a Isa falou por ultimo ha 1 h ou mais, a
  * janela de 24 h ainda esta aberta e ainda nao houve retomada desde a ultima fala da Isa (e nem
- * nas ultimas 24 h). Dono: "pode retomar, respeitando o tempo — nunca com periodo curto".
+ * nas ultimas 24 h). Dono (11/09/2026): "se ele nao responder depois de 1 hr voce chama ele de
+ * novo" — uma vez so por silencio.
  */
 export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
   return sql<ContatoIsa>(
@@ -308,7 +309,7 @@ export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
        WHERE ligada AND lead_id IS NOT NULL AND conversation_id IS NOT NULL
          AND ultima_resposta_em IS NOT NULL
          AND ultima_resposta_em > COALESCE(ultimo_inbound_em, '-infinity'::timestamptz)
-         AND ultima_resposta_em < now() - interval '4 hours'
+         AND ultima_resposta_em < now() - interval '1 hour'
          AND janela_ate > now() + interval '10 minutes'
          AND (retomada_em IS NULL OR (retomada_em < ultima_resposta_em AND retomada_em < now() - interval '24 hours'))
          AND (humano_em IS NULL OR humano_em < ultima_resposta_em)

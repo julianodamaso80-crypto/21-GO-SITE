@@ -13,7 +13,7 @@ import type { MensagemHistorico } from '@/lib/isa/banco'
 
 const MODELO = 'google/gemini-2.5-flash'
 
-export type Gatilho = 'desconto' | 'robo' | 'hostil' | 'associado' | 'sem_informacao' | 'validador' | null
+export type Gatilho = 'desconto' | 'robo' | 'hostil' | 'associado' | 'sem_informacao' | 'sem_comprovante' | 'validador' | null
 
 export interface SaidaCerebro {
   resposta: string
@@ -29,7 +29,7 @@ export interface SaidaCerebro {
 // Sem simulacao a Isa nao tem preco nenhum: so os valores fixos do gabarito.
 const PERMITIDOS_SEM_FATOS: Permitidos = { dinheiro: [100, 19.9, 29.9, 22.9], pct: [6, 10, 15, 5, 100, 80] }
 
-const GATILHOS = new Set(['desconto', 'robo', 'hostil', 'associado', 'sem_informacao'])
+const GATILHOS = new Set(['desconto', 'robo', 'hostil', 'associado', 'sem_informacao', 'sem_comprovante'])
 
 function primeiroNome(nome: string | null): string | null {
   const n = (nome || '').trim().split(/\s+/)[0]

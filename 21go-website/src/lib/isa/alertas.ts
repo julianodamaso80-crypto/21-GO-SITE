@@ -22,6 +22,7 @@ const MOTIVO_LEGIVEL: Record<string, string> = {
   hostil: 'cliente xingou ou ameacou',
   validador: 'a Isa ia passar um numero que nao confere — segurei a mensagem',
   sem_informacao: 'cliente perguntou algo que a Isa nao soube responder',
+  sem_comprovante: 'cliente escolheu o plano e nao tem comprovante de residencia',
   desconto: 'pedido de desconto',
   qualidade: 'qualidade do numero caiu na Meta',
   template: 'template da mensagem dos 5 min deixou de ser utilidade aprovada',

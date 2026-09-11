@@ -16,38 +16,32 @@ const fatos = montarFatos({
 })
 
 const msgs = mensagensDaSimulacao({
-  abertura: 'boa noite, Juliano 😃', nome: 'Juliano', fatos, pdfUrl: 'https://21go.site/api/pdfs/lead_x',
+  abertura: 'boa noite, Juliano 😃', nome: 'JULIANO DAMASO', fatos, pdfUrl: 'https://21go.site/api/pdfs/lead_x',
   leilaoOuAppAssumido: true,
 })
 
-test('duas mensagens: a simulacao organizada e o PDF', () => {
-  assert.equal(msgs.length, 2)
-  assert.match(msgs[0], /^boa noite, Juliano 😃/)
-  assert.match(msgs[0], /segue a sua simulação, Juliano/)
-  assert.match(msgs[1], /PDF com todos os benefícios/)
-  assert.match(msgs[1], /https:\/\/21go\.site\/api\/pdfs\/lead_x/)
-})
-
-test('traz veiculo, ano, FIPE, ativacao e cada plano com a mensalidade', () => {
-  assert.match(msgs[0], /🚗 Jeep COMPASS/)
-  assert.match(msgs[0], /📅 2022/)
-  assert.match(msgs[0], /FIPE: R\$ 116\.540,00/)
-  assert.match(msgs[0], /Ativação: R\$ 557,00/)
-  assert.match(msgs[0], /Básico: R\$ 437,00\/mês/)
-  assert.match(msgs[0], /VIP SUV: R\$ 507,00\/mês/)
+test('formato do dono: nome, veiculo, FIPE, todos os planos com preco, ativacao, PDF e a pergunta', () => {
+  const m = msgs[0]
+  assert.match(m, /^boa noite, Juliano 😃\n\nNome: JULIANO DAMASO\nVeículo: Jeep COMPASS LONG\. T270 1\.3 TB 4x2 Flex Aut\. 2022\nFIPE: R\$ 116\.540,00\n/)
+  assert.match(m, /Plano Básico · R\$ 437,00\/mês/)
+  assert.match(m, /Plano VIP SUV · R\$ 507,00\/mês/)
   // plano com ativacao diferente mostra a dele
-  assert.match(msgs[0], /Veículos Especiais: R\$ 606,75\/mês · ativação R\$ 656,75/)
+  assert.match(m, /Plano Veículos Especiais · R\$ 606,75\/mês \(ativação R\$ 656,75\)/)
+  assert.match(m, /Ativação: R\$ 557,00/)
+  assert.match(m, /Sua simulação completa \(PDF\): https:\/\/21go\.site\/api\/pdfs\/lead_x/)
+  assert.match(m, /qual deles se encaixa mais com o que você tá buscando\?$/)
 })
 
 test('lista EXATAMENTE os planos que vieram (sem inventar plano)', () => {
   assert.doesNotMatch(msgs[0], /Premium|Do Seu Jeito/)
 })
 
-test('avisa quando assumiu que nao e leilao nem aplicativo', () => {
-  assert.match(msgs[0], /considerei que não é de leilão nem de aplicativo/)
+test('avisa numa segunda mensagem quando assumiu que nao e leilao nem aplicativo', () => {
+  assert.equal(msgs.length, 2)
+  assert.match(msgs[1], /considerei que não é de leilão nem de aplicativo/)
   const sem = mensagensDaSimulacao({ abertura: null, nome: null, fatos, pdfUrl: 'x', leilaoOuAppAssumido: false })
-  assert.doesNotMatch(sem[0], /considerei/)
-  assert.match(sem[0], /^segue a sua simulação 😃/)
+  assert.equal(sem.length, 1)
+  assert.match(sem[0], /^Veículo: /)
 })
 
 test('todo numero da mensagem passa no validador (montada so com fatos)', () => {
