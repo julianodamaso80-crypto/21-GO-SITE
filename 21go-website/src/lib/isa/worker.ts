@@ -29,7 +29,9 @@ import { dividirEmPartes, pausaEntreSegundos } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos } from '@/lib/isa/entrega.regras'
-import { orcarPorPlaca } from '@/lib/isa/orcamento'
+import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
+import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes } from '@/lib/isa/versoes.regras'
+import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
 import { isLeilaoOrigin } from '@/data/pricing'
 
 /**
@@ -109,6 +111,23 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return false
   }
 
+  // Respondeu o numero da versao (cotacao sem placa): cota direto, sem passar pela IA.
+  const ultimoTexto = novas[novas.length - 1]?.content ?? ''
+  if (c.opcoes_versao?.itens?.length) {
+    const i = escolhaDoCliente(ultimoTexto, c.opcoes_versao.itens.length)
+    if (i !== null) {
+      const o = c.opcoes_versao
+      const item = o.itens[i]
+      await atualizarContato(c.telefone, { opcoes_versao: null })
+      const enviou = await cotarModeloEEnviar(c, {
+        tipo: o.tipo, brandId: o.brandId, brandText: o.brandText, modelId: item.id, modelText: item.text,
+        ano: o.ano, codFipe: item.back, ultimaInbound, visto,
+      })
+      await liberar(c.telefone, visto, enviou)
+      return enviou
+    }
+  }
+
   const lead = await leadDoCliente(c.telefone, c.lead_id).catch(() => null)
   if (lead && lead.id !== c.lead_id) await atualizarContato(c.telefone, { lead_id: lead.id })
   const desconto =
@@ -170,6 +189,18 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return enviouOrcamento
   }
 
+  // Sem placa (zero km / nao sabe): lista as versoes do Power e o cliente escolhe.
+  if (!saida.placa && saida.semPlaca?.ano && (saida.semPlaca.marca || saida.semPlaca.modelo)) {
+    const enviou = await listarVersoesEEnviar(c, saida.semPlaca, {
+      cumprimentar: precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora),
+      nome: c.nome ?? lead?.nome ?? null,
+      ultimaInbound,
+      visto,
+    })
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
+
   const enviou = saida.resposta ? await enviarComoGente(c, saida.resposta, ultimaInbound, visto) : false
 
   // Desconto: a Isa ja disse "vou confirmar com meu supervisor" e fica esperando o dono.
@@ -226,6 +257,77 @@ async function orcarEEnviar(
   }
   // Nenhuma fonte achou o veiculo nem a FIPE: a Isa nao chuta — o time assume.
   await pausar(c.telefone, 'sem_preco', { placa: p.placa, motivo: orc.motivo })
+  return false
+}
+
+/** Acha a marca (carro, depois moto), filtra as versoes do ano e manda a lista numerada. */
+async function listarVersoesEEnviar(
+  c: ContatoIsa,
+  sp: { marca: string | null; modelo: string; ano: number | null },
+  p: { cumprimentar: boolean; nome: string | null; ultimaInbound: string | undefined; visto: string | null },
+): Promise<boolean> {
+  const ab = p.cumprimentar ? `${abertura(cumprimento(new Date()), primeiroNomeDe(p.nome))}\n\n` : ''
+  const ano = sp.ano as number
+  const marcaDita = sp.marca || sp.modelo.split(' ')[0]
+  let tipo: 'carro' | 'moto' = 'carro'
+  let marca = acharMarca(await listBrandsPowerCrm('carro'), marcaDita)
+  if (!marca) {
+    marca = acharMarca(await listBrandsPowerCrm('moto'), marcaDita)
+    tipo = 'moto'
+  }
+  const modelos = marca ? await listModelsPowerCrm(marca.id, ano) : []
+  const opcoes = filtrarVersoes(modelos, sp.modelo)
+  await registrarEvento(c.telefone, 'versoes', { marca: marca?.text ?? null, ano, modelo: sp.modelo, achadas: opcoes.length })
+
+  if (!marca || opcoes.length === 0) {
+    return enviarComoGente(
+      c,
+      [`${ab}não achei esse modelo aqui 🤔 me manda o nome completo, do jeito que tá no documento, ou a placa se já tiver?`],
+      p.ultimaInbound,
+      p.visto,
+    )
+  }
+  if (opcoes.length === 1) {
+    return cotarModeloEEnviar(c, {
+      tipo, brandId: marca.id, brandText: marca.text, modelId: opcoes[0].id, modelText: opcoes[0].text,
+      ano, codFipe: opcoes[0].back ?? null, ultimaInbound: p.ultimaInbound, visto: p.visto,
+    })
+  }
+  await atualizarContato(c.telefone, {
+    opcoes_versao: {
+      tipo, brandId: marca.id, brandText: marca.text, ano, modeloDito: sp.modelo,
+      itens: opcoes.map((o) => ({ id: o.id, text: o.text, back: o.back ?? null })),
+    },
+  })
+  return enviarComoGente(c, [`${ab}${mensagemVersoes(sp.modelo, ano, opcoes)}`], p.ultimaInbound, p.visto)
+}
+
+async function cotarModeloEEnviar(
+  c: ContatoIsa,
+  p: {
+    tipo: 'carro' | 'moto'; brandId: number; brandText: string; modelId: number; modelText: string
+    ano: number; codFipe: string | null; ultimaInbound: string | undefined; visto: string | null
+  },
+): Promise<boolean> {
+  await enviarComoGente(c, ['perai que vou consultar aqui 🙏🏼'], p.ultimaInbound, p.visto)
+  const orc = await orcarPorModelo({
+    telefone: c.telefone, nome: c.nome, tipo: p.tipo, brandId: p.brandId, brandText: p.brandText,
+    modelId: p.modelId, modelText: p.modelText, ano: p.ano, codFipe: p.codFipe, leilao: false, carroApp: false,
+  })
+  await registrarEvento(c.telefone, 'orcamento', { modelo: p.modelText, ano: p.ano, resultado: orc.tipo })
+  if (orc.tipo === 'ok') {
+    await atualizarContato(c.telefone, { lead_id: orc.lead.id, preco_da_tabela: orc.tabela })
+    const partes = mensagensDaSimulacao({
+      abertura: null,
+      nome: primeiroNomeDe(c.nome),
+      fatos: fatosDoLead(orc.lead, null),
+      pdfUrl: `${SITE}/api/pdfs/${orc.lead.id}`,
+      leilaoOuAppAssumido: true,
+    })
+    return enviarComoGente(c, partes, p.ultimaInbound, p.visto)
+  }
+  if (orc.tipo === 'nao_fazemos') return enviarComoGente(c, [mensagemNaoFazemos(orc.motivo)], p.ultimaInbound, p.visto)
+  await pausar(c.telefone, 'sem_preco', { modelo: p.modelText, ano: p.ano, motivo: orc.tipo === 'humano' ? orc.motivo : orc.tipo })
   return false
 }
 

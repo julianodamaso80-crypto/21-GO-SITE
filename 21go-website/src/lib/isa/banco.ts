@@ -61,6 +61,17 @@ export interface ContatoIsa {
   ultimo_inbound_em: string | null
   janela_ate: string | null
   ultima_resposta_em: string | null
+  opcoes_versao: OpcoesVersao | null
+}
+
+/** Versoes que a Isa listou (cotacao sem placa), esperando o cliente responder o numero. */
+export interface OpcoesVersao {
+  tipo: 'carro' | 'moto'
+  brandId: number
+  brandText: string
+  ano: number
+  modeloDito: string
+  itens: { id: number; text: string; back: string | null }[]
 }
 
 /** A mensagem ja estava gravada? A Meta reentrega eventos e a Isa nao pode responder duas vezes. */
@@ -199,15 +210,17 @@ export async function registrarEvento(telefone: string, tipo: string, detalhe: u
 const CAMPOS_EDITAVEIS = new Set([
   'lead_id', 'nome', 'ligada', 'pausa_motivo', 'pausa_por', 'pausada_em', 'transferido_em', 'entrada',
   'desconto50_em', 'desconto50_de', 'desconto50_para', 'aguardando_dono', 'genero', 'preco_da_tabela',
-  'retomada_em', 'abordagem5min_em',
+  'retomada_em', 'abordagem5min_em', 'opcoes_versao',
 ])
 
 export async function atualizarContato(telefone: string, campos: Record<string, unknown>): Promise<void> {
   const nomes = Object.keys(campos).filter((c) => CAMPOS_EDITAVEIS.has(c))
   if (nomes.length === 0) return
   const sets = nomes.map((c, i) => `${c} = $${i + 2}`).join(', ')
-  await sql(`UPDATE public.isa_contatos SET ${sets}, updated_at = now() WHERE telefone = $1`, [
-    telefone,
-    ...nomes.map((c) => campos[c]),
-  ])
+  // jsonb vai como texto: o pg transformaria objeto/array JS em array do Postgres.
+  const valores = nomes.map((c) => {
+    const v = campos[c]
+    return v !== null && typeof v === 'object' && !(v instanceof Date) ? JSON.stringify(v) : v
+  })
+  await sql(`UPDATE public.isa_contatos SET ${sets}, updated_at = now() WHERE telefone = $1`, [telefone, ...valores])
 }

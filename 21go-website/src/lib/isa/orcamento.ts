@@ -1,5 +1,12 @@
 import 'server-only'
 import { lookupPlate } from '@/lib/plate-lookup'
+import { listYearsPowerCrm, valorFipeDoPowerCrm } from '@/lib/powercrm-lookup'
+import { lookupFipeDirect } from '@/lib/fipe-direct'
+import { getApplicablePlans, resolveMotoCc } from '@/data/pricing'
+import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
+import { planosDoPowerAoVivo } from '@/lib/powercrm-planos'
+import { planosDoPowerParaTela } from '@/lib/planos-para-tela'
+import { aceitaAno, decidirElegibilidade, ehBydDeLeilao } from '@/lib/elegibilidade.regras'
 import { upsertLead } from '@/lib/supabase-store'
 import { sql } from '@/lib/isa/banco'
 import type { LeadIsa } from '@/lib/isa/fatos'
@@ -102,6 +109,112 @@ export async function orcarPorPlaca(p: {
   }
 }
 
+/**
+ * Orcamento sem placa (zero km / nao sabe a placa), depois que o cliente escolheu a versao.
+ * Mesmas pecas da rota /api/vehicle/powercrm/preco — ano minimo, BYD de leilao, elegibilidade
+ * do Power, FIPE do proprio Power (Parallelum de reserva) — com a decisao B no Power mudo.
+ */
+export async function orcarPorModelo(p: {
+  telefone: string
+  nome: string | null
+  tipo: 'carro' | 'moto'
+  brandId: number
+  brandText: string
+  modelId: number
+  modelText: string
+  ano: number
+  codFipe: string | null
+  leilao: boolean
+  carroApp: boolean
+}): Promise<ResultadoOrcamento> {
+  if (!aceitaAno(p.ano)) return { tipo: 'nao_fazemos', motivo: 'ano' }
+  if (ehBydDeLeilao(p.brandText, p.modelText, p.leilao ? 'leilao' : 'nao')) return { tipo: 'nao_fazemos', motivo: 'byd_leilao' }
+
+  const anos = await listYearsPowerCrm(p.modelId)
+  const mdlYr = anos.find((a) => (a.text || '').startsWith(String(p.ano)))?.id
+  const consulta = await planosDoPowerAoVivo(p.modelId, mdlYr, {
+    moto: p.tipo === 'moto' ? { marca: p.brandText, cilindrada: resolveMotoCc(0, p.modelText) } : null,
+  })
+  const veredicto = decidirElegibilidade({
+    ano: p.ano,
+    powerAoVivo: consulta.planos === null ? null : consulta.planos.length > 0,
+    allowlist: planoNoPowerCrm(p.modelId),
+    marca: p.brandText,
+    modelo: p.modelText,
+  })
+  if (veredicto.acao === 'nao_fazemos') return { tipo: 'nao_fazemos', motivo: veredicto.motivo }
+
+  const doPower = await valorFipeDoPowerCrm(p.brandId, p.ano, p.modelId)
+  const direto = doPower
+    ? null
+    : await lookupFipeDirect({
+        brand: p.brandText,
+        model: p.modelText,
+        year: p.ano,
+        codFipe: p.codFipe || undefined,
+        categoria: p.tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL',
+      })
+  const fipe = doPower?.valor ?? direto?.fipeValue ?? 0
+  if (fipe <= 0) return { tipo: 'humano', motivo: 'fipe_indisponivel' }
+
+  const tabela = veredicto.acao === 'consultor'
+  const plans = tabela
+    ? getApplicablePlans(fipe, p.tipo === 'moto' ? 'MOTOCICLETA' : 'AUTOMOVEL', undefined, 0, p.modelText, p.leilao)
+    : planosDoPowerParaTela(consulta.planos || [], fipe, p.leilao)
+  if (plans.length === 0) return { tipo: 'humano', motivo: 'sem_plano_aplicavel' }
+
+  const ref = ORDEM_REFERENCIA.map((id) => plans.find((pl) => pl.id === id)).find(Boolean) || plans[0]
+  const trk = `isa${p.telefone}m${p.modelId}a${p.ano}`.toLowerCase()
+  const nome = (p.nome || 'Cliente WhatsApp').trim()
+  const { id: leadId } = await upsertLead({
+    trk,
+    nome,
+    telefone: p.telefone,
+    marca: p.brandText,
+    modelo: p.modelText,
+    ano_modelo: p.ano,
+    fipe_codigo: doPower?.codFipe ?? p.codFipe,
+    valor_fipe: fipe,
+    plano: ref?.name ?? null,
+    valor_mensal: ref?.monthly ?? null,
+    planos: plans,
+    carro_app: p.carroApp,
+    leilao: p.leilao ? 'leilao' : 'nao',
+    origem: 'isa_whatsapp',
+  })
+
+  criarCotacaoPower({ nome, telefone: p.telefone, placa: '', fipe, carroApp: p.carroApp, leilao: p.leilao, interno: { mdl: p.modelId, mdlYr } })
+    .then(async (c) => {
+      if (c?.quotationCode) {
+        await sql(`UPDATE public.leads SET quotation_code = $2, negotiation_code = $3 WHERE id = $1`, [
+          leadId,
+          c.quotationCode,
+          c.negotiationCode ?? null,
+        ])
+      }
+    })
+    .catch((err) => console.error('[isa] cotacao no Power falhou:', err instanceof Error ? err.message : err))
+
+  return {
+    tipo: 'ok',
+    tabela,
+    lead: {
+      id: leadId,
+      nome,
+      marca_interesse: p.brandText,
+      modelo_interesse: p.modelText,
+      ano_interesse: p.ano,
+      valor_fipe_consultado: fipe,
+      cotacao_planos: plans.map((pl) => ({ id: pl.id, name: pl.name, monthly: pl.monthly })),
+      carro_app: p.carroApp,
+      leilao: p.leilao ? 'leilao' : 'nao',
+      estado: null,
+      placa_interesse: null,
+      combustivel: null,
+    },
+  }
+}
+
 async function criarCotacaoPower(p: {
   nome: string
   telefone: string
@@ -119,7 +232,7 @@ async function criarCotacaoPower(p: {
   const payload: Record<string, unknown> = {
     name: p.nome,
     phone: p.telefone.replace(/\D/g, ''),
-    plts: p.placa,
+    plts: p.placa || undefined,
     leadSource: Number(POWERCRM_DEFAULT_LEAD_SOURCE),
     slsmnNwId: POWERCRM_DEFAULT_SLSMN_NW_ID,
     protectedValue: p.fipe,

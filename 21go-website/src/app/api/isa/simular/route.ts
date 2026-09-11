@@ -3,6 +3,8 @@ import { pensar } from '@/lib/isa/cerebro'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import { lookupPlate } from '@/lib/plate-lookup'
 import { mensagensDaSimulacao } from '@/lib/isa/entrega.regras'
+import { acharMarca, filtrarVersoes, mensagemVersoes } from '@/lib/isa/versoes.regras'
+import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
 import type { MensagemHistorico } from '@/lib/isa/banco'
 
 export const runtime = 'nodejs'
@@ -30,9 +32,19 @@ export async function POST(req: NextRequest) {
     hora?: string
     desconto50?: { de: number; para: number } | null
     placa?: string
+    semPlaca?: { marca: string | null; modelo: string; ano: number }
     leilao?: boolean
     app?: boolean
   }
+  // Modo sem placa: mostra as versoes que a Isa listaria (nada e gravado).
+  if (b.semPlaca) {
+    const { marca: m, modelo, ano } = b.semPlaca
+    let marca = acharMarca(await listBrandsPowerCrm('carro'), m || modelo.split(' ')[0])
+    if (!marca) marca = acharMarca(await listBrandsPowerCrm('moto'), m || modelo.split(' ')[0])
+    const versoes = marca ? filtrarVersoes(await listModelsPowerCrm(marca.id, ano), modelo) : []
+    return NextResponse.json({ marca: marca?.text ?? null, versoes: versoes.map((v) => v.text), mensagem: versoes.length ? mensagemVersoes(modelo, ano, versoes) : null })
+  }
+
   // Modo placa: mostra as 2 mensagens da simulacao SEM gravar lead e SEM criar cotacao no Power.
   if (b.placa) {
     const inicio = Date.now()
