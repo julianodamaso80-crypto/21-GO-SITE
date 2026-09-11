@@ -40,7 +40,7 @@ export async function alertarDono(p: { telefone: string; nome: string | null; mo
   } catch (err) {
     const erroTemplate = err instanceof Error ? err.message : String(err)
     try {
-      await enviarTexto(para, `⚠️ Atendimento pausado - 21Go\n\nMotivo: ${motivo}\nCliente: ${p.nome || 'sem nome'}\nTelefone: ${p.telefone}\nDetalhe: ${detalhe}`)
+      await enviarTexto(para, `⚠️ Aviso do atendimento - 21Go\n\nMotivo: ${motivo}\nCliente: ${p.nome || 'sem nome'}\nTelefone: ${p.telefone}\nDetalhe: ${detalhe}`)
       await registrarEvento(p.telefone, 'alerta', { motivo: p.motivo, via: 'texto', erroTemplate }, 'sistema')
     } catch (err2) {
       await registrarEvento(p.telefone, 'alerta_falhou', {
