@@ -85,6 +85,7 @@ export function Footer() {
       <div className="border-t border-white/[0.06]">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-6 py-5">
           <p className="text-xs text-[#64748B] text-center">&copy; 2026 21Go Proteção Patrimonial Veicular. Todos os direitos reservados.</p>
+          <p className="text-xs text-[#64748B] text-center">21Go Proteção Patrimonial Veicular por JULIANO DAMASO CARDOSO DE OLIVEIRA LTDA</p>
 
           <FooterCredito />
         </div>
