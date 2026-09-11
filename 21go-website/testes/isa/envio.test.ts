@@ -80,3 +80,23 @@ test('a mesma frase nao sai duas vezes na mesma resposta (11/09/2026: "vou confi
   // partes diferentes continuam inteiras
   assert.equal(dividirEmPartes('oi\n\ntudo bem?\n\nme manda a placa').length, 3)
 })
+
+test('duas perguntas juntas: cada parte cita a mensagem que responde (dono, 11/09/2026)', async () => {
+  const { partesComCitacao } = await import('../../src/lib/isa/envio.regras.ts')
+  const wamids = ['wamid.A', 'wamid.B']
+  const r = partesComCitacao('[1] não tem problema\n\n[2] você ganha R$ 50,00 no pix', wamids)
+  assert.deepEqual(r, [
+    { texto: 'não tem problema', citar: 'wamid.A' },
+    { texto: 'você ganha R$ 50,00 no pix', citar: 'wamid.B' },
+  ])
+  // duas partes da MESMA pergunta: as duas citam a mesma mensagem
+  assert.deepEqual(partesComCitacao('[2] não tem problema\n\n[2] qualquer pessoa pode dirigir', wamids), [
+    { texto: 'não tem problema', citar: 'wamid.B' },
+    { texto: 'qualquer pessoa pode dirigir', citar: 'wamid.B' },
+  ])
+  // uma mensagem so: nao cita nada
+  assert.deepEqual(partesComCitacao('[1] pode fazer normalmente', ['wamid.A']), [{ texto: 'pode fazer normalmente', citar: null }])
+  // sem marcacao, ou marcacao que nao existe: nao cita
+  assert.deepEqual(partesComCitacao('pode fazer normalmente', wamids), [{ texto: 'pode fazer normalmente', citar: null }])
+  assert.deepEqual(partesComCitacao('[9] pode fazer', wamids), [{ texto: 'pode fazer', citar: null }])
+})

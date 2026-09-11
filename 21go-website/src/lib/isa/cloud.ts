@@ -58,9 +58,15 @@ async function postarMensagem(payload: Record<string, unknown>): Promise<string>
 }
 
 /** Texto livre — so dentro da janela de 24 h que o cliente abriu. Devolve o wamid. */
-export async function enviarTexto(to: string, texto: string): Promise<string> {
+export async function enviarTexto(to: string, texto: string, citar: string | null = null): Promise<string> {
   if (!destinoPermitido(to)) throw new EnvioBloqueado(`destino fora da allowlist: ${to.slice(0, 6)}***`)
-  return postarMensagem({ to, type: 'text', text: { body: texto, preview_url: true } })
+  // `context` = o balao de resposta do WhatsApp: a mensagem sai citando a pergunta do cliente.
+  return postarMensagem({
+    to,
+    type: 'text',
+    text: { body: texto, preview_url: true },
+    ...(citar ? { context: { message_id: citar } } : {}),
+  })
 }
 
 /**

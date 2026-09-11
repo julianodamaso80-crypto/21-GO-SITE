@@ -41,10 +41,15 @@ type MsgIA = { role: 'system' | 'user' | 'assistant'; content: string }
 
 function paraMensagensIA(historico: MensagemHistorico[]): MsgIA[] {
   const out: MsgIA[] = []
+  // Mensagens novas (depois da ultima resposta da Isa) vao numeradas quando sao mais de uma: a IA
+  // marca cada parte com [n] e o envio cita a pergunta certa (dono, 11/09/2026).
+  const iUltimaNossa = historico.map((m) => m.direction).lastIndexOf('outbound')
+  const novas = historico.slice(iUltimaNossa + 1).filter((m) => m.direction === 'inbound' && (m.content || '').trim())
+  const numero = new Map(novas.length > 1 ? novas.map((m, i) => [m.id, i + 1]) : [])
   for (const m of historico) {
     const texto = (m.content || '').trim()
     if (!texto) continue
-    if (m.direction === 'inbound') out.push({ role: 'user', content: texto })
+    if (m.direction === 'inbound') out.push({ role: 'user', content: numero.has(m.id) ? `[${numero.get(m.id)}] ${texto}` : texto })
     else if (m.sender && m.sender !== 'isa') out.push({ role: 'assistant', content: `(mensagem da equipe, ${m.sender}): ${texto}` })
     else out.push({ role: 'assistant', content: texto })
   }

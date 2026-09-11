@@ -34,7 +34,7 @@ import {
 import { transcrever } from '@/lib/isa/transcrever'
 import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura } from '@/lib/isa/ler-midia.regras'
-import { dividirEmPartes, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido } from '@/lib/isa/envio.regras'
+import { dividirEmPartes, partesComCitacao, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp } from '@/lib/isa/entrega.regras'
@@ -386,7 +386,16 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return enviou
   }
 
-  const enviou = saida.resposta ? await enviarComoGente(c, saida.resposta, ultimaInbound, visto) : false
+  // Varias perguntas juntas: cada parte sai citando a mensagem que ela responde. A ordem e a MESMA
+  // que o cerebro numerou pra IA (as mensagens do cliente depois da ultima resposta da Isa).
+  const iUltimaNossaNoHist = hist.map((m) => m.direction).lastIndexOf('outbound')
+  const wamidsDasNovas = hist
+    .slice(iUltimaNossaNoHist + 1)
+    .filter((m) => m.direction === 'inbound' && (m.content || '').trim())
+    .map((m) => m.whatsapp_message_id)
+  const enviou = saida.resposta
+    ? await enviarComoGente(c, partesComCitacao(saida.resposta, wamidsDasNovas), ultimaInbound, visto)
+    : false
 
   // Escolheu o plano e a resposta nao pediu os documentos: o proximo passo vai pelo codigo
   // (teste de 11/09/2026 — "gostei do vip, como funciona guincho?" e a IA so explicou o guincho).
@@ -651,13 +660,15 @@ async function transcreverAudios(novas: MensagemHistorico[]): Promise<void> {
  */
 export async function enviarComoGente(
   c: ContatoIsa,
-  texto: string | string[],
+  texto: string | string[] | ParteEnvio[],
   ultimaInboundWamid: string | undefined,
   visto: string | null,
   sender = 'isa',
 ): Promise<boolean> {
   // Lista = partes ja montadas (a simulacao vai inteira numa mensagem); texto = divide na linha em branco.
-  const partes = Array.isArray(texto) ? texto.filter(Boolean) : dividirEmPartes(texto)
+  const partes: ParteEnvio[] = (Array.isArray(texto) ? texto : dividirEmPartes(texto))
+    .map((p) => (typeof p === 'string' ? { texto: p, citar: null } : p))
+    .filter((p) => p.texto)
   if (partes.length === 0) return false
 
   if (ultimaInboundWamid) await marcarLidaEDigitando(ultimaInboundWamid)
@@ -675,7 +686,7 @@ export async function enviarComoGente(
       break
     }
     try {
-      const wamid = await enviarTexto(c.telefone, partes[i])
+      const wamid = await enviarTexto(c.telefone, partes[i].texto, partes[i].citar)
       enviadas++
       await upsertMessage({
         conversation_id: c.conversation_id,
@@ -686,7 +697,7 @@ export async function enviarComoGente(
         status: 'SENT',
         sender,
         message_type: 'text',
-        content: partes[i],
+        content: partes[i].texto,
         sent_at: new Date().toISOString(),
       }).catch((err) => console.error('[isa] resposta enviada mas nao gravada:', err))
     } catch (err) {
@@ -700,7 +711,7 @@ export async function enviarComoGente(
     const proxima = partes[i + 1]
     if (proxima) {
       if (ultimaInboundWamid) await marcarLidaEDigitando(ultimaInboundWamid) // o indicador some em 25 s
-      await dormir(pausaEntreSegundos(partes[i], proxima))
+      await dormir(pausaEntreSegundos(partes[i].texto, proxima.texto))
     }
   }
   return enviadas > 0

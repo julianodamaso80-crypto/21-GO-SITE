@@ -29,6 +29,28 @@ export function dividirEmPartes(texto: string): string[] {
   return [...partes.slice(0, MAX_PARTES - 1), partes.slice(MAX_PARTES - 1).join('\n\n')]
 }
 
+export interface ParteEnvio {
+  texto: string
+  /** wamid da mensagem do cliente que esta parte responde (citada no WhatsApp), ou null. */
+  citar: string | null
+}
+
+/**
+ * Chegaram varias mensagens juntas: a IA marca cada parte com [1], [2]... e aqui a marca vira a
+ * citacao da mensagem certa (dono, 11/09/2026, com o print do balao de resposta). Com UMA
+ * mensagem so nao cita nada — nao faz sentido citar o que acabou de chegar sozinho.
+ */
+export function partesComCitacao(texto: string, wamids: (string | undefined)[]): ParteEnvio[] {
+  const citavel = wamids.length > 1
+  return dividirEmPartes(texto).map((p) => {
+    const m = p.match(/^\[(\d{1,2})\]\s*/)
+    const limpo = m ? p.slice(m[0].length).trim() : p
+    const i = m ? Number(m[1]) - 1 : -1
+    const wamid = citavel && i >= 0 && i < wamids.length ? wamids[i] ?? null : null
+    return { texto: limpo, citar: wamid }
+  })
+}
+
 const palavras = (s: string) => s.split(/\s+/).filter(Boolean).length
 
 /** Segundos de "digitando..." entre a parte que acabou de sair e a proxima. */
