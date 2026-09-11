@@ -12,13 +12,14 @@ import {
   registrarEvento,
   atualizarContato,
   contatosParaRetomar,
+  reiniciarContato,
   type ContatoIsa,
   type MensagemHistorico,
 } from '@/lib/isa/banco'
 import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono } from '@/lib/isa/acoes'
 import { alertarDono } from '@/lib/isa/alertas'
-import { entradaPopup, mensagemDesconto50 } from '@/lib/isa/dono.regras'
+import { entradaPopup, mensagemDesconto50, ehReiniciar, numeroDeTeste, respostaDeSupervisor } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import {
@@ -95,9 +96,21 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const novas = await inboundsNovas(c.conversation_id, c.processado_ate)
   await transcreverAudios(novas)
 
-  // O numero de alertas do dono conversa com a Isa pelo mesmo canal, mas nao e cliente: e a
-  // resposta dele a um pedido de desconto (botao Autorizar/Recusar ou o valor em texto).
-  if (c.telefone === numeroDeAlerta()) {
+  // Numeros de teste do dono: "/reiniciar" zera a conversa — a Isa esquece o que veio antes (as
+  // mensagens continuam no painel). Cliente de verdade nunca reinicia.
+  const iReiniciar = novas.map((m) => ehReiniciar(m.content)).lastIndexOf(true)
+  if (iReiniciar >= 0 && numeroDeTeste(c.telefone, { allowlist: process.env.ISA_ALLOWLIST, alerta: numeroDeAlerta() })) {
+    const aviso = '🔄 conversa de teste reiniciada — pode começar do zero'
+    await enviarComoGente(c, [aviso], novas[iReiniciar].whatsapp_message_id, visto, 'sistema')
+    await reiniciarContato(c.telefone)
+    await registrarEvento(c.telefone, 'reiniciou', null, 'dono')
+    await liberar(c.telefone, visto, false)
+    return true
+  }
+
+  // O numero de alertas (4240) tambem testa como cliente. So fala como supervisor quando ha um
+  // pedido de desconto esperando resposta ou quando toca num botao do alerta.
+  if (c.telefone === numeroDeAlerta() && respostaDeSupervisor({ aguardandoDono: c.aguardando_dono, payloads: payloadsDe(novas) })) {
     await atenderDono(c, novas)
     await liberar(c.telefone, visto, false)
     return false
@@ -150,7 +163,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // "qual a sua duvida?") + os R$ 50, que so aqui podem aparecer — o template nao fala de oferta.
   const botao = payloadsDe(novas).find((p) => p === PAYLOAD_COBRE || p === PAYLOAD_DUVIDA)
   if (botao) {
-    const lead5 = await leadDoCliente(c.telefone, c.lead_id).catch(() => null)
+    const lead5 = await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)
     const plano = lead5 ? planoDoCliente(fatosDoLead(lead5, null).planos, lead5.cotacao_plano ?? null) : null
     if (botao === PAYLOAD_DUVIDA || (lead5 && plano)) {
       const ab = await aberturaSePrecisa(c, agora)
@@ -185,7 +198,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     }
   }
 
-  const lead = await leadDoCliente(c.telefone, c.lead_id).catch(() => null)
+  const lead = await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)
   if (lead && lead.id !== c.lead_id) await atualizarContato(c.telefone, { lead_id: lead.id })
   const desconto =
     c.desconto50_em && c.desconto50_de && c.desconto50_para
@@ -193,7 +206,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       : null
   const fatos = lead ? fatosDoLead(lead, desconto) : null
 
-  const hist = await historico(c.conversation_id, 30)
+  const hist = await historico(c.conversation_id, 30, c.reiniciada_em)
   const ultimaNossa = [...hist].reverse().find((m) => m.direction === 'outbound')
   const saida = await pensar({
     nome: c.nome ?? lead?.nome ?? null,
@@ -416,7 +429,7 @@ async function cotarModeloEEnviar(
 
 /** "bom dia, Fulano 😃" quando a Isa ainda nao falou hoje (ou ha 4 h); senao null. */
 async function aberturaSePrecisa(c: ContatoIsa, agora: Date): Promise<string | null> {
-  const hist = await historico(c.conversation_id as string, 5)
+  const hist = await historico(c.conversation_id as string, 5, c.reiniciada_em)
   const nossa = [...hist].reverse().find((m) => m.direction === 'outbound')
   return precisaCumprimentar(nossa ? new Date(nossa.criada_em) : null, agora)
     ? abertura(cumprimento(agora), primeiroNomeDe(c.nome))

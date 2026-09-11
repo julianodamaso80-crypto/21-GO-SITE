@@ -81,3 +81,26 @@ export function entradaPopup(texto: string): { popup: boolean; leadId: string | 
   const pl = texto.match(/^Plano:\s*(.+?)\s*·/m)
   return { popup, leadId: popup && m ? m[1] : null, plano: popup && pl ? pl[1] : null }
 }
+
+/** "/reiniciar" sozinho na mensagem — comando de teste do dono. */
+export function ehReiniciar(texto: string | null): boolean {
+  return /^\s*\/reiniciar\s*$/i.test(texto || '')
+}
+
+/**
+ * Numeros de teste do dono (a allowlist e o de alertas). So eles reiniciam a conversa: um cliente
+ * que reiniciasse ganharia outro desconto de R$ 50.
+ */
+export function numeroDeTeste(telefone: string, p: { allowlist: string | undefined; alerta: string | null }): boolean {
+  const lista = (p.allowlist ?? '').split(',').map((n) => n.trim()).filter(Boolean)
+  return lista.includes(telefone) || (!!p.alerta && telefone === p.alerta)
+}
+
+/**
+ * O numero de alertas (4240) tambem testa como cliente. Ele so fala como SUPERVISOR quando ha um
+ * pedido de desconto esperando resposta ("desconto:<tel>" / "valor:<tel>") ou quando toca num botao
+ * do alerta. "desconto" sozinho e o estado dele como cliente, esperando o supervisor.
+ */
+export function respostaDeSupervisor(p: { aguardandoDono: string | null; payloads: string[] }): boolean {
+  return /^(desconto|valor):\d+$/.test(p.aguardandoDono || '') || p.payloads.some((x) => x.startsWith(`${PREFIXO}:`))
+}

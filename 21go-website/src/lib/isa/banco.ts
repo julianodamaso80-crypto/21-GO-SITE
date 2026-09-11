@@ -62,6 +62,8 @@ export interface ContatoIsa {
   janela_ate: string | null
   ultima_resposta_em: string | null
   opcoes_versao: OpcoesVersao | null
+  /** /reiniciar (numeros de teste): a Isa ignora historico e simulacoes de antes disto. */
+  reiniciada_em: string | null
 }
 
 /** Versoes que a Isa listou (cotacao sem placa), esperando o cliente responder o numero. */
@@ -176,17 +178,39 @@ export async function inboundsNovas(conversationId: string, processadoAte: strin
   )
 }
 
-/** Ultimas `limite` mensagens da conversa (contexto da IA), da mais antiga pra mais nova. */
-export async function historico(conversationId: string, limite = 30): Promise<MensagemHistorico[]> {
+/**
+ * Ultimas `limite` mensagens da conversa (contexto da IA), da mais antiga pra mais nova. `desde`
+ * = reiniciada_em: depois de um /reiniciar a Isa nao enxerga o que veio antes.
+ */
+export async function historico(conversationId: string, limite = 30, desde: string | null = null): Promise<MensagemHistorico[]> {
   const r = await sql<MensagemHistorico>(
     `SELECT id, whatsapp_message_id, direction, sender, message_type, content, NULL AS raw_payload,
             (created_at AT TIME ZONE 'UTC') AS criada_em
      FROM public.messages
      WHERE conversation_id = $1 AND evolution_instance = 'cloud_isa'
+       AND (created_at AT TIME ZONE 'UTC') > COALESCE($3::timestamptz, '-infinity'::timestamptz)
      ORDER BY created_at DESC LIMIT $2`,
-    [conversationId, limite],
+    [conversationId, limite, desde],
   )
   return r.reverse()
+}
+
+/**
+ * /reiniciar dos numeros de teste: zera o que a Isa sabe do contato (desconto dado, pausa, lead,
+ * genero, versoes...) e marca o instante — historico e simulacoes de antes deixam de valer. As
+ * mensagens ficam no banco e no painel.
+ */
+export async function reiniciarContato(telefone: string): Promise<void> {
+  await sql(
+    `UPDATE public.isa_contatos SET
+       reiniciada_em = now(), lead_id = NULL, ligada = true, pausa_motivo = NULL, pausa_por = NULL,
+       pausada_em = NULL, transferido_em = NULL, entrada = NULL, desconto50_em = NULL,
+       desconto50_de = NULL, desconto50_para = NULL, aguardando_dono = NULL, genero = NULL,
+       preco_da_tabela = false, retomada_em = NULL, abordagem5min_em = NULL, opcoes_versao = NULL,
+       ultima_resposta_em = NULL, updated_at = now()
+     WHERE telefone = $1`,
+    [telefone],
+  )
 }
 
 /** Troca o "[áudio]" pela transcricao — o audio em si nunca e gravado no banco. */

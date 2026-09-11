@@ -34,8 +34,11 @@ export interface LeadIsa {
 const COLUNAS = `id, nome, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado,
   cotacao_planos, carro_app, leilao, estado, placa_interesse, cotacao_plano`
 
-/** A simulacao mais recente do telefone (ou a do lead_id que a propria Isa gravou). */
-export async function leadDoCliente(telefone: string, leadId: string | null): Promise<LeadIsa | null> {
+/**
+ * A simulacao mais recente do telefone (ou a do lead_id que a propria Isa gravou). `desde` =
+ * reiniciada_em do contato: depois de um /reiniciar, simulacao antiga nao conta.
+ */
+export async function leadDoCliente(telefone: string, leadId: string | null, desde: string | null = null): Promise<LeadIsa | null> {
   if (leadId) {
     // Lead de consultor nunca entra, nem pelo link do popup (REGRA 0.1).
     const r = await sql<LeadIsa>(`SELECT ${COLUNAS} FROM public.leads WHERE id = $1 AND consultor_slug IS NULL LIMIT 1`, [leadId])
@@ -47,8 +50,9 @@ export async function leadDoCliente(telefone: string, leadId: string | null): Pr
        AND consultor_slug IS NULL
        AND cotacao_planos IS NOT NULL
        AND created_at > (now() AT TIME ZONE 'UTC') - interval '30 days'
+       AND created_at > COALESCE($2::timestamptz AT TIME ZONE 'UTC', '-infinity'::timestamp)
      ORDER BY created_at DESC LIMIT 1`,
-    [telefone],
+    [telefone, desde],
   )
   return r[0] ?? null
 }

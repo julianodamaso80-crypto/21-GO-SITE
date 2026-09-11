@@ -32,7 +32,7 @@ export async function pausar(telefone: string, motivo: string, detalhe: Record<s
 
 /** Resumo que vai pro time (no link do 4824 e no alerta). So dados da simulacao — nunca inventado. */
 export async function resumoDoCliente(c: ContatoIsa): Promise<{ texto: string; veiculo: string; plano: string }> {
-  const lead = await leadDoCliente(c.telefone, c.lead_id).catch(() => null)
+  const lead = await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)
   if (!lead) return { texto: `Nome: ${c.nome || '-'}`, veiculo: '-', plano: '-' }
   const f = fatosDoLead(lead, null)
   const veiculo = `${f.veiculo.descricao}${f.veiculo.ano ? ` ${f.veiculo.ano}` : ''}`
@@ -104,7 +104,7 @@ export async function concederDesconto50(
   planoNaTela: string | null = null,
 ): Promise<{ de: number; para: number } | null> {
   if (c.desconto50_em) return null
-  const lead = await leadDoCliente(c.telefone, leadId ?? c.lead_id).catch(() => null)
+  const lead = await leadDoCliente(c.telefone, leadId ?? c.lead_id, c.reiniciada_em).catch(() => null)
   if (!lead) return null
   const fatos = fatosDoLead(lead, null)
   const plano = planoDoCliente(fatos.planos, planoNaTela ?? lead.cotacao_plano ?? null)
@@ -136,7 +136,7 @@ export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]):
 
     const [cliente] = await sql<ContatoIsa>(`SELECT * FROM public.isa_contatos WHERE telefone = $1`, [telCliente])
     if (!cliente) continue
-    const lead = await leadDoCliente(cliente.telefone, cliente.lead_id).catch(() => null)
+    const lead = await leadDoCliente(cliente.telefone, cliente.lead_id, cliente.reiniciada_em).catch(() => null)
     const ativacao = cliente.desconto50_para ? Number(cliente.desconto50_para) : lead ? fatosDoLead(lead, null).ativacaoReferencia : null
 
     if (r.acao === 'autorizar') {

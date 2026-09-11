@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (!t) return NextResponse.json({ erro: 'telefone' }, { status: 400 })
   const { contato, itens } = await abrirConversa(t)
   if (!contato) return NextResponse.json({ erro: 'nao encontrado' }, { status: 404 })
-  const lead = await leadDoCliente(t, contato.lead_id).catch(() => null)
+  const lead = await leadDoCliente(t, contato.lead_id, contato.reiniciada_em).catch(() => null)
   const desconto =
     contato.desconto50_de && contato.desconto50_para
       ? { de: Number(contato.desconto50_de), para: Number(contato.desconto50_para) }

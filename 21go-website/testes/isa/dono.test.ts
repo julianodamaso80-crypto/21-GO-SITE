@@ -9,6 +9,9 @@ import {
   mensagemDonoRecusou,
   mensagemTransferencia,
   entradaPopup,
+  ehReiniciar,
+  numeroDeTeste,
+  respostaDeSupervisor,
 } from '../../src/lib/isa/dono.regras.ts'
 
 test('o botao do alerta carrega o telefone do cliente e a decisao', () => {
@@ -60,4 +63,27 @@ test('entrada pelo popup: "Quero meu desconto" + o lead do link do PDF', () => {
   assert.deepEqual(entradaPopup(txt), { popup: true, leadId: 'lead_b4a6d7cb5bc1ee3d', plano: null })
   assert.deepEqual(entradaPopup('quero meu desconto'), { popup: true, leadId: null, plano: null })
   assert.deepEqual(entradaPopup('quanto fica?'), { popup: false, leadId: null, plano: null })
+})
+
+test('/reiniciar: so o comando sozinho, e so dos numeros de teste do dono', () => {
+  assert.equal(ehReiniciar('/reiniciar'), true)
+  assert.equal(ehReiniciar('  /Reiniciar  '), true)
+  assert.equal(ehReiniciar('quero /reiniciar'), false)
+  assert.equal(ehReiniciar('reiniciar'), false)
+  assert.equal(ehReiniciar(null), false)
+  const cfg = { allowlist: '5521992208062', alerta: '5521965774240' }
+  assert.equal(numeroDeTeste('5521992208062', cfg), true)
+  assert.equal(numeroDeTeste('5521965774240', cfg), true)
+  // cliente de verdade nunca reinicia (ganharia outro desconto de R$ 50)
+  assert.equal(numeroDeTeste('5521988887777', cfg), false)
+  assert.equal(numeroDeTeste('5521992208062', { allowlist: '', alerta: null }), false)
+})
+
+test('o 4240 so e supervisor com pedido de desconto aberto ou tocando no botao do alerta', () => {
+  assert.equal(respostaDeSupervisor({ aguardandoDono: null, payloads: [] }), false)
+  assert.equal(respostaDeSupervisor({ aguardandoDono: 'desconto:5521992208062', payloads: [] }), true)
+  assert.equal(respostaDeSupervisor({ aguardandoDono: 'valor:5521992208062', payloads: [] }), true)
+  assert.equal(respostaDeSupervisor({ aguardandoDono: null, payloads: ['isa-desc:5521992208062:sim'] }), true)
+  // 'desconto' sozinho e o estado do 4240 como CLIENTE esperando a resposta — nao e supervisor
+  assert.equal(respostaDeSupervisor({ aguardandoDono: 'desconto', payloads: [] }), false)
 })
