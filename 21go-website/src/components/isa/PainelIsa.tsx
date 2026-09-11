@@ -558,6 +558,15 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             : 'Isa desligada: quem atende esta conversa é você.'}
         </p>
         <div className="flex items-end gap-2">
+          <GravadorDeAudio
+            telefone={telefone}
+            desligado={jan.tom === 'fechada' || ocupado}
+            aoEnviar={async () => {
+              await carregar()
+              aoMudar()
+            }}
+            aoFalhar={setAviso}
+          />
           <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={1}
             disabled={jan.tom === 'fechada'}
             onKeyDown={(e) => {
@@ -575,6 +584,103 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
         </div>
       </form>
     </>
+  )
+}
+
+/**
+ * Responder por ÁUDIO (dono, 11/09/2026). Grava no navegador (webm no Chrome/Android, mp4 no
+ * iPhone) e manda pro servidor, que converte pra ogg/opus — o formato de mensagem de voz da Meta.
+ */
+function GravadorDeAudio({
+  telefone,
+  desligado,
+  aoEnviar,
+  aoFalhar,
+}: {
+  telefone: string
+  desligado: boolean
+  aoEnviar: () => Promise<void>
+  aoFalhar: (m: string) => void
+}) {
+  const [gravando, setGravando] = useState(false)
+  const [segundos, setSegundos] = useState(0)
+  const [enviando, setEnviando] = useState(false)
+  const rec = useRef<MediaRecorder | null>(null)
+  const pedacos = useRef<Blob[]>([])
+  const cancelado = useRef(false)
+
+  useEffect(() => {
+    if (!gravando) return
+    const t = setInterval(() => setSegundos((s) => s + 1), 1000)
+    return () => clearInterval(t)
+  }, [gravando])
+
+  async function comecar() {
+    try {
+      const fluxo = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const tipo = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus']
+        .find((t) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t))
+      const r = new MediaRecorder(fluxo, tipo ? { mimeType: tipo } : undefined)
+      pedacos.current = []
+      cancelado.current = false
+      r.ondataavailable = (e) => { if (e.data.size) pedacos.current.push(e.data) }
+      r.onstop = async () => {
+        fluxo.getTracks().forEach((t) => t.stop())
+        setGravando(false)
+        const blob = new Blob(pedacos.current, { type: r.mimeType || 'audio/webm' })
+        if (cancelado.current || blob.size < 1000) return
+        setEnviando(true)
+        try {
+          const form = new FormData()
+          form.append('telefone', telefone)
+          form.append('audio', blob, 'audio')
+          const resp = await fetch('/api/atendimento/responder-audio', { method: 'POST', body: form, cache: 'no-store' })
+          const j = (await resp.json().catch(() => ({}))) as { erro?: string }
+          if (!resp.ok) throw new Error(j.erro || `erro ${resp.status}`)
+          await aoEnviar()
+        } catch (err) {
+          aoFalhar(err instanceof Error ? err.message : 'não deu pra enviar o áudio')
+        } finally {
+          setEnviando(false)
+        }
+      }
+      r.start()
+      rec.current = r
+      setSegundos(0)
+      setGravando(true)
+    } catch {
+      aoFalhar('não consegui acessar o microfone — autorize no navegador')
+    }
+  }
+
+  const parar = (cancelar: boolean) => {
+    cancelado.current = cancelar
+    rec.current?.stop()
+  }
+
+  if (gravando) {
+    return (
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={() => parar(true)} title="cancelar"
+          className="h-11 rounded-xl border border-white/15 px-3 text-[13px] text-white/70 hover:bg-white/5">
+          cancelar
+        </button>
+        <span className="min-w-[52px] text-center text-[13px] font-semibold text-[#C7D301] tabular-nums">
+          ● {String(Math.floor(segundos / 60)).padStart(2, '0')}:{String(segundos % 60).padStart(2, '0')}
+        </span>
+        <button type="button" onClick={() => parar(false)} title="enviar áudio"
+          className="h-11 rounded-xl bg-[#C7D301] px-4 font-semibold text-[#141d45] hover:brightness-110">
+          enviar
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button type="button" onClick={comecar} disabled={desligado || enviando} title="gravar áudio"
+      className="h-11 w-11 shrink-0 rounded-xl border border-white/[0.08] bg-[#0f1638] text-lg text-white/70 transition hover:border-[#C7D301]/60 hover:text-[#C7D301] disabled:opacity-30">
+      {enviando ? '…' : '🎤'}
+    </button>
   )
 }
 

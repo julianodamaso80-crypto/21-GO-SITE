@@ -70,6 +70,27 @@ export async function enviarTexto(to: string, texto: string, citar: string | nul
 }
 
 /**
+ * Mensagem de VOZ (o balao com o play). Sobe o arquivo na Meta e manda pelo id — ogg/opus, o
+ * unico formato que vira nota de voz. Usado pela resposta por audio do painel.
+ */
+export async function enviarAudio(to: string, bytes: Buffer, citar: string | null = null): Promise<string> {
+  if (!destinoPermitido(to)) throw new EnvioBloqueado(`destino fora da allowlist: ${to.slice(0, 6)}***`)
+  const form = new FormData()
+  form.append('messaging_product', 'whatsapp')
+  form.append('type', 'audio/ogg')
+  form.append('file', new Blob([new Uint8Array(bytes)], { type: 'audio/ogg' }), 'audio.ogg')
+  const up = await fetch(graph(`${phoneId()}/media`), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token()}` },
+    body: form,
+    signal: AbortSignal.timeout(30_000),
+  })
+  const j = (await up.json().catch(() => ({}))) as { id?: string; error?: { message?: string } }
+  if (!up.ok || !j.id) throw new Error(`Cloud API media ${up.status}: ${j.error?.message ?? 'sem id'}`)
+  return postarMensagem({ to, type: 'audio', audio: { id: j.id }, ...(citar ? { context: { message_id: citar } } : {}) })
+}
+
+/**
  * Template aprovado (UTILITY). `variaveis` na ordem dos {{1}}, {{2}}... do corpo; `payloads`, um
  * por botao de resposta rapida — volta no webhook quando alguem toca no botao.
  */

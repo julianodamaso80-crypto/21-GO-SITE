@@ -55,7 +55,10 @@ WORKDIR /app
 
 # Somente as libs de runtime que o Chrome headless precisa (SEM instalar o chromium do
 # apt). O binario do Chrome vem do cache do puppeteer, copiado do builder logo abaixo.
+# ffmpeg: converte o audio gravado no painel (webm/mp4) pra ogg/opus, o unico formato que a Meta
+# aceita como mensagem de voz (pedido do dono, 11/09/2026).
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
     fonts-liberation \
     fonts-noto-color-emoji \
     ca-certificates \
