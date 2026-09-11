@@ -1653,6 +1653,13 @@ export default function CotacaoPage() {
                   <Lock className="w-3.5 h-3.5" />
                   Seus dados estão seguros. Sem spam.
                 </div>
+                {/* Consentimento que a Meta exige pra Isa mandar o resultado. So na casa: o
+                    cliente de consultor nunca recebe mensagem nossa (REGRA 0.1). */}
+                {!consultor && (
+                  <p className="mt-1 text-center text-xs text-[#94A3B8]">
+                    Você recebe o resultado da simulação no seu WhatsApp.
+                  </p>
+                )}
               </div>
 
               {/* Trust badges */}

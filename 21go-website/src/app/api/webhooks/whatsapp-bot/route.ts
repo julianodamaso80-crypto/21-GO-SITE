@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { upsertConversation, upsertMessage, phoneToJid } from '@/lib/supabase-store'
 import { assinaturaConfere, mensagensDoNumero, podeResponder } from '@/lib/whatsapp-cloud'
+import { mensagemJaGravada, registrarInbound } from '@/lib/isa/banco'
+import { processarFila } from '@/lib/isa/worker'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -11,8 +13,8 @@ export const dynamic = 'force-dynamic'
  * Só a WABA de vendas aponta para cá, via override_callback_uri — o app "21 GO" continua com o
  * callback do CRM (crm21go.site) para o número dele. Mesmo assim filtramos por phone_number_id.
  *
- * Etapa atual: RECEBE E GRAVA, não responde nada. A decisão da allowlist só vai para o log,
- * para provar a trava antes de existir qualquer envio.
+ * Grava a mensagem e, se ela e nova, coloca o cliente na fila da Isa (src/lib/isa/worker.ts).
+ * Quem responde e o worker — sempre atras da trava de teste (ISA_MODO_TESTE / ISA_ALLOWLIST).
  *
  * Responde 200 mesmo em erro: a Meta desativa o endpoint que devolve erro repetido. Isso inclui
  * assinatura inválida — se o App Secret for trocado no painel e não aqui, tudo passa a ser
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest) {
   }
 
   const phoneId = process.env.WA_PHONE_ID ?? ''
+  let chegouNova = false
   for (const m of mensagensDoNumero(payload, phoneId)) {
     const jid = phoneToJid(m.from) ?? `${m.from}@s.whatsapp.net`
     const responderia = podeResponder(m.from, {
@@ -57,6 +60,9 @@ export async function POST(req: NextRequest) {
     console.log(`[isa] recebida ${m.tipo} de ${m.from.slice(0, 6)}*** | responderia=${responderia}`)
 
     try {
+      // A Meta reentrega eventos. A gravacao ja e idempotente, mas a resposta nao seria: so
+      // mensagem que ainda nao existia coloca o cliente na fila da Isa.
+      const nova = !(await mensagemJaGravada(m.id).catch(() => false))
       const conversa = await upsertConversation({
         jid,
         evolution_instance: ORIGEM,
@@ -75,9 +81,21 @@ export async function POST(req: NextRequest) {
         raw_payload: payload,
         sent_at: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
       })
+      if (nova) {
+        await registrarInbound({ telefone: m.from, conversationId: conversa.id, nome: m.nome })
+        chegouNova = true
+      }
     } catch (err) {
       console.error('[isa] falha ao gravar mensagem', m.id, err)
     }
+  }
+
+  // Responde a Meta ja; a Isa entra quando o cliente parar de digitar. Se o container cair antes,
+  // o cron de 1 em 1 minuto pega — o estado da fila mora no banco.
+  if (chegouNova) {
+    setTimeout(() => {
+      processarFila().catch((err) => console.error('[isa] fila (webhook):', err))
+    }, 10_500)
   }
 
   return NextResponse.json({ ok: true })
