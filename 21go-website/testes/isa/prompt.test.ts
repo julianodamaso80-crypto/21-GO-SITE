@@ -215,3 +215,19 @@ test('indicacao, livre condutor e sem CNH entram no que ela sabe (dono, 11/09/20
   assert.ok(!AINDA_NAO_SABE.some((x: string) => x.includes('livre condutor')), 'livre condutor saiu do que nao sabe')
   assert.ok(!AINDA_NAO_SABE.some((x: string) => x.includes('indicação')), 'indicacao saiu do que nao sabe')
 })
+
+test('nome de CAMPO do JSON tambem nunca vai pro cliente (11/09/2026: saiu "pronta")', () => {
+  assert.equal(comporResposta(null, 'pronta', null), '')
+  assert.equal(comporResposta('fora_do_assunto', 'pronta', null), RESPOSTAS_PRONTAS.foraDoAssunto)
+  for (const campo of ['resposta', 'gatilho', 'genero', 'placa', 'sem_placa', 'leilao', 'app']) {
+    assert.equal(comporResposta(null, campo, null), '', campo)
+  }
+  // texto de verdade continua passando
+  assert.equal(comporResposta(null, 'me manda a placa do veículo', null), 'me manda a placa do veículo')
+})
+
+test('cumprimento ou mensagem truncada nao e fora do assunto (11/09/2026: "oi q")', () => {
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
+  assert.match(p, /cumprimento[^
+]*NÃO é fora do assunto/i)
+})
