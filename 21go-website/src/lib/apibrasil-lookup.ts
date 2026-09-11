@@ -1,4 +1,5 @@
 import 'server-only'
+import { resultadosDaApiBrasil } from './apibrasil.regras'
 
 /**
  * Consulta de placa via API Brasil — endpoint /consulta/veiculos/credits.
@@ -50,32 +51,15 @@ interface ApiBrasilCreditsResponse {
   balance_before?: string
   tax?: string
   valor_consulta?: number
-  /** 'fipe' devolve a lista direto; o formato antigo ('fipe-chassi') vinha em `resultados`. */
-  data?: ResultadoApiBrasil[] | { resultados?: ResultadoApiBrasil[] }
-}
-
-interface ResultadoApiBrasil {
-  anoFabricacao?: number
-  anoModelo?: string | number
-  categoria?: string
-  chassi?: string
-  codigoFipe?: string
-  combustivel?: string
-  cor?: string
-  historico?: Array<{ mes: string; valor: number }>
-  marca?: string
-  mesReferencia?: string
-  modelo?: string
-  principal?: boolean
-  valor?: number
+  /** Onde fica a lista depende do tipo — ver resultadosDaApiBrasil. */
+  data?: unknown
 }
 
 /**
  * A consulta de R$ 0,10 ('fipe-chassi') foi removida pra sempre por ordem do dono (11/09/2026) —
  * ele quer so a de R$ 0,03, que NAO existe nesta conta (tipos medidos: fipe R$ 0,06, fipe-chassi
- * R$ 0,10, agregados-basica R$ 0,14). A 'fipe' fica pronta e DESLIGADA ate ele autorizar
- * (APIBRASIL_FIPE=on). Desligada, a cascata segue sem API Brasil: Parallelum pelo codFipe do
- * Power, senao atendimento/confirmacao.
+ * R$ 0,10, agregados-basica R$ 0,14); autorizou a 'fipe' de R$ 0,06 no mesmo dia. Liga com
+ * APIBRASIL_FIPE=on e so roda quando o Power nao resolve (ver plate-lookup.ts).
  */
 export function isApiBrasilConfigured(): boolean {
   return Boolean(APIBRASIL_TOKEN) && process.env.APIBRASIL_FIPE === 'on'
@@ -140,9 +124,8 @@ export async function lookupApiBrasilByPlate(
     return null
   }
 
-  // 'fipe' devolve a lista direto em `data`; o formato antigo vinha em `data.resultados`.
-  const resultados = Array.isArray(raw.data) ? raw.data : raw.data?.resultados
-  if (!resultados || resultados.length === 0) {
+  const resultados = resultadosDaApiBrasil(raw.data)
+  if (resultados.length === 0) {
     console.warn('[apibrasil] sem resultados pra placa', normalized)
     return null
   }

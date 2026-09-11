@@ -355,7 +355,9 @@ export async function lookupPlate(
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ETAPA 2 — API Brasil pela placa (FIPE OFICIAL, fonte de verdade do valor)
+  // ETAPA 2 — API Brasil pela placa, SO quando o Power nao resolve (dono, 11/09/2026: "qd ele
+  // nao achar no power ele tem q procurar no api brasil"). Antes rodava em toda placa; cada
+  // consulta e paga (R$ 0,06).
   // ═══════════════════════════════════════════════════════════════════════════
   let fipeValue = 0
   let fipeCode = pcCodFipe
@@ -371,7 +373,8 @@ export async function lookupPlate(
   let abCategoriaRaw = ''
   let fipeSource: 'apibrasil' | 'parallelum' | null = null
 
-  if (isApiBrasilConfigured()) {
+  const tentarApiBrasil = async (): Promise<void> => {
+    if (!isApiBrasilConfigured()) return
     try {
       const ab = await lookupApiBrasilByPlate(normalized)
       if (ab && ab.fipeValue > 0) {
@@ -396,8 +399,10 @@ export async function lookupPlate(
     }
   }
 
+  if (!pcCodFipe || !pcYear) await tentarApiBrasil()
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // ETAPA 3 — Parallelum por codFipe+ano (fallback se API Brasil falhou)
+  // ETAPA 3 — Parallelum pelo codFipe+ano do Power
   // ═══════════════════════════════════════════════════════════════════════════
   if (fipeValue <= 0) {
     if (!pcCodFipe || !pcYear) {
@@ -430,6 +435,8 @@ export async function lookupPlate(
         err instanceof Error ? err.message : err,
       )
     }
+    // O Power achou a placa mas o valor nao veio: ai sim a API Brasil.
+    if (fipeValue <= 0) await tentarApiBrasil()
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
