@@ -217,10 +217,10 @@ function Login({ aoEntrar }: { aoEntrar: (u: string) => void }) {
         </div>
         <label className="mb-1 block text-[11px] uppercase tracking-[0.18em] text-white/50">usuário</label>
         <input value={usuario} onChange={(e) => setU(e.target.value)} autoCapitalize="none" autoComplete="username"
-          className="mb-4 w-full rounded-lg border border-white/10 bg-[#141d45] px-3 py-2.5 outline-none focus:border-[#C7D301]" />
+          className="mb-4 w-full rounded-lg border border-white/10 bg-[#141d45] px-3 py-2.5 text-[#E9ECF8] outline-none focus:border-[#C7D301]" />
         <label className="mb-1 block text-[11px] uppercase tracking-[0.18em] text-white/50">senha</label>
         <input type="password" value={senha} onChange={(e) => setS(e.target.value)} autoComplete="current-password"
-          className="mb-6 w-full rounded-lg border border-white/10 bg-[#141d45] px-3 py-2.5 outline-none focus:border-[#C7D301]" />
+          className="mb-6 w-full rounded-lg border border-white/10 bg-[#141d45] px-3 py-2.5 text-[#E9ECF8] outline-none focus:border-[#C7D301]" />
         {erro && <p className="mb-4 rounded-md bg-red-500/15 px-3 py-2 text-sm text-red-200">{erro}</p>}
         <button disabled={indo} className="w-full rounded-lg bg-[#F2911D] py-3 font-semibold text-[#141d45] transition hover:brightness-110 disabled:opacity-50">
           {indo ? 'entrando…' : 'Entrar'}
@@ -285,7 +285,7 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
 
         <div className="px-4 pb-3">
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="buscar nome ou telefone"
-            className="w-full rounded-lg border border-white/[0.08] bg-[#0f1638] px-3 py-2 text-sm outline-none placeholder:text-white/30 focus:border-[#C7D301]/60" />
+            className="w-full rounded-lg border border-white/[0.08] bg-[#0f1638] px-3 py-2 text-sm text-[#E9ECF8] outline-none placeholder:text-white/30 focus:border-[#C7D301]/60" />
         </div>
 
         <nav className="flex gap-1.5 overflow-x-auto px-4 pb-3 [scrollbar-width:none]">
@@ -567,7 +567,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
               }
             }}
             placeholder={jan.tom === 'fechada' ? 'janela de 24h fechada — a Meta só aceita template' : 'responder pelo 98004-0964…'}
-            className="max-h-40 min-h-[44px] flex-1 resize-y rounded-xl border border-white/[0.08] bg-[#0f1638] px-3 py-2.5 text-[15px] outline-none placeholder:text-white/30 focus:border-[#C7D301]/60 disabled:opacity-40" />
+            className="max-h-40 min-h-[44px] flex-1 resize-y rounded-xl border border-white/[0.08] bg-[#0f1638] px-3 py-2.5 text-[15px] text-[#E9ECF8] caret-[#C7D301] outline-none placeholder:text-white/30 focus:border-[#C7D301]/60 disabled:opacity-40" />
           <button disabled={ocupado || !texto.trim() || jan.tom === 'fechada'}
             className="h-11 rounded-xl bg-[#F2911D] px-5 font-semibold text-[#141d45] transition hover:brightness-110 disabled:opacity-30">
             Enviar
