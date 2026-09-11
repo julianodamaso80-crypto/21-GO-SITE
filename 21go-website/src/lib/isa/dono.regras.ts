@@ -55,9 +55,13 @@ export function mensagemDescontoDoDono(d: { de: number; para: number }): string 
   return `consegui um desconto bem legal pra gente fechar hoje: de ${brl(d.de)} por ${brl(d.para)} 🎉\n\nbora seguir?`
 }
 
-/** Texto do "recusar" — redacao minha, a confirmar com o dono antes da liberacao. */
-export function mensagemDonoRecusou(ativacao: number): string {
-  return `conversei com meu supervisor e infelizmente não consegui um desconto a mais dessa vez 🙏🏼\n\na ativação continua ${brl(ativacao)}, e o desconto que dá pra ter na mensalidade é o do adesivo e pagando 5 dias antes`
+/**
+ * Texto do "recusar" — redacao minha, a confirmar com o dono antes da liberacao. Adesivo so pra
+ * DDD 21 (dono, 11/09/2026: ele so e colado na sede, em Campo Grande).
+ */
+export function mensagemDonoRecusou(ativacao: number, comAdesivo = true): string {
+  const desconto = comAdesivo ? 'o do adesivo e pagando 5 dias antes' : 'pagando 5 dias antes do vencimento'
+  return `conversei com meu supervisor e infelizmente não consegui um desconto a mais dessa vez 🙏🏼\n\na ativação continua ${brl(ativacao)}, e o desconto que dá pra ter na mensalidade é ${desconto}`
 }
 
 const TEXTO_TRANSFERENCIA: Record<string, string> = {

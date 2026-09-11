@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pensar } from '@/lib/isa/cerebro'
+import { falaDeAdesivo } from '@/lib/isa/prompt.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import { lookupPlate } from '@/lib/plate-lookup'
 import { mensagensDaSimulacao } from '@/lib/isa/entrega.regras'
@@ -105,6 +106,8 @@ export async function POST(req: NextRequest) {
     genero: b.genero ?? null,
     fatos,
     jaGanhouDesconto: !!b.desconto50,
+    // sem telefone no simulador, testa como cliente do Rio
+    falaDeAdesivo: b.telefone ? falaDeAdesivo(b.telefone) : true,
     historico,
     agora: b.hora ? new Date(b.hora) : new Date(),
     cumprimentar: (b.mensagens || []).every((m) => m.de === 'cliente'),

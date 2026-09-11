@@ -112,3 +112,23 @@ test('trava de codigo: resposta que fala de modelo, API, prompt ou se admite rob
     'posso te ajudar com a sua simulação?',
   ]) assert.equal(vazaInterno(r), false, r)
 })
+
+test('adesivo: so com DDD 21, e so colando na sede em Campo Grande (dono, 11/09/2026)', async () => {
+  const { falaDeAdesivo } = await import('../../src/lib/isa/prompt.regras.ts')
+  assert.equal(falaDeAdesivo('5521992208062'), true)
+  assert.equal(falaDeAdesivo('5511987654321'), false)
+  assert.equal(falaDeAdesivo('5524999998888'), false)
+  assert.equal(falaDeAdesivo(null), false)
+
+  const carro = montarFatos({
+    marca: 'Jeep', modelo: 'COMPASS', ano: 2022, fipe: 116540, combustivel: null, leilao: false, carroApp: false,
+    estado: null, planos: [{ id: 'vip', nome: 'VIP', mensal: 507 }], ativacaoReferencia: 557, ativacaoPorPlano: { vip: 557 }, desconto50: null,
+  })
+  const rio = montarPrompt({ cumprimento: 'bom dia', primeiroNome: null, genero: null, fatos: carro, jaGanhouDesconto: false, falaDeAdesivo: true })
+  assert.match(rio, /com adesivo \(15%\)/)
+  assert.match(rio, /sede da 21Go, em Campo Grande/)
+  const fora = montarPrompt({ cumprimento: 'bom dia', primeiroNome: null, genero: null, fatos: carro, jaGanhouDesconto: false, falaDeAdesivo: false })
+  assert.doesNotMatch(fora, /com adesivo \(/)
+  assert.match(fora, /NUNCA fale de adesivo/)
+  assert.doesNotMatch(fora, /o desconto que dá pra ter nela é o do adesivo/)
+})

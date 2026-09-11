@@ -6,6 +6,7 @@ import { alertarDono, alertarDesconto } from '@/lib/isa/alertas'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import { mensagensDoNumero } from '@/lib/whatsapp-cloud'
 import { planoDoCliente } from '@/lib/isa/abordagem.regras'
+import { falaDeAdesivo } from '@/lib/isa/prompt.regras'
 import {
   interpretarDono,
   valorAutorizadoValido,
@@ -175,7 +176,7 @@ export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]):
     }
 
     if (r.acao === 'recusar') {
-      const ok = ativacao ? await falarComCliente(cliente, mensagemDonoRecusou(ativacao)) : false
+      const ok = ativacao ? await falarComCliente(cliente, mensagemDonoRecusou(ativacao, falaDeAdesivo(cliente.telefone))) : false
       await atualizarContato(cliente.telefone, { aguardando_dono: null, ligada: true, pausa_motivo: null })
       await registrarEvento(cliente.telefone, 'desconto', { tipo: 'recusado' }, 'juliano')
       await sql(`UPDATE public.isa_contatos SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])

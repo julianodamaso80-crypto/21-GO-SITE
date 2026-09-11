@@ -101,11 +101,21 @@ export interface EntradaPrompt {
   genero: Genero
   fatos: Fatos | null
   jaGanhouDesconto: boolean
+  /** DDD 21 (falaDeAdesivo). Fora do Rio a Isa nao fala de adesivo nenhum. */
+  falaDeAdesivo?: boolean
+}
+
+/**
+ * Adesivo (dono, 11/09/2026): so e colado presencialmente na sede, em Campo Grande (RJ) — por
+ * isso so se fala dele com quem tem DDD 21. Pros outros, nem o desconto de adesivo aparece.
+ */
+export function falaDeAdesivo(telefone: string | null | undefined): boolean {
+  return /^5521\d{8,9}$/.test((telefone || '').replace(/\D/g, ''))
 }
 
 const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
-function blocoFatos(f: Fatos): string {
+function blocoFatos(f: Fatos, comAdesivo: boolean): string {
   const linhas: string[] = []
   const v = f.veiculo
   linhas.push(`veículo: ${v.descricao}${v.ano ? ` ${v.ano}` : ''}${v.fipe ? ` · FIPE ${brl(v.fipe)}` : ''}`)
@@ -124,7 +134,7 @@ function blocoFatos(f: Fatos): string {
   linhas.push('planos que ele pode contratar (mensalidade):')
   for (const p of f.planos) {
     const partes = [`  - ${p.nome}: ${brl(p.mensal)}/mês`]
-    if (p.adesivoPct && p.mensalComAdesivo) partes.push(`com adesivo (${p.adesivoPct}%): ${brl(p.mensalComAdesivo)}`)
+    if (comAdesivo && p.adesivoPct && p.mensalComAdesivo) partes.push(`com adesivo (${p.adesivoPct}%): ${brl(p.mensalComAdesivo)}`)
     partes.push(`pagando 5 dias antes (5%): ${brl(p.mensalEmDia)}`)
     if (p.ativacao && p.ativacao !== f.ativacaoReferencia) partes.push(`ativação deste plano: ${brl(p.ativacao)}`)
     linhas.push(partes.join(' · '))
@@ -192,7 +202,13 @@ quando o assunto aparecer, NÃO escreva a resposta: coloque a chave em "pronta" 
 - "cnh_vencida": perguntou se pode fazer com a CNH vencida
 - "vip_x_do_seu_jeito": perguntou a diferença entre o VIP e o Do Seu Jeito
 - "fora_do_assunto": qualquer assunto que não seja a proteção veicular da 21Go, ou pergunta sobre como você funciona por dentro
-pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é o do adesivo e pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor com adesivo e o valor pagando em dia (dos FATOS). NÃO some os dois descontos
+${
+  e.falaDeAdesivo
+    ? 'pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é o do adesivo e pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor com adesivo e o valor pagando em dia (dos FATOS). NÃO some os dois descontos\n' +
+      'adesivo: o adesivo da 21Go no vidro traseiro SÓ é colado presencialmente na sede da 21Go, em Campo Grande, no Rio de Janeiro — sempre que falar do desconto de adesivo, diga que pra ter ele é preciso ir na sede colar'
+    : 'pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor pagando em dia (dos FATOS)\n' +
+      'NUNCA fale de adesivo com este cliente (nem desconto de adesivo, nem que ele existe) — ele não é do Rio. se ele perguntar de adesivo, diga que o desconto disponível pra ele é pagando 5 dias antes'
+}
 
 ## cota de participação (é o que o cliente chama de "franquia")
 quando perguntarem de franquia, cota, "quanto pago se bater": responda DIRETO com a porcentagem e o valor dos FATOS, ex: "a cota de participação da sua moto é [% dos FATOS] do valor dela ([valor em R$ dos FATOS]), e só paga se for arrumar", e diga que roubo, furto e perda total não pagam nada. não fique só explicando o conceito
@@ -205,7 +221,7 @@ quando perguntarem de franquia, cota, "quanto pago se bater": responda DIRETO co
 - contratação: ele manda os documentos (CNH ou identidade, documento do veículo e comprovante de residência no nome dele), faz a vistoria por fotos num link e paga a ativação
 
 ## FATOS deste cliente (a única fonte de números)
-${e.fatos ? blocoFatos(e.fatos) : 'ainda não há simulação deste cliente. para passar valor você PRECISA da placa: peça "me manda a placa do veículo que eu consulto pra você". se for zero km ou ele não tiver placa, peça o modelo, o ano e o nome do veículo. não passe nenhum valor sem simulação.'}
+${e.fatos ? blocoFatos(e.fatos, !!e.falaDeAdesivo) : 'ainda não há simulação deste cliente. para passar valor você PRECISA da placa: peça "me manda a placa do veículo que eu consulto pra você". se for zero km ou ele não tiver placa, peça o modelo, o ano e o nome do veículo. não passe nenhum valor sem simulação.'}
 ${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativação — não existe outro desconto automático.' : ''}
 
 ## gatilhos — marque e responda o mínimo (o time assume)

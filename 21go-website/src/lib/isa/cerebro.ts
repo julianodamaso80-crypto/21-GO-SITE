@@ -100,6 +100,8 @@ export interface EntradaCerebro {
   genero: Genero
   fatos: Fatos | null
   jaGanhouDesconto: boolean
+  /** DDD 21: so entao a Isa fala de adesivo (prompt.regras falaDeAdesivo). */
+  falaDeAdesivo: boolean
   historico: MensagemHistorico[]
   agora: Date
   /** Comeco da conversa, primeiro contato do dia ou 4 h sem falar (precisaCumprimentar). */
@@ -115,6 +117,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
     genero: e.genero,
     fatos: e.fatos,
     jaGanhouDesconto: e.jaGanhouDesconto,
+    falaDeAdesivo: e.falaDeAdesivo,
   })
   const permitidos = e.fatos?.numerosPermitidos ?? PERMITIDOS_SEM_FATOS
   const conversa: MsgIA[] = [{ role: 'system', content: sistema }, ...paraMensagensIA(e.historico)]

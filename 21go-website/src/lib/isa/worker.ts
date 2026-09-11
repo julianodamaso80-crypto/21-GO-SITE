@@ -37,7 +37,7 @@ import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura } from '@/lib/isa/ler-midia.regras'
 import { dividirEmPartes, pausaEntreSegundos } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
-import { abertura } from '@/lib/isa/prompt.regras'
+import { abertura, falaDeAdesivo } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
@@ -272,6 +272,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     genero: (c.genero as 'm' | 'f' | null) ?? null,
     fatos,
     jaGanhouDesconto: !!c.desconto50_em,
+    falaDeAdesivo: falaDeAdesivo(c.telefone),
     historico: hist,
     agora,
     cumprimentar: precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora),
