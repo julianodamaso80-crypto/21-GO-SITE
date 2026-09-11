@@ -36,3 +36,15 @@ test('tolera formatacao: R$437 / R$ 437 / 437,00 sao o mesmo numero', () => {
   assert.equal(validarNumeros('R$437 ou R$ 437,00', permitidos).ok, true)
   assert.equal(validarNumeros('R$ 19,90 por mes', permitidos).ok, true)
 })
+
+test('telefone escrito pela IA nunca sai (11/09/2026: inventou "0800 2100 021")', () => {
+  const p = { dinheiro: [116540, 437], pct: [6] }
+  assert.equal(validarNumeros('o número do nosso 0800 é 0800 2100 021', p).ok, false)
+  assert.equal(validarNumeros('me liga no (21) 98004-0964', p).ok, false)
+  assert.equal(validarNumeros('chama no 21980040964', p).ok, false)
+  // dinheiro, FIPE, ano, km e cota continuam passando
+  assert.equal(validarNumeros('FIPE R$ 116.540,00 e a cota é 6%', p).ok, true)
+  assert.equal(validarNumeros('CRLV de 2023 em diante, reboque de 1.000 km', p).ok, true)
+  assert.equal(validarNumeros('o suporte é pelo 0800', p).ok, true)
+  assert.equal(validarNumeros('seu PDF: https://21go.site/api/pdfs/lead_isa5521992208062kzo9e03', p).ok, true)
+})

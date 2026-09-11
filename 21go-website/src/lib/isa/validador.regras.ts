@@ -45,12 +45,29 @@ export function extrairNumeros(texto: string): { dinheiro: number[]; pct: number
 const formataDinheiro = (v: number) =>
   `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+/**
+ * Telefone escrito pela IA (11/09/2026: ela inventou "0800 2100 021"). Numero de contato so sai
+ * pelo codigo (link da Leticya); na resposta da IA, qualquer telefone barra. Sequencia de 8+
+ * digitos separados por espaco, ponto, hifen ou parenteses — sem virgula e sem R$ na frente,
+ * pra nao pegar dinheiro ("R$ 116.540,00").
+ */
+export function extrairTelefones(texto: string): string[] {
+  const out: string[] = []
+  for (const m of texto.matchAll(/(?<![\p{L}\d,_])\(?\d[\d\s().-]{6,}\d(?![\p{L}\d,_])/gu)) {
+    const antes = texto.slice(Math.max(0, m.index! - 4), m.index!)
+    if (/R\$\s*$/.test(antes)) continue
+    if (m[0].replace(/\D/g, '').length >= 8) out.push(m[0].trim())
+  }
+  return out
+}
+
 export function validarNumeros(texto: string, permitidos: Permitidos): { ok: boolean; invalidos: string[] } {
   const { dinheiro, pct } = extrairNumeros(texto)
   const perto = (lista: number[], v: number) => lista.some((p) => Math.abs(p - v) < TOLERANCIA)
   const invalidos = [
     ...dinheiro.filter((v) => !perto(permitidos.dinheiro, v)).map(formataDinheiro),
     ...pct.filter((v) => !perto(permitidos.pct, v)).map((v) => `${v}%`),
+    ...extrairTelefones(texto).map((t) => `telefone ${t}`),
   ]
   return { ok: invalidos.length === 0, invalidos: [...new Set(invalidos)] }
 }
