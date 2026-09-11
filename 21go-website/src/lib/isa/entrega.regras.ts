@@ -64,3 +64,19 @@ export function mensagemNaoFazemos(motivo: string): string {
   }
   return 'infelizmente no momento não estamos aceitando esse veículo 🙏🏼'
 }
+
+/**
+ * O cliente escolheu um plano ("gostei do vip", "quero o basico", "vou fechar com o premium")?
+ * Entao o proximo passo e pedir os documentos (dono, 11/09/2026) — no teste, a IA respondeu as
+ * outras perguntas e esqueceu desse passo, por isso ele e do codigo.
+ */
+const ESCOLHA =
+  /\b(gostei|quero|vou (de|fechar|ficar|querer)|fechar com|fecho com|prefiro|pode ser o|vamos de|bora de|escolho|fico com)\b[^.?!\n]{0,25}\b(b[aá]sico|vip|premium|do seu jeito|especia(l|is)|suv|moto)\b/i
+
+export function escolheuPlano(texto: string | null | undefined): boolean {
+  return ESCOLHA.test(texto || '')
+}
+
+export function mensagemPedidoDocumentos(): string {
+  return 'que ótimo! 🥳\n\npra darmos sequência na sua ativação, me manda por aqui: foto da CNH, o documento do veículo e um comprovante de residência'
+}

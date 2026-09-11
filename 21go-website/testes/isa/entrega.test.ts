@@ -62,3 +62,14 @@ test('placa/modelo sem preco: a Isa pede pra conferir e oferece fazer pelo model
   assert.match(mensagemPlacaNaoAchada(), /modelo e o ano/)
   assert.match(mensagemModeloSemPreco(), /modelo e o ano|placa/)
 })
+
+test('escolheu o plano: reconhece o jeito que o cliente fala e pede os documentos', async () => {
+  const { escolheuPlano, mensagemPedidoDocumentos } = await import('../../src/lib/isa/entrega.regras.ts')
+  for (const t of ['Gostei do vip, como funciona guincho', 'quero o básico', 'vou fechar com o premium', 'vamos de do seu jeito', 'fico com o plano VIP SUV'])
+    assert.equal(escolheuPlano(t), true, t)
+  for (const t of ['qual a diferença do vip pro básico?', 'o vip tem carro reserva?', 'tem rastreador?', 'quero saber a cota'])
+    assert.equal(escolheuPlano(t), false, t)
+  assert.match(mensagemPedidoDocumentos(), /CNH/)
+  assert.match(mensagemPedidoDocumentos(), /documento do veículo/)
+  assert.match(mensagemPedidoDocumentos(), /comprovante de residência/)
+})

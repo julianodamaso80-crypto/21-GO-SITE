@@ -38,7 +38,7 @@ import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type
 import { dividirEmPartes, pausaEntreSegundos } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -339,6 +339,13 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   }
 
   const enviou = saida.resposta ? await enviarComoGente(c, saida.resposta, ultimaInbound, visto) : false
+
+  // Escolheu o plano e a resposta nao pediu os documentos: o proximo passo vai pelo codigo
+  // (teste de 11/09/2026 — "gostei do vip, como funciona guincho?" e a IA so explicou o guincho).
+  if (enviou && !saida.gatilho && escolheuPlano(novas.map((m) => m.content).join('\n')) && !/\bcnh\b/i.test(saida.resposta)) {
+    await enviarComoGente(c, [mensagemPedidoDocumentos()], ultimaInbound, visto)
+    await registrarEvento(c.telefone, 'pediu_documentos', null)
+  }
 
   // Respondeu a mensagem dos 5 min escrevendo, sem tocar no botao: os R$ 50 vem logo depois.
   if (enviou && !saida.gatilho && c.entrada === '5min' && !c.desconto50_em) {
