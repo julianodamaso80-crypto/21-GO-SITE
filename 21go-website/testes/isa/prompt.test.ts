@@ -161,3 +161,13 @@ test('audio que falhou no meio de outros: responde os outros e so no fim pede o 
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
   assert.match(p, /responda TODAS elas normalmente e só no fim diga que um dos áudios não deu pra entender/)
 })
+
+test('o que a Isa AINDA NAO sabe esta escrito — fidelidade/multa inventada no teste de 11/09/2026', async () => {
+  const { AINDA_NAO_SABE } = await import('../../src/lib/isa/prompt.regras.ts')
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
+  assert.match(p, /## o que você AINDA NÃO sabe/)
+  for (const tema of ['fidelidade', 'multa', 'contrato', 'aplicativo', 'rastreador', 'livre condutor', 'financiado', 'lavagem']) {
+    assert.ok(AINDA_NAO_SABE.some((x: string) => x.includes(tema)), `faltou ${tema}`)
+    assert.match(p, new RegExp(tema))
+  }
+})

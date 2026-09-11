@@ -124,6 +124,35 @@ export function tirarCumprimento(resposta: string): string {
   return semPrefixo || r
 }
 
+/**
+ * Assuntos que clientes perguntam e o dono AINDA NAO respondeu (lista de 71 perguntas enviada
+ * a ele em 11/09/2026 — vault ClaudeCode/Projetos/Isa-perguntas-2026-09-11). Sem isto a IA
+ * inventava ("nao tem fidelidade nem multa"). Quando o dono responder, o item sai daqui e a
+ * resposta entra em "o que voce sabe da 21Go".
+ */
+export const AINDA_NAO_SABE: readonly string[] = [
+  'fidelidade, multa ou como cancelar',
+  'contrato ou regulamento antes de fechar, prazo pra desistir, apólice',
+  'como paga a mensalidade, dia de vencimento, reajuste ou rateio',
+  'desconto pagando o ano à vista, desconto por indicação, desconto na ativação vindo de outra proteção',
+  'se a ativação é paga à empresa ou ao consultor',
+  'aplicativo da 21Go',
+  'instalação do rastreador (onde, quem agenda), rastreador fora do RJ, usar rastreador de outra empresa',
+  'foto do adesivo todo mês, tamanho do adesivo',
+  'livre condutor, outra pessoa dirigindo, idade do condutor',
+  'carro no nome de outra pessoa, financiado ou alienado, veículo no CNPJ ou frota',
+  'ATPV ou recibo de compra e venda, IPVA atrasado, carro com avaria ou amassado',
+  'comprovante de residência no nome de outra pessoa ou de internet/telefone, CNH ou documento digital, quem não tem CNH',
+  'detalhes da vistoria (tempo, número de fotos, horário, se o link expira, app VISTO, fazer na sede)',
+  'oficina credenciada ou própria, peça original no conserto, problema mecânico sem batida',
+  'se paga cota ao acionar só os terceiros, acidente com CNH vencida',
+  'carro blindado, kit gás (GNV), porcentagem do para-brisa, clube de benefícios, lavagem e almoço na sede',
+  'táxi (se aceita e quanto indeniza), se carro de aplicativo muda a indenização, autoescola, motorhome',
+  'tempo de espera do reboque, se as saídas renovam por mês, reboque adicional, chaveiro, táxi quando reboca',
+  'telefones (0800, recepção), endereço e horário da sede, CNPJ',
+  'vender o carro e passar o plano pro novo',
+]
+
 export type Genero = 'm' | 'f' | null
 
 export interface EntradaPrompt {
@@ -263,6 +292,9 @@ quando perguntarem de franquia, cota, "quanto pago se bater": responda DIRETO co
 - indenização em roubo, furto ou perda total: 100% da FIPE, sem cota (leilão, táxi e ex-táxi: 80%). prazo: o contrato prevê até 90 dias corridos depois da documentação entregue, mas na prática a 21Go paga em menos de 60 dias
 - rastreador: só é obrigatório no RJ — carro particular com FIPE a partir de R$ 50 mil, carro de aplicativo a partir de R$ 35 mil, moto a partir de R$ 15 mil. quando é obrigatório já vem incluso no valor do plano. fora disso é opcional: R$ 100,00 de instalação + R$ 19,90 por mês
 - mais de um veículo (frota): 5% de desconto na mensalidade de cada um
+
+## o que você AINDA NÃO sabe — perguntou disso: "essa eu vou confirmar e já te retorno 🙏🏼" e marque "gatilho": "sem_informacao". NUNCA responda por conta própria, nem "sim", nem "não"
+${AINDA_NAO_SABE.map((x) => `- ${x}`).join('\n')}
 
 ## FATOS deste cliente (a única fonte de números)
 ${e.fatos ? blocoFatos(e.fatos, !!e.falaDeAdesivo) : 'ainda não há simulação deste cliente. para passar valor você PRECISA da placa: peça "me manda a placa do veículo que eu consulto pra você". se for zero km ou ele não tiver placa, peça o modelo, o ano e o nome do veículo. não passe nenhum valor sem simulação.'}
