@@ -11,7 +11,17 @@ import { Pool } from 'pg'
  *
  * messages.created_at e `timestamp without time zone` gravado em UTC — toda comparacao com as
  * colunas timestamptz da Isa passa por `AT TIME ZONE 'UTC'`.
+ *
+ * ⚠️ PRECISAO: o Postgres grava microssegundos e o `pg` devolve Date do JS, que so tem
+ * milissegundos. O `visto` que volta pro banco fica ate 999 µs MENOR que o valor gravado — e
+ * `ultimo_inbound_em > visto` dava verdadeiro sem mensagem nova nenhuma: a Isa mandava so a
+ * primeira parte da resposta ("interrompida") e o contato nunca saia da fila (reprocessado a cada
+ * minuto). Achado no teste de 11/09/2026. Toda comparacao com um horario que passou pelo JS
+ * trunca o lado do banco em milissegundos (`ms(...)`).
  */
+
+/** Trunca um timestamp do banco em milissegundos — o que o JS consegue devolver. */
+const ms = (coluna: string) => `date_trunc('milliseconds', ${coluna})`
 
 let _pool: Pool | null = null
 
@@ -121,7 +131,7 @@ export async function reivindicarPendentes(p: {
      WHERE c.telefone IN (
        SELECT telefone FROM public.isa_contatos
        WHERE ultimo_inbound_em IS NOT NULL
-         AND ultimo_inbound_em > COALESCE(processado_ate, '-infinity'::timestamptz)
+         AND ${ms('ultimo_inbound_em')} > COALESCE(processado_ate, '-infinity'::timestamptz)
          AND ultimo_inbound_em < now() - make_interval(secs => $1)
          AND (processando_desde IS NULL OR processando_desde < now() - make_interval(secs => $2))
          AND ($4::text[] IS NULL OR telefone = ANY($4::text[]))
@@ -161,7 +171,7 @@ export async function soltarSemProcessar(telefone: string): Promise<void> {
  */
 export async function humanoFalouDepois(telefone: string, desde: string | null): Promise<boolean> {
   const r = await sql<{ falou: boolean }>(
-    `SELECT humano_em IS NOT NULL AND humano_em >= COALESCE($2::timestamptz, '-infinity'::timestamptz) AS falou
+    `SELECT humano_em IS NOT NULL AND ${ms('humano_em')} >= COALESCE($2::timestamptz, '-infinity'::timestamptz) AS falou
      FROM public.isa_contatos WHERE telefone = $1`,
     [telefone, desde],
   )
@@ -171,7 +181,7 @@ export async function humanoFalouDepois(telefone: string, desde: string | null):
 /** Chegou mensagem nova depois de `desde`? A Isa para no meio da resposta e rele tudo. */
 export async function chegouMensagemNova(telefone: string, desde: string | null): Promise<boolean> {
   const r = await sql<{ novo: boolean }>(
-    `SELECT ultimo_inbound_em > COALESCE($2::timestamptz, '-infinity'::timestamptz) AS novo
+    `SELECT ${ms('ultimo_inbound_em')} > COALESCE($2::timestamptz, '-infinity'::timestamptz) AS novo
      FROM public.isa_contatos WHERE telefone = $1`,
     [telefone, desde],
   )
@@ -196,7 +206,7 @@ export async function inboundsNovas(conversationId: string, processadoAte: strin
             (created_at AT TIME ZONE 'UTC') AS criada_em
      FROM public.messages
      WHERE conversation_id = $1 AND evolution_instance = 'cloud_isa' AND direction = 'inbound'
-       AND (created_at AT TIME ZONE 'UTC') > COALESCE($2::timestamptz, '-infinity'::timestamptz)
+       AND ${ms("created_at AT TIME ZONE 'UTC'")} > COALESCE($2::timestamptz, '-infinity'::timestamptz)
      ORDER BY created_at`,
     [conversationId, processadoAte],
   )

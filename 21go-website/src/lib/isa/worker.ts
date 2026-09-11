@@ -167,7 +167,9 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   }
 
   // Entrada pelo popup ("Quero meu desconto!"): R$ 50 na ativacao, uma vez, com o antes e o depois.
-  const popup = entradaPopup(novas[0]?.content ?? '')
+  // Em QUALQUER mensagem pendente, nao so na primeira: no teste de 11/09/2026 havia uma mensagem
+  // antiga na frente e o "Quero meu desconto" virou pedido de desconto comum (foi pro supervisor).
+  const popup = novas.map((m) => entradaPopup(m.content ?? '')).find((p) => p.popup) ?? entradaPopup('')
   if (popup.popup && !c.desconto50_em) {
     await atualizarContato(c.telefone, { entrada: 'popup', ...(popup.leadId ? { lead_id: popup.leadId } : {}) })
     const d = await concederDesconto50(c, popup.leadId, popup.plano)
