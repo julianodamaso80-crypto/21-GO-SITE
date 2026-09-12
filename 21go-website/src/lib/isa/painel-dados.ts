@@ -1,4 +1,5 @@
 import 'server-only'
+import { etapaDoCard } from '@/lib/isa/funil.regras'
 import { sql, type ContatoIsa } from '@/lib/isa/banco'
 
 /**
@@ -52,6 +53,69 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Pr
      ORDER BY u.created_at DESC NULLS LAST
      LIMIT 500`,
     [termo, etiqueta],
+  )
+}
+
+export interface CardFunil {
+  telefone: string
+  nome: string | null
+  etapa: string
+  /** A etapa que alguem arrastou (null = a do fluxo). */
+  etapa_manual: string | null
+  veiculo: string | null
+  fipe: number | null
+  plano: string | null
+  valor: number | null
+  ultima: string | null
+  ultima_em: string | null
+  etiquetas: string[]
+  ligada: boolean
+}
+
+/**
+ * Cards do funil: TODA conversa entra, com o veiculo e o plano da simulacao. A etapa vem do
+ * `etapaDoCard` — o que a pessoa arrastou vence o que o fluxo calculou.
+ */
+export async function listarFunil(): Promise<CardFunil[]> {
+  const linhas = await sql<
+    Omit<CardFunil, 'etapa'> & { tem_simulacao: boolean; escolheu: boolean; documento: boolean }
+  >(
+    `SELECT c.telefone, COALESCE(c.nome, cv.pushname) AS nome, c.etapa AS etapa_manual, c.ligada, c.etiquetas,
+            NULLIF(TRIM(CONCAT_WS(' ', l.marca_interesse, l.modelo_interesse, l.ano_interesse)), '') AS veiculo,
+            l.valor_fipe_consultado AS fipe, l.cotacao_plano AS plano, l.cotacao_valor AS valor,
+            u.content AS ultima, (u.created_at AT TIME ZONE 'UTC') AS ultima_em,
+            (l.id IS NOT NULL) AS tem_simulacao,
+            EXISTS (SELECT 1 FROM public.isa_eventos e WHERE e.telefone = c.telefone AND e.tipo = 'pediu_documentos') AS escolheu,
+            (c.pausa_motivo = 'documento') AS documento
+     FROM public.isa_contatos c
+     LEFT JOIN public.conversations cv ON cv.id = c.conversation_id
+     LEFT JOIN public.leads l ON l.id = c.lead_id
+     LEFT JOIN LATERAL (
+       SELECT content, created_at FROM public.messages m
+       WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa'
+       ORDER BY m.created_at DESC LIMIT 1
+     ) u ON true
+     WHERE c.conversation_id IS NOT NULL
+     ORDER BY u.created_at DESC NULLS LAST
+     LIMIT 500`,
+  )
+  return linhas.map((l) => ({
+    ...l,
+    etapa: etapaDoCard({
+      etapa: l.etapa_manual,
+      temSimulacao: !!l.tem_simulacao,
+      escolheuPlano: !!l.escolheu,
+      mandouDocumento: !!l.documento,
+    }),
+  }))
+}
+
+/** Arrastou o card: a escolha da pessoa fica gravada e vence a etapa automatica. */
+export async function gravarEtapa(telefone: string, etapa: string | null): Promise<void> {
+  await sql(
+    `UPDATE public.isa_contatos SET etapa = $2, etapa_em = CASE WHEN $2 IS NULL THEN NULL ELSE now() END, updated_at = now()
+     WHERE telefone = $1`,
+    [telefone, etapa],
   )
 }
 

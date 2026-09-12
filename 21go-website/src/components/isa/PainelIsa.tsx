@@ -233,6 +233,7 @@ function Login({ aoEntrar }: { aoEntrar: (u: string) => void }) {
 /* ───────────────────────────── mesa ───────────────────────────── */
 
 function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
+  const [modo, setModo] = useState<'conversas' | 'funil'>('conversas')
   const [aba, setAba] = useState<Aba>('todos')
   const [busca, setBusca] = useState('')
   const [etiqueta, setEtiqueta] = useState('')
@@ -269,6 +270,20 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
     aoSair()
   }
 
+  if (modo === 'funil') {
+    return (
+      <Funil
+        usuario={usuario}
+        aoSair={aoSair}
+        aoVoltar={() => setModo('conversas')}
+        aoAbrir={(t) => {
+          setSel(t)
+          setModo('conversas')
+        }}
+      />
+    )
+  }
+
   return (
     <div className="flex h-full">
       {/* barra lateral */}
@@ -280,7 +295,11 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
               <span className="h-1.5 w-1.5 rounded-full bg-[#C7D301] shadow-[0_0_10px_#C7D301]" /> isa · {usuario}
             </p>
           </div>
-          <button onClick={sair} className="rounded-md border border-white/10 px-2.5 py-1 text-xs text-white/60 hover:text-white">sair</button>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setModo('funil')}
+              className="rounded-md border border-[#C7D301]/40 px-2.5 py-1 text-xs font-semibold text-[#C7D301] hover:bg-[#C7D301]/10">funil</button>
+            <button onClick={sair} className="rounded-md border border-white/10 px-2.5 py-1 text-xs text-white/60 hover:text-white">sair</button>
+          </div>
         </header>
 
         <div className="px-4 pb-3">
@@ -753,5 +772,136 @@ function Evento({ it }: { it: ItemConversa }) {
         {it.autor && it.autor !== 'isa' && it.autor !== 'sistema' ? ` · ${it.autor}` : ''}
       </span>
     </p>
+  )
+}
+
+/* ───────────────────────────── funil (kanban) ───────────────────────────── */
+
+interface CardFunil {
+  telefone: string
+  nome: string | null
+  etapa: string
+  etapa_manual: string | null
+  veiculo: string | null
+  fipe: number | null
+  plano: string | null
+  valor: number | null
+  ultima: string | null
+  ultima_em: string | null
+  etiquetas: string[]
+  ligada: boolean
+}
+
+/**
+ * Funil do atendimento (dono, 11/09/2026). No computador arrasta o card; no celular usa o
+ * seletor "mover" — arrastar com o dedo nao funciona com drag and drop do navegador.
+ */
+function Funil({
+  usuario,
+  aoSair,
+  aoVoltar,
+  aoAbrir,
+}: {
+  usuario: string
+  aoSair: () => void
+  aoVoltar: () => void
+  aoAbrir: (telefone: string) => void
+}) {
+  const [etapas, setEtapas] = useState<{ id: string; rotulo: string; cor: string }[]>([])
+  const [cards, setCards] = useState<CardFunil[]>([])
+  const [arrastando, setArrastando] = useState<string | null>(null)
+  const [aviso, setAviso] = useState('')
+
+  const carregar = useCallback(async () => {
+    try {
+      const r = await api<{ etapas: { id: string; rotulo: string; cor: string }[]; cards: CardFunil[] }>('/api/atendimento/funil')
+      setEtapas(r.etapas)
+      setCards(r.cards)
+    } catch (err) {
+      if ((err as { status?: number }).status === 401) aoSair()
+    }
+  }, [aoSair])
+
+  useEffect(() => {
+    carregar()
+    const t = setInterval(carregar, 10000)
+    return () => clearInterval(t)
+  }, [carregar])
+
+  async function mover(telefone: string, etapa: string) {
+    setCards((antes) => antes.map((c) => (c.telefone === telefone ? { ...c, etapa, etapa_manual: etapa } : c)))
+    try {
+      await api('/api/atendimento/funil', { method: 'POST', body: JSON.stringify({ telefone, etapa }) })
+    } catch (err) {
+      setAviso(err instanceof Error ? err.message : 'não deu pra mover')
+      await carregar()
+    }
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <header className="flex items-center justify-between px-5 pb-3 pt-5">
+        <div>
+          <p className="text-[22px] font-bold leading-none tracking-tight [font-family:var(--fonte-rotulo)]">FUNIL</p>
+          <p className="mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-white/45">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C7D301] shadow-[0_0_10px_#C7D301]" /> isa · {usuario} · {cards.length} conversas
+          </p>
+        </div>
+        <button onClick={aoVoltar} className="rounded-md border border-white/10 px-2.5 py-1 text-xs text-white/70 hover:text-white">
+          voltar pras conversas
+        </button>
+      </header>
+
+      {aviso && <p className="mx-5 mb-2 rounded-md bg-red-500/15 px-3 py-1.5 text-sm text-red-200">{aviso}</p>}
+
+      <div className="flex flex-1 gap-3 overflow-x-auto px-4 pb-5">
+        {etapas.map((e) => {
+          const doFunil = cards.filter((c) => c.etapa === e.id)
+          return (
+            <section key={e.id}
+              onDragOver={(ev) => ev.preventDefault()}
+              onDrop={() => { if (arrastando) mover(arrastando, e.id); setArrastando(null) }}
+              className="flex w-[280px] shrink-0 flex-col rounded-xl border border-white/[0.07] bg-[#141d45]/70">
+              <div className="flex items-center justify-between rounded-t-xl px-3 py-2" style={{ backgroundColor: `${e.cor}22`, borderBottom: `2px solid ${e.cor}` }}>
+                <span className="text-[12px] font-bold uppercase tracking-wide [font-family:var(--fonte-rotulo)]" style={{ color: e.cor }}>{e.rotulo}</span>
+                <span className="rounded-full bg-white/10 px-2 text-[11px] font-semibold text-white/70">{doFunil.length}</span>
+              </div>
+              <div className="flex-1 space-y-2 overflow-y-auto p-2">
+                {doFunil.map((c) => (
+                  <article key={c.telefone} draggable
+                    onDragStart={() => setArrastando(c.telefone)}
+                    onDragEnd={() => setArrastando(null)}
+                    className="cursor-grab rounded-lg border border-white/[0.07] bg-[#0f1638] p-2.5 active:cursor-grabbing">
+                    <button onClick={() => aoAbrir(c.telefone)} className="block w-full text-left">
+                      <p className="truncate text-[14px] font-semibold text-[#E9ECF8]">{c.nome || telefoneBonito(c.telefone)}</p>
+                      {c.veiculo && <p className="mt-0.5 truncate text-[12px] text-white/55">{c.veiculo}</p>}
+                      {c.plano && (
+                        <p className="mt-0.5 text-[12px] text-[#C7D301]">
+                          {c.plano}{c.valor ? ` · ${brl(c.valor)}/mês` : ''}
+                        </p>
+                      )}
+                      {c.ultima && <p className="mt-1 truncate text-[11.5px] text-white/40">{c.ultima}</p>}
+                      <p className="mt-1 text-[10.5px] uppercase tracking-wide text-white/30">
+                        {hora(c.ultima_em)}{c.ligada ? '' : ' · isa off'}
+                      </p>
+                    </button>
+                    {c.etiquetas.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {c.etiquetas.map((id) => <ChipEtiqueta key={id} id={id} />)}
+                      </div>
+                    )}
+                    <select value={c.etapa} onChange={(ev) => mover(c.telefone, ev.target.value)}
+                      className="mt-2 w-full rounded-md border border-white/10 bg-[#141d45] px-2 py-1 text-[11.5px] text-white/70 outline-none focus:border-[#C7D301]/60">
+                      {etapas.map((op) => <option key={op.id} value={op.id}>mover para: {op.rotulo}</option>)}
+                    </select>
+                  </article>
+                ))}
+                {doFunil.length === 0 && <p className="px-1 py-6 text-center text-[12px] text-white/25">vazio</p>}
+              </div>
+            </section>
+          )
+        })}
+      </div>
+    </div>
   )
 }
