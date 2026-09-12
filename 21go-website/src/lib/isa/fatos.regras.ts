@@ -76,6 +76,8 @@ const ADICIONAIS = { vidros: 29.9, terceirosMoto: 22.9 }
 const DESCONTO_ENTRADA = 50
 /** Indicacao (dono, 11/09/2026): R$ 50 no pix + 10% no proximo boleto, por indicado que fechar. */
 export const INDICACAO = { pix: 50, pct: 10 }
+/** Multa por nao devolver o rastreador no cancelamento (dono, 12/09/2026). */
+export const MULTA_RASTREADOR = 900
 
 const MARCAS_ELETRIFICADAS = ['BYD', 'TESLA', 'GWM', 'ZEEKR', 'NETA', 'ORA']
 const PALAVRAS_ELETRICO = /\b(ELETRIC|ELÉTRIC|ELECTRIC|EV|BEV|H[IÍ]BRID|HYBRID|HEV|PHEV|MHEV|E-TECH|E:HEV|RECHARGE)/i
@@ -142,6 +144,7 @@ export function montarFatos(e: EntradaFatos): Fatos {
     DESCONTO_ENTRADA,
     ...Object.values(RASTREADOR_OBRIGATORIO),
     INDICACAO.pix,
+    MULTA_RASTREADOR,
   ])
   const cotaValor = e.fipe ? r2((e.fipe * cotaPct) / 100) : null
   if (e.fipe) dinheiro.add(r2(e.fipe))
@@ -160,7 +163,9 @@ export function montarFatos(e: EntradaFatos): Fatos {
     if (p.ativacao) dinheiro.add(r2(p.ativacao))
   }
 
-  const pct = new Set<number>([cotaPct, 5, 100, INDICACAO.pct, e.leilao ? 80 : 100])
+  // 20 e 80: a depreciacao de leilao/remarcado/taxi/sinistro (dono, 12/09/2026) — a Isa explica
+  // a regra mesmo quando o veiculo do cliente nao e desses.
+  const pct = new Set<number>([cotaPct, 5, 20, 80, 100, INDICACAO.pct])
   for (const p of planos) if (p.adesivoPct) pct.add(p.adesivoPct)
 
   const descricao = [e.marca, e.modelo].filter(Boolean).join(' ').trim()

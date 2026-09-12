@@ -147,7 +147,7 @@ export const AINDA_NAO_SABE: readonly string[] = [
   'oficina credenciada ou própria, peça original no conserto, problema mecânico sem batida',
   'se paga cota ao acionar só os terceiros, acidente com CNH vencida',
   'carro blindado, kit gás (GNV), porcentagem do para-brisa, clube de benefícios',
-  'táxi (se aceita e quanto indeniza), se carro de aplicativo muda a indenização, autoescola, motorhome',
+  'autoescola, motorhome',
   'tempo de espera do reboque, se as saídas renovam por mês, reboque adicional, chaveiro, táxi quando reboca',
   'telefones (0800, recepção), endereço e horário da sede, CNPJ',
   'vender o carro e passar o plano pro novo',
@@ -342,10 +342,12 @@ quando perguntarem de franquia, cota, "quanto pago se bater": responda DIRETO co
 - quem não tem CNH também pode fazer a proteção normalmente
 - contratação: ele manda os documentos (CNH ou identidade, documento do veículo e comprovante de residência no nome dele), faz a vistoria por fotos num link e paga a ativação
 - documento do veículo (CRLV): aceitamos mesmo atrasado, desde que seja o CRLV de 2023 em diante. CRLV de 2022 pra trás não aceitamos
-- NÃO aceitamos: moto de leilão, veículo com chassi remarcado e veículo que já teve sinistro. carro de leilão aceitamos
+- NÃO aceitamos: moto de leilão. carro de leilão, ex-táxi e táxi, chassi remarcado e veículo que já teve sinistro nós ACEITAMOS, com depreciação de 20% (a indenização fica em 80% da FIPE)
+- carro de aplicativo (uber/99): aceitamos e pagamos 100% da FIPE, sem depreciação
+- pode alugar o veículo: ele fica protegido normalmente
 - ano: só aceitamos veículo de 2006 em diante
-- indenização em roubo, furto ou perda total: 100% da FIPE, sem cota (leilão, táxi e ex-táxi: 80%). prazo: o contrato prevê até 90 dias corridos depois da documentação entregue, mas na prática a 21Go paga em menos de 60 dias — complete dizendo que quem acompanha o nosso presidente, Marcos Alves, no instagram vê que ele paga bem antes disso
-- rastreador: só é obrigatório no RJ — carro particular com FIPE a partir de R$ 50 mil, carro de aplicativo a partir de R$ 35 mil, moto a partir de R$ 15 mil. quando é obrigatório já vem incluso no valor do plano. fora disso é opcional: R$ 100,00 de instalação + R$ 19,90 por mês
+- indenização em roubo, furto ou perda total: 100% da FIPE, sem cota (leilão, remarcado, táxi/ex-táxi e veículo com sinistro: depreciação de 20%, ou seja 80% da FIPE). prazo: o contrato prevê até 90 dias corridos depois da documentação entregue, mas na prática a 21Go paga em menos de 60 dias — complete dizendo que quem acompanha o nosso presidente, Marcos Alves, no instagram vê que ele paga bem antes disso
+- rastreador: devolver é obrigatório quando cancelar; sem devolver, multa de R$ 900,00. só é obrigatório no RJ — carro particular com FIPE a partir de R$ 50 mil, carro de aplicativo a partir de R$ 35 mil, moto a partir de R$ 15 mil. quando é obrigatório já vem incluso no valor do plano. fora disso é opcional: R$ 100,00 de instalação + R$ 19,90 por mês
 - mais de um veículo (frota): 5% de desconto na mensalidade de cada um
 
 ## o que você AINDA NÃO sabe — perguntou disso: "essa eu vou confirmar e já te retorno 🙏🏼" e marque "gatilho": "sem_informacao". NUNCA responda por conta própria, nem "sim", nem "não"
@@ -368,5 +370,5 @@ ${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativa
 
 - "placa": SÓ se o cliente mandou uma placa nas mensagens NOVAS (não repita placa antiga do histórico). quando vier placa, o sistema consulta e manda a simulação sozinho — deixe "resposta" vazia
 - "sem_placa": zero km ou ele não tem/não sabe a placa e já disse marca, modelo e ano. se ele COMPLETAR a versão depois ("manual", "o LT", "turbo"), preencha de novo "sem_placa" com a marca, o modelo e o ano que ele já disse na conversa + o detalhe novo no "modelo" — não pergunte de novo o que ele já respondeu
-- "leilao" e "app": SÓ se o cliente disse, nesta conversa, se o veículo é de leilão e se é carro de aplicativo (uber/99). chassi remarcado NÃO é leilão: não aceitamos (diga isso e não marque "leilao"). se você perguntou "o veículo é de leilão? e roda em aplicativo?" e ele respondeu, preencha os dois — resposta curta segue a ordem da pergunta ("não e sim" = não é leilão, roda em app; "não" = nenhum dos dois). se ele respondeu só "sim" sem dizer qual, pergunte qual dos dois não pergunte isso antes de ter a placa`
+- "leilao" e "app": SÓ se o cliente disse, nesta conversa, se o veículo é de leilão e se é carro de aplicativo (uber/99). chassi remarcado, ex-táxi/táxi e veículo com sinistro entram na MESMA regra de leilão (preço e depreciação de 20%): marque "leilao": true. se você perguntou "o veículo é de leilão? e roda em aplicativo?" e ele respondeu, preencha os dois — resposta curta segue a ordem da pergunta ("não e sim" = não é leilão, roda em app; "não" = nenhum dos dois). se ele respondeu só "sim" sem dizer qual, pergunte qual dos dois não pergunte isso antes de ter a placa`
 }

@@ -122,3 +122,9 @@ test('indicacao: R$ 50 no pix e 10% no proximo boleto podem ser ditos (dono, 11/
   assert.ok(f.numerosPermitidos.dinheiro.includes(50), 'R$ 50 da indicacao')
   assert.ok(f.numerosPermitidos.pct.includes(10), '10% da indicacao')
 })
+
+test('20% e 80% (depreciacao de leilao/remarcado/taxi/sinistro) podem ser ditos (dono, 12/09/2026)', () => {
+  const f = montarFatos(base)
+  for (const v of [20, 80, 100]) assert.ok(f.numerosPermitidos.pct.includes(v), `faltou ${v}%`)
+  assert.ok(f.numerosPermitidos.dinheiro.includes(900), 'multa do rastreador')
+})

@@ -243,3 +243,16 @@ test('com UM plano so, a pergunta e pelo nome do plano — nao "qual voce gostou
   // a moto tambem tem um plano so (pela cilindrada): a mesma regra serve
   assert.match(p, /pergunte pelo nome/)
 })
+
+test('depreciacao de 20%: leilao, remarcado, taxi e sinistro entram; app paga 100% (dono, 12/09/2026)', async () => {
+  const { AINDA_NAO_SABE } = await import('../../src/lib/isa/prompt.regras.ts')
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
+  assert.match(p, /depreciação de 20%/)
+  assert.match(p, /chassi remarcado[^\n]*aceitamos|aceitamos[^\n]*chassi remarcado/i)
+  assert.match(p, /aplicativo[^\n]*100% da FIPE/)
+  assert.match(p, /pode alugar/i)
+  assert.match(p, /R\$ 900,00/)
+  // moto de leilao segue recusada; o resto saiu da lista de recusa
+  assert.match(p, /NÃO aceitamos: moto de leilão/)
+  assert.ok(!AINDA_NAO_SABE.some((x: string) => x.includes('quanto indeniza')), 'aceitar taxi saiu do que nao sabe')
+})

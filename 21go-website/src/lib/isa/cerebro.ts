@@ -27,7 +27,7 @@ export interface SaidaCerebro {
 }
 
 // Sem simulacao a Isa nao tem preco nenhum: so os valores fixos do gabarito.
-const PERMITIDOS_SEM_FATOS: Permitidos = { dinheiro: [50, 100, 19.9, 29.9, 22.9, 15000, 35000, 50000], pct: [6, 10, 15, 5, 100, 80] }
+const PERMITIDOS_SEM_FATOS: Permitidos = { dinheiro: [50, 100, 900, 19.9, 29.9, 22.9, 15000, 35000, 50000], pct: [6, 10, 15, 5, 100, 80, 20] }
 
 const GATILHOS = new Set(['desconto', 'robo', 'hostil', 'associado', 'sem_informacao', 'sem_comprovante'])
 
