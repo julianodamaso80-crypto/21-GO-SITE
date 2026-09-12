@@ -574,7 +574,7 @@ async function orcarEEnviar(
 ): Promise<boolean> {
   const nome = primeiroNomeDe(p.nome)
   const ab = p.cumprimentar ? abertura(cumprimento(new Date()), nome) : null
-  await enviarComoGente(c, [ab ? `${ab}\n\nperai que vou consultar aqui 🙏🏼` : 'perai que vou consultar aqui 🙏🏼'], p.ultimaInbound, p.visto)
+  await enviarComoGente(c, [ab ? `${ab}\n\nperaí, que eu vou consultar aqui 🙏🏼` : 'peraí, que eu vou consultar aqui 🙏🏼'], p.ultimaInbound, p.visto)
 
   const orc = await orcarPorPlaca({ telefone: c.telefone, nome: p.nome, placa: p.placa, leilao: p.leilao, carroApp: p.app })
   await registrarEvento(c.telefone, 'orcamento', { placa: p.placa, resultado: orc.tipo, tabela: orc.tipo === 'ok' ? orc.tabela : undefined })
@@ -633,7 +633,7 @@ async function listarVersoesEEnviar(
   if (!marca || opcoes.length === 0) {
     return enviarComoGente(
       c,
-      [`${ab}não achei esse modelo aqui 🤔 me manda o nome completo, do jeito que tá no documento, ou a placa se já tiver?`],
+      [`${ab}não achei esse modelo aqui 🤔 me manda o nome completo, do jeito que está no documento, ou a placa, se já tiver`],
       p.ultimaInbound,
       p.visto,
     )
@@ -663,7 +663,7 @@ async function cotarModeloEEnviar(
     ano: number; codFipe: string | null; ultimaInbound: string | undefined; visto: string | null
   },
 ): Promise<boolean> {
-  await enviarComoGente(c, ['perai que vou consultar aqui 🙏🏼'], p.ultimaInbound, p.visto)
+  await enviarComoGente(c, ['peraí, que eu vou consultar aqui 🙏🏼'], p.ultimaInbound, p.visto)
   const orc = await orcarPorModelo({
     telefone: c.telefone, nome: c.nome, tipo: p.tipo, brandId: p.brandId, brandText: p.brandText,
     modelId: p.modelId, modelText: p.modelText, ano: p.ano, codFipe: p.codFipe, leilao: false, carroApp: false,

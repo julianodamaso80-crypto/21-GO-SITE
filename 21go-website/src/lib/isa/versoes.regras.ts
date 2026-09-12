@@ -71,7 +71,7 @@ export function filtrarVersoes<T extends ItemPower>(modelos: T[], dito: string):
 
 export function mensagemDetalhe(modelo: string, ano: number | null): string {
   // zero km nao tem documento: pede o que o cliente sabe (cambio e nome da versao)
-  return `tem várias versões do ${modelo}${ano ? ` ${ano}` : ''} aqui 😃 me fala se é manual ou automático e o nome da versão que eu acho a sua certinho`
+  return `tem várias versões do ${modelo}${ano ? ` ${ano}` : ''} aqui 😃 me fala se é manual ou automático e o nome da versão, que eu acho a sua certinho`
 }
 
 const EMOJI_NUM = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']

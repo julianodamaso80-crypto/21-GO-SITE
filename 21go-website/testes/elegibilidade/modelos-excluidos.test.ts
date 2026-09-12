@@ -75,6 +75,9 @@ test('o Meriva do print: cotado pelo Power, barrado aqui', () => {
 
 test('qualquer Meriva barra, com ou sem marca separada', () => {
   assert.equal(ehModeloExcluido('Chevrolet', 'MERIVA JOY 1.8 MPFI 8V FLEXPOWER'), true)
+  // 12/09/2026: "nao fazemos esse carro" — o Prius que a Isa cotou pra Leticya
+  assert.equal(ehModeloExcluido('Toyota', 'PRIUS 1.8 16V 5p Aut. (Híbrido)'), true)
+  assert.equal(ehModeloExcluido('Toyota', 'COROLLA XEI 2.0'), false)
   assert.equal(ehModeloExcluido(null, 'GM - Chevrolet Meriva Premium 1.8 Easytronic'), true)
 })
 

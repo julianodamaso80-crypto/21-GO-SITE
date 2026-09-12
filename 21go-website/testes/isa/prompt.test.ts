@@ -50,7 +50,7 @@ test('genero desconhecido: pelo nome e sem deduzir; conhecido: senhor/senhora', 
 
 test('sem simulacao: pede a placa e nao passa valor', () => {
   const p = montarPrompt({ cumprimento: 'bom dia', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
-  assert.match(p, /me manda a placa do veículo que eu consulto pra você/)
+  assert.match(p, /me manda a placa do veículo, que eu consulto pra você/)
   assert.match(p, /não passe nenhum valor sem simulação/)
 })
 
@@ -243,7 +243,7 @@ test('plano que o veiculo dele NAO tem nao vira "otima escolha" (11/09/2026: Com
 test('com UM plano so, a pergunta e pelo nome do plano — nao "qual voce gostou mais" (dono, 11/09/2026)', () => {
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false })
   assert.match(p, /se o veículo dele tem UM plano só/)
-  assert.match(p, /se encaixa com o que você tá buscando/)
+  assert.match(p, /se encaixa com o que você está buscando/)
   // a moto tambem tem um plano so (pela cilindrada): a mesma regra serve
   assert.match(p, /pergunte pelo nome/)
 })

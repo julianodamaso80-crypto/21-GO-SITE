@@ -37,7 +37,7 @@ export function mensagensDaSimulacao(p: {
   }
   if (f.ativacaoReferencia) linhas.push(`Ativação: ${brl(f.ativacaoReferencia)}`)
   linhas.push(`Sua simulação completa (PDF): ${p.pdfUrl}`)
-  linhas.push('', f.planos.length === 1 ? 'esse plano se encaixa com o que você tá buscando?' : 'qual deles se encaixa mais com o que você tá buscando?')
+  linhas.push('', f.planos.length === 1 ? 'esse plano se encaixa com o que você está buscando?' : 'qual deles se encaixa mais com o que você está buscando?')
   const partes = [linhas.join('\n')]
   // Leilao, remarcado, taxi ou sinistrado: o preco cai e a indenizacao tambem — dizer junto com o
   // valor, nao deixar o cliente descobrir no sinistro (auditoria de 12/09/2026).
@@ -55,9 +55,9 @@ export function mensagemPlacaNaoAchada(comoApareceNoDenatran: string | null = nu
   // A placa existe mas nao deu preco (ex.: RKW7J62 e uma carreta): dizer o que o DENATRAN mostra
   // faz o cliente perceber se digitou errado — "nao achei" parecia que a placa nao existia.
   if (comoApareceNoDenatran) {
-    return `essa placa aparece registrada como ${comoApareceNoDenatran} 🤔\n\nconfere pra mim se é essa mesmo? se for outro veículo, me manda a placa certinha ou o modelo e o ano que eu faço a simulação`
+    return `essa placa aparece registrada como ${comoApareceNoDenatran} 🤔\n\nconfere pra mim se é essa mesmo? se for outro veículo, me manda a placa certinha ou o modelo e o ano, que eu faço a simulação`
   }
-  return 'não consegui achar essa placa aqui 🤔\n\nconfere pra mim se tá certinha? se preferir, me fala o modelo e o ano do veículo que eu faço a simulação por eles'
+  return 'não consegui achar essa placa aqui 🤔\n\nconfere pra mim se está certinha? se preferir, me fala o modelo e o ano do veículo, que eu faço a simulação por eles'
 }
 
 /** Modelo escolhido que nao deu preco: pede pra confirmar, nunca transfere. */

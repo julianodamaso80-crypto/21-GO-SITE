@@ -29,7 +29,7 @@ test('formato do dono: nome, veiculo, FIPE, todos os planos com preco, ativacao,
   assert.match(m, /Plano Veículos Especiais · R\$ 606,75\/mês \(ativação R\$ 656,75\)/)
   assert.match(m, /Ativação: R\$ 557,00/)
   assert.match(m, /Sua simulação completa \(PDF\): https:\/\/21go\.site\/api\/pdfs\/lead_x/)
-  assert.match(m, /qual deles se encaixa mais com o que você tá buscando\?$/)
+  assert.match(m, /qual deles se encaixa mais com o que você está buscando\?$/)
 })
 
 test('lista EXATAMENTE os planos que vieram (sem inventar plano)', () => {

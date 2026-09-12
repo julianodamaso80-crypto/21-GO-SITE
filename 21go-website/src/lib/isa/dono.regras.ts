@@ -75,7 +75,7 @@ const TEXTO_TRANSFERENCIA: Record<string, string> = {
 export function mensagemTransferencia(p: { motivo: string; resumo: string }): string {
   const frase = TEXTO_TRANSFERENCIA[p.motivo] ?? TEXTO_TRANSFERENCIA.documento
   const texto = `Oi Leticya! Vim do atendimento da Isa. ${p.resumo}`
-  return `${frase}\n\né só tocar aqui que já cai com ela 👇\nhttps://wa.me/${NUMERO_4824}?text=${encodeURIComponent(texto)}`
+  return `${frase}\n\né só tocar aqui, que já cai com ela 👇\nhttps://wa.me/${NUMERO_4824}?text=${encodeURIComponent(texto)}`
 }
 
 /**
