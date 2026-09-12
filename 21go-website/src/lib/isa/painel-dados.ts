@@ -71,6 +71,7 @@ export interface CardFunil {
   ultima_em: string | null
   etiquetas: string[]
   ligada: boolean
+  nota: string | null
 }
 
 /**
@@ -86,7 +87,7 @@ export async function listarFunil(): Promise<CardFunil[]> {
       documento: boolean
     }
   >(
-    `SELECT c.telefone, COALESCE(c.nome, cv.pushname) AS nome, c.etapa AS etapa_manual, c.ligada, c.etiquetas,
+    `SELECT c.telefone, COALESCE(c.nome, cv.pushname) AS nome, c.etapa AS etapa_manual, c.ligada, c.etiquetas, c.nota,
             NULLIF(TRIM(CONCAT_WS(' ', l.marca_interesse, l.modelo_interesse, l.ano_interesse)), '') AS veiculo,
             l.valor_fipe_consultado AS fipe, l.cotacao_planos AS planos,
             u.content AS ultima, (u.created_at AT TIME ZONE 'UTC') AS ultima_em,

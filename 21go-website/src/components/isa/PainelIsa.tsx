@@ -790,6 +790,7 @@ interface CardFunil {
   ultima_em: string | null
   etiquetas: string[]
   ligada: boolean
+  nota: string | null
 }
 
 /**
@@ -827,6 +828,16 @@ function Funil({
     const t = setInterval(carregar, 10000)
     return () => clearInterval(t)
   }, [carregar])
+
+  async function anotar(telefone: string, nota: string) {
+    setCards((antes) => antes.map((c) => (c.telefone === telefone ? { ...c, nota } : c)))
+    try {
+      await api('/api/atendimento/nota', { method: 'POST', body: JSON.stringify({ telefone, nota }) })
+    } catch (err) {
+      setAviso(err instanceof Error ? err.message : 'não deu pra salvar a nota')
+      await carregar()
+    }
+  }
 
   async function mover(telefone: string, etapa: string) {
     setCards((antes) => antes.map((c) => (c.telefone === telefone ? { ...c, etapa, etapa_manual: etapa } : c)))
@@ -868,33 +879,8 @@ function Funil({
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto p-2">
                 {doFunil.map((c) => (
-                  <article key={c.telefone} draggable
-                    onDragStart={() => setArrastando(c.telefone)}
-                    onDragEnd={() => setArrastando(null)}
-                    className="cursor-grab rounded-lg border border-white/[0.07] bg-[#0f1638] p-2.5 active:cursor-grabbing">
-                    <button onClick={() => aoAbrir(c.telefone)} className="block w-full text-left">
-                      <p className="truncate text-[14px] font-semibold text-[#E9ECF8]">{c.nome || telefoneBonito(c.telefone)}</p>
-                      {c.veiculo && <p className="mt-0.5 truncate text-[12px] text-white/55">{c.veiculo}</p>}
-                      {c.plano && (
-                        <p className="mt-0.5 text-[12px] text-[#C7D301]">
-                          {c.plano}{c.valor ? ` · ${brl(c.valor)}/mês` : ''}
-                        </p>
-                      )}
-                      {c.ultima && <p className="mt-1 truncate text-[11.5px] text-white/40">{c.ultima}</p>}
-                      <p className="mt-1 text-[10.5px] uppercase tracking-wide text-white/30">
-                        {hora(c.ultima_em)}{c.ligada ? '' : ' · isa off'}
-                      </p>
-                    </button>
-                    {c.etiquetas.length > 0 && (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {c.etiquetas.map((id) => <ChipEtiqueta key={id} id={id} />)}
-                      </div>
-                    )}
-                    <select value={c.etapa} onChange={(ev) => mover(c.telefone, ev.target.value)}
-                      className="mt-2 w-full rounded-md border border-white/10 bg-[#141d45] px-2 py-1 text-[11.5px] text-white/70 outline-none focus:border-[#C7D301]/60">
-                      {etapas.map((op) => <option key={op.id} value={op.id}>mover para: {op.rotulo}</option>)}
-                    </select>
-                  </article>
+                  <Card key={c.telefone} card={c} etapas={etapas}
+                    aoArrastar={setArrastando} aoAbrir={aoAbrir} aoMover={mover} aoAnotar={anotar} />
                 ))}
                 {doFunil.length === 0 && <p className="px-1 py-6 text-center text-[12px] text-white/25">vazio</p>}
               </div>
@@ -903,5 +889,117 @@ function Funil({
         })}
       </div>
     </div>
+  )
+}
+
+/**
+ * Card do funil. O card INTEIRO arrasta (nada de botão por dentro: o navegador não começa o
+ * arrasto quando a pessoa pega num botão) e um clique abre a conversa. A nota é interna — o
+ * cliente nunca vê (dono, 12/09/2026).
+ */
+function Card({
+  card: c,
+  etapas,
+  aoArrastar,
+  aoAbrir,
+  aoMover,
+  aoAnotar,
+}: {
+  card: CardFunil
+  etapas: { id: string; rotulo: string; cor: string }[]
+  aoArrastar: (t: string | null) => void
+  aoAbrir: (t: string) => void
+  aoMover: (t: string, etapa: string) => void
+  aoAnotar: (t: string, nota: string) => void
+}) {
+  const [editando, setEditando] = useState(false)
+  const [texto, setTexto] = useState(c.nota ?? '')
+
+  return (
+    <article
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', c.telefone)
+        aoArrastar(c.telefone)
+      }}
+      onDragEnd={() => aoArrastar(null)}
+      className="cursor-grab select-none rounded-lg border border-white/[0.07] bg-[#0f1638] p-2.5 active:cursor-grabbing">
+      <div onClick={() => aoAbrir(c.telefone)} className="cursor-pointer">
+        <p className="truncate text-[14px] font-semibold text-[#E9ECF8]">{c.nome || telefoneBonito(c.telefone)}</p>
+        {c.veiculo && <p className="mt-0.5 truncate text-[12px] text-white/55">{c.veiculo}</p>}
+        {c.plano && (
+          <p className="mt-0.5 text-[12px] text-[#C7D301]">
+            {c.plano}
+            {c.valor ? ` · ${brl(c.valor)}/mês` : ''}
+          </p>
+        )}
+        {c.ultima && <p className="mt-1 truncate text-[11.5px] text-white/40">{c.ultima}</p>}
+        <p className="mt-1 text-[10.5px] uppercase tracking-wide text-white/30">
+          {hora(c.ultima_em)}
+          {c.ligada ? '' : ' · isa off'}
+        </p>
+      </div>
+
+      {c.etiquetas.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {c.etiquetas.map((id) => (
+            <ChipEtiqueta key={id} id={id} />
+          ))}
+        </div>
+      )}
+
+      {editando ? (
+        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+          <textarea
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            rows={3}
+            autoFocus
+            placeholder="anotação interna (o cliente não vê)"
+            className="w-full resize-y rounded-md border border-white/10 bg-[#141d45] px-2 py-1.5 text-[12px] text-[#E9ECF8] outline-none placeholder:text-white/25 focus:border-[#C7D301]/60" />
+          <div className="mt-1 flex gap-1.5">
+            <button type="button"
+              onClick={() => {
+                aoAnotar(c.telefone, texto.trim())
+                setEditando(false)
+              }}
+              className="rounded-md bg-[#C7D301] px-2.5 py-1 text-[11.5px] font-semibold text-[#141d45]">
+              salvar
+            </button>
+            <button type="button"
+              onClick={() => {
+                setTexto(c.nota ?? '')
+                setEditando(false)
+              }}
+              className="rounded-md border border-white/15 px-2.5 py-1 text-[11.5px] text-white/60">
+              cancelar
+            </button>
+          </div>
+        </div>
+      ) : c.nota ? (
+        <p onClick={() => setEditando(true)}
+          className="mt-2 cursor-text whitespace-pre-wrap rounded-md border-l-2 border-[#F2911D] bg-[#F2911D]/10 px-2 py-1 text-[11.5px] text-[#FFE4C4]">
+          {c.nota}
+        </p>
+      ) : (
+        <button type="button" onClick={() => setEditando(true)}
+          className="mt-2 w-full rounded-md border border-dashed border-white/15 px-2 py-1 text-[11.5px] text-white/40 hover:border-[#F2911D]/60 hover:text-[#F2911D]">
+          + anotação
+        </button>
+      )}
+
+      <select
+        value={c.etapa}
+        onChange={(ev) => aoMover(c.telefone, ev.target.value)}
+        onClick={(e) => e.stopPropagation()}
+        className="mt-2 w-full rounded-md border border-white/10 bg-[#141d45] px-2 py-1 text-[11.5px] text-white/70 outline-none focus:border-[#C7D301]/60">
+        {etapas.map((op) => (
+          <option key={op.id} value={op.id}>
+            mover para: {op.rotulo}
+          </option>
+        ))}
+      </select>
+    </article>
   )
 }
