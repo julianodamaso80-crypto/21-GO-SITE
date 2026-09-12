@@ -233,11 +233,18 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       await liberar(c.telefone, visto, true)
       return true
     }
-    // CRLV mandado PEDINDO cotacao ("simula esse agora", dono 12/09/2026): o documento e so o jeito
-    // dele passar a placa. A Isa cota; transferir e pra quando o documento vem pra FECHAR.
-    const placaDoCrlv = leituras.find((l) => l?.tipo === 'crlv' && l.placa)?.placa ?? null
-    const querSimular = ehPedidoDeSimulacao(novas.map((m) => m.content).join(' '))
-    if (!(placaDoCrlv && querSimular) && leituras.some((l) => !l || DOC_DE_FECHAMENTO.has(l.tipo))) {
+    // CRLV SOZINHO antes de existir simulacao (ou pedindo cotacao) e so o jeito dele mandar a
+    // placa — a Isa cota (dono, 12/09/2026). Transferir e pra quando o documento vem pra FECHAR:
+    // depois dos valores, ou junto com CNH/comprovante.
+    const soCrlv =
+      leituras.length > 0 &&
+      leituras.every((l) => l && (l.tipo !== 'crlv' ? !DOC_DE_FECHAMENTO.has(l.tipo) : Boolean(l.placa))) &&
+      leituras.some((l) => l?.tipo === 'crlv')
+    const crlvPraCotar =
+      soCrlv &&
+      (ehPedidoDeSimulacao(novas.map((m) => m.content).join(' ')) ||
+        !(await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)))
+    if (!crlvPraCotar && leituras.some((l) => !l || DOC_DE_FECHAMENTO.has(l.tipo))) {
       await transferir(c, 'documento', enviar)
       await liberar(c.telefone, visto, true)
       return true
