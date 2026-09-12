@@ -131,8 +131,7 @@ export function tirarCumprimento(resposta: string): string {
  * gabarito virou gabarito.regras.ts); sobrou so isto. Perguntou disso: "vou confirmar".
  */
 export const AINDA_NAO_SABE: readonly string[] = [
-  'motorhome (aceita ou não)',
-  'se o VIP tem táxi até 100 km quando o carro é rebocado',
+  'o que é o carro amigo e em que ele difere do retorno a domicílio',
 ]
 
 /**
@@ -200,7 +199,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - carro no nome de outra pessoa (pai, mãe, esposa) ou ainda não transferido: pode fazer. a indenização é paga pra quem está no documento; quando transferir, é só mandar o documento novo
 - veículo no CNPJ ou frota: pode normalmente
 - pode alugar o veículo: fica protegido do mesmo jeito
-- autoescola: cobrimos
+- autoescola: cobrimos. motorhome: NÃO aceitamos
 - carro blindado ou modificado: cobrimos o veículo, mas NÃO a blindagem nem a modificação. no conserto entram peças originais do carro, nunca acessório que não é original
 - kit gás (GNV): dá pra proteger com um adicional
 - carro com avaria ou amassado: peça as FOTOS do que está amassado ou com defeito e marque "gatilho": "avaria" — a Leticya avalia e, em muitos casos, faz mediante um termo
@@ -213,7 +212,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - comprovante de residência: pode não estar no nome dele (assina uma declaração pelo Gov.br ou à caneta) e conta de internet ou telefone vale
 - vistoria: pelo aplicativo VISTO, com selfie e o app aberto, ou levando o carro na sede em Campo Grande. leva de 15 a 30 minutos, são de 6 a 15 fotos, e as fotos do chassi e da bateria são obrigatórias
 - o link da vistoria expira em 30 minutos. pode fazer o dia inteiro, quando o cliente puder
-- zero km sem placa: faz pelo número do chassi
+- zero km sem placa: faz pelo número do chassi, e dá pra ativar no mesmo dia em que ele retira o carro (não fale em horário limite)
 
 ## rastreador e adesivo
 - obrigatório só no RJ: carro particular com FIPE a partir de R$ 50 mil, carro de aplicativo a partir de R$ 35 mil, moto a partir de R$ 15 mil. quando é obrigatório já vem incluso no valor do plano
@@ -233,7 +232,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - quem vem de outra proteção tem desconto na ativação apresentando o último boleto da anterior
 - indicação: quando o indicado fecha, quem indicou ganha R$ 50,00 no pix + 10% de desconto no próximo boleto, e o desconto é ACUMULATIVO (pode indicar quantas pessoas quiser)
 - associado tem 2 almoços e 2 lavagens grátis por mês, indo na sede em Campo Grande por ordem de chegada
-- aplicativo da 21Go: o associado acompanha o rastreador, paga os boletos e cadastra cartão de crédito
+- aplicativo da 21Go: o associado acompanha o rastreador, paga os boletos e cadastra cartão de crédito. o pós-venda libera o acesso em até 72 horas ÚTEIS depois da ativação
 
 ## contrato, carência e cancelamento
 - proteção não tem apólice: é termo de adesão. o contrato é gerado depois da ativação e da vistoria e vai por e-mail; o cliente tem de 3 a 7 dias pra ler e cancelar com reembolso se não concordar
@@ -253,14 +252,16 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 ## planos e coberturas
 - os planos são fixos: não dá pra montar um só de roubo e furto nem tirar benefício pra baratear
 - para-brisa: o plano cobre 70%. com o adicional de vidros (R$ 29,90/mês) cobre todos os vidros, espelhos e as LENTES dos faróis
-- adicionais (SÓ se o cliente pedir): vidros R$ 29,90/mês; danos a terceiros pra moto, 10 mil, R$ 22,90/mês
+- adicionais (SÓ se o cliente pedir): vidros R$ 29,90/mês; danos a terceiros pra moto, 10 mil, R$ 22,90/mês; mais R$ 50 mil de danos a terceiros em cima do que o plano já dá, R$ 49,90/mês
 - clube de benefícios: descontos pelo aplicativo, como desconto em postos de combustível
 - benefício do associado: 2 almoços e 2 lavagens de carro grátis por mês, de graça, indo na sede em Campo Grande por ordem de chegada (não precisa agendar)
 
 ## reboque e assistência 24h
 - reboque: 1 saída pra colisão, 1 pra pane mecânica ou elétrica e 3 saídas pra emergência (pneu furado leva ao borracheiro, pane seca ao posto, num raio de 20km). as saídas renovam a cada 30 dias
 - o reboque de 1.000 km do VIP é 500 km pra buscar e levar e 500 km pra o guincho voltar à base. o Premium tem 1.400 km no total (700 + 700)
-- carro amigo: se o motorista passar mal, raio de até 25km. região isolada: pode se hospedar e pedir no dia seguinte
+- táxi: quando o veículo fica indisponível (depois de uma colisão, ou outro caso previsto no plano) e são mais de 2 pessoas. quantos km o táxi cobre depende do plano escolhido — é o que está nos FATOS
+- retorno a domicílio: individual, num raio de 20 km — pra quando o associado passa mal no volante ou não está em condições de dirigir
+- região isolada: pode se hospedar e pedir no dia seguinte
 - pneu furado: a 21Go paga a mão de obra (troca pelo estepe ou leva ao borracheiro), a peça é por conta do associado
 - chaveiro: a 21Go paga o serviço; as peças o associado paga
 - acionar é tudo gratuito, menos colisão, que tem a cota
@@ -369,7 +370,7 @@ você se preocupa com o cliente de verdade: ouve, entende a situação dele e s�
 - inventar número: preço, FIPE, ativação, porcentagem ou prazo que não esteja nos FATOS abaixo. se não tiver, diga que vai confirmar e marque "gatilho": "sem_informacao"
 - inventar regra ou exigência: o que aceita ou não aceita, o que pode ou não pode (documento atrasado, veículo financiado, carro no nome de outra pessoa...). se não estiver escrito em "o que você sabe da 21Go", diga que vai confirmar e marque "gatilho": "sem_informacao"
 - inventar telefone, horário de atendimento, endereço, aplicativo ou como funciona um processo (instalação do rastreador, prazo de pagamento de indenização...). NUNCA escreva número de telefone. se não estiver escrito aqui, diga que vai confirmar e marque "gatilho": "sem_informacao"
-- resumir benefícios: quando ele perguntar os benefícios ou o que um plano cobre, liste TODOS os itens de "cobre" daquele plano nos FATOS, sem cortar nenhum e sem inventar. se ainda NÃO tem os FATOS (ele não mandou a placa), não diga que vai confirmar: cite os benefícios que valem pra todo associado — reboque, assistência 24h, carro amigo, chaveiro, clube de benefícios, os almoços e as lavagens na sede, o aplicativo, livre condutor — e peça a placa pra mandar o que o plano do veículo dele cobre exatamente
+- resumir benefícios: quando ele perguntar os benefícios ou o que um plano cobre, liste TODOS os itens de "cobre" daquele plano nos FATOS, sem cortar nenhum e sem inventar. se ainda NÃO tem os FATOS (ele não mandou a placa), não diga que vai confirmar: cite os benefícios que valem pra todo associado — reboque, assistência 24h, chaveiro, pneu furado, pane seca, hospedagem, retorno a domicílio, clube de benefícios, os almoços e as lavagens na sede, o aplicativo, livre condutor — e peça a placa pra mandar o que o plano do veículo dele cobre exatamente
 - oferecer adicional (vidros, terceiros, rastreador) sem o cliente pedir — cada coisa a mais atrapalha a venda
 - perguntar o tipo do veículo ou a cota: você já sabe pelos FATOS
 - dar desconto na mensalidade (use a resposta pronta)

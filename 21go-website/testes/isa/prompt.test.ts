@@ -166,8 +166,8 @@ test('o que a Isa AINDA NAO sabe esta escrito — fidelidade/multa inventada no 
   const { AINDA_NAO_SABE } = await import('../../src/lib/isa/prompt.regras.ts')
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
   assert.match(p, /## o que você AINDA NÃO sabe/)
-  // depois que o dono respondeu as 71 (12/09/2026) sobrou pouca coisa aqui
-  for (const tema of ['motorhome', 'táxi até 100 km']) {
+  // depois que o dono respondeu as 71 e as 5 pendencias (12/09/2026) sobrou o carro amigo
+  for (const tema of ['carro amigo']) {
     assert.ok(AINDA_NAO_SABE.some((x: string) => x.includes(tema)), `faltou ${tema}`)
     assert.match(p, new RegExp(tema))
   }
@@ -271,4 +271,22 @@ test('oficina propria na sede, lavagem e beneficios: ela responde, nao "vou conf
   assert.match(p, /se ainda NÃO tem os FATOS[^\n]*cite os benefícios que valem pra todo associado/)
   // multi-pergunta: responde a parte que sabe e confirma so o resto
   assert.match(p, /responda essa primeiro e diga que vai confirmar SÓ o que falta/)
+})
+
+test('as 5 pendencias do doc respondidas pelo dono (12/09/2026)', async () => {
+  const { AINDA_NAO_SABE } = await import('../../src/lib/isa/prompt.regras.ts')
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false })
+  assert.match(p, /motorhome: NÃO aceitamos/)
+  assert.match(p, /72 horas ÚTEIS depois da ativação/)
+  assert.match(p, /ativar no mesmo dia em que ele retira o carro/)
+  assert.match(p, /mais R\$ 50 mil de danos a terceiros[^\n]*R\$ 49,90\/mês/)
+  assert.match(p, /táxi: quando o veículo fica indisponível[^\n]*mais de 2 pessoas/)
+  assert.match(p, /retorno a domicílio: individual, num raio de 20 km/)
+  // o que ele respondeu saiu da lista do que ela nao sabe
+  assert.ok(!AINDA_NAO_SABE.some((x: string) => /motorhome|táxi até 100/.test(x)))
+  // R$ 49,90 tem que ser numero PERMITIDO, senao o validador engole a resposta
+  assert.ok(fatos.numerosPermitidos.dinheiro.includes(49.9), 'R$ 49,90 liberado no validador')
+  // carro amigo nao e de todo plano: nao pode estar na lista do "vale pra todo associado"
+  const comuns = p.match(/cite os benefícios que valem pra todo associado[^\n]*/)?.[0] || ''
+  assert.ok(!/carro amigo/.test(comuns), 'carro amigo fora da lista dos comuns')
 })

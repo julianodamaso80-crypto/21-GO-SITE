@@ -72,7 +72,7 @@ const CARRO_APP_EXTRA = 20
 const RASTREADOR = { instalacao: 100, mensal: 19.9 }
 /** FIPE a partir da qual o rastreador e obrigatorio no RJ (gabarito do dono, 10/09/2026). */
 export const RASTREADOR_OBRIGATORIO = { moto: 15000, app: 35000, carro: 50000 }
-const ADICIONAIS = { vidros: 29.9, terceirosMoto: 22.9 }
+const ADICIONAIS = { vidros: 29.9, terceirosMoto: 22.9, terceiros50k: 49.9 }
 const DESCONTO_ENTRADA = 50
 /** Indicacao (dono, 11/09/2026): R$ 50 no pix + 10% no proximo boleto, por indicado que fechar. */
 export const INDICACAO = { pix: 50, pct: 10 }
@@ -141,6 +141,7 @@ export function montarFatos(e: EntradaFatos): Fatos {
     RASTREADOR.mensal,
     ADICIONAIS.vidros,
     ADICIONAIS.terceirosMoto,
+    ADICIONAIS.terceiros50k,
     DESCONTO_ENTRADA,
     ...Object.values(RASTREADOR_OBRIGATORIO),
     INDICACAO.pix,
