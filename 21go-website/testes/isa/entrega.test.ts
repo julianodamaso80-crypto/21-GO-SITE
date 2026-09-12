@@ -138,3 +138,13 @@ test('leilao avisa a indenizacao de 80% junto com o valor; pedido de documentos 
   assert.ok(!/🥳/.test(mensagemPedidoDocumentos(false)))
   assert.match(mensagemPedidoDocumentos(false), /^pra darmos sequência/)
 })
+
+test('documento mandado PEDINDO simulacao nao e fechamento (dono, 12/09/2026: "simula esse agora")', async () => {
+  const { ehPedidoDeSimulacao } = await import('../../src/lib/isa/entrega.regras.ts')
+  for (const t of ['simula esse agora', 'faz a cotação desse', 'simular esse aqui', 'quanto fica esse?', 'me passa o valor desse']) {
+    assert.equal(ehPedidoDeSimulacao(t), true, t)
+  }
+  for (const t of ['segue a cnh e o documento', 'ta ai os documentos', 'boa tarde', '']) {
+    assert.equal(ehPedidoDeSimulacao(t), false, t)
+  }
+})

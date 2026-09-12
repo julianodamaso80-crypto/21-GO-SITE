@@ -42,7 +42,7 @@ import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type
 import { dividirEmPartes, partesComCitacao, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -233,7 +233,11 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       await liberar(c.telefone, visto, true)
       return true
     }
-    if (leituras.some((l) => !l || DOC_DE_FECHAMENTO.has(l.tipo))) {
+    // CRLV mandado PEDINDO cotacao ("simula esse agora", dono 12/09/2026): o documento e so o jeito
+    // dele passar a placa. A Isa cota; transferir e pra quando o documento vem pra FECHAR.
+    const placaDoCrlv = leituras.find((l) => l?.tipo === 'crlv' && l.placa)?.placa ?? null
+    const querSimular = ehPedidoDeSimulacao(novas.map((m) => m.content).join(' '))
+    if (!(placaDoCrlv && querSimular) && leituras.some((l) => !l || DOC_DE_FECHAMENTO.has(l.tipo))) {
       await transferir(c, 'documento', enviar)
       await liberar(c.telefone, visto, true)
       return true
@@ -516,7 +520,7 @@ const SITE = 'https://21go.site'
  * "tem diferenca?" e so a simulacao saiu.
  */
 async function soltarComPerguntaPendente(telefone: string, texto: string, visto: string | null, enviou: boolean): Promise<void> {
-  const soAPlacaEaResposta = !ehPergunta(texto.replace(/[A-Z]{3}\d[A-Z0-9]\d{2}/gi, ' '))
+  const soAPlacaEaResposta = !ehPergunta(texto.replace(/\b[A-Z]{3}\d[A-Z0-9]\d{2}\b/gi, ' '))
   await liberar(telefone, soAPlacaEaResposta ? visto : null, enviou)
 }
 

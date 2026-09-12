@@ -111,6 +111,17 @@ export function lerLeilaoApp(texto: string | null | undefined): { leilao: boolea
   return r
 }
 
+/**
+ * Mandou o documento PEDINDO cotacao ("simula esse agora", "quanto fica esse?"). Ai o CRLV e so o
+ * jeito dele passar a placa — a Isa simula em vez de transferir pro 4824 (dono, 12/09/2026).
+ */
+const PEDIDO_DE_SIMULACAO =
+  /(simul|cotac|cotaç|orcament|orçament|quanto (fica|custa|sai)|me passa o valor|valor desse|preco desse|preço desse)/i
+
+export function ehPedidoDeSimulacao(texto: string | null | undefined): boolean {
+  return PEDIDO_DE_SIMULACAO.test((texto || '').normalize('NFD').replace(/[̀-ͯ]/g, ''))
+}
+
 /** Dono, 11/09/2026: a 21Go nao aceita moto de leilao (carro de leilao aceita). */
 export function recusaMotoDeLeilao(categoria: string | null | undefined, leilao: boolean): boolean {
   return leilao && categoria === 'MOTOCICLETA'
