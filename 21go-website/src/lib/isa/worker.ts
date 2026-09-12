@@ -41,7 +41,7 @@ import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura } from '@/lib/isa/ler-midia.regras'
 import { dividirEmPartes, partesComCitacao, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
-import { abertura, falaDeAdesivo } from '@/lib/isa/prompt.regras'
+import { abertura, falaDeAdesivo, ehPergunta } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
@@ -322,7 +322,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       return enviou
     }
     const enviou = await cotarPlacaPendente(c, placaDita, dito, { cumprimentar: cumprimentarAgora, nome: c.nome ?? lead?.nome ?? null, desconto: null, ultimaInbound, visto })
-    await liberar(c.telefone, visto, enviou)
+    await soltarComPerguntaPendente(c.telefone, textoNovas, visto, enviou)
     return enviou
   }
 
@@ -331,7 +331,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     const dito = lerLeilaoApp(textoNovas)
     if (dito.leilao !== null || dito.app !== null) {
       const enviou = await cotarPlacaPendente(c, c.placa_pendente, dito, { cumprimentar: cumprimentarAgora, nome: c.nome ?? lead?.nome ?? null, desconto, ultimaInbound, visto })
-      await liberar(c.telefone, visto, enviou)
+      await soltarComPerguntaPendente(c.telefone, textoNovas, visto, enviou)
       return enviou
     }
   }
@@ -508,6 +508,17 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 const GATILHOS_SILENCIOSOS = new Set(['hostil', 'associado', 'validador'])
 
 const SITE = 'https://21go.site'
+
+/**
+ * Depois de cotar: se junto com a placa (ou com a resposta de leilao/aplicativo) ele perguntou
+ * OUTRA coisa, as mensagens ficam pendentes de proposito — a rodada seguinte, um minuto depois,
+ * responde a pergunta com a simulacao ja gravada. Dono, 12/09/2026: ele mandou "roda em app" e
+ * "tem diferenca?" e so a simulacao saiu.
+ */
+async function soltarComPerguntaPendente(telefone: string, texto: string, visto: string | null, enviou: boolean): Promise<void> {
+  const soAPlacaEaResposta = !ehPergunta(texto.replace(/[A-Z]{3}\d[A-Z0-9]\d{2}/gi, ' '))
+  await liberar(telefone, soAPlacaEaResposta ? visto : null, enviou)
+}
 
 /** Guarda a placa e pergunta leilao e aplicativo juntos, antes de passar valores. */
 async function perguntarLeilaoApp(
