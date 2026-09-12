@@ -128,7 +128,9 @@ export async function listarFunil(): Promise<CardFunil[]> {
 /** Arrastou o card: a escolha da pessoa fica gravada e vence a etapa automatica. */
 export async function gravarEtapa(telefone: string, etapa: string | null): Promise<void> {
   await sql(
-    `UPDATE public.isa_contatos SET etapa = $2, etapa_em = CASE WHEN $2 IS NULL THEN NULL ELSE now() END, updated_at = now()
+    // $2::text: sem o tipo explicito o Postgres recusa o parametro dentro do CASE
+    // ("could not determine data type of parameter $2") e o card voltava pra coluna anterior.
+    `UPDATE public.isa_contatos SET etapa = $2::text, etapa_em = CASE WHEN $2::text IS NULL THEN NULL ELSE now() END, updated_at = now()
      WHERE telefone = $1`,
     [telefone, etapa],
   )

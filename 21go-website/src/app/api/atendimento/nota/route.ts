@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const nota = (b.nota ?? '').trim().slice(0, MAXIMO)
   if (!telefone) return NextResponse.json({ erro: 'telefone' }, { status: 400 })
 
-  await sql(`UPDATE public.isa_contatos SET nota = NULLIF($2, ''), updated_at = now() WHERE telefone = $1`, [telefone, nota])
+  await sql(`UPDATE public.isa_contatos SET nota = NULLIF($2::text, ''), updated_at = now() WHERE telefone = $1`, [telefone, nota])
   await registrarEvento(telefone, 'nota', { tamanho: nota.length }, s.u)
   return NextResponse.json({ ok: true })
 }
