@@ -235,3 +235,11 @@ test('plano que o veiculo dele NAO tem nao vira "otima escolha" (11/09/2026: Com
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
   assert.match(p, /plano que (ele )?citou[^\n]*não está nos FATOS|não está nos FATOS[^\n]*não peça documento/i)
 })
+
+test('com UM plano so, a pergunta e pelo nome do plano — nao "qual voce gostou mais" (dono, 11/09/2026)', () => {
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false })
+  assert.match(p, /se o veículo dele tem UM plano só/)
+  assert.match(p, /se encaixa com o que você tá buscando/)
+  // a moto tambem tem um plano so (pela cilindrada): a mesma regra serve
+  assert.match(p, /pergunte pelo nome/)
+})
