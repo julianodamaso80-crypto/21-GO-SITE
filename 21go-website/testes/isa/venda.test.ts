@@ -92,6 +92,8 @@ test('retomada pelo momento do cliente, sem repetir e sem nome (12/09/2026 13:43
   assert.match(mensagemRetomada({ escolheuPlano: true, jaPerguntouProtecao: true, planoUnico: null }), /separar os documentos/)
   assert.match(mensagemRetomada({ escolheuPlano: false, jaPerguntouProtecao: true, planoUnico: 'Veículos Especiais' }), /olhada na simulação\? se o Veículos Especiais fizer sentido/)
   assert.match(mensagemRetomada({ escolheuPlano: false, jaPerguntouProtecao: false, planoUnico: null, despediuSe: true }), /olhada na simulação/)
+  // varios planos: cita o de referencia com o valor (dono, 12/09/2026: "algo que deixa ela mais inteligente")
+  assert.match(mensagemRetomada({ escolheuPlano: false, jaPerguntouProtecao: true, planoUnico: null, planoSugerido: { nome: 'VIP', mensal: 227.41 } }), /o VIP ficou em R\$ 227,41\/mês/)
   // nenhuma retomada carrega o nome — quem chama pelo nome e a abertura
   assert.ok(!/possui/.test(PERGUNTA_TEM_PROTECAO))
   assert.ok(jaPerguntouProtecao([{ direction: 'outbound', content: 'Juliano, hoje você possui alguma proteção pro seu veículo?' }]))

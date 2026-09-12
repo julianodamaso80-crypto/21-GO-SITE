@@ -170,6 +170,8 @@ export interface EstadoRetomada {
   jaPerguntouProtecao: boolean
   /** Um plano so nos FATOS (Especiais, moto). */
   planoUnico: string | null
+  /** Varios planos: o de referencia (VIP), com o valor — a retomada cita ele em vez de ficar generica. */
+  planoSugerido?: { nome: string; mensal: number } | null
   /** A ultima mensagem dele foi despedida ("ok obrigado", "vou pensar"): retomada leve, no dia seguinte. */
   despediuSe?: boolean
 }
@@ -182,9 +184,9 @@ export interface EstadoRetomada {
 export function mensagemRetomada(e: EstadoRetomada): string {
   if (e.escolheuPlano) return 'conseguiu separar os documentos? é só a foto da CNH, o documento do veículo e um comprovante de residência 🙏🏼'
   if (e.jaPerguntouProtecao || e.despediuSe) {
-    return e.planoUnico
-      ? `conseguiu dar uma olhada na simulação? se o ${e.planoUnico} fizer sentido pra você, eu já sigo com a ativação`
-      : 'conseguiu dar uma olhada na simulação? qualquer dúvida sobre os planos é só me chamar aqui'
+    if (e.planoUnico) return `conseguiu dar uma olhada na simulação? se o ${e.planoUnico} fizer sentido pra você, eu já sigo com a ativação`
+    if (e.planoSugerido) return `conseguiu dar uma olhada na simulação? o ${e.planoSugerido.nome} ficou em ${brl(e.planoSugerido.mensal)}/mês — faz sentido pra você, ou prefere que eu compare com outro?`
+    return 'conseguiu dar uma olhada na simulação? qualquer dúvida sobre os planos é só me chamar aqui'
   }
   return PERGUNTA_TEM_PROTECAO
 }

@@ -71,8 +71,7 @@ const comparisonFeatures: FeatureRow[] = [
   { feature: 'Carro Reserva', basico: false, jeito: false, vip: '7 dias', premium: '15 dias' },
   { feature: 'Parabrisa', basico: false, jeito: true, vip: true, premium: true },
   { feature: 'Carro Amigo', basico: false, jeito: '25km', vip: '25km', premium: true },
-  { feature: 'Reboque', basico: '200km', jeito: '400km', vip: '1.000km', premium: '1.200km' },
-  { feature: 'Reboque Adicional', basico: false, jeito: false, vip: false, premium: '200km' },
+  { feature: 'Reboque', basico: '200km', jeito: '400km', vip: '1.000km', premium: '1.400km' },
   { feature: 'Todos os Vidros', basico: false, jeito: false, vip: false, premium: true },
   { feature: 'Monitoramento 24h', basico: true, jeito: true, vip: 'Acima R$50K', premium: true },
   { feature: 'Táxi', basico: '25km', jeito: '50km', vip: '100km', premium: '150km' },
@@ -116,7 +115,7 @@ const planFAQ = [
   },
   {
     q: 'O que a proteção veicular cobre?',
-    a: 'Na 21Go: roubo e furto, colisão, incêndio proveniente de colisão, danos a terceiros (de R$5.000 a R$100.000 conforme o plano), assistência 24h com reboque de 200 km a 1.200 km, carro reserva, vidros e monitoramento. O que cada plano inclui está na tabela comparativa desta página.',
+    a: 'Na 21Go: roubo e furto, colisão, incêndio proveniente de colisão, danos a terceiros (de R$5.000 a R$100.000 conforme o plano), assistência 24h com reboque de 200 km a 1.400 km, carro reserva, vidros e monitoramento. O que cada plano inclui está na tabela comparativa desta página.',
   },
   {
     q: 'Quanto custa a proteção veicular?',

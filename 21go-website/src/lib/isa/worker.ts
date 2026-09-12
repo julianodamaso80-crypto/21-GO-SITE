@@ -137,6 +137,7 @@ async function retomarSumidos(): Promise<void> {
       escolheuPlano: await jaPediuDocumentos(c.telefone, c.reiniciada_em),
       jaPerguntouProtecao: jaPerguntouProtecao(hist),
       planoUnico: planos.length === 1 ? planos[0].nome : null,
+      planoSugerido: planos.length > 1 ? (() => { const p = planoDoCliente(planos, null); return p ? { nome: p.nome, mensal: p.mensal } : null })() : null,
       despediuSe,
     })
     const agora = new Date()

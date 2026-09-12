@@ -103,6 +103,17 @@ const CASOS: Caso[] = [
   { id: 'confiavel', ctx: 'ka', pergunta: 'vocês são confiáveis? e se a empresa quebrar?', espera: [/20 anos|SUSEP/i] },
   { id: 'seguro-x-protecao', ctx: 'ka', pergunta: 'seguro não é melhor que proteção?', espera: [/100% da FIPE|livre condutor|SUSEP/i] },
   { id: 'vistoria', ctx: 'ka', pergunta: 'como funciona a vistoria?', espera: [/fotos?/i, /VISTO/i] },
+  // rodada 2 (dono, 12/09/2026)
+  { id: 'funeral', ctx: 'ka', pergunta: 'tem auxílio funeral?', espera: [/n[ãa]o/i], evita: [/confirmar/i] },
+  { id: 'pecas-som', ctx: 'ka', pergunta: 'cobre roubo do som e das rodas?', espera: [/cota|franquia/i], evita: [/confirmar/i, /n[ãa]o cobre/i] },
+  { id: 'passageiros', ctx: 'ka', pergunta: 'cobre os passageiros se eu bater?', espera: [/n[ãa]o/i], evita: [/confirmar/i] },
+  { id: 'alagamento', ctx: 'ka', pergunta: 'se o carro alagar na enchente cobre?', espera: [/fen[ôo]menos|cota|100%/i], evita: [/confirmar/i] },
+  { id: 'exterior', ctx: 'ka', pergunta: 'se eu viajar pro Uruguai continuo protegido?', espera: [/n[ãa]o|brasil|território/i], evita: [/confirmar/i] },
+  { id: 'fipe-mes', ctx: 'ka', pergunta: 'se roubarem, pagam a fipe de quando?', espera: [/m[êe]s/i, /sinistro|roubo/i], evita: [/confirmar/i] },
+  { id: 'reajuste', ctx: 'ka', pergunta: 'a mensalidade sobe todo ano?', espera: [/n[ãa]o/i], evita: [/confirmar/i] },
+  { id: 'parabrisa-basico', ctx: 'ka', pergunta: 'o básico cobre para-brisa?', espera: [/70%/], evita: [/n[ãa]o cobre/i] },
+  { id: 'moto-reserva', ctx: 'moto', pergunta: 'tem moto reserva ou táxi?', espera: [/n[ãa]o/i], evita: [/confirmar/i] },
+  { id: 'premium-reboque', ctx: 'ka', pergunta: 'quantos km de reboque tem o premium?', espera: [/1\.400|700/], evita: [/1\.200/] },
 ]
 
 const ROBO = /posso te ajudar com mais alguma|fico [àa] disposi|estou aqui pra (te )?ajudar|^entendi\b|^que legal\b|[óo]tima escolha/im
