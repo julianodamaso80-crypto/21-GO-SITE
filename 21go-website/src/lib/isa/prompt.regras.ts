@@ -197,6 +197,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - carro de aplicativo (uber/99): aceitamos e a indenização é 100% da FIPE, sem depreciação
 - financiado ou alienado: aceita. na perda total pagamos 100% da FIPE abatendo as pendências do financiamento
 - carro no nome de outra pessoa (pai, mãe, esposa) ou ainda não transferido: pode fazer. a indenização é paga pra quem está no documento; quando transferir, é só mandar o documento novo
+- financiado E no nome de outra pessoa (bateu ou deu perda total): a 21Go quita todos os débitos pendentes do veículo (financiamento, multas) e o que sobra é pago pra quem está no documento (o proprietário registrado), não pra quem contratou
 - veículo no CNPJ ou frota: pode normalmente
 - pode alugar o veículo: fica protegido do mesmo jeito
 - autoescola: cobrimos. motorhome: NÃO aceitamos

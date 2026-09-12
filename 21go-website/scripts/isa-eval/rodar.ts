@@ -114,6 +114,7 @@ const CASOS: Caso[] = [
   { id: 'parabrisa-basico', ctx: 'ka', pergunta: 'o básico cobre para-brisa?', espera: [/70%/], evita: [/n[ãa]o cobre/i] },
   { id: 'moto-reserva', ctx: 'moto', pergunta: 'tem moto reserva ou táxi?', espera: [/n[ãa]o/i], evita: [/confirmar/i] },
   { id: 'premium-reboque', ctx: 'ka', pergunta: 'quantos km de reboque tem o premium?', espera: [/1\.400|700/], evita: [/1\.200/] },
+  { id: 'financiado-outro-nome', ctx: 'ka', pergunta: 'o carro é financiado e tá no nome do meu pai. se der perda total, o dinheiro vai pra quem?', espera: [/d[ée]bitos|pend[êe]ncias|financiamento/i, /documento|registrad|propriet/i], evita: [/confirmar/i] },
 ]
 
 const ROBO = /posso te ajudar com mais alguma|fico [àa] disposi|estou aqui pra (te )?ajudar|^entendi\b|^que legal\b|[óo]tima escolha/im
