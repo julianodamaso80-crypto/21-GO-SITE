@@ -230,3 +230,8 @@ test('cumprimento ou mensagem truncada nao e fora do assunto (11/09/2026: "oi q"
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
   assert.match(p, /cumprimento[^\n]*NÃO é fora do assunto/i)
 })
+
+test('plano que o veiculo dele NAO tem nao vira "otima escolha" (11/09/2026: Compass so tem Especiais e ele disse VIP)', () => {
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
+  assert.match(p, /plano que (ele )?citou[^\n]*não está nos FATOS|não está nos FATOS[^\n]*não peça documento/i)
+})
