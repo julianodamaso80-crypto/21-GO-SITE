@@ -87,7 +87,9 @@ export function fatosDoLead(
     id: p.id,
     nome: p.name,
     mensal: Number(p.monthly),
-    beneficios: PLAN_INFO[planoDosBeneficios(p.id) as PlanId]?.features,
+    // "Parabrisa" no site; pra Isa o item ja carrega os 70% (eval de 12/09/2026: ela lia o item e
+    // esquecia a regra do gabarito).
+    beneficios: PLAN_INFO[planoDosBeneficios(p.id) as PlanId]?.features.map((b) => (/^parabrisa$/i.test(b.text) ? { ...b, text: 'Parabrisa (70% do valor)' } : b)),
   }))
   const numerosDosBeneficios = planos.flatMap((p) =>
     (p.beneficios || []).flatMap((b) => extrairNumeros(b.text).dinheiro),

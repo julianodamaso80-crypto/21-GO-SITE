@@ -25,6 +25,16 @@ function horaMinutoRio(d: Date): { h: number; m: number; ano: number; mes: numbe
   return { h: v('hour'), m: v('minute'), ano: v('year'), mes: v('month'), dia: v('day') }
 }
 
+/** 'AAAA-MM-DD' no Rio — o dia do relatorio, nunca o do container (UTC). */
+export function diaNoRio(d: Date): string {
+  const { ano, mes, dia } = horaMinutoRio(d)
+  return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`
+}
+
+export function horaNoRio(d: Date): number {
+  return horaMinutoRio(d).h
+}
+
 /** bom dia 05:00–11:59 · boa tarde 12:00–17:59 · boa noite 18:00–04:59 */
 export function cumprimento(agora: Date): Cumprimento {
   const { h } = horaMinutoRio(agora)

@@ -23,12 +23,14 @@ export interface ItemLista {
   ultima_em: string | null
   janela_ate: string | null
   etiquetas: string[]
+  pergunta_pendente: { texto: string; em: string } | null
 }
 
 const FILTRO: Record<Aba, string> = {
   todos: 'true',
   // Pausou sozinha num gatilho (e nao foi transferido) ou esta esperando o dono decidir desconto.
-  precisa: `(NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR c.aguardando_dono IS NOT NULL`,
+  // ...ou ficou devendo uma resposta ("vou confirmar e ja te retorno" — auditoria 12/09/2026).
+  precisa: `(NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR c.aguardando_dono IS NOT NULL OR c.pergunta_pendente IS NOT NULL`,
   isa: 'c.ligada',
   off: 'NOT c.ligada',
   transferidos: 'c.transferido_em IS NOT NULL',
@@ -38,7 +40,7 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Pr
   const termo = busca.trim()
   return sql<ItemLista>(
     `SELECT c.telefone, COALESCE(c.nome, cv.pushname) AS nome, c.ligada, c.pausa_motivo, c.transferido_em,
-            c.aguardando_dono, c.preco_da_tabela, c.janela_ate, c.etiquetas,
+            c.aguardando_dono, c.preco_da_tabela, c.janela_ate, c.etiquetas, c.pergunta_pendente,
             u.content AS ultima, u.direction AS ultima_direcao, (u.created_at AT TIME ZONE 'UTC') AS ultima_em
      FROM public.isa_contatos c
      LEFT JOIN public.conversations cv ON cv.id = c.conversation_id

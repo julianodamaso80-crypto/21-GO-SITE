@@ -39,6 +39,9 @@ export function mensagensDaSimulacao(p: {
   linhas.push(`Sua simulação completa (PDF): ${p.pdfUrl}`)
   linhas.push('', f.planos.length === 1 ? 'esse plano se encaixa com o que você tá buscando?' : 'qual deles se encaixa mais com o que você tá buscando?')
   const partes = [linhas.join('\n')]
+  // Leilao, remarcado, taxi ou sinistrado: o preco cai e a indenizacao tambem — dizer junto com o
+  // valor, nao deixar o cliente descobrir no sinistro (auditoria de 12/09/2026).
+  if (f.indenizacaoPct === 80) partes.push('como o veículo é de leilão (a mesma regra vale pra remarcado, táxi e sinistrado), a indenização em roubo, furto ou perda total é 80% da FIPE')
   if (p.leilaoOuAppAssumido) partes.push('ah, considerei que não é de leilão nem de aplicativo — se for, me avisa que eu ajusto 👍')
   return partes
 }
@@ -124,6 +127,8 @@ export function escolheuPlano(texto: string | null | undefined): boolean {
   return ESCOLHA.test(texto || '')
 }
 
-export function mensagemPedidoDocumentos(): string {
-  return 'que ótimo! 🥳\n\npra darmos sequência na sua ativação, me manda por aqui: foto da CNH, o documento do veículo e um comprovante de residência'
+/** `comemorar` = false quando a IA acabou de responder (ela ja comemorou; duas vezes soa robo). */
+export function mensagemPedidoDocumentos(comemorar = true): string {
+  const pedido = 'pra darmos sequência na sua ativação, me manda por aqui: foto da CNH, o documento do veículo e um comprovante de residência'
+  return comemorar ? `que ótimo! 🥳\n\n${pedido}` : pedido
 }

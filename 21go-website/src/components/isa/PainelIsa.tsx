@@ -26,6 +26,8 @@ interface ItemLista {
   ultima_em: string | null
   janela_ate: string | null
   etiquetas: string[]
+  /** "Vou confirmar e ja te retorno" sem resposta ainda (auditoria 12/09/2026). */
+  pergunta_pendente: { texto: string; em: string } | null
 }
 
 interface ItemConversa {
@@ -53,6 +55,7 @@ interface Contato {
   janela_ate: string | null
   genero: string | null
   etiquetas: string[]
+  pergunta_pendente: { texto: string; em: string } | null
 }
 
 interface Simulacao {
@@ -86,6 +89,11 @@ const MOTIVO: Record<string, string> = {
 
 const EVENTO: Record<string, string> = {
   pausou: 'Isa pausou',
+  sem_informacao: 'Isa não soube — prometeu retornar',
+  resposta_dono: 'resposta do dono entregue ao cliente',
+  beneficios: 'lista de cobertura enviada',
+  retomada_adiada: 'retomada adiada (cliente se despediu)',
+  aviso_fora_horario: 'aviso de fora do horário',
   transferiu: 'transferido pro 4824',
   alerta: 'alerta enviado ao dono',
   alerta_falhou: 'ALERTA NÃO SAIU',
@@ -343,7 +351,7 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
         <ul className="flex-1 overflow-y-auto">
           {lista.length === 0 && <li className="px-5 py-10 text-center text-sm text-white/35">nada por aqui</li>}
           {lista.map((c) => {
-            const precisaGente = (!c.ligada && !c.transferido_em && c.pausa_motivo && c.pausa_motivo !== 'manual' && c.pausa_motivo !== 'humano_assumiu') || !!c.aguardando_dono
+            const precisaGente = (!c.ligada && !c.transferido_em && c.pausa_motivo && c.pausa_motivo !== 'manual' && c.pausa_motivo !== 'humano_assumiu') || !!c.aguardando_dono || !!c.pergunta_pendente
             return (
               <li key={c.telefone}>
                 <button onClick={() => setSel(c.telefone)}
@@ -362,7 +370,7 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
                     </span>
                     {(precisaGente || c.transferido_em || c.preco_da_tabela || c.etiquetas?.length > 0) && (
                       <span className="mt-1.5 flex flex-wrap gap-1">
-                        {precisaGente && <Etiqueta tom="laranja">{c.aguardando_dono ? 'esperando você' : MOTIVO[c.pausa_motivo || ''] || c.pausa_motivo}</Etiqueta>}
+                        {precisaGente && <Etiqueta tom="laranja">{c.pergunta_pendente ? 'devendo resposta' : c.aguardando_dono ? 'esperando você' : MOTIVO[c.pausa_motivo || ''] || c.pausa_motivo}</Etiqueta>}
                         {c.transferido_em && <Etiqueta tom="azul">no 4824</Etiqueta>}
                         {c.preco_da_tabela && <Etiqueta tom="cinza">preço da tabela</Etiqueta>}
                         {(c.etiquetas || []).map((id) => <ChipEtiqueta key={id} id={id} />)}
@@ -508,7 +516,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
         </div>
 
         <div className={detalhes ? 'block' : 'hidden md:block'}>
-        {(sim || contato?.pausa_motivo || contato?.aguardando_dono) && (
+        {(sim || contato?.pausa_motivo || contato?.aguardando_dono || contato?.pergunta_pendente) && (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px]">
             {sim && (
               <>
@@ -530,6 +538,9 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             )}
             {contato?.preco_da_tabela && <Etiqueta tom="cinza">preço da tabela — conferir no Power</Etiqueta>}
             {contato?.aguardando_dono && <Etiqueta tom="laranja">esperando você decidir o desconto</Etiqueta>}
+            {contato?.pergunta_pendente && (
+              <Etiqueta tom="laranja">a Isa prometeu retornar: “{contato.pergunta_pendente.texto.slice(0, 90)}” — responda aqui ou pelo WhatsApp de avisos</Etiqueta>
+            )}
             {!contato?.ligada && contato?.pausa_motivo && <Etiqueta tom="laranja">pausada: {MOTIVO[contato.pausa_motivo] || contato.pausa_motivo}</Etiqueta>}
           </div>
         )}

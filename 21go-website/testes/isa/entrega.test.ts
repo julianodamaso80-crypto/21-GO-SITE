@@ -118,3 +118,18 @@ test('le a resposta de leilao/aplicativo na ordem da pergunta', async () => {
   assert.deepEqual(lerLeilaoApp('sim'), { leilao: null, app: null })
   assert.deepEqual(lerLeilaoApp('quanto fica o vip?'), { leilao: null, app: null })
 })
+
+test('leilao avisa a indenizacao de 80% junto com o valor; pedido de documentos sem comemorar duas vezes (auditoria 12/09/2026)', async () => {
+  const { mensagensDaSimulacao, mensagemPedidoDocumentos } = await import('../../src/lib/isa/entrega.regras.ts')
+  const { montarFatos } = await import('../../src/lib/isa/fatos.regras.ts')
+  const f = montarFatos({
+    marca: 'Jeep', modelo: 'Compass', ano: 2022, fipe: 116540, combustivel: null, leilao: true, carroApp: false, estado: null,
+    planos: [{ id: 'especial', nome: 'Veículos Especiais', mensal: 597.51 }], ativacaoReferencia: 647.51, ativacaoPorPlano: { especial: 647.51 }, desconto50: null,
+  })
+  const partes = mensagensDaSimulacao({ abertura: null, nome: 'Juliano', fatos: f, pdfUrl: 'u', leilaoOuAppAssumido: false })
+  assert.equal(partes.length, 2)
+  assert.match(partes[1], /80% da FIPE/)
+  assert.match(mensagemPedidoDocumentos(), /que ótimo! 🥳/)
+  assert.ok(!/🥳/.test(mensagemPedidoDocumentos(false)))
+  assert.match(mensagemPedidoDocumentos(false), /^pra darmos sequência/)
+})

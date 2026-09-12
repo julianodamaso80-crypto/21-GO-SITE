@@ -64,7 +64,9 @@ export const NUMEROS_OFICIAIS: readonly string[] = [
  */
 export function extrairTelefones(texto: string): string[] {
   const out: string[] = []
-  for (const m of texto.matchAll(/(?<![\p{L}\d,_])\(?\d[\d\s().-]{6,}\d(?![\p{L}\d,_])/gu)) {
+  // A barra entra por causa do CNPJ (40.902.817/0001-70): sem ela a sequencia parava em "40.902.817"
+  // e o CNPJ oficial era barrado como telefone (auditoria de 12/09/2026).
+  for (const m of texto.matchAll(/(?<![\p{L}\d,_])\(?\d[\d\s()./-]{6,}\d(?![\p{L}\d,_])/gu)) {
     const antes = texto.slice(Math.max(0, m.index! - 4), m.index!)
     if (/R\$\s*$/.test(antes)) continue
     const digitos = m[0].replace(/\D/g, '')

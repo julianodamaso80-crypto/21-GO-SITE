@@ -78,6 +78,26 @@ const DESCONTO_ENTRADA = 50
 export const INDICACAO = { pix: 50, pct: 10 }
 /** Multa por nao devolver o rastreador no cancelamento (dono, 12/09/2026). */
 export const MULTA_RASTREADOR = 900
+/** Para-brisa: o plano cobre 70% (doc do dono, item 58). */
+export const PARABRISA_PCT = 70
+/** Danos a terceiros do adicional de moto (R$ 10 mil) e do adicional de carro (+R$ 50 mil). */
+export const TERCEIROS_ADICIONAL = { moto: 10000, carro: 50000 }
+
+/**
+ * Os numeros que estao ESCRITOS no GABARITO_21GO e a Isa pode dizer mesmo sem simulacao. Uma
+ * lista so: o cerebro usa ela quando nao ha FATOS e montarFatos soma ela aos numeros do veiculo.
+ * Auditoria de 12/09/2026: 70%, R$ 10 mil e R$ 49,90 estavam no gabarito e o validador barrava —
+ * a Isa sabia e nao conseguia dizer. O teste `gabarito inteiro passa no validador` trava isso.
+ */
+export const NUMEROS_FIXOS: { dinheiro: number[]; pct: number[] } = {
+  dinheiro: [
+    DESCONTO_ENTRADA, INDICACAO.pix, RASTREADOR.instalacao, RASTREADOR.mensal, MULTA_RASTREADOR,
+    ADICIONAIS.vidros, ADICIONAIS.terceirosMoto, ADICIONAIS.terceiros50k,
+    TERCEIROS_ADICIONAL.moto, TERCEIROS_ADICIONAL.carro,
+    ...Object.values(RASTREADOR_OBRIGATORIO),
+  ],
+  pct: [6, 10, 15, 5, 20, 80, 100, PARABRISA_PCT, INDICACAO.pct],
+}
 
 const MARCAS_ELETRIFICADAS = ['BYD', 'TESLA', 'GWM', 'ZEEKR', 'NETA', 'ORA']
 const PALAVRAS_ELETRICO = /\b(ELETRIC|ELÉTRIC|ELECTRIC|EV|BEV|H[IÍ]BRID|HYBRID|HEV|PHEV|MHEV|E-TECH|E:HEV|RECHARGE)/i
@@ -136,17 +156,7 @@ export function montarFatos(e: EntradaFatos): Fatos {
     }
   })
 
-  const dinheiro = new Set<number>([
-    RASTREADOR.instalacao,
-    RASTREADOR.mensal,
-    ADICIONAIS.vidros,
-    ADICIONAIS.terceirosMoto,
-    ADICIONAIS.terceiros50k,
-    DESCONTO_ENTRADA,
-    ...Object.values(RASTREADOR_OBRIGATORIO),
-    INDICACAO.pix,
-    MULTA_RASTREADOR,
-  ])
+  const dinheiro = new Set<number>(NUMEROS_FIXOS.dinheiro)
   const cotaValor = e.fipe ? r2((e.fipe * cotaPct) / 100) : null
   if (e.fipe) dinheiro.add(r2(e.fipe))
   if (cotaValor) dinheiro.add(cotaValor)
@@ -166,7 +176,7 @@ export function montarFatos(e: EntradaFatos): Fatos {
 
   // 20 e 80: a depreciacao de leilao/remarcado/taxi/sinistro (dono, 12/09/2026) — a Isa explica
   // a regra mesmo quando o veiculo do cliente nao e desses.
-  const pct = new Set<number>([cotaPct, 5, 20, 80, 100, INDICACAO.pct])
+  const pct = new Set<number>([cotaPct, ...NUMEROS_FIXOS.pct])
   for (const p of planos) if (p.adesivoPct) pct.add(p.adesivoPct)
 
   const descricao = [e.marca, e.modelo].filter(Boolean).join(' ').trim()

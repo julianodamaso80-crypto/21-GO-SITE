@@ -126,5 +126,16 @@ export function numerosDeTeste(p: { allowlist: string | undefined; alerta: strin
  * do alerta. "desconto" sozinho e o estado dele como cliente, esperando o supervisor.
  */
 export function respostaDeSupervisor(p: { aguardandoDono: string | null; payloads: string[] }): boolean {
-  return /^(desconto|valor):\d+$/.test(p.aguardandoDono || '') || p.payloads.some((x) => x.startsWith(`${PREFIXO}:`))
+  return /^(desconto|valor|pergunta):\d+$/.test(p.aguardandoDono || '') || p.payloads.some((x) => x.startsWith(`${PREFIXO}:`))
+}
+
+/** O dono respondeu a uma pergunta que a Isa nao soube: "nao"/"ignora"/"depois" = deixa pra la. */
+export function donoPulouPergunta(texto: string | null): boolean {
+  // So a mensagem INTEIRA sendo "nao"/"ignora": "nao aceitamos motorhome" e resposta, nao pulo.
+  return /^\s*(n[aã]o|nao sei|não sei|ignora|ignorar|pula|pular|depois|deixa( pra l[aá])?)[\s!.]*$/i.test(texto || '')
+}
+
+/** Mensagem pro cliente com a resposta do dono, quando a IA nao reescreveu (rede). */
+export function mensagemRespostaConfirmada(resposta: string): string {
+  return `consegui confirmar aqui 🙏🏼\n\n${resposta.trim()}`
 }

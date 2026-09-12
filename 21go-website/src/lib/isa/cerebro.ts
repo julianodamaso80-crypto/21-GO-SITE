@@ -1,17 +1,26 @@
 import 'server-only'
 import { montarPrompt, comporResposta, abertura, tirarCumprimento, tirarNomeRepetido, ehRepeticao, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
-import { validarNumeros, type Permitidos } from '@/lib/isa/validador.regras'
+import { validarNumeros, extrairNumeros, type Permitidos } from '@/lib/isa/validador.regras'
+import { tirarFrasesDeRobo, comparacaoComHoje } from '@/lib/isa/venda.regras'
+import { lerJsonTolerante } from '@/lib/isa/json.regras'
 import { cumprimento } from '@/lib/isa/hora.regras'
-import type { Fatos } from '@/lib/isa/fatos.regras'
+import { NUMEROS_FIXOS, type Fatos } from '@/lib/isa/fatos.regras'
 import type { MensagemHistorico } from '@/lib/isa/banco'
 
 /**
- * Pensa a resposta da Isa: prompt (persona + gabarito + fatos) → Gemini 2.5 Flash (OpenRouter)
- * → validador de numeros. Numero fora dos fatos: pede UMA reescrita dizendo quais; se errar de
+ * Pensa a resposta da Isa: prompt (persona + gabarito + fatos) → Gemini 3.1 Pro (OpenRouter, raciocinio
+ * baixo; 2.5 Flash de reserva se ele falhar) → validador de numeros.
+ *
+ * Eval de 12/09/2026 (scripts/isa-eval, 45 perguntas reais): Flash 38/45 — ignorava o 70% do
+ * para-brisa, os 20 km do retorno a domicilio, os R$ 50 mil do adicional e respondia vago em
+ * "seguro x protecao"; Pro 43/45 (as 2 que faltaram eram regex do eval). Mesma escolha do audio. Numero fora dos fatos: pede UMA reescrita dizendo quais; se errar de
  * novo, devolve gatilho "validador" e a Isa nao envia — pausa e o time assume.
  */
 
-const MODELO = 'google/gemini-2.5-flash'
+// Trocavel por env pra comparar modelos no eval (scripts/isa-eval) sem mexer no codigo.
+const MODELO = process.env.ISA_MODELO || 'google/gemini-3.1-pro-preview'
+const RESERVA = 'google/gemini-2.5-flash'
+const raciocina = (modelo: string) => /pro|thinking/i.test(modelo)
 
 export type Gatilho = 'desconto' | 'robo' | 'hostil' | 'associado' | 'sem_informacao' | 'sem_comprovante' | 'avaria' | 'validador' | null
 
@@ -26,8 +35,8 @@ export interface SaidaCerebro {
   reprovados: string[]
 }
 
-// Sem simulacao a Isa nao tem preco nenhum: so os valores fixos do gabarito.
-const PERMITIDOS_SEM_FATOS: Permitidos = { dinheiro: [50, 100, 900, 19.9, 29.9, 22.9, 15000, 35000, 50000], pct: [6, 10, 15, 5, 100, 80, 20] }
+// Sem simulacao a Isa nao tem preco nenhum: so os valores fixos do gabarito (uma lista so, em fatos.regras).
+const PERMITIDOS_SEM_FATOS: Permitidos = NUMEROS_FIXOS
 
 const GATILHOS = new Set(['desconto', 'robo', 'hostil', 'associado', 'sem_informacao', 'sem_comprovante', 'avaria'])
 
@@ -56,17 +65,18 @@ function paraMensagensIA(historico: MensagemHistorico[]): MsgIA[] {
   return out
 }
 
-async function chamarIA(mensagens: MsgIA[]): Promise<string> {
-  const chave = process.env.OPENROUTER_API_KEY
-  if (!chave) throw new Error('OPENROUTER_API_KEY ausente')
+async function chamarModelo(chave: string, modelo: string, mensagens: MsgIA[]): Promise<string> {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: MODELO,
+      model: modelo,
       temperature: 0.5,
-      max_tokens: 900,
+      // Modelo com raciocinio (Pro): o pensamento conta no limite — com 900 a resposta vinha so "{".
+      max_tokens: raciocina(modelo) ? 4000 : 900,
       response_format: { type: 'json_object' },
+      // Raciocinio baixo: senao demora 15 s+ por resposta.
+      ...(raciocina(modelo) ? { reasoning: { effort: 'low' } } : {}),
       messages: mensagens,
     }),
     signal: AbortSignal.timeout(45_000),
@@ -76,9 +86,25 @@ async function chamarIA(mensagens: MsgIA[]): Promise<string> {
   return j.choices?.[0]?.message?.content ?? ''
 }
 
+/** O modelo principal e, se ele falhar ou demorar, a reserva — o cliente nunca fica sem resposta por causa do provedor. */
+async function chamarIA(mensagens: MsgIA[]): Promise<string> {
+  const chave = process.env.OPENROUTER_API_KEY
+  if (!chave) throw new Error('OPENROUTER_API_KEY ausente')
+  try {
+    return await chamarModelo(chave, MODELO, mensagens)
+  } catch (err) {
+    if (MODELO === RESERVA) throw err
+    console.warn('[isa] modelo principal falhou, indo pra reserva:', err instanceof Error ? err.message : err)
+    return chamarModelo(chave, RESERVA, mensagens)
+  }
+}
+
+export class JsonInvalido extends Error {}
+
 function lerSaida(bruto: string, aberturaDoCodigo: string | null, primeiroNome: string | null): Omit<SaidaCerebro, 'reprovados'> {
-  const limpo = bruto.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim()
-  const j = JSON.parse(limpo) as Record<string, unknown>
+  // Quebra de linha crua dentro do JSON derrubava a resposta inteira (eval de 12/09/2026).
+  const j = lerJsonTolerante(bruto)
+  if (!j) throw new JsonInvalido(`JSON da IA ilegível: ${bruto.slice(0, 120)}`)
   const gat = typeof j.gatilho === 'string' && GATILHOS.has(j.gatilho) ? (j.gatilho as Gatilho) : null
   const gen = j.genero === 'm' || j.genero === 'f' ? j.genero : null
   const placa = typeof j.placa === 'string' ? j.placa.toUpperCase().replace(/[^A-Z0-9]/g, '') : null
@@ -88,7 +114,8 @@ function lerSaida(bruto: string, aberturaDoCodigo: string | null, primeiroNome: 
     // Resposta pronta: a IA so aponta a chave; o texto do dono entra aqui, exato.
     // O cumprimento e do codigo (hora certa do Rio), nunca da IA.
     // O nome so aparece no cumprimento do codigo (dono, 11/09/2026: nada de "Juliano" toda hora).
-    resposta: comporResposta(pronta, tirarNomeRepetido(tirarCumprimento(typeof j.resposta === 'string' ? j.resposta : ''), primeiroNome), aberturaDoCodigo),
+    // Filler de robo ("entendi", "posso te ajudar com mais alguma duvida?") sai no codigo — auditoria 12/09/2026.
+    resposta: comporResposta(pronta, tirarFrasesDeRobo(tirarNomeRepetido(tirarCumprimento(typeof j.resposta === 'string' ? j.resposta : ''), primeiroNome)), aberturaDoCodigo),
     gatilho: gat,
     genero: gen,
     placa: placa && /^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(placa) ? placa : null,
@@ -112,11 +139,14 @@ export interface EntradaCerebro {
   agora: Date
   /** Comeco da conversa, primeiro contato do dia ou 4 h sem falar (precisaCumprimentar). */
   cumprimentar: boolean
+  /** O que ele disse pagar hoje em outra protecao (venda.regras valorQuePagaHoje) — vira comparacao nos FATOS. */
+  pagaHoje?: number | null
 }
 
 export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
   const nome = primeiroNome(e.nome)
   const aberturaDoCodigo = e.cumprimentar ? abertura(cumprimento(e.agora), nome) : null
+  const comparacao = e.fatos && e.pagaHoje ? comparacaoComHoje(e.fatos, e.pagaHoje) : null
   const sistema = montarPrompt({
     cumprimento: cumprimento(e.agora),
     primeiroNome: nome,
@@ -124,15 +154,39 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
     fatos: e.fatos,
     jaGanhouDesconto: e.jaGanhouDesconto,
     falaDeAdesivo: e.falaDeAdesivo,
+    comparacaoHoje: comparacao?.linhas,
   })
-  const permitidos = e.fatos?.numerosPermitidos ?? PERMITIDOS_SEM_FATOS
+  const base = e.fatos?.numerosPermitidos ?? PERMITIDOS_SEM_FATOS
+  // O valor que ele paga hoje e as diferencas sao fatos calculados: a IA pode cita-los.
+  const permitidos: Permitidos = { dinheiro: [...base.dinheiro, ...(comparacao?.dinheiro ?? (e.pagaHoje ? [e.pagaHoje] : []))], pct: base.pct }
   const conversa: MsgIA[] = [{ role: 'system', content: sistema }, ...paraMensagensIA(e.historico)]
 
-  let bruto = await chamarIA(conversa)
-  let saida = lerSaida(bruto, aberturaDoCodigo, nome)
   // O que o cliente mandou desde a ultima resposta da Isa.
   const iUltimaNossa = e.historico.map((m) => m.direction).lastIndexOf('outbound')
   const doCliente = e.historico.slice(iUltimaNossa + 1).filter((m) => m.direction === 'inbound').map((m) => m.content).join('\n')
+
+  let bruto = await chamarIA(conversa)
+  let saida: Omit<SaidaCerebro, 'reprovados'>
+  try {
+    saida = lerSaida(bruto, aberturaDoCodigo, nome)
+  } catch (err) {
+    if (!(err instanceof JsonInvalido)) throw err
+    // JSON ilegivel de verdade: pede de novo uma vez; se repetir, resposta segura e o dono recebe a
+    // pergunta pelo protocolo do "vou confirmar" — o cliente nunca fica sem resposta.
+    console.warn('[isa] JSON ilegível, pedindo de novo:', bruto.slice(0, 160))
+    conversa.push({ role: 'assistant', content: bruto })
+    conversa.push({ role: 'user', content: '(instrução interna, não é o cliente) sua saída não era JSON válido. responda de novo SÓ com o JSON, numa linha, com \\n escapado dentro das strings.' })
+    bruto = await chamarIA(conversa)
+    try {
+      saida = lerSaida(bruto, aberturaDoCodigo, nome)
+    } catch {
+      console.warn('[isa] JSON ilegível de novo — resposta segura')
+      return {
+        resposta: comporResposta(null, 'deixa eu confirmar aqui e já te retorno 🙏🏼', aberturaDoCodigo),
+        gatilho: 'sem_informacao', genero: null, placa: null, semPlaca: null, leilao: null, app: null, reprovados: [],
+      }
+    }
+  }
 
   // Resposta vazia SEM gatilho = a Isa ficaria calada sem ninguem saber (aconteceu no teste de
   // 10/09/2026: "Como está o processo?" ficou sem resposta e sem evento). Pede de novo uma vez;
@@ -212,4 +266,31 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
   if (v.ok) return { ...saida, reprovados: primeiraReprovacao }
 
   return { ...saida, resposta: '', gatilho: 'validador', reprovados: [...primeiraReprovacao, ...v.invalidos] }
+}
+
+/**
+ * "Vou confirmar e ja te retorno" — o dono respondeu no WhatsApp e a Isa escreve pro cliente no
+ * tom dela, SEM mudar fato nenhum. Numeros conferidos contra o gabarito + os que o dono escreveu.
+ * Qualquer duvida devolve null e a resposta do dono vai como esta (dono.regras).
+ */
+export async function reescreverRespostaDoDono(p: { pergunta: string; respostaDoDono: string; genero: Genero; nome: string | null }): Promise<string | null> {
+  const tratamento = p.genero === 'm' ? 'trate por "o senhor"' : p.genero === 'f' ? 'trate por "a senhora"' : 'escreva sem gênero ("você")'
+  const sistema =
+    'você é a Isa, atendente da 21Go Proteção Patrimonial Veicular, no WhatsApp. o cliente perguntou algo que você não sabia, você disse "vou confirmar e já te retorno", e o seu supervisor acabou de te passar a resposta. escreva a mensagem pro cliente.\n' +
+    'regras: minúsculas, frases curtas, sem ponto final, no máximo 2 partes separadas por uma linha em branco, sem cumprimento, sem chamar pelo nome. comece com "consegui confirmar aqui 🙏🏼". ' +
+    'NÃO mude nenhum fato, número, valor, prazo ou condição da resposta do supervisor; NÃO acrescente informação; NÃO explique o que ele não disse. ' +
+    tratamento +
+    '. termine com um próximo passo curto ligado à proteção (ex.: "quer que eu siga com a sua simulação?" ou "posso seguir com a ativação?").\n' +
+    'responda SÓ com JSON: {"resposta": "..."}'
+  const bruto = await chamarIA([
+    { role: 'system', content: sistema },
+    { role: 'user', content: `pergunta do cliente: "${p.pergunta}"\nresposta do supervisor: "${p.respostaDoDono}"` },
+  ])
+  const j = lerJsonTolerante(bruto) as { resposta?: unknown } | null
+  if (!j) return null
+  const texto = tirarFrasesDeRobo(tirarNomeRepetido(tirarCumprimento(typeof j.resposta === 'string' ? j.resposta : ''), primeiroNome(p.nome)))
+  if (!texto || vazaInterno(texto)) return null
+  const doDono = extrairNumeros(p.respostaDoDono)
+  const v = validarNumeros(texto, { dinheiro: [...NUMEROS_FIXOS.dinheiro, ...doDono.dinheiro], pct: [...NUMEROS_FIXOS.pct, ...doDono.pct] })
+  return v.ok ? texto : null
 }

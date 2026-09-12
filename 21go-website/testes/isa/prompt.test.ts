@@ -129,7 +129,7 @@ test('adesivo: so com DDD 21, e so colando na sede em Campo Grande (dono, 11/09/
   assert.match(rio, /sede da 21Go, em Campo Grande/)
   const fora = montarPrompt({ cumprimento: 'bom dia', primeiroNome: null, genero: null, fatos: carro, jaGanhouDesconto: false, falaDeAdesivo: false })
   assert.doesNotMatch(fora, /com adesivo \(/)
-  assert.match(fora, /NUNCA fale de adesivo/)
+  assert.match(fora, /NUNCA puxe o assunto adesivo/)
   assert.doesNotMatch(fora, /o desconto que dá pra ter nela é o do adesivo/)
 })
 
@@ -289,4 +289,17 @@ test('as 5 pendencias do doc respondidas pelo dono (12/09/2026)', async () => {
   // carro amigo nao e de todo plano: nao pode estar na lista do "vale pra todo associado"
   const comuns = p.match(/cite os benefícios que valem pra todo associado[^\n]*/)?.[0] || ''
   assert.ok(!/carro amigo/.test(comuns), 'carro amigo fora da lista dos comuns')
+})
+
+test('bloco de venda e frases proibidas estao no prompt; comparacao com o que ele paga entra nos FATOS (auditoria 12/09/2026)', () => {
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false, comparacaoHoje: ['hoje ele paga R$ 650,00 por mês em outra proteção/seguro (ele disse). comparação, plano a plano:'] })
+  assert.match(p, /## como você vende — com fato, sem pressão, sem desconto/)
+  assert.match(p, /toda resposta termina com UM próximo passo concreto/)
+  assert.match(p, /"tá caro" \/ "achei caro"/)
+  assert.match(p, /"vou pensar" \/ "depois te falo"/)
+  assert.match(p, /não fale mal de seguradora/)
+  assert.match(p, /NUNCA use frase de atendimento automático/)
+  assert.match(p, /hoje ele paga R\$ 650,00/)
+  // sem comparacao, nada dela aparece
+  assert.ok(!/hoje ele paga/.test(montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false })))
 })

@@ -30,9 +30,9 @@ const PROMPT =
   'Se nao der pra entender nada (cortado, sem fala, so ruido), responda exatamente [INAUDIVEL]. ' +
   'Devolva so o texto transcrito, sem comentarios.'
 
-// Cada modelo tem o seu tempo: no teste de 11/09/2026 o Pro passou de 45 s num audio e ele
-// virou "nao deu pra entender" — a reserva do OpenRouter so entra em erro, nao em demora.
-const TEMPO_POR_MODELO_MS = 25_000
+// Cada modelo tem o seu tempo: o Pro (o fiel) ganha 40 s — em 25 s um audio longo caia pro
+// Flash, que ja inventou palavra (auditoria de 12/09/2026). A reserva so entra em erro ou estouro.
+const TEMPO_POR_MODELO_MS: Record<string, number> = { 'google/gemini-3.1-pro-preview': 40_000, 'google/gemini-3.8-flash': 25_000 }
 
 async function tentar(chave: string, modelo: string, bytes: Buffer, mime: string): Promise<string | null> {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -54,7 +54,7 @@ async function tentar(chave: string, modelo: string, bytes: Buffer, mime: string
         },
       ],
     }),
-    signal: AbortSignal.timeout(TEMPO_POR_MODELO_MS),
+    signal: AbortSignal.timeout(TEMPO_POR_MODELO_MS[modelo] ?? 25_000),
   })
   if (!res.ok) {
     console.warn('[isa] transcricao HTTP', modelo, res.status, (await res.text().catch(() => '')).slice(0, 200))

@@ -14,13 +14,17 @@ import {
   contatosParaRetomar,
   reiniciarContato,
   humanoFalouDepois,
+  contatosSemAvisoForaDoHorario,
+  adiarRetomada,
+  jaPediuDocumentos,
   sql,
   type ContatoIsa,
   type MensagemHistorico,
 } from '@/lib/isa/banco'
 import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente } from '@/lib/isa/acoes'
-import { alertarDono } from '@/lib/isa/alertas'
+import { alertarDono, alertarPergunta } from '@/lib/isa/alertas'
+import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao } from '@/lib/isa/venda.regras'
 import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
@@ -69,6 +73,7 @@ export async function processarFila(): Promise<ResultadoFila> {
   const noHorario = dentroDoHorario(agora)
   // Fora do horario so os numeros de teste do dono (ele testa 24 h); cliente espera as 8h.
   const teste = numerosDeTeste({ allowlist: process.env.ISA_ALLOWLIST, alerta: numeroDeAlerta() })
+  if (!noHorario) await avisarForaDoHorario(teste).catch((err) => console.error('[isa] aviso fora do horario:', err))
   if (!noHorario && teste.length === 0) return { processados: 0, respondidos: 0, foraDoHorario: true }
   if (noHorario) await retomarSumidos().catch((err) => console.error('[isa] retomada:', err))
 
@@ -91,20 +96,56 @@ export async function processarFila(): Promise<ResultadoFila> {
   }
 }
 
-/** Uma retomada por silencio, so pra quem ja recebeu cotacao (ver contatosParaRetomar). */
+const MENSAGEM_FORA_HORARIO = 'oi! nosso atendimento é das 8h às 22h 🙏🏼\n\nassim que abrir eu te respondo por aqui, pode deixar'
+
+/**
+ * 22h-8h: quem escreveu recebe UM aviso por noite dizendo que a resposta vem as 8h (antes era
+ * silencio ate de manha). Atras de ISA_AVISO_FORA_HORARIO=on ate o dono aprovar o texto.
+ */
+async function avisarForaDoHorario(teste: string[]): Promise<void> {
+  if (process.env.ISA_AVISO_FORA_HORARIO !== 'on') return
+  for (const c of await contatosSemAvisoForaDoHorario(teste)) {
+    if (!destinoPermitido(c.telefone)) continue
+    await atualizarContato(c.telefone, { aviso_fora_horario_em: new Date().toISOString() })
+    const enviou = await enviarComoGente(c, MENSAGEM_FORA_HORARIO, undefined, c.ultimo_inbound_em)
+    await registrarEvento(c.telefone, 'aviso_fora_horario', { enviou })
+  }
+}
+
+const ADIAR_DESPEDIDA_MS = 20 * 60 * 60 * 1000
+
+/**
+ * Uma retomada por silencio, so pra quem ja recebeu cotacao (ver contatosParaRetomar). A mensagem
+ * e a do MOMENTO dele (venda.regras mensagemRetomada): quem escolheu plano ouve dos documentos, quem
+ * ja respondeu "tem protecao?" nao ouve de novo, quem se despediu so e chamado no dia seguinte.
+ */
 async function retomarSumidos(): Promise<void> {
   for (const c of await contatosParaRetomar()) {
     if (!destinoPermitido(c.telefone)) continue
-    // Dono (11/09/2026): conversa, nao cobranca — pergunta da situacao dele. O resto (quanto paga
-    // hoje, qual dos nossos planos gostou mais) segue pela IA quando ele responder.
-    const nome = primeiroNomeDe(c.nome)
+    const hist = await historico(c.conversation_id as string, 30, c.reiniciada_em)
+    const ultimaDele = [...hist].reverse().find((m) => m.direction === 'inbound')
+    const despediuSe = !!ultimaDele && ehDespedida(ultimaDele.content)
+    const faz = c.ultima_resposta_em ? Date.now() - new Date(c.ultima_resposta_em).getTime() : Infinity
+    if (despediuSe && faz < ADIAR_DESPEDIDA_MS) {
+      await adiarRetomada(c.telefone, new Date(new Date(c.ultima_resposta_em as string).getTime() + ADIAR_DESPEDIDA_MS))
+      await registrarEvento(c.telefone, 'retomada_adiada', { motivo: 'despedida' })
+      continue
+    }
+    const lead = await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)
+    const planos = lead ? fatosDoLead(lead, null).planos : []
+    const texto = mensagemRetomada({
+      escolheuPlano: await jaPediuDocumentos(c.telefone, c.reiniciada_em),
+      jaPerguntouProtecao: jaPerguntouProtecao(hist),
+      planoUnico: planos.length === 1 ? planos[0].nome : null,
+      despediuSe,
+    })
     const agora = new Date()
+    // O nome vai SO na abertura (12/09/2026 13:43 saiu "boa tarde, Leticya 😃 / Leticya, hoje...").
     const ab = precisaCumprimentar(c.ultima_resposta_em ? new Date(c.ultima_resposta_em) : null, agora)
-      ? `${abertura(cumprimento(agora), nome)}\n\n`
+      ? `${abertura(cumprimento(agora), primeiroNomeDe(c.nome))}\n\n`
       : ''
-    const texto = `${ab}${nome ? `${nome}, ` : ''}hoje você possui alguma proteção pro seu veículo?`
-    const enviou = await enviarComoGente(c, texto, undefined, c.ultimo_inbound_em)
-    await registrarEvento(c.telefone, 'retomada', { enviou })
+    const enviou = await enviarComoGente(c, `${ab}${texto}`, undefined, c.ultimo_inbound_em)
+    await registrarEvento(c.telefone, 'retomada', { enviou, texto })
     if (enviou) await liberar(c.telefone, null, true)
   }
 }
@@ -293,6 +334,25 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       return enviou
     }
   }
+  // "Quais os beneficios?" com simulacao na mao: a lista sai INTEIRA pelo codigo (auditoria de
+  // 12/09/2026: a IA listou 5 de 17). Junto com outra pergunta, a IA responde tudo.
+  if (fatos && lead) {
+    const pb = perguntaDeBeneficios(textoNovas, novas.length)
+    if (pb.pergunta) {
+      const plano = planoParaListar(fatos.planos, pb.planoIds)
+      const ab = cumprimentarAgora ? abertura(cumprimento(agora), primeiroNomeDe(c.nome ?? lead.nome ?? null)) : null
+      const texto = plano
+        ? mensagemBeneficios({ abertura: ab, plano, pdfUrl: `${SITE}/api/pdfs/${lead.id}`, temOutros: fatos.planos.length > 1 })
+        : `${ab ? `${ab}\n\n` : ''}${mensagemQualPlano(fatos.planos)}`
+      await registrarEvento(c.telefone, 'beneficios', { plano: plano?.id ?? null, por: 'codigo' })
+      const enviou = await enviarComoGente(c, [texto], ultimaInbound, visto)
+      await liberar(c.telefone, visto, enviou)
+      return enviou
+    }
+  }
+
+  // Visto + "digitando" ANTES de pensar: o modelo leva alguns segundos e o cliente ve que tem alguem ali.
+  if (ultimaInbound) await marcarLidaEDigitando(ultimaInbound)
   const saida = await pensar({
     nome: c.nome ?? lead?.nome ?? null,
     genero: (c.genero as 'm' | 'f' | null) ?? null,
@@ -302,6 +362,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     historico: hist,
     agora,
     cumprimentar: precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora),
+    pagaHoje: valorQuePagaHoje(hist),
   })
 
   if (saida.genero && !c.genero) await atualizarContato(c.telefone, { genero: saida.genero })
@@ -407,7 +468,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // Escolheu o plano e a resposta nao pediu os documentos: o proximo passo vai pelo codigo
   // (teste de 11/09/2026 — "gostei do vip, como funciona guincho?" e a IA so explicou o guincho).
   if (enviou && !saida.gatilho && escolheuPlano(novas.map((m) => m.content).join('\n')) && !/\bcnh\b/i.test(saida.resposta)) {
-    await enviarComoGente(c, [mensagemPedidoDocumentos()], ultimaInbound, visto)
+    await enviarComoGente(c, [mensagemPedidoDocumentos(false)], ultimaInbound, visto)
     await registrarEvento(c.telefone, 'pediu_documentos', null)
   }
 
@@ -426,7 +487,12 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_comprovante', detalhe: ultimoTexto.slice(0, 200) })
   }
   if (saida.gatilho === 'sem_informacao') {
-    await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_informacao', detalhe: ultimoTexto.slice(0, 200) })
+    // A promessa "ja te retorno" vira pendencia: aparece em "Precisa de voce" e o dono responde
+    // pelo WhatsApp — a Isa entrega ao cliente (acoes.responderPerguntaPendente).
+    const pergunta = textoNovas.trim().slice(0, 300)
+    await atualizarContato(c.telefone, { pergunta_pendente: { texto: pergunta, em: new Date().toISOString() } })
+    await registrarEvento(c.telefone, 'sem_informacao', { pergunta })
+    await alertarPergunta({ telefone: c.telefone, nome: c.nome, pergunta })
   }
   // Veiculo com amassado: a Isa pediu as fotos; a etiqueta faz a proxima foto ir pra Leticya.
   if (saida.gatilho === 'avaria' && !c.etiquetas?.includes('avaria')) {

@@ -28,6 +28,7 @@ const MOTIVO_LEGIVEL: Record<string, string> = {
   desconto: 'pedido de desconto',
   qualidade: 'qualidade do numero caiu na Meta',
   template: 'template da mensagem dos 5 min deixou de ser utilidade aprovada',
+  relatorio: 'relatorio diario da Isa',
 }
 
 export async function alertarDono(p: { telefone: string; nome: string | null; motivo: string; detalhe: string }): Promise<void> {
@@ -91,6 +92,54 @@ export async function alertarDesconto(p: {
         motivo: 'desconto',
         erroTemplate,
         erroTexto: err2 instanceof Error ? err2.message : String(err2),
+      }, 'sistema')
+    }
+  }
+}
+
+/**
+ * "Essa eu vou confirmar e ja te retorno": a pergunta vai pro dono com o pedido de RESPOSTA — ele
+ * escreve, a Isa reescreve no tom dela e entrega ao cliente (acoes.atenderDono). Antes o alerta
+ * so avisava e ninguem retornava: 10 promessas nos testes de 11-12/09/2026, 0 cumpridas.
+ */
+export async function alertarPergunta(p: { telefone: string; nome: string | null; pergunta: string }): Promise<void> {
+  const para = numeroDeAlerta()
+  if (!para) return
+  await sql(
+    `INSERT INTO public.isa_contatos (telefone, aguardando_dono) VALUES ($1, $2)
+     ON CONFLICT (telefone) DO UPDATE SET aguardando_dono = EXCLUDED.aguardando_dono, updated_at = now()`,
+    [para, `pergunta:${p.telefone}`],
+  )
+  const corpo =
+    `❓ A Isa não soube responder - 21Go
+
+Cliente: ${p.nome || 'sem nome'}
+Telefone: ${p.telefone}
+` +
+    `Pergunta: "${p.pergunta.slice(0, 300)}"
+
+` +
+    `Responda esta mensagem com a resposta que ela vai cumprir a promessa de retornar (ela escreve no tom dela). ` +
+    `Pra deixar pra lá: NAO.
+${PAINEL}?c=${p.telefone}`
+  try {
+    await enviarTexto(para, corpo)
+    await registrarEvento(p.telefone, 'alerta', { motivo: 'sem_informacao', via: 'texto' }, 'sistema')
+  } catch (err) {
+    const erroTexto = err instanceof Error ? err.message : String(err)
+    try {
+      await enviarTemplate(para, 'alerta_atendimento_isa', [
+        'a Isa nao soube responder — responda esta mensagem com a resposta',
+        p.nome || 'sem nome',
+        p.telefone,
+        `Pergunta: ${p.pergunta.slice(0, 300)} — abrir: ${PAINEL}?c=${p.telefone}`,
+      ])
+      await registrarEvento(p.telefone, 'alerta', { motivo: 'sem_informacao', via: 'template', erroTexto }, 'sistema')
+    } catch (err2) {
+      await registrarEvento(p.telefone, 'alerta_falhou', {
+        motivo: 'sem_informacao',
+        erroTexto,
+        erroTemplate: err2 instanceof Error ? err2.message : String(err2),
       }, 'sistema')
     }
   }

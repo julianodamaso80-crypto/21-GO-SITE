@@ -82,6 +82,12 @@ export interface ContatoIsa {
   etiquetas: string[]
   /** Ultima mensagem de alguem do time pelo painel/CRM — a Isa nao fala por cima ate o cliente responder. */
   humano_em: string | null
+  /** Retomada adiada (cliente se despediu): nada antes disto. */
+  retomar_apos: string | null
+  /** "Vou confirmar e ja te retorno": a pergunta que espera a resposta do dono (auditoria 12/09/2026). */
+  pergunta_pendente: { texto: string; em: string } | null
+  /** Aviso de fora do horario ja enviado nesta noite. */
+  aviso_fora_horario_em: string | null
 }
 
 /** Versoes que a Isa listou (cotacao sem placa), esperando o cliente responder o numero. */
@@ -245,7 +251,7 @@ export async function reiniciarContato(telefone: string): Promise<void> {
        pausada_em = NULL, transferido_em = NULL, entrada = NULL, desconto50_em = NULL,
        desconto50_de = NULL, desconto50_para = NULL, aguardando_dono = NULL, genero = NULL,
        preco_da_tabela = false, retomada_em = NULL, abordagem5min_em = NULL, opcoes_versao = NULL, placa_pendente = NULL,
-       ultima_resposta_em = NULL, humano_em = NULL, updated_at = now()
+       ultima_resposta_em = NULL, humano_em = NULL, retomar_apos = NULL, pergunta_pendente = NULL, aviso_fora_horario_em = NULL, updated_at = now()
      WHERE telefone = $1`,
     [telefone],
   )
@@ -285,6 +291,7 @@ const CAMPOS_EDITAVEIS = new Set([
   'lead_id', 'nome', 'ligada', 'pausa_motivo', 'pausa_por', 'pausada_em', 'transferido_em', 'entrada',
   'desconto50_em', 'desconto50_de', 'desconto50_para', 'aguardando_dono', 'genero', 'preco_da_tabela',
   'retomada_em', 'abordagem5min_em', 'opcoes_versao', 'placa_pendente', 'nota',
+  'retomar_apos', 'pergunta_pendente', 'aviso_fora_horario_em',
 ])
 
 export async function atualizarContato(telefone: string, campos: Record<string, unknown>): Promise<void> {
@@ -317,6 +324,7 @@ export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
          AND janela_ate > now() + interval '10 minutes'
          AND (retomada_em IS NULL OR (retomada_em < ultima_resposta_em AND retomada_em < now() - interval '24 hours'))
          AND (humano_em IS NULL OR humano_em < ultima_resposta_em)
+         AND (retomar_apos IS NULL OR retomar_apos < now())
          AND processando_desde IS NULL
        LIMIT $1
        FOR UPDATE SKIP LOCKED
@@ -324,4 +332,39 @@ export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
      RETURNING c.*`,
     [limite],
   )
+}
+
+/**
+ * Fora do horario (22h-8h): quem escreveu e esta esperando, ainda sem o aviso desta noite. O
+ * aviso nao marca nada como respondido — as 8h a fila responde normalmente.
+ */
+export async function contatosSemAvisoForaDoHorario(excluir: string[], limite = 20): Promise<ContatoIsa[]> {
+  return sql<ContatoIsa>(
+    `SELECT * FROM public.isa_contatos
+     WHERE ligada AND conversation_id IS NOT NULL AND ultimo_inbound_em IS NOT NULL
+       AND ${ms('ultimo_inbound_em')} > COALESCE(processado_ate, '-infinity'::timestamptz)
+       AND (aviso_fora_horario_em IS NULL OR aviso_fora_horario_em < now() - interval '10 hours')
+       AND (humano_em IS NULL OR humano_em < ultimo_inbound_em)
+       AND NOT (telefone = ANY($1::text[]))
+     ORDER BY ultimo_inbound_em LIMIT $2`,
+    [excluir, limite],
+  )
+}
+
+/** Cliente se despediu ("ok obrigado", "vou pensar"): a retomada espera ate `ate`. */
+export async function adiarRetomada(telefone: string, ate: Date): Promise<void> {
+  await sql(`UPDATE public.isa_contatos SET retomar_apos = $2, retomada_em = NULL, updated_at = now() WHERE telefone = $1`, [
+    telefone,
+    ate.toISOString(),
+  ])
+}
+
+/** Ja pediu os documentos nesta conversa (escolheu plano)? Depois de /reiniciar nao conta. */
+export async function jaPediuDocumentos(telefone: string, desde: string | null): Promise<boolean> {
+  const r = await sql(
+    `SELECT 1 FROM public.isa_eventos WHERE telefone = $1 AND tipo = 'pediu_documentos'
+       AND created_at > COALESCE($2::timestamptz, '-infinity'::timestamptz) LIMIT 1`,
+    [telefone, desde],
+  )
+  return r.length > 0
 }

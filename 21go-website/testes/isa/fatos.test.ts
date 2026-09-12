@@ -128,3 +128,19 @@ test('20% e 80% (depreciacao de leilao/remarcado/taxi/sinistro) podem ser ditos 
   for (const v of [20, 80, 100]) assert.ok(f.numerosPermitidos.pct.includes(v), `faltou ${v}%`)
   assert.ok(f.numerosPermitidos.dinheiro.includes(900), 'multa do rastreador')
 })
+
+test('o GABARITO inteiro passa no validador sem simulacao (auditoria de 12/09/2026: 70%, R$ 10 mil e R$ 49,90 estavam barrados)', async () => {
+  const { GABARITO_21GO, RESPOSTAS_PRONTAS } = await import('../../src/lib/isa/prompt.regras.ts')
+  const { validarNumeros } = await import('../../src/lib/isa/validador.regras.ts')
+  const { NUMEROS_FIXOS } = await import('../../src/lib/isa/fatos.regras.ts')
+  const linhas = [...GABARITO_21GO.split('\n'), ...Object.values(RESPOSTAS_PRONTAS)]
+  const barradas = linhas
+    .map((l) => ({ l, v: validarNumeros(l, NUMEROS_FIXOS) }))
+    .filter((x) => !x.v.ok)
+    .map((x) => `${x.v.invalidos.join(', ')}  <=  ${x.l.slice(0, 80)}`)
+  assert.deepEqual(barradas, [], 'linha do gabarito que a Isa sabe e nao consegue dizer:\n' + barradas.join('\n'))
+  // e os tres casos da auditoria, escritos como a Isa escreveria
+  for (const f of ['o plano cobre 70% do para-brisa', 'terceiros pra moto, R$ 10 mil, por R$ 22,90/mês', 'mais R$ 50 mil de terceiros por R$ 49,90/mês']) {
+    assert.ok(validarNumeros(f, NUMEROS_FIXOS).ok, f)
+  }
+})

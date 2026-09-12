@@ -40,13 +40,13 @@ interface Config5min {
   motivo?: string
 }
 
-async function lerConfig<T>(chave: string): Promise<T | null> {
+export async function lerConfig<T>(chave: string): Promise<T | null> {
   const r = await sql<{ valor: T }>(`SELECT valor FROM public.isa_config WHERE chave = $1`, [chave])
   return r[0]?.valor ?? null
 }
 
 /** Mescla no valor que ja existe — gravar a qualidade nao apaga o "ligado_em". */
-async function gravarConfig(chave: string, valor: Record<string, unknown>): Promise<void> {
+export async function gravarConfig(chave: string, valor: Record<string, unknown>): Promise<void> {
   await sql(
     `INSERT INTO public.isa_config (chave, valor) VALUES ($1, $2::jsonb)
      ON CONFLICT (chave) DO UPDATE SET valor = isa_config.valor || EXCLUDED.valor, updated_at = now()`,

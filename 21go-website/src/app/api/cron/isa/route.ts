@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processarFila } from '@/lib/isa/worker'
 import { abordarLeadsNovos } from '@/lib/isa/abordagem'
+import { relatorioDiario } from '@/lib/isa/relatorio'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,7 +23,11 @@ export async function GET(req: NextRequest) {
       console.error('[isa] 5 min falhou:', err)
       return { enviados: 0, erro: err instanceof Error ? err.message : String(err) }
     })
-    return NextResponse.json({ ok: true, ...fila, cincoMin })
+    const relatorio = await relatorioDiario().catch((err) => {
+      console.error('[isa] relatorio falhou:', err)
+      return { enviado: false, erro: err instanceof Error ? err.message : String(err) }
+    })
+    return NextResponse.json({ ok: true, ...fila, cincoMin, relatorio })
   } catch (err) {
     console.error('[isa] cron falhou:', err)
     return NextResponse.json({ ok: false, erro: err instanceof Error ? err.message : String(err) }, { status: 500 })

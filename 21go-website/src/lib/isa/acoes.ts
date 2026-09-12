@@ -3,6 +3,7 @@ import { upsertMessage, phoneToJid } from '@/lib/supabase-store'
 import { atualizarContato, registrarEvento, sql, type ContatoIsa, type MensagemHistorico } from '@/lib/isa/banco'
 import { enviarTexto } from '@/lib/isa/cloud'
 import { alertarDono, alertarDesconto } from '@/lib/isa/alertas'
+import { reescreverRespostaDoDono } from '@/lib/isa/cerebro'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import { mensagensDoNumero } from '@/lib/whatsapp-cloud'
 import { planoDoCliente } from '@/lib/isa/abordagem.regras'
@@ -13,6 +14,8 @@ import {
   mensagemDescontoDoDono,
   mensagemDonoRecusou,
   mensagemTransferencia,
+  donoPulouPergunta,
+  mensagemRespostaConfirmada,
 } from '@/lib/isa/dono.regras'
 
 /**
@@ -131,8 +134,14 @@ export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]):
   const phoneId = process.env.WA_PHONE_ID ?? ''
   for (const m of novas) {
     const bruto = mensagensDoNumero(m.raw_payload, phoneId).find((x) => x.id === m.whatsapp_message_id)
+    const pendente = (dono.aguardando_dono || '').match(/^(desconto|valor|pergunta):(\d+)$/)
+    // Pergunta que a Isa nao soube: o texto do dono E a resposta (auditoria de 12/09/2026).
+    if (pendente?.[1] === 'pergunta' && !bruto?.payload && (m.content || '').trim()) {
+      await responderPerguntaPendente(dono, pendente[2], m.content)
+      dono.aguardando_dono = null
+      continue
+    }
     const r = interpretarDono({ texto: m.content, payload: bruto?.payload ?? null })
-    const pendente = (dono.aguardando_dono || '').match(/^(desconto|valor):(\d+)$/)
     const telCliente = 'telefone' in r && r.telefone ? r.telefone : pendente?.[2]
     if (!telCliente || r.acao === 'nada') continue
 
@@ -199,4 +208,45 @@ async function falarComCliente(cliente: ContatoIsa, texto: string): Promise<bool
     await registrarEvento(cliente.telefone, 'envio_falhou', { erro: err instanceof Error ? err.message : String(err) })
     return false
   }
+}
+
+/**
+ * O dono respondeu a pergunta que a Isa nao soube: a Isa reescreve no tom dela (sem mudar fato),
+ * entrega ao cliente dentro da janela, limpa a pendencia e confirma pro dono. Ate 12/09/2026 o
+ * "vou confirmar e ja te retorno" morria no alerta — 10 promessas nos testes, 0 cumpridas.
+ */
+async function responderPerguntaPendente(dono: ContatoIsa, telCliente: string, texto: string): Promise<void> {
+  const limpar = () => sql(`UPDATE public.isa_contatos SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])
+  const [cliente] = await sql<ContatoIsa>(`SELECT * FROM public.isa_contatos WHERE telefone = $1`, [telCliente])
+  if (!cliente) {
+    await limpar()
+    return
+  }
+  const pergunta = cliente.pergunta_pendente?.texto ?? '(pergunta não registrada)'
+  const quem = cliente.nome || telCliente
+
+  if (donoPulouPergunta(texto)) {
+    await limpar()
+    await atualizarContato(cliente.telefone, { pergunta_pendente: null })
+    await registrarEvento(cliente.telefone, 'resposta_dono', { pergunta, pulou: true }, 'juliano')
+    const conf = `ok, deixei pra lá a pergunta do ${quem}`
+    await enviarTexto(dono.telefone, conf).then((w) => gravarSaida(dono, w, conf)).catch(() => {})
+    return
+  }
+
+  const reescrita = await reescreverRespostaDoDono({
+    pergunta,
+    respostaDoDono: texto,
+    genero: (cliente.genero as 'm' | 'f' | null) ?? null,
+    nome: cliente.nome,
+  }).catch(() => null)
+  const msg = reescrita ?? mensagemRespostaConfirmada(texto)
+  const ok = await falarComCliente(cliente, msg)
+  await limpar()
+  if (ok) await atualizarContato(cliente.telefone, { pergunta_pendente: null })
+  await registrarEvento(cliente.telefone, 'resposta_dono', { pergunta, resposta: texto, enviada: msg, ok, reescrita: !!reescrita }, 'juliano')
+  const conf = ok
+    ? `pronto, mandei pro ${quem} ✅\n\n"${msg}"`
+    : `não consegui mandar pro ${quem}: a janela de 24h dele fechou — responde pelo painel (a pergunta continua lá)`
+  await enviarTexto(dono.telefone, conf).then((w) => gravarSaida(dono, w, conf)).catch(() => {})
 }

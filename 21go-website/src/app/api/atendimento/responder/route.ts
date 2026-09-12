@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: err instanceof Error ? err.message : 'falha ao enviar' }, { status: 502 })
   }
 
-  await sql(`UPDATE public.isa_contatos SET humano_em = now(), updated_at = now() WHERE telefone = $1`, [telefone])
+  // Quem responde pelo painel cumpre o "vou confirmar e ja te retorno" da Isa, se havia um.
+  await sql(`UPDATE public.isa_contatos SET humano_em = now(), pergunta_pendente = NULL, updated_at = now() WHERE telefone = $1`, [telefone])
   await registrarEvento(telefone, 'humano_respondeu', { isa: c.ligada ? 'ligada' : 'desligada' }, s.u)
   return NextResponse.json({ ok: true })
 }

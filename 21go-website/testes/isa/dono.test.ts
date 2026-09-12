@@ -106,3 +106,12 @@ test('fora do horario a Isa atende so os numeros de teste (allowlist + alertas, 
   assert.deepEqual(numerosDeTeste({ allowlist: '5521992208062,5521965774240', alerta: '5521965774240' }), ['5521992208062', '5521965774240'])
   assert.deepEqual(numerosDeTeste({ allowlist: undefined, alerta: null }), [])
 })
+
+test('pergunta pendente: o 4240 vira supervisor e "nao"/"ignora" pula (auditoria 12/09/2026)', async () => {
+  const { respostaDeSupervisor, donoPulouPergunta, mensagemRespostaConfirmada } = await import('../../src/lib/isa/dono.regras.ts')
+  assert.ok(respostaDeSupervisor({ aguardandoDono: 'pergunta:5521999999999', payloads: [] }))
+  assert.ok(!respostaDeSupervisor({ aguardandoDono: 'pergunta', payloads: [] }))
+  for (const t of ['não', 'nao sei', 'ignora', 'depois', 'deixa pra lá']) assert.ok(donoPulouPergunta(t), t)
+  for (const t of ['não aceitamos motorhome', 'sim, cobre', '72 horas úteis']) assert.ok(!donoPulouPergunta(t), t)
+  assert.match(mensagemRespostaConfirmada('  72 horas úteis '), /^consegui confirmar aqui 🙏🏼\n\n72 horas úteis$/)
+})
