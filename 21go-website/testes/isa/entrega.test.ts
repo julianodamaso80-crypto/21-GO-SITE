@@ -114,6 +114,11 @@ test('le a resposta de leilao/aplicativo na ordem da pergunta', async () => {
   assert.deepEqual(lerLeilaoApp('não é de leilão'), { leilao: false, app: null })
   assert.deepEqual(lerLeilaoApp('rodo na uber'), { leilao: null, app: true })
   assert.deepEqual(lerLeilaoApp('leilão não, mas trabalho no 99'), { leilao: false, app: true })
+  // "sem leilão" e negacao (12/09/2026: virou "e de leilao" e a moto foi recusada a toa)
+  assert.deepEqual(lerLeilaoApp('sem leilão'), { leilao: false, app: null })
+  assert.deepEqual(lerLeilaoApp('RIR4D72\nsem leilão'), { leilao: false, app: null })
+  assert.deepEqual(lerLeilaoApp('sem leilão e sem aplicativo'), { leilao: false, app: false })
+  assert.deepEqual(lerLeilaoApp('não é de leilão, mas rodo na uber'), { leilao: false, app: true })
   // "sim" sozinho nao diz qual dos dois; pergunta de outra coisa nao e resposta
   assert.deepEqual(lerLeilaoApp('sim'), { leilao: null, app: null })
   assert.deepEqual(lerLeilaoApp('quanto fica o vip?'), { leilao: null, app: null })

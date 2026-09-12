@@ -84,8 +84,9 @@ export function mensagemPerguntaLeilaoApp(abertura: string | null): string {
 }
 
 const APP = /\b(uber|99|99pop|indriver|aplicativo|app)\b/
-const NAO_APP = /\b(nao|nem|nunca)\s+(\w+\s+){0,3}(uber|99|99pop|indriver|aplicativo|app)\b|\b(uber|99|aplicativo|app)\s+nao\b/
-const NAO_LEILAO = /\b(nao|nem|nunca)\s+(e\s+)?(de\s+)?leil|leil\w*\s+nao\b/
+// "sem" tambem e negacao (dono, 12/09/2026: "sem leilão" virou leilao e a moto foi recusada a toa).
+const NAO_APP = /\b(nao|nem|nunca|sem)\s+(\w+\s+){0,3}(uber|99|99pop|indriver|aplicativo|app)\b|\b(uber|99|aplicativo|app)\s+nao\b/
+const NAO_LEILAO = /\b(nao|nem|nunca|sem)\s+(e\s+)?(de\s+)?leil|leil\w*\s+nao\b/
 
 /**
  * Resposta a pergunta de leilao/aplicativo. `null` = o cliente nao disse (ai a IA le a conversa).
