@@ -29,8 +29,36 @@ export const ROTULO_MIDIA: Record<TipoMidia, string> = {
   outro: 'arquivo',
 }
 
-/** Documento de contratacao: o cliente quer fechar — transfere pro 4824 e pausa. */
+/**
+ * Documentos de contratacao. Dono (12/09/2026): documento no COMECO e pra cotar — a Isa le (a placa
+ * do CRLV vira simulacao) e NAO transfere; so transfere quando ele esta FECHANDO (escolheu plano).
+ * E ao fechar, pede so o que ainda falta.
+ */
 export const DOC_DE_FECHAMENTO = new Set<TipoMidia>(['cnh', 'crlv', 'comprovante_residencia'])
+export const DOCS_CONTRATACAO: readonly TipoMidia[] = ['cnh', 'crlv', 'comprovante_residencia']
+const PEDIDO_DOC: Record<'cnh' | 'crlv' | 'comprovante_residencia', string> = {
+  cnh: 'a foto da CNH',
+  crlv: 'o documento do veículo',
+  comprovante_residencia: 'um comprovante de residência',
+}
+
+/** Que documento esta neste texto lido ("📎 CNH: ..."), se for de contratacao. */
+export function tipoDoTextoLido(texto: string | null | undefined): TipoMidia | null {
+  const t = texto || ''
+  for (const tipo of DOCS_CONTRATACAO) if (t.includes(`📎 ${ROTULO_MIDIA[tipo]}`)) return tipo
+  return null
+}
+
+/** O que ainda falta pra fechar, no jeito de pedir ("a foto da CNH", ...). Vazio = tem tudo. */
+export function docsQueFaltam(recebidos: Iterable<TipoMidia>): string[] {
+  const tem = new Set(recebidos)
+  return DOCS_CONTRATACAO.filter((d) => !tem.has(d)).map((d) => PEDIDO_DOC[d as keyof typeof PEDIDO_DOC])
+}
+
+/** Nome curto pro prompt ("CNH", "documento do veículo"). */
+export function nomeDoDoc(tipo: TipoMidia): string {
+  return ROTULO_MIDIA[tipo]
+}
 
 export interface Leitura {
   tipo: TipoMidia

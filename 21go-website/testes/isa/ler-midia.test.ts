@@ -33,3 +33,16 @@ test('o texto lido entra na conversa, com a legenda do cliente se tinha', () => 
   assert.equal(textoDaLeitura('olha essa', l), 'olha essa\n📎 cotação/orçamento: Porto Seguro, R$ 250/mês')
   assert.equal(textoDaLeitura(null, { tipo: 'foto_veiculo', resumo: 'Onix branco', placa: 'RKM7J62' }), '📎 foto do veículo: Onix branco (placa RKM7J62)')
 })
+
+test('documento no comeco: sabe o que ja chegou e pede so o que falta (dono, 12/09/2026)', async () => {
+  const { tipoDoTextoLido, docsQueFaltam, textoDaLeitura } = await import('../../src/lib/isa/ler-midia.regras.ts')
+  const crlv = textoDaLeitura(null, { tipo: 'crlv', resumo: 'CRLV 2024, Ford Ka', placa: 'KWG7183' })
+  const cnh = textoDaLeitura('segue', { tipo: 'cnh', resumo: 'CNH categoria B', placa: null })
+  assert.equal(tipoDoTextoLido(crlv), 'crlv')
+  assert.equal(tipoDoTextoLido(cnh), 'cnh')
+  assert.equal(tipoDoTextoLido(textoDaLeitura(null, { tipo: 'print_conversa', resumo: 'x', placa: null })), null)
+  assert.equal(tipoDoTextoLido('oi, tudo bem?'), null)
+  assert.deepEqual(docsQueFaltam(['crlv']), ['a foto da CNH', 'um comprovante de residência'])
+  assert.deepEqual(docsQueFaltam(['cnh', 'crlv', 'comprovante_residencia']), [])
+  assert.deepEqual(docsQueFaltam([]), ['a foto da CNH', 'o documento do veículo', 'um comprovante de residência'])
+})

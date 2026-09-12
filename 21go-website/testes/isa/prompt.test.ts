@@ -303,3 +303,12 @@ test('bloco de venda e frases proibidas estao no prompt; comparacao com o que el
   // sem comparacao, nada dela aparece
   assert.ok(!/hoje ele paga/.test(montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false })))
 })
+
+test('a IA sabe que documento ja chegou e pede so o que falta (dono, 12/09/2026)', () => {
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false, docs: { recebidos: ['documento do veículo'], faltam: ['a foto da CNH', 'um comprovante de residência'] } })
+  assert.match(p, /documentos que ele JÁ mandou nesta conversa: documento do veículo/)
+  assert.match(p, /peça SÓ o que falta: a foto da CNH, um comprovante de residência/)
+  assert.match(p, /documento que chega no COMEÇO[^\n]*é pra cotar, não pra fechar/)
+  const tudo = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false, docs: { recebidos: ['CNH', 'documento do veículo', 'comprovante de residência'], faltam: [] } })
+  assert.match(tudo, /não falta nenhum documento/)
+})

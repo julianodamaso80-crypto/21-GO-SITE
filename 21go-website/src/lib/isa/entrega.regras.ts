@@ -140,7 +140,11 @@ export function escolheuPlano(texto: string | null | undefined): boolean {
 }
 
 /** `comemorar` = false quando a IA acabou de responder (ela ja comemorou; duas vezes soa robo). */
-export function mensagemPedidoDocumentos(comemorar = true): string {
-  const pedido = 'pra darmos sequência na sua ativação, me manda por aqui: foto da CNH, o documento do veículo e um comprovante de residência'
+export function mensagemPedidoDocumentos(comemorar = true, faltam: string[] = ['a foto da CNH', 'o documento do veículo', 'um comprovante de residência']): string {
+  // Dono (12/09/2026): o que ele ja mandou no comeco nao se pede de novo.
+  const lista = faltam.length > 1 ? `${faltam.slice(0, -1).join(', ')} e ${faltam[faltam.length - 1]}` : faltam[0]
+  const pedido = faltam.length
+    ? `pra darmos sequência na sua ativação, me manda por aqui: ${lista}`
+    : 'já tenho seus documentos aqui, então vou te passar pra Leticya finalizar a sua ativação'
   return comemorar ? `que ótimo! 🥳\n\n${pedido}` : pedido
 }

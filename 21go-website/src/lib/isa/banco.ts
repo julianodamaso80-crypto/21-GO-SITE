@@ -368,3 +368,16 @@ export async function jaPediuDocumentos(telefone: string, desde: string | null):
   )
   return r.length > 0
 }
+
+/** Textos lidos de foto/PDF do cliente nesta conversa ("📎 ..."), depois de /reiniciar. */
+export async function textosLidos(conversationId: string, desde: string | null): Promise<string[]> {
+  const r = await sql<{ content: string }>(
+    `SELECT content FROM public.messages
+     WHERE conversation_id = $1 AND evolution_instance = 'cloud_isa' AND direction = 'inbound'
+       AND content LIKE '%📎 %'
+       AND (created_at AT TIME ZONE 'UTC') > COALESCE($2::timestamptz, '-infinity'::timestamptz)
+     ORDER BY created_at`,
+    [conversationId, desde],
+  )
+  return r.map((x) => x.content)
+}

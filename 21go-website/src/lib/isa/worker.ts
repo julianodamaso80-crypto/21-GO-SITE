@@ -14,6 +14,7 @@ import {
   contatosParaRetomar,
   reiniciarContato,
   humanoFalouDepois,
+  textosLidos,
   contatosSemAvisoForaDoHorario,
   adiarRetomada,
   jaPediuDocumentos,
@@ -38,7 +39,7 @@ import {
 } from '@/lib/isa/cloud'
 import { transcrever } from '@/lib/isa/transcrever'
 import { lerMidia } from '@/lib/isa/ler-midia'
-import { DOC_DE_FECHAMENTO, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura } from '@/lib/isa/ler-midia.regras'
+import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, nomeDoDoc, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura, type TipoMidia } from '@/lib/isa/ler-midia.regras'
 import { dividirEmPartes, partesComCitacao, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta } from '@/lib/isa/prompt.regras'
@@ -233,21 +234,28 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       await liberar(c.telefone, visto, true)
       return true
     }
-    // CRLV SOZINHO antes de existir simulacao (ou pedindo cotacao) e so o jeito dele mandar a
-    // placa — a Isa cota (dono, 12/09/2026). Transferir e pra quando o documento vem pra FECHAR:
-    // depois dos valores, ou junto com CNH/comprovante.
-    const soCrlv =
-      leituras.length > 0 &&
-      leituras.every((l) => l && (l.tipo !== 'crlv' ? !DOC_DE_FECHAMENTO.has(l.tipo) : Boolean(l.placa))) &&
-      leituras.some((l) => l?.tipo === 'crlv')
-    const crlvPraCotar =
-      soCrlv &&
-      (ehPedidoDeSimulacao(novas.map((m) => m.content).join(' ')) ||
-        !(await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)))
-    if (!crlvPraCotar && leituras.some((l) => !l || DOC_DE_FECHAMENTO.has(l.tipo))) {
-      await transferir(c, 'documento', enviar)
-      await liberar(c.telefone, visto, true)
-      return true
+    // Dono (12/09/2026): documento no COMECO (antes de escolher plano) e pra COTAR — a Isa le, a
+    // placa do CRLV vira simulacao, CNH/comprovante ficam guardados. So transfere pro 4824 quando
+    // ele esta FECHANDO: ja escolheu o plano (pedimos os documentos) ou esta escolhendo agora.
+    const docsAgora = leituras.filter((l): l is Leitura => !!l && DOC_DE_FECHAMENTO.has(l.tipo))
+    const ilegivel = leituras.some((l) => !l)
+    if (docsAgora.length || ilegivel) {
+      const textoAgora = novas.map((m) => m.content).join('\n')
+      const fechando =
+        !ehPedidoDeSimulacao(textoAgora) &&
+        ((await jaPediuDocumentos(c.telefone, c.reiniciada_em)) || escolheuPlano(textoAgora))
+      if (fechando) {
+        await transferir(c, 'documento', enviar)
+        await liberar(c.telefone, visto, true)
+        return true
+      }
+      if (ilegivel && !docsAgora.length) {
+        const enviou = await enviarComoGente(c, ['não consegui abrir esse arquivo 🤔 pode mandar de novo como foto, por favor?'], ultimaInbound, visto)
+        await liberar(c.telefone, visto, enviou)
+        return enviou
+      }
+      await registrarEvento(c.telefone, 'documento_no_comeco', { tipos: docsAgora.map((l) => l.tipo) })
+      // segue: a placa lida cai na cotacao logo abaixo; sem placa, a IA responde sabendo o que ja chegou
     }
   }
 
@@ -315,6 +323,9 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   const hist = await historico(c.conversation_id, 30, c.reiniciada_em)
   const ultimaNossa = [...hist].reverse().find((m) => m.direction === 'outbound')
+  // Documentos de contratacao que ele ja mandou (dono, 12/09/2026: nao pedir de novo o que ja tem).
+  const recebidos = new Set<TipoMidia>((await textosLidos(c.conversation_id, c.reiniciada_em)).map(tipoDoTextoLido).filter((t): t is TipoMidia => !!t))
+  const docsDaConversa = { recebidos: [...recebidos].map(nomeDoDoc), faltam: docsQueFaltam(recebidos) }
 
   // PLACA E ACHADA PELO CODIGO, nunca pela IA (bug de 11/09/2026: "Pyv8i13" virou um HB20 inventado,
   // sem consulta, sem lead no Power e sem PDF). Placa nova na mensagem = consulta direto.
@@ -375,6 +386,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     agora,
     cumprimentar: precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora),
     pagaHoje: valorQuePagaHoje(hist),
+    docs: docsDaConversa,
   })
 
   if (saida.genero && !c.genero) await atualizarContato(c.telefone, { genero: saida.genero })
@@ -479,9 +491,15 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   // Escolheu o plano e a resposta nao pediu os documentos: o proximo passo vai pelo codigo
   // (teste de 11/09/2026 — "gostei do vip, como funciona guincho?" e a IA so explicou o guincho).
-  if (enviou && !saida.gatilho && escolheuPlano(novas.map((m) => m.content).join('\n')) && !/\bcnh\b/i.test(saida.resposta)) {
-    await enviarComoGente(c, [mensagemPedidoDocumentos(false)], ultimaInbound, visto)
-    await registrarEvento(c.telefone, 'pediu_documentos', null)
+  if (enviou && !saida.gatilho && escolheuPlano(novas.map((m) => m.content).join('\n')) && !/\bcnh\b|comprovante/i.test(saida.resposta)) {
+    if (docsDaConversa.faltam.length === 0) {
+      // Ja mandou tudo no comeco "pra organizar": nao pede de novo — fecha com a Leticya.
+      await transferir(c, 'documento', enviar)
+      await liberar(c.telefone, visto, true)
+      return true
+    }
+    await enviarComoGente(c, [mensagemPedidoDocumentos(false, docsDaConversa.faltam)], ultimaInbound, visto)
+    await registrarEvento(c.telefone, 'pediu_documentos', { faltam: docsDaConversa.faltam })
   }
 
   // Respondeu a mensagem dos 5 min escrevendo, sem tocar no botao: os R$ 50 vem logo depois.

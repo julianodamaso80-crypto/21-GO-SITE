@@ -148,3 +148,11 @@ test('documento mandado PEDINDO simulacao nao e fechamento (dono, 12/09/2026: "s
     assert.equal(ehPedidoDeSimulacao(t), false, t)
   }
 })
+
+test('pedido de documentos so do que falta; com tudo em maos, avisa que vai finalizar (dono, 12/09/2026)', async () => {
+  const { mensagemPedidoDocumentos } = await import('../../src/lib/isa/entrega.regras.ts')
+  assert.match(mensagemPedidoDocumentos(false, ['a foto da CNH', 'um comprovante de residência']), /me manda por aqui: a foto da CNH e um comprovante de residência$/)
+  assert.match(mensagemPedidoDocumentos(false, ['um comprovante de residência']), /me manda por aqui: um comprovante de residência$/)
+  assert.match(mensagemPedidoDocumentos(false, []), /já tenho seus documentos aqui/)
+  assert.match(mensagemPedidoDocumentos(), /a foto da CNH, o documento do veículo e um comprovante de residência/)
+})

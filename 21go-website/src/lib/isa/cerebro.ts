@@ -141,6 +141,8 @@ export interface EntradaCerebro {
   cumprimentar: boolean
   /** O que ele disse pagar hoje em outra protecao (venda.regras valorQuePagaHoje) — vira comparacao nos FATOS. */
   pagaHoje?: number | null
+  /** Documentos de contratacao ja recebidos nesta conversa. */
+  docs?: { recebidos: string[]; faltam: string[] }
 }
 
 export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
@@ -155,6 +157,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
     jaGanhouDesconto: e.jaGanhouDesconto,
     falaDeAdesivo: e.falaDeAdesivo,
     comparacaoHoje: comparacao?.linhas,
+    docs: e.docs,
   })
   const base = e.fatos?.numerosPermitidos ?? PERMITIDOS_SEM_FATOS
   // O valor que ele paga hoje e as diferencas sao fatos calculados: a IA pode cita-los.

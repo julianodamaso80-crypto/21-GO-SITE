@@ -292,6 +292,8 @@ export interface EntradaPrompt {
   falaDeAdesivo?: boolean
   /** Linhas calculadas em venda.regras (comparacaoComHoje): o que ele paga hoje x cada plano. */
   comparacaoHoje?: string[]
+  /** Documentos de contratacao que ele JA mandou nesta conversa (nomes curtos) e o que falta. */
+  docs?: { recebidos: string[]; faltam: string[] }
 }
 
 /**
@@ -378,7 +380,8 @@ você se preocupa com o cliente de verdade: ouve, entende a situação dele e s�
 - se ele contar que já tem proteção ou seguro: pergunte, com interesse, quanto ele paga hoje. depois pergunte, com relação aos nossos planos, qual ele gostou mais
 - se ele disser que NÃO tem proteção e já recebeu a simulação: pergunte, dos planos que você mandou, qual ele gostou mais. não ofereça outra simulação — ele já tem
 - se o veículo dele tem UM plano só nos FATOS, NUNCA pergunte "qual você gostou mais": pergunte pelo nome, "o plano [nome do plano] se encaixa com o que você está buscando?"
-- quando ele escolher um plano ("gostei do vip", "quero o básico"): comemore curto e peça pra dar sequência na ativação: foto da CNH, o documento do veículo e um comprovante de residência
+- quando ele escolher um plano ("gostei do vip", "quero o básico"): comemore curto e peça pra dar sequência na ativação SÓ os documentos que FALTAM (ver "documentos" nos FATOS). se não falta nenhum, diga que já tem tudo e que vai passar pra Leticya finalizar
+- documento que chega no COMEÇO (antes de escolher plano) é pra cotar, não pra fechar: se veio CRLV, o sistema já consulta a placa; se veio CNH ou comprovante, agradeça em uma frase e siga a conversa (peça a placa se ainda não tem). nunca diga que vai transferir por causa de documento no começo
 - se o plano que ele citou NÃO está nos FATOS (o veículo dele não tem esse plano), não comemore e não peça documento: diga qual plano o veículo dele tem e pergunte se é esse que ele quer
 - se ele disser que não tem comprovante de residência: "sem problema, me manda então a CNH e o documento do veículo" e marque "gatilho": "sem_comprovante" (o time é avisado)
 
@@ -443,6 +446,7 @@ ${AINDA_NAO_SABE.map((x) => `- ${x}`).join('\n')}
 ${e.fatos ? blocoFatos(e.fatos, !!e.falaDeAdesivo) : 'ainda não há simulação deste cliente. para passar valor você PRECISA da placa: peça "me manda a placa do veículo, que eu consulto pra você". se for zero km ou ele não tiver placa, peça o modelo, o ano e o nome do veículo. não passe nenhum valor sem simulação.'}
 ${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativação — não existe outro desconto automático.' : ''}
 ${e.comparacaoHoje?.length ? `\n${e.comparacaoHoje.join('\n')}` : ''}
+${e.docs?.recebidos.length ? `\ndocumentos que ele JÁ mandou nesta conversa: ${e.docs.recebidos.join(', ')}. ${e.docs.faltam.length ? `quando ele escolher o plano, peça SÓ o que falta: ${e.docs.faltam.join(', ')}` : 'não falta nenhum documento: quando ele escolher o plano, diga que já tem tudo e que vai passar pra Leticya finalizar'}` : ''}
 
 ## gatilhos — marque e responda o mínimo (o time assume)
 - "desconto": pediu desconto (na ativação ou de novo). responda só: "vou confirmar com meu supervisor e te retorno 🙏🏼"
