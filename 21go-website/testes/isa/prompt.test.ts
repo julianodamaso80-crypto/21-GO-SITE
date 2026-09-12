@@ -260,3 +260,15 @@ test('depreciacao de 20%: leilao, remarcado, taxi e sinistro entram; app paga 10
   assert.match(p, /MOTO de leilão[^\n]*NÃO aceitamos/)
   assert.ok(!AINDA_NAO_SABE.some((x: string) => x.includes('quanto indeniza')), 'aceitar taxi saiu do que nao sabe')
 })
+
+test('oficina propria na sede, lavagem e beneficios: ela responde, nao "vou confirmar" (dono, 12/09/2026)', () => {
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
+  // o audio do dono: sede, oficina e lavagem na mesma pergunta
+  assert.match(p, /Rua Jorge Sampaio, 141, Campo Grande/)
+  assert.match(p, /oficina PRÓPRIA/)
+  assert.match(p, /2 almoços e 2 lavagens[^\n]*ordem de chegada/)
+  // sem a placa ela cita os beneficios que valem pra todos, em vez de ficar muda
+  assert.match(p, /se ainda NÃO tem os FATOS[^\n]*cite os benefícios que valem pra todo associado/)
+  // multi-pergunta: responde a parte que sabe e confirma so o resto
+  assert.match(p, /responda essa primeiro e diga que vai confirmar SÓ o que falta/)
+})
