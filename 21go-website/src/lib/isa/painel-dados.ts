@@ -1,6 +1,5 @@
 import 'server-only'
 import { sql, type ContatoIsa } from '@/lib/isa/banco'
-import { numeroDeAlerta } from '@/lib/isa/cloud'
 
 /**
  * Consultas do painel da Isa. So leitura aqui; as acoes (responder, ligar/desligar, transferir)
@@ -47,20 +46,18 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Pr
        ORDER BY m.created_at DESC LIMIT 1
      ) u ON true
      WHERE c.conversation_id IS NOT NULL
-       AND c.telefone <> $1
        AND (${FILTRO[aba]})
-       AND ($2 = '' OR c.telefone LIKE '%' || $2 || '%' OR COALESCE(c.nome, cv.pushname, '') ILIKE '%' || $2 || '%')
-       AND ($3 = '' OR $3 = ANY(c.etiquetas))
+       AND ($1 = '' OR c.telefone LIKE '%' || $1 || '%' OR COALESCE(c.nome, cv.pushname, '') ILIKE '%' || $1 || '%')
+       AND ($2 = '' OR $2 = ANY(c.etiquetas))
      ORDER BY u.created_at DESC NULLS LAST
-     LIMIT 200`,
-    [numeroDeAlerta() ?? '', termo, etiqueta],
+     LIMIT 500`,
+    [termo, etiqueta],
   )
 }
 
 export async function contarPrecisa(): Promise<number> {
   const r = await sql<{ n: string }>(
-    `SELECT count(*) AS n FROM public.isa_contatos c WHERE c.conversation_id IS NOT NULL AND c.telefone <> $1 AND (${FILTRO.precisa})`,
-    [numeroDeAlerta() ?? ''],
+    `SELECT count(*) AS n FROM public.isa_contatos c WHERE c.conversation_id IS NOT NULL AND (${FILTRO.precisa})`,
   )
   return Number(r[0]?.n ?? 0)
 }
