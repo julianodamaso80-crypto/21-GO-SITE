@@ -166,9 +166,13 @@ test('o que a Isa AINDA NAO sabe esta escrito — fidelidade/multa inventada no 
   const { AINDA_NAO_SABE } = await import('../../src/lib/isa/prompt.regras.ts')
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
   assert.match(p, /## o que você AINDA NÃO sabe/)
-  for (const tema of ['fidelidade', 'multa', 'contrato', 'apólice', 'rastreador', 'vistoria', 'financiado', 'blindado']) {
+  // depois que o dono respondeu as 71 (12/09/2026) sobrou pouca coisa aqui
+  for (const tema of ['motorhome', 'táxi até 100 km']) {
     assert.ok(AINDA_NAO_SABE.some((x: string) => x.includes(tema)), `faltou ${tema}`)
     assert.match(p, new RegExp(tema))
+  }
+  for (const sabido of ['fidelidade', 'contrato', 'rastreador', 'vistoria', 'financiado', 'blindado']) {
+    assert.match(p, new RegExp(sabido), `o gabarito tem que falar de ${sabido}`)
   }
 })
 
@@ -188,7 +192,7 @@ test('app, lavagem/almoço e o presidente entram no que ela sabe (dono, 11/09/20
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos: null, jaGanhouDesconto: false })
   assert.match(p, /aplicativo da 21Go.*rastrea|rastrea.*aplicativo/i)
   assert.match(p, /cartão de crédito/)
-  assert.match(p, /2 lavagens e 2 almoços/)
+  assert.match(p, /2 almoços e 2 lavagens/)
   assert.match(p, /Marcos Alves/)
   assert.ok(!AINDA_NAO_SABE.some((x: string) => x === 'aplicativo da 21Go'), 'app saiu da lista do que nao sabe')
   assert.ok(!AINDA_NAO_SABE.some((x: string) => x.includes('lavagem')), 'lavagem saiu da lista do que nao sabe')
@@ -253,6 +257,6 @@ test('depreciacao de 20%: leilao, remarcado, taxi e sinistro entram; app paga 10
   assert.match(p, /pode alugar/i)
   assert.match(p, /R\$ 900,00/)
   // moto de leilao segue recusada; o resto saiu da lista de recusa
-  assert.match(p, /NÃO aceitamos: moto de leilão/)
+  assert.match(p, /MOTO de leilão[^\n]*NÃO aceitamos/)
   assert.ok(!AINDA_NAO_SABE.some((x: string) => x.includes('quanto indeniza')), 'aceitar taxi saiu do que nao sabe')
 })

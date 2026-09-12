@@ -46,6 +46,17 @@ const formataDinheiro = (v: number) =>
   `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 /**
+ * Numeros oficiais que a Isa PODE dizer (o resto e telefone inventado). Confirmados pelo dono
+ * em 12/09/2026: assistencia 24h, recepcao da sede e CNPJ.
+ */
+export const NUMEROS_OFICIAIS: readonly string[] = [
+  '08002345555', // assistência 24h
+  '08009418589', // assistência 24h
+  '21965700021', // recepcao da sede
+  '40902817000170', // CNPJ
+]
+
+/**
  * Telefone escrito pela IA (11/09/2026: ela inventou "0800 2100 021"). Numero de contato so sai
  * pelo codigo (link da Leticya); na resposta da IA, qualquer telefone barra. Sequencia de 8+
  * digitos separados por espaco, ponto, hifen ou parenteses — sem virgula e sem R$ na frente,
@@ -56,7 +67,8 @@ export function extrairTelefones(texto: string): string[] {
   for (const m of texto.matchAll(/(?<![\p{L}\d,_])\(?\d[\d\s().-]{6,}\d(?![\p{L}\d,_])/gu)) {
     const antes = texto.slice(Math.max(0, m.index! - 4), m.index!)
     if (/R\$\s*$/.test(antes)) continue
-    if (m[0].replace(/\D/g, '').length >= 8) out.push(m[0].trim())
+    const digitos = m[0].replace(/\D/g, '')
+    if (digitos.length >= 8 && !NUMEROS_OFICIAIS.includes(digitos)) out.push(m[0].trim())
   }
   return out
 }

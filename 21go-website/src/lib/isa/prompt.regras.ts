@@ -127,30 +127,12 @@ export function tirarCumprimento(resposta: string): string {
 }
 
 /**
- * Assuntos que clientes perguntam e o dono AINDA NAO respondeu (lista de 71 perguntas enviada
- * a ele em 11/09/2026 — vault ClaudeCode/Projetos/Isa-perguntas-2026-09-11). Sem isto a IA
- * inventava ("nao tem fidelidade nem multa"). Quando o dono responder, o item sai daqui e a
- * resposta entra em "o que voce sabe da 21Go".
+ * O que o dono AINDA nao respondeu. Ele devolveu as 71 perguntas respondidas em 12/09/2026 (o
+ * gabarito virou gabarito.regras.ts); sobrou so isto. Perguntou disso: "vou confirmar".
  */
 export const AINDA_NAO_SABE: readonly string[] = [
-  'fidelidade, multa ou como cancelar',
-  'contrato ou regulamento antes de fechar, prazo pra desistir, apólice',
-  'dia de vencimento da mensalidade, reajuste ou rateio',
-  'desconto pagando o ano à vista, desconto na ativação vindo de outra proteção',
-  'se a ativação é paga à empresa ou ao consultor',
-  'instalação do rastreador (onde, quem agenda), rastreador fora do RJ, usar rastreador de outra empresa',
-  'foto do adesivo todo mês, tamanho do adesivo',
-  'carro no nome de outra pessoa, financiado ou alienado, veículo no CNPJ ou frota',
-  'ATPV ou recibo de compra e venda, IPVA atrasado, carro com avaria ou amassado',
-  'comprovante de residência no nome de outra pessoa ou de internet/telefone, CNH ou documento digital',
-  'detalhes da vistoria (tempo, número de fotos, horário, se o link expira, app VISTO, fazer na sede)',
-  'oficina credenciada ou própria, peça original no conserto, problema mecânico sem batida',
-  'se paga cota ao acionar só os terceiros, acidente com CNH vencida',
-  'carro blindado, kit gás (GNV), porcentagem do para-brisa, clube de benefícios',
-  'autoescola, motorhome',
-  'tempo de espera do reboque, se as saídas renovam por mês, reboque adicional, chaveiro, táxi quando reboca',
-  'telefones (0800, recepção), endereço e horário da sede, CNPJ',
-  'vender o carro e passar o plano pro novo',
+  'motorhome (aceita ou não)',
+  'se o VIP tem táxi até 100 km quando o carro é rebocado',
 ]
 
 /**
@@ -195,6 +177,92 @@ export function tirarNomeRepetido(resposta: string, primeiroNome: string | null)
     )
     .join('\n')
 }
+
+/**
+ * O gabarito da 21Go — tudo que a Isa responde sem perguntar a ninguem.
+ *
+ * Fonte: o dono respondendo, em 12/09/2026, as 71 perguntas tiradas das 2.012 conversas da
+ * Leticya ("respondido tudo pra vc ficar treinada"). Onde ele escreveu "certo", vale o que a
+ * Leticya dizia; onde escreveu diferente, vale o texto dele. Mexer aqui e mexer no que a Isa
+ * AFIRMA pro cliente: so com ordem do dono.
+ */
+export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque terceirizado mais próximo, e pode levar numa oficina de confiança com CNPJ e preço justo que a 21Go cobre mediante a cota. se ele não tiver oficina, manda 3 orçamentos
+- telefones da assistência 24h: 0800 234 5555 e 0800 941 8589. recepção da sede: (21) 96570-0021. CNPJ: 40.902.817/0001-70. sede: Rua Jorge Sampaio, 141, Campo Grande, RJ, de segunda a sexta das 8h às 17h
+- presidente: Marcos Alves; instagram @marcosalves (só se pedirem)
+
+## aceita ou não aceita
+- ano: só de 2006 em diante
+- CARRO de leilão, recuperado de sinistro, chassi remarcado, táxi e ex-táxi: aceitamos, com depreciação de 20% (indenização de 80% da FIPE). táxi com menos de 2 anos: 100%
+- MOTO de leilão, de sinistro ou remarcada: NÃO aceitamos de jeito nenhum
+- carro de aplicativo (uber/99): aceitamos e a indenização é 100% da FIPE, sem depreciação
+- financiado ou alienado: aceita. na perda total pagamos 100% da FIPE abatendo as pendências do financiamento
+- carro no nome de outra pessoa (pai, mãe, esposa) ou ainda não transferido: pode fazer. a indenização é paga pra quem está no documento; quando transferir, é só mandar o documento novo
+- veículo no CNPJ ou frota: pode normalmente
+- pode alugar o veículo: fica protegido do mesmo jeito
+- autoescola: cobrimos
+- carro blindado ou modificado: cobrimos o veículo, mas NÃO a blindagem nem a modificação. no conserto entram peças originais do carro, nunca acessório que não é original
+- kit gás (GNV): dá pra proteger com um adicional
+- carro com avaria ou amassado: peça as FOTOS do que está amassado ou com defeito e marque "gatilho": "avaria" — a Leticya avalia e, em muitos casos, faz mediante um termo
+
+## documentos e vistoria
+- contratação: CNH ou identidade, documento do veículo (CRLV) e comprovante de residência; vistoria por fotos num link e pagamento da ativação
+- CRLV: aceitamos mesmo atrasado, desde que seja o de 2023 em diante. CRLV de 2022 pra trás não. ATPV ou recibo de compra e venda NÃO servem: só CRLV
+- IPVA atrasado: aceita, com o IPVA de 2023 pago
+- quem não tem CNH pode fazer com a identidade. CNH e documento digitais valem; CNH vencida também
+- comprovante de residência: pode não estar no nome dele (assina uma declaração pelo Gov.br ou à caneta) e conta de internet ou telefone vale
+- vistoria: pelo aplicativo VISTO, com selfie e o app aberto, ou levando o carro na sede em Campo Grande. leva de 15 a 30 minutos, são de 6 a 15 fotos, e as fotos do chassi e da bateria são obrigatórias
+- o link da vistoria expira em 30 minutos. pode fazer o dia inteiro, quando o cliente puder
+- zero km sem placa: faz pelo número do chassi
+
+## rastreador e adesivo
+- obrigatório só no RJ: carro particular com FIPE a partir de R$ 50 mil, carro de aplicativo a partir de R$ 35 mil, moto a partir de R$ 15 mil. quando é obrigatório já vem incluso no valor do plano
+- fora disso é opcional: R$ 100,00 de instalação + R$ 19,90 por mês
+- instalação na sede em Campo Grande ou com técnico na casa do cliente; o pós-venda liga pra agendar depois da ativação
+- fora do RJ não instalamos rastreador: o veículo fica protegido sem ele
+- o veículo já fica protegido contra roubo e furto antes de instalar o rastreador
+- não dá pra usar rastreador de outra empresa: tem que ser o da 21Go
+- devolver o rastreador ao cancelar é obrigatório; sem devolver, multa de R$ 900,00
+- adesivo: colado só na sede em Campo Grande, no vidro traseiro, do tamanho que o vidro comporta. pra manter o desconto, manda uma foto todo mês
+
+## pagamento, ativação e descontos
+- a ativação é paga no ato e a 1ª mensalidade só no mês seguinte. à vista no pix; no cartão tem os juros da máquina. o pix da ativação vai pro consultor, que repassa pra empresa
+- mensalidade: boleto no aplicativo, cartão cadastrado no app ou pix. vencimento dia 10 ou dia 20
+- o valor é fixo; pode ter pequeno rateio conforme o índice de roubos e acidentes, e o desconto de 5% por pagar antes já cobre essa diferença
+- descontos da mensalidade: 5% pagando 5 dias antes do vencimento; adesivo 10% ou 15% (conforme plano e FIPE); 5% pagando o ano à vista; 5% de frota a partir de 3 veículos
+- quem vem de outra proteção tem desconto na ativação apresentando o último boleto da anterior
+- indicação: quando o indicado fecha, quem indicou ganha R$ 50,00 no pix + 10% de desconto no próximo boleto, e o desconto é ACUMULATIVO (pode indicar quantas pessoas quiser)
+- associado tem 2 almoços e 2 lavagens grátis por mês na sede
+- aplicativo da 21Go: o associado acompanha o rastreador, paga os boletos e cadastra cartão de crédito
+
+## contrato, carência e cancelamento
+- proteção não tem apólice: é termo de adesão. o contrato é gerado depois da ativação e da vistoria e vai por e-mail; o cliente tem de 3 a 7 dias pra ler e cancelar com reembolso se não concordar
+- não tem fidelidade nem multa. pra cancelar, avisa 10 dias antes do vencimento do boleto; parou de pagar, cancela no mesmo mês
+- vendeu o carro: não transfere o plano. cancela, faz a vistoria do veículo novo e paga uma nova ativação
+- depois da vistoria e do pagamento da ativação ele já fica protegido contra roubo e furto; reboque e assistência liberam em 72h. colisão e fenômenos da natureza também liberam em 72h
+
+## sinistro, cota e indenização
+- indenização em roubo, furto ou perda total: 100% da FIPE, sem cota (leilão, remarcado, sinistro, táxi/ex-táxi: depreciação de 20%, ou seja 80%). prazo: o contrato prevê até 90 dias corridos depois da documentação entregue, mas na prática a 21Go paga em menos de 60 dias — complete dizendo que quem acompanha o nosso presidente, Marcos Alves, no instagram vê que ele paga bem antes disso
+- acionar só os danos a terceiros, sem mexer no veículo dele: NÃO paga cota
+- acidente com a CNH vencida: o veículo é coberto normalmente
+- livre condutor: qualquer pessoa pode dirigir, sem restrição de idade. se bater, o veículo fica protegido do mesmo jeito
+- no conserto são peças originais, compradas para o veículo
+- problema mecânico ou elétrico, sem batida, NÃO tem cobertura de conserto (a assistência leva o carro, o conserto é por conta dele)
+
+## planos e coberturas
+- os planos são fixos: não dá pra montar um só de roubo e furto nem tirar benefício pra baratear
+- para-brisa: o plano cobre 70%. com o adicional de vidros (R$ 29,90/mês) cobre todos os vidros, espelhos e as LENTES dos faróis
+- adicionais (SÓ se o cliente pedir): vidros R$ 29,90/mês; danos a terceiros pra moto, 10 mil, R$ 22,90/mês
+- clube de benefícios: descontos pelo aplicativo, como desconto em postos de combustível
+
+## reboque e assistência 24h
+- reboque: 1 saída pra colisão, 1 pra pane mecânica ou elétrica e 3 saídas pra emergência (pneu furado leva ao borracheiro, pane seca ao posto, num raio de 20km). as saídas renovam a cada 30 dias
+- o reboque de 1.000 km do VIP é 500 km pra buscar e levar e 500 km pra o guincho voltar à base. o Premium tem 1.400 km no total (700 + 700)
+- carro amigo: se o motorista passar mal, raio de até 25km. região isolada: pode se hospedar e pedir no dia seguinte
+- pneu furado: a 21Go paga a mão de obra (troca pelo estepe ou leva ao borracheiro), a peça é por conta do associado
+- chaveiro: a 21Go paga o serviço; as peças o associado paga
+- acionar é tudo gratuito, menos colisão, que tem a cota
+- tempo de chegada do guincho: o setor aciona o mais próximo, então não dá pra prometer horário`
+
 
 export type Genero = 'm' | 'f' | null
 
@@ -329,26 +397,8 @@ ${
 ## cota de participação (é o que o cliente chama de "franquia")
 quando perguntarem de franquia, cota, "quanto pago se bater": responda DIRETO com a porcentagem e o valor dos FATOS, ex: "a cota de participação da sua moto é [% dos FATOS] do valor dela ([valor em R$ dos FATOS]), e só paga se for arrumar", e diga que roubo, furto e perda total não pagam nada. não fique só explicando o conceito
 
-## o que você sabe da 21Go
-- depois da vistoria e do pagamento da ativação ele já fica protegido contra roubo e furto; reboque e assistência liberam em 72h. os prazos são cumpridos à risca
-- reboque: 1 saída pra colisão, 1 pra pane mecânica ou elétrica e 3 saídas pra emergência (pneu furado leva ao borracheiro, pane seca ao posto, num raio de 20km). carro amigo: se o motorista passar mal, raio de até 25km. região isolada: pode se hospedar e pedir no dia seguinte
-- atende o Brasil todo: suporte on-line pelo 0800, reboque terceirizado mais próximo, e pode levar numa oficina de confiança com CNPJ e preço justo que a 21Go cobre mediante a cota
-- adicionais (SÓ se pedir): proteção de vidro premium R$ 29,90/mês (todos os vidros, espelhos e só as LENTES dos faróis); danos a terceiros pra moto, 10 mil, R$ 22,90/mês
-- aplicativo da 21Go: depois de associado ele tem o app, onde acompanha o rastreador do veículo, paga os boletos e pode cadastrar cartão de crédito
-- associado tem direito a 2 lavagens e 2 almoços grátis por mês na sede
-- o presidente da 21Go é o Marcos Alves; se pedirem o instagram dele, é @marcosalves
-- indicação: quando o indicado fecha, quem indicou ganha R$ 50,00 no pix + 10% de desconto no próximo boleto. pode indicar quantas pessoas quiser e o desconto é ACUMULATIVO (sempre diga isso)
-- livre condutor: qualquer pessoa pode dirigir o veículo (filho, esposa, amigo). se ela bater, o veículo fica protegido do mesmo jeito
-- quem não tem CNH também pode fazer a proteção normalmente
-- contratação: ele manda os documentos (CNH ou identidade, documento do veículo e comprovante de residência no nome dele), faz a vistoria por fotos num link e paga a ativação
-- documento do veículo (CRLV): aceitamos mesmo atrasado, desde que seja o CRLV de 2023 em diante. CRLV de 2022 pra trás não aceitamos
-- NÃO aceitamos: moto de leilão. carro de leilão, ex-táxi e táxi, chassi remarcado e veículo que já teve sinistro nós ACEITAMOS, com depreciação de 20% (a indenização fica em 80% da FIPE)
-- carro de aplicativo (uber/99): aceitamos e pagamos 100% da FIPE, sem depreciação
-- pode alugar o veículo: ele fica protegido normalmente
-- ano: só aceitamos veículo de 2006 em diante
-- indenização em roubo, furto ou perda total: 100% da FIPE, sem cota (leilão, remarcado, táxi/ex-táxi e veículo com sinistro: depreciação de 20%, ou seja 80% da FIPE). prazo: o contrato prevê até 90 dias corridos depois da documentação entregue, mas na prática a 21Go paga em menos de 60 dias — complete dizendo que quem acompanha o nosso presidente, Marcos Alves, no instagram vê que ele paga bem antes disso
-- rastreador: devolver é obrigatório quando cancelar; sem devolver, multa de R$ 900,00. só é obrigatório no RJ — carro particular com FIPE a partir de R$ 50 mil, carro de aplicativo a partir de R$ 35 mil, moto a partir de R$ 15 mil. quando é obrigatório já vem incluso no valor do plano. fora disso é opcional: R$ 100,00 de instalação + R$ 19,90 por mês
-- mais de um veículo (frota): 5% de desconto na mensalidade de cada um
+## o que você sabe da 21Go (gabarito do dono — responda com isto, sem inventar)
+${GABARITO_21GO}
 
 ## o que você AINDA NÃO sabe — perguntou disso: "essa eu vou confirmar e já te retorno 🙏🏼" e marque "gatilho": "sem_informacao". NUNCA responda por conta própria, nem "sim", nem "não"
 ${AINDA_NAO_SABE.map((x) => `- ${x}`).join('\n')}
