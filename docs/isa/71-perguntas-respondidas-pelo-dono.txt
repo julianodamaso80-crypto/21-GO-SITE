@@ -1,0 +1,225 @@
+
+Perguntas para a Isa
+Tirei das 2.012 conversas de clientes que a Leticya atendeu (3.735 perguntas). Aqui estão só as que a Isa ainda não sabe responder com certeza.
+Escreva sua resposta embaixo de cada pergunta, no campo "Sua resposta", e me devolva o arquivo. Pode deixar em branco a que não souber. "O que a Leticya respondia" é só sugestão: se estiver certo, escreva "ok".
+Decisões que estão comigo
+1. Chassi remarcado: aceita ou não?
+O que a Leticya respondia: Explica o que é e, em alguns casos, diz que cobre 80% da FIPE.
+Por que pergunto: Em 10/09 você disse que remarcado é indenizado em 80% da FIPE; hoje disse "não aceitamos chassi remarcado". A Isa já está recusando. O site ainda cota a opção "remarcado" com preço de leilão (regra de 29/07). Tiro do site também?
+Sua resposta:  SOMENTE DE CARRO, MOTO NAO ACEITAMOS, CARRO ACEITA RECUPARAD DE SINITRO, EIAL, REMARCADO, TEM DEPRECIAÇAO DE 20%
+2. Moto de leilão: tiro do site também?
+Por que pergunto: A Isa já recusa moto de leilão. O site (21go.site/cotacao) ainda simula moto de leilão com o desconto de leilão.
+Sua resposta:  NAO ACEITAMOS, TIRAR DO SITE TBM
+3. Reboque de 1.000 km: é ida e volta (500 + 500) ou 1.000 só de ida?  (apareceu 26x)
+O que a Leticya respondia: O reboque de 1000 km funciona com 500 km para buscar e levar o veículo e 500 km para o guincho retornar à base.
+Sua resposta:  500 + 500
+4. Reboque e assistência liberam em 72 horas ou na hora?  (apareceu 18x)
+O que a Leticya respondia: O reboque e assistência são liberados após 72 horas da ativação. / A cobertura contra roubo e furto é imediata após a vistoria e o pagamento da ativação. Para colisão e fenômenos da natureza, a proteção completa libera após 72 horas.
+Por que pergunto: Em 01/09 você disse que não existe "assistência em 72h" (proteção imediata após a ativação). Em 10/09 disse "reboque e assistência liberam em 72h". A Isa hoje fala 72h.
+Sua resposta:  O que a Leticya respondia: O reboque e assistência são liberados após 72 horas da ativação. / A cobertura contra roubo e furto é imediata após a vistoria e o pagamento da ativação. Para colisão e fenômenos da natureza, a proteção completa libera após 72 horas.
+5. Qual número vai receber os avisos da Isa (opção B)?
+Por que pergunto: Enquanto não vier, os avisos continuam indo pro 4240.
+Sua resposta:  4240
+Aceitação do veículo
+6. Carro de leilão: aceita, indeniza 80% da FIPE e a mensalidade é mais barata?  (apareceu 51x)
+O que a Leticya respondia: Sim, carros de leilão são aceitos, mas a cobertura é de 80% da FIPE e a mensalidade é mais barata. / Para veículos de leilão, a indenização é de 80% da tabela FIPE. / Sim, mas para veículos de leilão a cobertura é de 80% da tabela FIPE. / Sim, cobrimos 100% da FIPE (desde que o veículo não seja de leilão).
+Sua resposta:  CERTO
+7. Carro de aplicativo (Uber/99): aceita? Muda indenização ou preço?  (apareceu 43x)
+O que a Leticya respondia: Sim, todos os nossos planos permitem rodar em aplicativos. É livre condutor. / A Leticya encaminhou a questão para o setor de cadastro para verificar.
+Sua resposta:  ACEITAMOS E NAO MUDA INDENIZAÇAO
+8. Táxi: aceita? Indeniza 80%? Táxi com menos de 2 anos indeniza 100%?  (apareceu 3x)
+O que a Leticya respondia: Sim, cobrimos 80% da FIPE, mas táxi com menos de 2 anos cobrimos 100% da FIPE.
+Sua resposta:  CERTO
+9. Carro no nome de outra pessoa (pai, mãe, esposa) ou ainda não transferido: pode fazer? A indenização vai pra quem está no documento?  (apareceu 36x)
+O que a Leticya respondia: Sim, pode fazer no seu nome. Em caso de indenização, o pagamento é feito diretamente na conta do proprietário legal do veículo. / Pode fazer com o CRLV em nome de outra pessoa. Caso aconteça indenização, o pagamento é direto para o nome que está no documento. Quando transferir, é só enviar o documento para atualizar. / Não tem problema, pode fazer a proteção, mas em caso de indenização o pagamento é feito para o nome que consta no documento.
+Sua resposta:  CERTO
+10. Carro financiado/alienado: aceita? Na perda total paga a FIPE abatendo o financiamento?  (apareceu 23x)
+O que a Leticya respondia: Sim, aceita. Em casos de indenização (PT) é pago 100% da FIPE do veículo, abatendo as possíveis pendências do financiamento. / Sim, pagamos 100% da FIPE do veículo, abatendo possíveis pendências (financiamento, multas).
+Sua resposta:  CERTO
+11. ATPV / recibo de compra e venda serve no lugar do CRLV?  (apareceu 19x)
+O que a Leticya respondia: Só aceitamos CRLV, não aceitamos ATPV. Aceitamos documento atrasado desde que seja acima de 2023. / Não, a 21Go aceita somente CRLV.
+Sua resposta:  O que a Leticya respondia: Só aceitamos CRLV, não aceitamos ATPV. Aceitamos documento atrasado desde que seja acima de 2023.
+12. IPVA atrasado: aceita? Precisa ter o IPVA de 2023 pago?  (apareceu 3x)
+O que a Leticya respondia: Aceitamos com o IPVA de 2023 pago.
+Sua resposta:  CERTO
+13. Carro com avaria ou amassado: não aceita até arrumar, ou aceita com depreciação de 20%?  (apareceu 3x)
+O que a Leticya respondia: Não, só depois de arrumar. / Fazemos com depreciação de 20%. Quando o senhor arrumar os amassados, precisa mandar foto e vídeo para voltarmos a cobertura para 100%.
+Sua resposta:  PRECISAMOS VER AS FOTOS, PEDI APR ENVIAR AS FOTOS, TEM CASOS QE ACEITAMSO MEDIANTE DA ASSINATURA DE UM TERMO FALANDO QUE AQUELEPÇA ESTA AMASSADA OU COM DEFEITO, NESE CASO VC TRASNFERE PRA 4240 DEPOIS QUE ELE ENVIAR AS FOTOS FALANDO APRA ELA AVALIAR
+14. Veículo que "já teve sinistro": vale qualquer sinistro no histórico? Como a gente sabe (o cliente fala, consulta)?  (apareceu 2x)
+Sua resposta:  VALE QQ SINSITRO
+15. Veículo no CNPJ ou frota: pode fazer normal?  (apareceu 3x)
+O que a Leticya respondia: Pode fazer normalmente, o nome do cadastro não interfere.
+Sua resposta:  CERTO
+16. Autoescola e motorhome: aceita?  (apareceu 2x)
+O que a Leticya respondia: Sim, cobrimos auto escola. / Não, esse veículo não é aceito.
+Sua resposta:  O que a Leticya respondia: Sim, cobrimos auto escola
+17. Zero km sem placa: faz pelo chassi? Dá pra ativar no mesmo dia que retira (até 18h)?  (apareceu 9x)
+O que a Leticya respondia: Sim, pode fazer a proteção sem placa. / Sim, pode ser feito com o número do chassi. / Sim, é possível até as 18h.
+Sua resposta:  Sim, pode fazer a proteção sem placa. / Sim, pode ser feito com o número do chassi.
+Documentos e vistoria
+18. Comprovante de residência que não está no nome do cliente: aceita com declaração assinada (Gov.br ou caneta)? Ou tem que ser no nome dele?  (apareceu 27x)
+O que a Leticya respondia: Não, tem que ser no nome do titular. Se não tiver, será enviado um termo. / Pode usar uma declaração de residência e assinar pelo Gov.br. / É necessário assinar um termo e declaração de residência, que pode ser assinado digitalmente pelo Gov.br ou a caneta pelo próprio associado.
+Sua resposta:  CERTO
+19. Conta de internet ou telefone vale como comprovante de residência?  (apareceu 1x)
+O que a Leticya respondia: Sim, a 21Go aceita conta de internet ou telefone como comprovante de residência.
+Sua resposta:  CERTO
+20. Quem não tem CNH (ou está tirando) pode fazer com a identidade? Moto acima de R$ 15 mil exige CNH?  (apareceu 9x)
+O que a Leticya respondia: Pode fazer sem CNH (para motos acima de 15 mil é obrigatório). / Sim, pode fazer com identidade.
+Sua resposta:  Pode fazer sem CNH / Sim, pode fazer com identidade.
+21. CNH e documento digitais valem?  (apareceu 3x)
+O que a Leticya respondia: Pode ser digital.
+Sua resposta:  CERTO
+22. O link da vistoria expira? Em quanto tempo?  (apareceu 3x)
+O que a Leticya respondia: Sim, o link expira em 30 minutos.
+Sua resposta:  CERTO
+23. Quanto tempo leva a vistoria e quantas fotos são?  (apareceu 6x)
+O que a Leticya respondia: A vistoria demora de 15 a 30 minutos. / São de 6 a 15 fotos.
+Sua resposta:  CERTO
+24. Até que horas dá pra fazer a vistoria? Pode deixar pro dia seguinte?  (apareceu 7x)
+O que a Leticya respondia: Pode fazer o dia inteiro, até as 20h. / Sim, pode fazer amanhã.
+Sua resposta:  Pode fazer o dia inteiro, QD CLIENTE PUDER
+25. Fotos do chassi e da bateria são obrigatórias?  (apareceu 4x)
+O que a Leticya respondia: Sim, as fotos do chassi também precisam ser feitas. / Sim, é necessária.
+Sua resposta:  CERTO
+26. Vistoria só pelo app VISTO (selfie com o app aberto) ou pode ser pela câmera do celular?  (apareceu 2x)
+O que a Leticya respondia: Tem que ser no aplicativo VISTO, selfie com o app aberto.
+Sua resposta:  CERRTO
+27. Pode levar o carro na sede pra fazer a vistoria em vez de fazer pelo celular?  (apareceu 50x)
+O que a Leticya respondia: Fica onde está mostrando o cinto / Tem a opção de levar na sede ou fazer de casa. / A vistoria é online, o próprio cliente faz as fotos através de um link (auto vistoria), ou pode levar na sede em Campo Grande.
+Sua resposta:  pode levar na sede em Campo Grande OU FAZER PELO APP
+Rastreador e adesivo
+28. Onde instala o rastreador: na sede em Campo Grande, em casa com técnico, ou os dois?  (apareceu 38x)
+O que a Leticya respondia: Pode ser instalado na sede em Campo Grande ou agendado para um técnico ir na residência do cliente.
+Sua resposta:  CERTO
+29. Como agenda a instalação? O pós-venda liga pro cliente depois da ativação?  (apareceu 14x)
+O que a Leticya respondia: Após a ativação da proteção, o setor de pós-venda/monitoramento entrará em contato por telefone para agendar a instalação.
+Sua resposta:  CERTO
+30. Tem aplicativo pra acompanhar o carro pelo celular? Quando libera o acesso?  (apareceu 37x)
+O que a Leticya respondia: Sim, há um aplicativo para monitorar o veículo em tempo real direto no seu telefone. / Sim, tem aplicativo. O acesso é liberado pelo pós-venda após a confirmação dos dados (em até 72h). / Sim, tem rastreador e pode acompanhar direto no app no telefone. (Para outros estados, às vezes diz que rastreador é só RJ).
+Sua resposta:  pode levar na sede em Campo Grande
+31. Fora do RJ tem rastreador ou o veículo fica protegido sem ele?  (apareceu 12x)
+O que a Leticya respondia: Não, o rastreador é instalado apenas no Rio de Janeiro. Veículos de outros estados ficam protegidos normalmente sem ele.
+Sua resposta:  CERRTO
+32. O veículo fica protegido contra roubo antes de instalar o rastreador?  (apareceu 19x)
+O que a Leticya respondia: Sim, o veículo fica 100% protegido contra roubo e furto logo após a vistoria e o pagamento da ativação, mesmo antes de instalar o rastreador.
+Sua resposta:  CERTO
+33. Pode usar o rastreador de outra empresa que já está no carro?  (apareceu 7x)
+O que a Leticya respondia: Não, é necessário usar o rastreador da 21Go, pois não conseguimos rastrear com o equipamento de outra empresa.
+Sua resposta:  CERTO
+34. Adesivo: precisa mandar foto todo mês pra manter o desconto?  (apareceu 6x)
+O que a Leticya respondia: Sim, é preciso mandar foto mensalmente provando que está usando o adesivo para manter o desconto ativo (ou quando solicitado aleatoriamente).
+Sua resposta:  CERRTO
+35. Qual o tamanho do adesivo e onde vai no carro?  (apareceu 12x)
+O que a Leticya respondia: É um adesivo colocado no vidro traseiro do veículo. O tamanho depende do vidro, mas não é muito grande.
+Sua resposta:  CERTO
+Pagamento, ativação e descontos
+36. A ativação é paga no ato e a 1ª mensalidade só no mês seguinte?  (apareceu 42x)
+O que a Leticya respondia: Sim, a ativação é paga no ato (após a aprovação da vistoria) e a primeira mensalidade é cobrada apenas no mês seguinte.
+Sua resposta:  Sim, a ativação é paga no ato  e a primeira mensalidade é cobrada apenas no mês seguinte.
+37. Quem vem de outra proteção tem desconto na ativação mostrando o último boleto?  (apareceu 51x)
+O que a Leticya respondia: Sim, mediante a apresentação do último boleto da proteção anterior, é possível conseguir um bom desconto na ativação. / Os valores dos planos são fixos, não cobrimos mensalidade de outras empresas, mas a adesão sim.
+Sua resposta:  Sim, mediante a apresentação do último boleto da proteção anterior, é possível conseguir um bom desconto na ativação.
+38. Como paga a mensalidade: boleto no app, cartão, Pix?  (apareceu 32x)
+O que a Leticya respondia: A mensalidade chega via boleto no aplicativo todo mês, onde também é possível cadastrar cartão de crédito ou pagar via Pix.
+Sua resposta:  CERTO
+39. Quais os dias de vencimento (10 ou 20)? Pode escolher?  (apareceu 16x)
+O que a Leticya respondia: Os vencimentos são dia 10 ou dia 20. O primeiro boleto geralmente é fixo para o dia 10, mas pode ser alterado para o dia 20 nos meses seguintes.
+Sua resposta:  CERTO
+40. A ativação é paga pro consultor ou pra empresa?  (apareceu 15x)
+O que a Leticya respondia: O pagamento da ativação é feito via Pix para o consultor, que faz o repasse para a empresa.
+Sua resposta:  CERRTO
+41. A mensalidade é fixa ou tem reajuste/rateio?  (apareceu 14x)
+O que a Leticya respondia: O valor é fixo, mas podem ocorrer pequenos rateios dependendo do índice de roubos/acidentes. O desconto de 5% por pagamento antecipado geralmente cobre essa diferença.
+Sua resposta:  CERTO
+42. Tem desconto pagando o ano todo à vista?  (apareceu 8x)
+O que a Leticya respondia: Sim, há um desconto de 5% para o pagamento do valor anual à vista.
+Sua resposta:  CERTO
+43. Mais de um veículo: além dos 5% na mensalidade (frota), tem desconto na ativação?  (apareceu 12x)
+O que a Leticya respondia: Sim, é possível conseguir desconto na ativação e 5% de desconto fixo na mensalidade para mais de um veículo.
+Sua resposta:  Sim, é possível conseguir desconto na ativação e 5% de desconto fixo na mensalidade A PARTIR DE 3 veículo.
+44. Indicação: quem indica ganha 10% na mensalidade e R$ 50 no Pix se fechar?  (apareceu 4x)
+O que a Leticya respondia: Ganha 10% de desconto na mensalidade e R$ 50,00 no pix se a pessoa fechar (se for associado da Leticya).
+Sua resposta:  CERTOENTAO ORQUESTRRAR ISO NO SUPA DARIA CERTO E FICARIA SALVO OS BOLETOS DE TO
+Contrato, carência e cancelamento
+45. O cliente pode ver o contrato/regulamento antes de fechar? Tem prazo pra desistir com reembolso (3 a 7 dias)?  (apareceu 26x)
+O que a Leticya respondia: A Leticya não tem acesso ao contrato. Ele é gerado automaticamente e enviado por e-mail após a ativação e vistoria. O cliente tem um prazo (3 a 7 dias) para ler e cancelar com reembolso caso não concorde. / O contrato é enviado por e-mail para o cliente e não fica disponível para a atendente.
+Sua resposta:  CERTO
+46. Tem fidelidade ou multa? Pra cancelar avisa 10 dias antes do vencimento? Parou de pagar, cancela?  (apareceu 20x)
+O que a Leticya respondia: Não há fidelidade nem multa. Pode cancelar quando quiser, desde que os boletos estejam pagos, avisando com 10 dias de antecedência do vencimento. / isso, parou de pagar cancela no mesmo mes. se quiser cancelar tem que avisar 10 dias de vencer o boleto. e se pagar 5 dias antes de vencer o boleto tem 5% de desconto
+Sua resposta:  CERTO
+47. Proteção tem apólice? (Leticya: não, é termo de adesão)  (apareceu 4x)
+O que a Leticya respondia: Não, proteção não tem apólice, a associação envia um termo de adesão/contrato.
+Sua resposta:  CERTO
+48. Vendeu o carro: transfere o plano pro novo ou cancela e faz tudo de novo (vistoria + nova ativação)?  (apareceu 1x)
+O que a Leticya respondia: Não é possível alterar. É necessário cancelar o atual, fazer todo o processo de vistoria no novo veículo e pagar uma nova ativação.
+Sua resposta:  CERTO
+49. No conserto usam peça original?  (apareceu 1x)
+O que a Leticya respondia: Posso perguntar ao meu superior.
+Sua resposta:  SIM, SAO PEÇAS ORIGINAIS COMPRADAS EXCLUSIVAMENTE PARA SEU VEICULO
+Sinistro, cota e indenização
+50. Oficina: é a de confiança do cliente com CNPJ, tem oficina própria/parceira, ou manda 3 orçamentos?  (apareceu 25x)
+O que a Leticya respondia: O cliente deve ligar no 0800 e levar o veículo em uma oficina de confiança com CNPJ. Se não tiver, pode enviar 3 orçamentos. / Sim, nossa oficina é própria. / (FAQ do site: "designamos uma oficina parceira")
+Sua resposta:  O cliente deve ligar no 0800 e levar o veículo em uma oficina de confiança com CNPJ. Se não tiver, pode enviar 3 orçamentos. /
+51. Bateu no carro de outra pessoa e o dele não estragou: paga cota pra acionar os terceiros?  (apareceu 21x)
+O que a Leticya respondia: Não, se o seu veículo não tiver sido danificado e for acionar apenas para terceiros, não paga a cota de participação. / Não, se for acionar apenas para terceiros, não paga nada de cota de participação.
+Sua resposta:  CERTO
+52. Acidente com a CNH vencida: o carro é coberto?  (apareceu 2x)
+O que a Leticya respondia: Sim, não tem problema, o veículo é coberto normalmente.
+Sua resposta:  CERTO
+53. Livre condutor: qualquer pessoa habilitada pode dirigir? Tem restrição de idade (menor de 26)?  (apareceu 18x)
+O que a Leticya respondia: Sim, é livre condutor. Qualquer pessoa habilitada pode conduzir, não há restrição de condutor. / Sim, nossa proteção é livre condutor. / Sim, a proteção cobre, é livre condutor, desde que a pessoa tenha CNH.
+Sua resposta:  CERTO
+54. Problema mecânico ou elétrico, sem batida, tem cobertura?  (apareceu 1x)
+O que a Leticya respondia: Sim, nossa oficina é própria.
+Sua resposta:  NAO TEM COBERTURA PRA ISSO
+Coberturas e planos
+55. Tem plano só roubo e furto, ou dá pra tirar benefício (táxi, retorno) pra baratear? Terceiros acima de 100 mil (ex.: 200 mil)?  (apareceu 33x)
+O que a Leticya respondia: Os planos são fixos e não podem ser personalizados. Para motos e alguns veículos, só temos o plano apresentado. / Não, nossos planos são fechados e completos, não é possível contratar apenas roubo e furto. / Não, a proteção é completa. / Não tem como tirar nenhum benefício, é fixo no plano e o valor é de acordo com a FIPE do carro.
+Sua resposta:  CERTO
+56. Carro blindado: cobre? A blindagem fica de fora?  (apareceu 7x)
+O que a Leticya respondia: Cobrimos normalmente, mas não cobrimos a parte blindada. Em caso de colisão, colocamos peças originais sem blindagem.
+Sua resposta:  CERTO, QQ CARRO MODIFICADO NOS COBRIMOS O VALOR E O CARRO, NAO COBRIMOS A BLINDAGEM E TBM A MODIFICAÇAO FEITA NO CARRO, CASSO O CARRO BATE AS PEÇA SAO ORIGINAIS DO VEICULO E NAO É COLOCADO PEÇAS OU ASSORIOS QUE NAO SEJA ORIGINAIS DO CARRO
+57. Kit gás (GNV): cobre com adicional? Quanto?  (apareceu 3x)
+O que a Leticya respondia: Sim, é possível proteger o kit gás com um valor adicional.
+Sua resposta:  CERTO
+58. Para-brisa: o plano cobre 70% ou 100%?  (apareceu 34x)
+O que a Leticya respondia: O plano cobre 70% do para-brisa. Para cobrir todos os vidros, lentes dos faróis e espelhos, há um adicional de proteção de vidro premium por R$ 29,90 (ou já incluso no plano Premium).
+Sua resposta:  CERTO
+59. Clube de benefícios: o que é? Desconto em posto pelo app?  (apareceu 6x)
+O que a Leticya respondia: Oferece descontos em postos de gasolina através do aplicativo. / Sim, no aplicativo é possível ver os postos com desconto.
+Sua resposta:  CERTO
+60. Quem fecha ganha 2 almoços e 2 lavagens por mês na sede?  (apareceu 8x)
+O que a Leticya respondia: Sim, fechando a proteção o cliente tem direito a 2 almoços e 2 lavagens grátis no mês, indo na sede em Campo Grande por ordem de chegada.
+Sua resposta:  CERTO
+Reboque e assistência 24h
+61. As saídas de reboque renovam a cada 30 dias? Pode usar a mesma saída duas vezes no mês?  (apareceu 50x)
+O que a Leticya respondia: 1 saída com guincho para colisão, 1 saída com guincho para pane mecânica ou elétrica e 3 saídas para emergências (pneu furado, pane seca, num raio de 20km). A cada 30 dias pode solicitar uma mesma saída. / São 5 usos diferentes, para o mesmo uso igual não tem. / Respondeu com um áudio.
+Sua resposta:  CERTO, RENOVA SEMPRE MENSALMENTE A CADA 30 DIAS DE USO
+62. Premium tem reboque adicional de 200 km (1.200 no total)?  (apareceu 8x)
+O que a Leticya respondia: O plano premium tem reboque adicional de 200km (totalizando 1200km ou 1400km dependendo da resposta).
+Sua resposta:  TOTAL 1400, 700 + 700
+63. Quanto tempo o reboque demora pra chegar?  (apareceu 4x)
+O que a Leticya respondia: O setor de assistência 24h aciona o guincho mais próximo, então não é possível afirmar o tempo de espera.
+Sua resposta:  CERTO
+64. Pneu furado: é só a mão de obra (troca pelo estepe / reparo)?  (apareceu 1x)
+O que a Leticya respondia: Mão de obra em uma oficina mais próxima para reparo do pneu furado.
+Sua resposta:  CERTO
+65. Chaveiro: cobre só o carro ou também a casa?  (apareceu 2x)
+O que a Leticya respondia: É um serviço 0800, caso quebre a chave na moto ou na fechadura da casa principal, pode solicitar o chaveiro.
+Sua resposta:  CERTO, A 21 PAGA O SERVIÇO, AS PEÇAS O ASSOCIADO PAGA
+67. Tudo é gratuito pra acionar, menos colisão (cota)?  (apareceu 2x)
+O que a Leticya respondia: Fora colisão, tudo é gratuito.
+Sua resposta:  CERTO
+68. Quais os números de 0800 da assistência? (Leticya passou 0800 234 5555 e 0800 941 8589)  (apareceu 3x)
+O que a Leticya respondia: 0800 234 5555 e 0800 941 8589.
+Sua resposta:  CERTO
+Empresa e atendimento
+69. Endereço da sede: Rua Jorge Sampaio, 141, Campo Grande? Qual o horário?  (apareceu 29x)
+O que a Leticya respondia: A sede fica na Rua Jorge Sampaio 141, Campo Grande, Rio de Janeiro. / De segunda a sexta, das 8h às 17h (ou a partir das 9h).
+Sua resposta:  CERTO
+70. CNPJ: 40.902.817/0001-70?  (apareceu 1x)
+O que a Leticya respondia: 40902817000170.
+Sua resposta:  CERTO
+71. Recepção: (21) 96570-0021? A Isa pode passar esse número?  (apareceu 3x)
+O que a Leticya respondia: Recepção: +55 21 96570-0021.
+Sua resposta:  CERTO
