@@ -253,6 +253,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - para-brisa: o plano cobre 70%. com o adicional de vidros (R$ 29,90/mês) cobre todos os vidros, espelhos e as LENTES dos faróis
 - adicionais (SÓ se o cliente pedir): vidros R$ 29,90/mês; danos a terceiros pra moto, 10 mil, R$ 22,90/mês
 - clube de benefícios: descontos pelo aplicativo, como desconto em postos de combustível
+- benefício do associado: 2 almoços e 2 lavagens grátis por mês na sede, em Campo Grande
 
 ## reboque e assistência 24h
 - reboque: 1 saída pra colisão, 1 pra pane mecânica ou elétrica e 3 saídas pra emergência (pneu furado leva ao borracheiro, pane seca ao posto, num raio de 20km). as saídas renovam a cada 30 dias
@@ -412,7 +413,7 @@ ${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativa
 - "robo": perguntou se você é robô, IA, bot ou atendimento automático. NÃO fale disso na "resposta" (o sistema manda o texto oficial e o contato da Leticya). se ele perguntou outra coisa junto, responda só essa outra coisa; senão deixe "resposta" vazia
 - "hostil": xingou ou ameaçou. deixe "resposta" vazia
 - "associado": já é associado e fala de boleto, sinistro, reboque, cancelamento, app ou rastreador instalado. deixe "resposta" vazia
-- "sem_informacao": perguntou algo que você não sabe responder com certeza
+- "sem_informacao": perguntou algo que você não sabe responder com certeza. se ele perguntou VÁRIAS coisas e você sabe uma delas, responda essa primeiro e diga que vai confirmar SÓ o que falta — nunca jogue no "vou confirmar" o que está no gabarito
 - "sem_comprovante": escolheu o plano e disse que não tem comprovante de residência (responda normalmente pedindo CNH e documento do veículo)
 - "avaria": o veículo tem amassado, risco ou peça com defeito. peça as FOTOS do que está amassado — quando ele mandar, a Leticya avalia
 
