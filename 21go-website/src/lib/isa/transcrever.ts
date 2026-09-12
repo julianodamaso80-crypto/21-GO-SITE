@@ -28,6 +28,7 @@ const PROMPT =
   'NAO complete frases, NAO corrija e NAO adivinhe palavras que nao ficaram claras. ' +
   'Se uma palavra ou trecho nao ficou claro, escreva [INAUDIVEL] no lugar dele. ' +
   'Se nao der pra entender nada (cortado, sem fala, so ruido), responda exatamente [INAUDIVEL]. ' +
+  'Se o audio TERMINAR no meio de uma frase ou de uma palavra, transcreva o que foi dito e escreva [CORTADO] no fim. ' +
   'Devolva so o texto transcrito, sem comentarios.'
 
 // Cada modelo tem o seu tempo: o Pro (o fiel) ganha 40 s — em 25 s um audio longo caia pro

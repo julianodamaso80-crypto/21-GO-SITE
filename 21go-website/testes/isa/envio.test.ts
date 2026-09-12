@@ -100,3 +100,10 @@ test('duas perguntas juntas: cada parte cita a mensagem que responde (dono, 11/0
   assert.deepEqual(partesComCitacao('pode fazer normalmente', wamids), [{ texto: 'pode fazer normalmente', citar: null }])
   assert.deepEqual(partesComCitacao('[9] pode fazer', wamids), [{ texto: 'pode fazer', citar: null }])
 })
+
+test('[CORTADO]: so o marcador e "nao entendeu"; frase + marcador vai pra IA pedir o final (12/09/2026)', async () => {
+  const { ehInaudivel } = await import('../../src/lib/isa/envio.regras.ts')
+  assert.ok(ehInaudivel('[CORTADO]'))
+  assert.ok(ehInaudivel('[INAUDIVEL] [CORTADO]'))
+  assert.ok(!ehInaudivel('queria saber se vocês fazem carro de [CORTADO]'))
+})

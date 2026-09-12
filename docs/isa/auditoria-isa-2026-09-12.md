@@ -128,3 +128,50 @@ Placa inventada (HB20), "Onix/Kwid" no áudio, 0800 inventado, "documento não p
 ## 4. O que NÃO mudei nesta auditoria
 
 Nada de código. Só leitura, consultas ao banco e um teste no scratchpad pra provar o item 2.1. Os itens P0 são pequenos e eu faço hoje com o seu "vai".
+
+---
+
+## 5. Depois do "pode seguir" — o que foi feito no mesmo dia (12/09, tarde)
+
+Tudo aplicado, testado (212 testes) e no ar. Por item do plano:
+
+| Item | Estado | Prova |
+|---|---|---|
+| P0-1 validador | ✅ `NUMEROS_FIXOS` (lista única) + teste que passa **cada linha do gabarito** pelo validador. O teste pegou um 4º furo: o **CNPJ** (a barra cortava em "40.902.817"). | `testes/isa/fatos.test.ts` |
+| P0-2 retomada | ✅ por estado (documentos / olhada na simulação / tem proteção), sem nome dobrado, "ok obrigado"/"vou pensar" adia 20 h | `venda.regras.ts`, coluna `retomar_apos` |
+| P0-3 benefícios | ✅ lista inteira pelo código, com "não entra nesse plano" e próximo passo | `mensagemBeneficios` |
+| P1-4 "vou confirmar" com volta | ✅ `pergunta_pendente` → aba "Precisa de você" → alerta pede a resposta → o dono responde no 4240 → a Isa reescreve no tom dela (sem mudar fato, validada) e entrega. Responder pelo painel também fecha. | `acoes.responderPerguntaPendente` |
+| P1-5 venda | ✅ bloco "como você vende" (próximo passo sempre, 6 objeções, recomendar UM plano); "quanto paga hoje" vira fato calculado com a diferença por plano | eval `paga-hoje` ✔ |
+| P1-6 frases de robô | ✅ lista no prompt + filtro no código | `tirarFrasesDeRobo` |
+| P1-7 incoerências | ⏳ no Word da 2ª rodada (funeral, 1.400 km, monitoramento no Básico, para-brisa no Básico) | `docs/isa/perguntas-rodada-2-2026-09-12.docx` |
+| P1-8 2ª rodada de perguntas | ✅ 21 perguntas, em Word, em `Downloads/` e `docs/isa/` | — |
+| P1-9 eval automático | ✅ `scripts/isa-eval/` — 45 perguntas reais pelo modelo de verdade, nota no fim | ver abaixo |
+| P2-10 modelo | ✅ **Gemini 3.1 Pro (raciocínio baixo), Flash de reserva** | Flash 38/45 → Pro 43/45 |
+| P2-11 relatório diário | ✅ no 4240, 1x/dia a partir das 8h (conversas, simulações, escolheram, documentos, o que ela não soube) | `relatorio.ts` |
+| P2-12 aviso fora do horário | ✅ pronto, **desligado** (`ISA_AVISO_FORA_HORARIO=on` quando aprovar o texto) | Word, item 18 |
+| P2-13 leilão avisa 80% | ✅ na própria simulação | `entrega.regras.ts` |
+| P2-14 áudio longo | ✅ Pro ganha 40 s antes de cair pro Flash | `transcrever.ts` |
+
+### O que o eval descobriu que a leitura não pegou
+
+1. **JSON com quebra de linha crua**: a IA escreve `\n` de verdade dentro de `"resposta"`. O `JSON.parse` estourava e **o cliente ficava sem resposta, em silêncio** — 1 em 45 no Flash (≈2% das respostas em produção), 24 em 45 no Pro. Agora `json.regras.ts` lê tolerante, pede de novo uma vez e, no pior caso, manda a resposta segura que vira pergunta pendente.
+2. **`max_tokens` engolido pelo raciocínio**: com 900 tokens o Pro devolvia só `{`. Agora 4000 quando o modelo raciocina.
+3. Flash ignorava fatos que estavam no gabarito (70% do para-brisa, 20 km do retorno a domicílio, R$ 50 mil do adicional) e respondia vago em "seguro × proteção". O Pro não.
+
+### Voz (pedido do dono: "verifique a IA de voz")
+
+Cinco áudios gerados em português passaram pelo `transcrever()` de produção (`scripts/isa-eval/audio.ts`):
+
+| Áudio | Transcrição | Veredito |
+|---|---|---|
+| frase completa com placa soletrada | "…A placa é RKW7J62. Ele não é de leilão, mas roda em aplicativo sim…" | ✅ fiel, placa certa |
+| números e nomes | "Hoje eu pago 650 reais na Porto Seguro. Vocês cobrem para-brisa…" | ✅ fiel |
+| frase que termina no ar ("fazem carro de") | "Queria saber se vocês fazem carro de" | ✅ não completou |
+| áudio cortado no meio de uma palavra | "A placa é R" | ✅ não inventou o resto |
+| silêncio | `[INAUDIVEL]` | ✅ pede pra repetir sem passar pela IA |
+
+Refino feito na hora: o modelo agora marca `[CORTADO]` quando o áudio termina no meio da frase e a Isa pede o final em vez de deduzir. 5–7 s por áudio.
+
+### Nota depois de tudo
+
+Com o Pro, o eval está em **43/45** (as 2 restantes eram regex do próprio eval, já ajustadas). O que ainda separa de 10/10 depende do dono: o Word da 2ª rodada (21 itens) e o teste dele no WhatsApp com o fluxo novo.
