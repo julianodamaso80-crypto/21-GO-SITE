@@ -144,6 +144,8 @@ export async function orcarPorModelo(p: {
     allowlist: planoNoPowerCrm(p.modelId),
     marca: p.brandText,
     modelo: p.modelText,
+    moto: p.tipo === 'moto',
+    origem: p.leilao ? 'leilao' : 'nao',
   })
   if (veredicto.acao === 'nao_fazemos') return { tipo: 'nao_fazemos', motivo: veredicto.motivo }
 

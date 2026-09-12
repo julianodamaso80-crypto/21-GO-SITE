@@ -15,3 +15,9 @@ test('so etiqueta conhecida entra, sem repetir e na ordem oficial', () => {
   assert.equal(etiquetaValida('toString'), false)
   assert.equal(etiquetaValida(''), false)
 })
+
+test('etiqueta "avaria": o carro tem amassado e a Leticya vai avaliar pelas fotos (dono, 12/09/2026)', async () => {
+  const { ETIQUETAS, normalizarEtiquetas } = await import('../../src/lib/isa/etiquetas.regras.ts')
+  assert.ok(ETIQUETAS.some((e) => e.id === 'avaria'), 'a etiqueta existe')
+  assert.deepEqual(normalizarEtiquetas(['avaria']), ['avaria'])
+})

@@ -29,7 +29,7 @@ export type Elegibilidade =
    * Nao fazemos: `model` = o Power negou; `ano` = anterior a 2006; `byd_leilao` = BYD de
    * leilao/remarcado. A tela agradece e encerra.
    */
-  | { acao: 'nao_fazemos'; motivo: 'model' | 'ano' | 'byd_leilao' | 'modelo_excluido' }
+  | { acao: 'nao_fazemos'; motivo: 'model' | 'ano' | 'byd_leilao' | 'modelo_excluido' | 'moto_leilao' }
   /** Nao deu pra confirmar. Cliente vai pro WhatsApp do consultor, nunca dispensado. */
   | { acao: 'consultor'; motivo: 'elegibilidade_indisponivel' }
 
@@ -108,6 +108,8 @@ export interface EntradaElegibilidade {
   modelo?: string | null
   /** Origem declarada pelo cliente: 'nao' | 'leilao' | 'remarcado'. */
   origem?: string | null
+  /** E moto? Moto de leilao/remarcada a 21Go nao faz (dono, 12/09/2026). */
+  moto?: boolean
 }
 
 export function decidirElegibilidade(e: EntradaElegibilidade): Elegibilidade {
@@ -118,6 +120,11 @@ export function decidirElegibilidade(e: EntradaElegibilidade): Elegibilidade {
   }
   if (ehBydDeLeilao(e.marca, e.modelo, e.origem)) {
     return { acao: 'nao_fazemos', motivo: 'byd_leilao' }
+  }
+  // Moto de leilao, remarcada ou de sinistro: nao fazemos de jeito nenhum (dono, 12/09/2026).
+  const origem = (e.origem || '').trim().toLowerCase()
+  if (e.moto && origem !== '' && origem !== 'nao' && origem !== 'não') {
+    return { acao: 'nao_fazemos', motivo: 'moto_leilao' }
   }
 
   if (e.powerAoVivo === true) return { acao: 'cotar' }

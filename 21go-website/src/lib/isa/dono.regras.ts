@@ -65,6 +65,7 @@ export function mensagemDonoRecusou(ativacao: number, comAdesivo = true): string
 }
 
 const TEXTO_TRANSFERENCIA: Record<string, string> = {
+  avaria: 'vou passar as fotos pra Leticya avaliar e ela já te responde 🙏🏼',
   documento: 'vou te passar pra Leticya, que vai finalizar com você 🙏🏼',
   associado: 'vou te passar pra Leticya, que cuida disso pra você 🙏🏼',
   sem_preco: 'vou pedir pra Leticya fazer a cotação do seu veículo com cuidado 🙏🏼',

@@ -83,7 +83,7 @@ export interface PlateErrorResponse {
   requires_human_support?: boolean
   /** Veículo que a 21Go não aceita — não é falha de consulta, não vai pra humano */
   excluded?: true
-  reason?: 'ano' | 'model' | 'byd_leilao' | 'modelo_excluido'
+  reason?: 'ano' | 'model' | 'byd_leilao' | 'modelo_excluido' | 'moto_leilao'
 }
 
 const apiHeaders = {
@@ -512,6 +512,8 @@ export async function lookupPlate(
     // ELX 2009 saiu cotado com quatro planos.
     marca,
     modelo,
+    moto: isMoto,
+    origem: opcoes?.isLeilao ? 'leilao' : 'nao',
   })
 
   if (veredicto.acao === 'nao_fazemos') {

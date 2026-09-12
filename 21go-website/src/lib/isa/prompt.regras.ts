@@ -41,7 +41,7 @@ export const CHAVES_PRONTAS: Record<string, keyof typeof RESPOSTAS_PRONTAS> = {
 
 const NOMES_INTERNOS = new Set([
   ...Object.keys(CHAVES_PRONTAS),
-  'desconto', 'robo', 'hostil', 'associado', 'sem_informacao', 'sem_comprovante', 'validador', 'null',
+  'desconto', 'robo', 'hostil', 'associado', 'sem_informacao', 'sem_comprovante', 'avaria', 'validador', 'null',
   // nomes dos campos do JSON (11/09/2026: saiu uma mensagem so com a palavra "pronta")
   'resposta', 'pronta', 'gatilho', 'genero', 'placa', 'sem_placa', 'leilao', 'app',
 ])
@@ -414,6 +414,7 @@ ${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativa
 - "associado": já é associado e fala de boleto, sinistro, reboque, cancelamento, app ou rastreador instalado. deixe "resposta" vazia
 - "sem_informacao": perguntou algo que você não sabe responder com certeza
 - "sem_comprovante": escolheu o plano e disse que não tem comprovante de residência (responda normalmente pedindo CNH e documento do veículo)
+- "avaria": o veículo tem amassado, risco ou peça com defeito. peça as FOTOS do que está amassado — quando ele mandar, a Leticya avalia
 
 ## saída — responda SÓ com JSON válido, sem texto fora dele
 {"resposta": "texto pro cliente, com linha em branco entre as partes, sem cumprimento", "pronta": null ou "susep"|"susep_numero"|"cooperativa"|"cnh_vencida"|"vip_x_do_seu_jeito"|"fora_do_assunto", "gatilho": null ou "desconto"|"robo"|"hostil"|"associado"|"sem_informacao"|"sem_comprovante", "genero": null ou "m"|"f", "placa": null ou "ABC1D23", "sem_placa": null ou {"marca": "...", "modelo": "...", "ano": 2020}, "leilao": null ou true|false, "app": null ou true|false}

@@ -14,6 +14,7 @@ import {
   contatosParaRetomar,
   reiniciarContato,
   humanoFalouDepois,
+  sql,
   type ContatoIsa,
   type MensagemHistorico,
 } from '@/lib/isa/banco'
@@ -184,6 +185,12 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const midias = novas.filter((m) => m.message_type === 'document' || m.message_type === 'image')
   if (midias.length) {
     const leituras = await lerMidias(c, midias)
+    // Fotos do amassado que a Isa pediu: quem avalia e a Leticya (dono, 12/09/2026).
+    if (c.etiquetas?.includes('avaria')) {
+      await transferir(c, 'avaria', enviar)
+      await liberar(c.telefone, visto, true)
+      return true
+    }
     if (leituras.some((l) => !l || DOC_DE_FECHAMENTO.has(l.tipo))) {
       await transferir(c, 'documento', enviar)
       await liberar(c.telefone, visto, true)
@@ -420,6 +427,11 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   }
   if (saida.gatilho === 'sem_informacao') {
     await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_informacao', detalhe: ultimoTexto.slice(0, 200) })
+  }
+  // Veiculo com amassado: a Isa pediu as fotos; a etiqueta faz a proxima foto ir pra Leticya.
+  if (saida.gatilho === 'avaria' && !c.etiquetas?.includes('avaria')) {
+    await sql(`UPDATE public.isa_contatos SET etiquetas = array_append(etiquetas, 'avaria'), updated_at = now() WHERE telefone = $1`, [c.telefone])
+    await registrarEvento(c.telefone, 'avaria', { texto: ultimoTexto.slice(0, 120) })
   }
 
   await liberar(c.telefone, visto, enviou)

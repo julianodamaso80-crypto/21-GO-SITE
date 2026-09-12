@@ -60,7 +60,7 @@ async function gravarSaida(c: ContatoIsa, wamid: string, texto: string, sender =
 /** Documento, associado, sem preco: manda o link do 4824 com o resumo, pausa e avisa o dono. */
 export async function transferir(
   c: ContatoIsa,
-  motivo: 'documento' | 'associado' | 'sem_preco' | 'manual',
+  motivo: 'documento' | 'associado' | 'sem_preco' | 'avaria' | 'manual',
   enviar: (partes: string[]) => Promise<boolean>,
   opcoes: { avisarDono?: boolean; por?: string } = {},
 ): Promise<void> {

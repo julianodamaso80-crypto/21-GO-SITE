@@ -94,3 +94,12 @@ test('Power mudo com modelo excluido: barra antes de mandar pro consultor', () =
   })
   assert.equal(v.acao, 'nao_fazemos')
 })
+
+test('moto de leilao/remarcada: o site tambem nao faz (dono, 12/09/2026)', () => {
+  const base = { ano: 2022, powerAoVivo: true, allowlist: true, marca: 'Honda', modelo: 'CG 160 TITAN' }
+  assert.deepEqual(decidirElegibilidade({ ...base, moto: true, origem: 'leilao' }), { acao: 'nao_fazemos', motivo: 'moto_leilao' })
+  assert.deepEqual(decidirElegibilidade({ ...base, moto: true, origem: 'remarcado' }), { acao: 'nao_fazemos', motivo: 'moto_leilao' })
+  // moto normal e carro de leilao seguem normalmente
+  assert.equal(decidirElegibilidade({ ...base, moto: true, origem: 'nao' }).acao, 'cotar')
+  assert.equal(decidirElegibilidade({ ...base, moto: false, origem: 'leilao' }).acao, 'cotar')
+})

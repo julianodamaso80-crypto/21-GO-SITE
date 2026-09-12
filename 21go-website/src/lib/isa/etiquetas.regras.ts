@@ -17,6 +17,8 @@ export const ETIQUETAS: Etiqueta[] = [
   { id: 'vai_fechar', nome: 'Vai fechar', cor: '#C7D301', claro: true },
   { id: 'falta_doc', nome: 'Falta documento', cor: '#FDE68A', claro: true },
   { id: 'vistoria', nome: 'Vistoria', cor: '#93C5FD', claro: true },
+  // Carro amassado/com defeito: a Leticya avalia pelas fotos (dono, 12/09/2026).
+  { id: 'avaria', nome: 'Avaria (avaliar)', cor: '#FCA5A5', claro: true },
   { id: 'fechou', nome: 'Fechou', cor: '#22C55E', claro: false },
   { id: 'frio', nome: 'Frio', cor: '#64748B', claro: false },
   { id: 'sem_retorno', nome: 'Sem retorno', cor: '#CBD5E1', claro: true },

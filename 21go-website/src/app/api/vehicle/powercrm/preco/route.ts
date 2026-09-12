@@ -151,6 +151,8 @@ export async function POST(req: NextRequest) {
     // Mesmo motivo do plate-lookup: sem marca e modelo os excluidos por nome nunca barram.
     marca: brandText,
     modelo: modelText,
+    moto: tipo === 'moto',
+    origem: body.leilao,
   })
 
   if (veredicto.acao === 'consultor') {
