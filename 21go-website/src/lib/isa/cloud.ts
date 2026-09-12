@@ -87,7 +87,9 @@ export async function enviarAudio(to: string, bytes: Buffer, citar: string | nul
   })
   const j = (await up.json().catch(() => ({}))) as { id?: string; error?: { message?: string } }
   if (!up.ok || !j.id) throw new Error(`Cloud API media ${up.status}: ${j.error?.message ?? 'sem id'}`)
-  return postarMensagem({ to, type: 'audio', audio: { id: j.id }, ...(citar ? { context: { message_id: citar } } : {}) })
+  // `voice: true` = nota de voz (ondinhas + transcricao). Sem isso chega como ARQUIVO de audio,
+  // com o player de fone — foi o que o dono viu em 12/09/2026.
+  return postarMensagem({ to, type: 'audio', audio: { id: j.id, voice: true }, ...(citar ? { context: { message_id: citar } } : {}) })
 }
 
 /**

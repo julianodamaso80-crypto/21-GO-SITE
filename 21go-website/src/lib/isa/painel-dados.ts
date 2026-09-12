@@ -1,5 +1,6 @@
 import 'server-only'
 import { etapaDoCard } from '@/lib/isa/funil.regras'
+import { planosQueAparecem } from '@/lib/isa/fatos.regras'
 import { sql, type ContatoIsa } from '@/lib/isa/banco'
 
 /**
@@ -78,11 +79,16 @@ export interface CardFunil {
  */
 export async function listarFunil(): Promise<CardFunil[]> {
   const linhas = await sql<
-    Omit<CardFunil, 'etapa'> & { tem_simulacao: boolean; escolheu: boolean; documento: boolean }
+    Omit<CardFunil, 'etapa' | 'plano' | 'valor'> & {
+      planos: { id: string; name: string; monthly: number }[] | null
+      tem_simulacao: boolean
+      escolheu: boolean
+      documento: boolean
+    }
   >(
     `SELECT c.telefone, COALESCE(c.nome, cv.pushname) AS nome, c.etapa AS etapa_manual, c.ligada, c.etiquetas,
             NULLIF(TRIM(CONCAT_WS(' ', l.marca_interesse, l.modelo_interesse, l.ano_interesse)), '') AS veiculo,
-            l.valor_fipe_consultado AS fipe, l.cotacao_plano AS plano, l.cotacao_valor AS valor,
+            l.valor_fipe_consultado AS fipe, l.cotacao_planos AS planos,
             u.content AS ultima, (u.created_at AT TIME ZONE 'UTC') AS ultima_em,
             (l.id IS NOT NULL) AS tem_simulacao,
             EXISTS (SELECT 1 FROM public.isa_eventos e WHERE e.telefone = c.telefone AND e.tipo = 'pediu_documentos') AS escolheu,
@@ -99,15 +105,23 @@ export async function listarFunil(): Promise<CardFunil[]> {
      ORDER BY u.created_at DESC NULLS LAST
      LIMIT 500`,
   )
-  return linhas.map((l) => ({
-    ...l,
-    etapa: etapaDoCard({
-      etapa: l.etapa_manual,
-      temSimulacao: !!l.tem_simulacao,
-      escolheuPlano: !!l.escolheu,
-      mandouDocumento: !!l.documento,
-    }),
-  }))
+  return linhas.map(({ planos, ...l }) => {
+    // O card mostra o plano que a Isa REALMENTE oferece pro veiculo (a mesma regra da conversa),
+    // nao o plano de referencia gravado no lead.
+    const doCliente = planosQueAparecem(planos || [])
+    const p = doCliente[0]
+    return {
+      ...l,
+      plano: p?.name ?? null,
+      valor: p?.monthly ?? null,
+      etapa: etapaDoCard({
+        etapa: l.etapa_manual,
+        temSimulacao: !!l.tem_simulacao,
+        escolheuPlano: !!l.escolheu,
+        mandouDocumento: !!l.documento,
+      }),
+    }
+  })
 }
 
 /** Arrastou o card: a escolha da pessoa fica gravada e vence a etapa automatica. */
