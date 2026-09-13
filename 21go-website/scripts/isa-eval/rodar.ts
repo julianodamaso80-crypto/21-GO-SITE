@@ -58,6 +58,10 @@ interface Caso {
 }
 
 const CASOS: Caso[] = [
+  // dono, 13/09/2026: num "oi" so pergunta como pode ajudar — nada de placa antes de ele dizer o que quer
+  { id: 'oi', ctx: 'sem', pergunta: 'oi', espera: [/ajudar/i], evita: [/placa|simula|cota|valor/i] },
+  { id: 'bom-dia-tudo-bem', ctx: 'sem', pergunta: 'bom dia, tudo bem?', espera: [/ajudar/i], evita: [/placa|simula|cota/i] },
+  { id: 'quero-cotacao', ctx: 'sem', pergunta: 'quero fazer uma cotação', espera: [/placa/i] },
   { id: 'sede', ctx: 'ka', pergunta: 'onde fica a sede de vocês?', espera: [/jorge sampaio/i, /campo grande/i] },
   { id: 'oficina', ctx: 'ka', pergunta: 'a oficina é de vocês ou eu levo na minha?', espera: [/pr[óo]pria/i, /cnpj/i], evita: [/confirmar/i] },
   { id: 'lavagem', ctx: 'ka', pergunta: 'tem direito a lavagem?', espera: [/2 lavagens|duas lavagens/i, /ordem de chegada/i], evita: [/confirmar/i] },
