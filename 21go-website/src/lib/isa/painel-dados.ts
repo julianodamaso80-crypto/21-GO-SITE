@@ -50,6 +50,8 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Pr
        ORDER BY m.created_at DESC LIMIT 1
      ) u ON true
      WHERE c.conversation_id IS NOT NULL
+       -- so quem ESCREVEU: lead que so recebeu a mensagem dos 5 min nao e atendimento (dono, 13/09/2026)
+       AND c.ultimo_inbound_em IS NOT NULL
        AND (${FILTRO[aba]})
        AND ($1 = '' OR c.telefone LIKE '%' || $1 || '%' OR COALESCE(c.nome, cv.pushname, '') ILIKE '%' || $1 || '%')
        AND ($2 = '' OR $2 = ANY(c.etiquetas))
@@ -105,6 +107,8 @@ export async function listarFunil(): Promise<CardFunil[]> {
        ORDER BY m.created_at DESC LIMIT 1
      ) u ON true
      WHERE c.conversation_id IS NOT NULL
+       -- so quem ESCREVEU: lead que so recebeu a mensagem dos 5 min nao e atendimento (dono, 13/09/2026)
+       AND c.ultimo_inbound_em IS NOT NULL
      ORDER BY u.created_at DESC NULLS LAST
      LIMIT 500`,
   )
@@ -140,7 +144,7 @@ export async function gravarEtapa(telefone: string, etapa: string | null): Promi
 
 export async function contarPrecisa(): Promise<number> {
   const r = await sql<{ n: string }>(
-    `SELECT count(*) AS n FROM public.isa_contatos c WHERE c.conversation_id IS NOT NULL AND (${FILTRO.precisa})`,
+    `SELECT count(*) AS n FROM public.isa_contatos c WHERE c.conversation_id IS NOT NULL AND c.ultimo_inbound_em IS NOT NULL AND (${FILTRO.precisa})`,
   )
   return Number(r[0]?.n ?? 0)
 }
