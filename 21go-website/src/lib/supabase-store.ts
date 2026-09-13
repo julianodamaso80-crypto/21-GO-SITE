@@ -442,7 +442,33 @@ export async function upsertMessage(input: InsertMessageInput): Promise<{ id: st
     .single()
 
   if (error) throw new Error(`upsertMessage falhou: ${error.message}`)
-  return { id: data!.id as string }
+  const id = data!.id as string
+
+  // A tabela e a mesma do inbox do CRM (crm21go.site /whatsapp). Sem last_message_at a conversa
+  // caia no FIM da lista de la e as nao lidas nunca subiam (dono, 13/09/2026: "toda conversa que
+  // ela atender tem que cair no CRM igual cai do WhatsApp, por ordem de chegada"). Melhor esforco:
+  // a mensagem ja esta gravada; isto nunca derruba o fluxo.
+  if (input.conversation_id) {
+    const inbound = input.direction === 'inbound'
+    const { sql } = await import('@/lib/isa/banco')
+    await sql(
+      `UPDATE public.conversations SET
+         last_message_at = GREATEST(COALESCE(last_message_at, '-infinity'::timestamptz), COALESCE($2::timestamptz, now())),
+         unread_count = COALESCE(unread_count, 0) + $3,
+         total_messages = COALESCE(total_messages, 0) + 1,
+         first_inbound_at = CASE WHEN $4 THEN COALESCE(first_inbound_at, now()) ELSE first_inbound_at END,
+         first_outbound_at = CASE WHEN $4 THEN first_outbound_at ELSE COALESCE(first_outbound_at, now()) END,
+         updated_at = now()
+       WHERE id = $1`,
+      [input.conversation_id, input.sent_at ?? null, inbound ? 1 : 0, inbound],
+    ).catch((err) => console.warn('[store] conversa nao atualizada:', err instanceof Error ? err.message : err))
+    if (instance === 'cloud_isa') {
+      const { avisarCrm } = await import('@/lib/isa/crm')
+      avisarCrm({ conversationId: input.conversation_id, messageId: id })
+    }
+  }
+
+  return { id }
 }
 
 /**

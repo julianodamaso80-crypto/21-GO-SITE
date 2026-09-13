@@ -81,8 +81,10 @@ export function sessaoDoCrm(chave: string | null, usuario: string | null): Sessa
   const a = Buffer.from(chave)
   const b = Buffer.from(esperada)
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null
-  const u = usuario.trim().toLowerCase()
-  return usuarios().has(u) ? { u, exp: Date.now() + 60_000 } : null
+  // A chave (32+ chars) e o segredo; o usuario e so o rotulo de quem respondeu ("leticya",
+  // "rodrigo.souza"). Dono (13/09/2026): todo mundo do CRM responde pelo /whatsapp, nao so a Leticya.
+  const u = usuario.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 40)
+  return u ? { u, exp: Date.now() + 60_000 } : null
 }
 
 // Tentativas de login por IP: 5 a cada 15 min. Em memoria de proposito — so 2 usuarios.
