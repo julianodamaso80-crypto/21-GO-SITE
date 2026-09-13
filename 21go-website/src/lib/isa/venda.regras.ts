@@ -194,3 +194,28 @@ export function mensagemRetomada(e: EstadoRetomada): string {
 export function jaPerguntouProtecao(historico: { direction: 'inbound' | 'outbound'; content: string }[]): boolean {
   return historico.some((m) => m.direction === 'outbound' && /alguma prote[cç][aã]o pro seu ve[ií]culo/i.test(m.content))
 }
+
+/* ───────────────────────── "oi" ───────────────────────── */
+
+const SO_CUMPRIMENTO =
+  /^(?:(?:oi+|oie+|ol[aá]|opa|e a[ií]|eai|hey|hello|bom dia|boa tarde|boa noite|boa|tudo bem|tudo bom|td bem|td bom|tudo certo|beleza|blz|como vai|como (vc|voc[eê]) (ta|est[aá])|por favor|pfv|isa|leticya|21go)[\s,!.?]*)+$/
+
+/** A mensagem e SO um cumprimento ("oi", "bom dia, tudo bem?"): nada de pergunta junto. */
+export function ehSoCumprimento(texto: string | null | undefined): boolean {
+  const t = norm(texto).replace(/[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u200d\ufe0f]/gu, '').trim()
+  return !!t && SO_CUMPRIMENTO.test(t)
+}
+
+/**
+ * Resposta ao "oi", pelo codigo (dono, 13/09/2026: "o certo e 'boa noite, Juliano, tudo bem? como
+ * posso ajudar?', algo assim, mais simpatica"). Uma mensagem so, e para: nada de placa.
+ */
+export function mensagemCumprimento(p: { cumprimento: string; primeiroNome: string | null; eleJaPerguntouTudoBem: boolean }): string {
+  const nome = p.primeiroNome ? `, ${p.primeiroNome}` : ''
+  if (p.eleJaPerguntouTudoBem) return `${p.cumprimento}${nome}! tudo ótimo por aqui, e você? 😃 me diz, como posso te ajudar?`
+  return `${p.cumprimento}${nome}, tudo bem? 😃 como posso te ajudar?`
+}
+
+export function perguntouTudoBem(texto: string | null | undefined): boolean {
+  return /\b(tudo (bem|bom|certo)|td (bem|bom)|como vai|beleza)\b/.test(norm(texto))
+}

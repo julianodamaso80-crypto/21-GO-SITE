@@ -25,7 +25,7 @@ import {
 import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente } from '@/lib/isa/acoes'
 import { alertarDono, alertarPergunta } from '@/lib/isa/alertas'
-import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao } from '@/lib/isa/venda.regras'
+import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao, ehSoCumprimento, mensagemCumprimento, perguntouTudoBem } from '@/lib/isa/venda.regras'
 import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor, AGUARDANDO_FECHA_QUANDO, mensagemTentarDesconto, mensagemVouFalarComSupervisor, mensagemTentarDeNovo } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
@@ -357,6 +357,16 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       return enviou
     }
   }
+  // "oi" / "bom dia, tudo bem?" sozinho: resposta simpatica pelo codigo e PARA — sem placa, sem
+  // cotacao (dono, 13/09/2026: "boa noite, Juliano, tudo bem? como posso ajudar? nao atropela").
+  if (novas.length === 1 && ehSoCumprimento(textoNovas) && c.aguardando_dono !== AGUARDANDO_FECHA_QUANDO) {
+    const texto = mensagemCumprimento({ cumprimento: cumprimento(agora), primeiroNome: primeiroNomeDe(c.nome ?? lead?.nome ?? null), eleJaPerguntouTudoBem: perguntouTudoBem(textoNovas) })
+    await registrarEvento(c.telefone, 'cumprimento', { por: 'codigo' })
+    const enviou = await enviarComoGente(c, [texto], ultimaInbound, visto)
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
+
   // Protocolo do desconto (dono, 12/09/2026), etapa 2: a Isa perguntou "se eu conseguir, você
   // pretende fechar quando?" e ele respondeu — a resposta vai no aviso pro supervisor e ela pausa.
   if (c.aguardando_dono === AGUARDANDO_FECHA_QUANDO) {

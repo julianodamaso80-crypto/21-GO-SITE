@@ -13,6 +13,9 @@ import {
   mensagemRetomada,
   jaPerguntouProtecao,
   PERGUNTA_TEM_PROTECAO,
+  ehSoCumprimento,
+  mensagemCumprimento,
+  perguntouTudoBem,
 } from '../../src/lib/isa/venda.regras.ts'
 import { montarFatos } from '../../src/lib/isa/fatos.regras.ts'
 
@@ -103,4 +106,13 @@ test('retomada pelo momento do cliente, sem repetir e sem nome (12/09/2026 13:43
   assert.ok(jaPerguntouProtecao([{ direction: 'outbound', content: 'Juliano, hoje você possui alguma proteção pro seu veículo?' }]))
   assert.ok(jaPerguntouProtecao([{ direction: 'outbound', content: PERGUNTA_TEM_PROTECAO }]))
   assert.ok(!jaPerguntouProtecao([{ direction: 'inbound', content: 'tenho proteção' }]))
+})
+
+test('"oi" sozinho: resposta simpatica pelo codigo, sem placa (dono, 13/09/2026)', () => {
+  for (const t of ['oi', 'Oi!', 'olá', 'bom dia', 'boa noite, tudo bem?', 'oi, tudo bom?', 'opa, beleza?', 'oi 😃']) assert.ok(ehSoCumprimento(t), t)
+  for (const t of ['oi, quero uma cotação', 'bom dia, qual o valor?', 'oi rkm7j62', 'tudo bem? cobre roubo?', 'ok obrigado']) assert.ok(!ehSoCumprimento(t), t)
+  assert.equal(mensagemCumprimento({ cumprimento: 'boa noite', primeiroNome: 'Juliano', eleJaPerguntouTudoBem: false }), 'boa noite, Juliano, tudo bem? 😃 como posso te ajudar?')
+  assert.equal(mensagemCumprimento({ cumprimento: 'bom dia', primeiroNome: null, eleJaPerguntouTudoBem: false }), 'bom dia, tudo bem? 😃 como posso te ajudar?')
+  assert.match(mensagemCumprimento({ cumprimento: 'boa tarde', primeiroNome: 'Ana', eleJaPerguntouTudoBem: true }), /^boa tarde, Ana! tudo ótimo por aqui, e você\? 😃 me diz, como posso te ajudar\?$/)
+  assert.ok(perguntouTudoBem('boa noite, tudo bem?') && !perguntouTudoBem('oi'))
 })
