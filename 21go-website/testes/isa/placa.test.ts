@@ -22,3 +22,15 @@ test('nao confunde com outras coisas', () => {
 test('duas placas: vale a ultima (o cliente corrigiu)', () => {
   assert.equal(placaNoTexto('RKM7J62\nops, é PYV8I13'), 'PYV8I13')
 })
+
+test('o 9 do celular: from sem o 9 vira a grafia do lead; fixo e outros paises ficam (13/09/2026)', async () => {
+  const { telefoneCanonico, variantesDoTelefone } = await import('../../src/lib/isa/telefone.regras.ts')
+  assert.equal(telefoneCanonico('558896490972'), '5588996490972')
+  assert.equal(telefoneCanonico('5588996490972'), '5588996490972')
+  assert.equal(telefoneCanonico('552133334444'), '552133334444') // fixo
+  assert.equal(telefoneCanonico('5521992208062'), '5521992208062')
+  assert.equal(telefoneCanonico('+55 (88) 96490-972'), '5588996490972')
+  assert.deepEqual(variantesDoTelefone('558896490972'), ['5588996490972', '558896490972'])
+  assert.deepEqual(variantesDoTelefone('552133334444'), ['552133334444'])
+  assert.deepEqual(variantesDoTelefone(''), [])
+})

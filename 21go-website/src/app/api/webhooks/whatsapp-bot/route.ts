@@ -3,6 +3,7 @@ import { upsertConversation, upsertMessage, phoneToJid } from '@/lib/supabase-st
 import { assinaturaConfere, mensagensDoNumero, podeResponder } from '@/lib/whatsapp-cloud'
 import { mensagemJaGravada, registrarInbound } from '@/lib/isa/banco'
 import { processarFila } from '@/lib/isa/worker'
+import { telefoneCanonico } from '@/lib/isa/telefone.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -51,7 +52,10 @@ export async function POST(req: NextRequest) {
 
   const phoneId = process.env.WA_PHONE_ID ?? ''
   let chegouNova = false
-  for (const m of mensagensDoNumero(payload, phoneId)) {
+  for (const bruta of mensagensDoNumero(payload, phoneId)) {
+    // O 9 do celular: o WhatsApp manda alguns `from` sem ele e o lead tem com — mesma pessoa, uma
+    // conversa so (13/09/2026: partiu em duas e a Isa atendeu sem a simulacao).
+    const m = { ...bruta, from: telefoneCanonico(bruta.from) }
     const jid = phoneToJid(m.from) ?? `${m.from}@s.whatsapp.net`
     const responderia = podeResponder(m.from, {
       modoTeste: process.env.ISA_MODO_TESTE,

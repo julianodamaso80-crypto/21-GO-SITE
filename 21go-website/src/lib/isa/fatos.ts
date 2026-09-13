@@ -3,6 +3,7 @@ import { sql } from '@/lib/isa/banco'
 import { calcActivation, isLeilaoOrigin, PLAN_INFO, type PlanId } from '@/data/pricing'
 import { montarFatos, planosQueAparecem, planoDosBeneficios, type Fatos, type PlanoEntrada } from '@/lib/isa/fatos.regras'
 import { extrairNumeros } from '@/lib/isa/validador.regras'
+import { variantesDoTelefone } from '@/lib/isa/telefone.regras'
 
 /**
  * Liga o cliente do WhatsApp a simulacao que ele fez (lead) e monta os fatos com as MESMAS
@@ -46,13 +47,13 @@ export async function leadDoCliente(telefone: string, leadId: string | null, des
   }
   const r = await sql<LeadIsa>(
     `SELECT ${COLUNAS} FROM public.leads
-     WHERE (telefone = $1 OR whatsapp = $1)
+     WHERE (telefone = ANY($1::text[]) OR whatsapp = ANY($1::text[]))
        AND consultor_slug IS NULL
        AND cotacao_planos IS NOT NULL
        AND created_at > (now() AT TIME ZONE 'UTC') - interval '30 days'
        AND created_at > COALESCE($2::timestamptz AT TIME ZONE 'UTC', '-infinity'::timestamp)
      ORDER BY created_at DESC LIMIT 1`,
-    [telefone, desde],
+    [variantesDoTelefone(telefone), desde],
   )
   return r[0] ?? null
 }
