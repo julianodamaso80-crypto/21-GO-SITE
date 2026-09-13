@@ -52,8 +52,28 @@ export function mensagemDesconto50(d: { de: number; para: number }, o: { pergunt
   return o.perguntaSeFecha === false ? base : `${base}\n\nficou alguma dúvida sobre o plano que eu possa esclarecer, ou quer que eu já siga com a sua ativação?`
 }
 
+/**
+ * Protocolo do desconto na ativacao (dono, 12/09/2026): ele diz que a ativacao esta cara → a Isa
+ * oferece tentar com o supervisor e pergunta quando ele fecha → ele responde → ela avisa o dono
+ * (com a resposta) → o dono manda o valor → ela volta empolgada "consegui um bom desconto pra voce,
+ * de X por Y, o que acha?" → pediu mais → "vou tentar de novo".
+ */
+export const AGUARDANDO_FECHA_QUANDO = 'fecha_quando'
+
+export function mensagemTentarDesconto(): string {
+  return 'posso tentar conseguir um desconto na ativação com meu supervisor 🙏🏼\n\nse eu conseguir, você pretende fechar quando?'
+}
+
+export function mensagemVouFalarComSupervisor(): string {
+  return 'deixa comigo, vou falar com ele agora e já te retorno 🙏🏼'
+}
+
+export function mensagemTentarDeNovo(): string {
+  return 'vou tentar de novo com meu supervisor 🙏🏼 já te retorno'
+}
+
 export function mensagemDescontoDoDono(d: { de: number; para: number }): string {
-  return `consegui um desconto bem legal pra gente fechar hoje: de ${brl(d.de)} por ${brl(d.para)} 🎉\n\nbora seguir?`
+  return `consegui um bom desconto pra você 🎉\n\nde ${brl(d.de)} por ${brl(d.para)}\n\no que acha?`
 }
 
 /**

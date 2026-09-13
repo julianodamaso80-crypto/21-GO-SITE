@@ -87,12 +87,13 @@ export async function pausarEAvisar(c: ContatoIsa, motivo: string, detalhe: stri
   await alertarDono({ telefone: c.telefone, nome: c.nome, motivo, detalhe })
 }
 
-/** Pedido de desconto: a resposta "vou confirmar com meu supervisor" ja saiu; pausa e alerta. */
-export async function pedirDescontoAoDono(c: ContatoIsa): Promise<void> {
+/** Pedido de desconto: a Isa ja respondeu ao cliente; pausa e manda o alerta (com quando ele fecha). */
+export async function pedirDescontoAoDono(c: ContatoIsa, extra: { quando?: string | null } = {}): Promise<void> {
   const r = await resumoDoCliente(c)
-  await pausar(c.telefone, 'desconto')
+  await pausar(c.telefone, 'desconto', extra.quando ? { quando: extra.quando } : {})
   await atualizarContato(c.telefone, { aguardando_dono: 'desconto' })
-  await alertarDesconto({ telefone: c.telefone, nome: c.nome, veiculo: r.veiculo, plano: r.plano })
+  const plano = extra.quando ? `${r.plano} | fecha: ${extra.quando.slice(0, 120)}` : r.plano
+  await alertarDesconto({ telefone: c.telefone, nome: c.nome, veiculo: r.veiculo, plano })
 }
 
 /**

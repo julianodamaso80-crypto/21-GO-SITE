@@ -30,7 +30,7 @@ const FILTRO: Record<Aba, string> = {
   todos: 'true',
   // Pausou sozinha num gatilho (e nao foi transferido) ou esta esperando o dono decidir desconto.
   // ...ou ficou devendo uma resposta ("vou confirmar e ja te retorno" — auditoria 12/09/2026).
-  precisa: `(NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR c.aguardando_dono IS NOT NULL OR c.pergunta_pendente IS NOT NULL`,
+  precisa: `(NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR (c.aguardando_dono IS NOT NULL AND c.aguardando_dono <> 'fecha_quando') OR c.pergunta_pendente IS NOT NULL`,
   isa: 'c.ligada',
   off: 'NOT c.ligada',
   transferidos: 'c.transferido_em IS NOT NULL',

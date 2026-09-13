@@ -351,7 +351,7 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
         <ul className="flex-1 overflow-y-auto">
           {lista.length === 0 && <li className="px-5 py-10 text-center text-sm text-white/35">nada por aqui</li>}
           {lista.map((c) => {
-            const precisaGente = (!c.ligada && !c.transferido_em && c.pausa_motivo && c.pausa_motivo !== 'manual' && c.pausa_motivo !== 'humano_assumiu') || !!c.aguardando_dono || !!c.pergunta_pendente
+            const precisaGente = (!c.ligada && !c.transferido_em && c.pausa_motivo && c.pausa_motivo !== 'manual' && c.pausa_motivo !== 'humano_assumiu') || (!!c.aguardando_dono && c.aguardando_dono !== 'fecha_quando') || !!c.pergunta_pendente
             return (
               <li key={c.telefone}>
                 <button onClick={() => setSel(c.telefone)}
@@ -516,7 +516,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
         </div>
 
         <div className={detalhes ? 'block' : 'hidden md:block'}>
-        {(sim || contato?.pausa_motivo || contato?.aguardando_dono || contato?.pergunta_pendente) && (
+        {(sim || contato?.pausa_motivo || (contato?.aguardando_dono && contato.aguardando_dono !== 'fecha_quando') || contato?.pergunta_pendente) && (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px]">
             {sim && (
               <>
@@ -537,7 +537,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
               </>
             )}
             {contato?.preco_da_tabela && <Etiqueta tom="cinza">preço da tabela — conferir no Power</Etiqueta>}
-            {contato?.aguardando_dono && <Etiqueta tom="laranja">esperando você decidir o desconto</Etiqueta>}
+            {contato?.aguardando_dono && contato.aguardando_dono !== 'fecha_quando' && <Etiqueta tom="laranja">esperando você decidir o desconto</Etiqueta>}
             {contato?.pergunta_pendente && (
               <Etiqueta tom="laranja">a Isa prometeu retornar: “{contato.pergunta_pendente.texto.slice(0, 90)}” — responda aqui ou pelo WhatsApp de avisos</Etiqueta>
             )}

@@ -47,8 +47,12 @@ test('frase do desconto de entrada: sempre o antes e o depois', () => {
   assert.match(m, /em vez de pagar R\$ 557,00, você vai pagar R\$ 507,00/)
 })
 
-test('desconto do dono vem na moldura "consegui um desconto bem legal"', () => {
-  assert.match(mensagemDescontoDoDono({ de: 557, para: 479 }), /consegui um desconto bem legal pra gente fechar hoje: de R\$ 557,00 por R\$ 479,00/)
+test('desconto do dono vem na moldura do dono: "consegui um bom desconto pra voce, de X por Y, o que acha?" (12/09/2026)', () => {
+  assert.match(mensagemDescontoDoDono({ de: 557, para: 479 }), /consegui um bom desconto pra você 🎉
+
+de R\$ 557,00 por R\$ 479,00
+
+o que acha\?/)
   assert.match(mensagemDonoRecusou(557), /R\$ 557,00/)
 })
 
@@ -105,6 +109,18 @@ test('fora do horario a Isa atende so os numeros de teste (allowlist + alertas, 
   assert.deepEqual(numerosDeTeste({ allowlist: '5521992208062', alerta: '5521965774240' }), ['5521992208062', '5521965774240'])
   assert.deepEqual(numerosDeTeste({ allowlist: '5521992208062,5521965774240', alerta: '5521965774240' }), ['5521992208062', '5521965774240'])
   assert.deepEqual(numerosDeTeste({ allowlist: undefined, alerta: null }), [])
+})
+
+test('protocolo do desconto no texto do dono (12/09/2026)', async () => {
+  const { mensagemTentarDesconto, mensagemVouFalarComSupervisor, mensagemTentarDeNovo, mensagemDescontoDoDono, AGUARDANDO_FECHA_QUANDO, respostaDeSupervisor } = await import('../../src/lib/isa/dono.regras.ts')
+  assert.match(mensagemTentarDesconto(), /tentar conseguir um desconto na ativação com meu supervisor/)
+  assert.match(mensagemTentarDesconto(), /se eu conseguir, você pretende fechar quando\?$/)
+  assert.match(mensagemVouFalarComSupervisor(), /vou falar com ele agora/)
+  assert.match(mensagemTentarDeNovo(), /tentar de novo/)
+  assert.equal(mensagemDescontoDoDono({ de: 264.42, para: 214.42 }), 'consegui um bom desconto pra você 🎉\n\nde R$ 264,42 por R$ 214,42\n\no que acha?')
+  // esperando o CLIENTE dizer quando fecha nao e o 4240 em modo supervisor
+  assert.equal(AGUARDANDO_FECHA_QUANDO, 'fecha_quando')
+  assert.ok(!respostaDeSupervisor({ aguardandoDono: AGUARDANDO_FECHA_QUANDO, payloads: [] }))
 })
 
 test('pergunta pendente: o 4240 vira supervisor e "nao"/"ignora" pula (auditoria 12/09/2026)', async () => {

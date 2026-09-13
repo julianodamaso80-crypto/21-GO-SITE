@@ -26,7 +26,7 @@ import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente } from '@/lib/isa/acoes'
 import { alertarDono, alertarPergunta } from '@/lib/isa/alertas'
 import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao } from '@/lib/isa/venda.regras'
-import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor } from '@/lib/isa/dono.regras'
+import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor, AGUARDANDO_FECHA_QUANDO, mensagemTentarDesconto, mensagemVouFalarComSupervisor, mensagemTentarDeNovo } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import {
@@ -357,6 +357,15 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       return enviou
     }
   }
+  // Protocolo do desconto (dono, 12/09/2026), etapa 2: a Isa perguntou "se eu conseguir, você
+  // pretende fechar quando?" e ele respondeu — a resposta vai no aviso pro supervisor e ela pausa.
+  if (c.aguardando_dono === AGUARDANDO_FECHA_QUANDO) {
+    const enviou = await enviarComoGente(c, [mensagemVouFalarComSupervisor()], ultimaInbound, visto)
+    await pedirDescontoAoDono(c, { quando: textoNovas.trim() })
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
+
   // "Quais os beneficios?" com simulacao na mao: a lista sai INTEIRA pelo codigo (auditoria de
   // 12/09/2026: a IA listou 5 de 17). Junto com outra pergunta, a IA responde tudo.
   if (fatos && lead) {
@@ -485,6 +494,24 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     .slice(iUltimaNossaNoHist + 1)
     .filter((m) => m.direction === 'inbound' && (m.content || '').trim())
     .map((m) => m.whatsapp_message_id)
+  // Protocolo do desconto, etapa 1 (ou 4, se ele ja ganhou um e pediu mais): a fala e do codigo,
+  // no texto do dono; a IA so aponta o gatilho. Primeira vez: oferece tentar e pergunta quando
+  // fecha (fica esperando a resposta, ligada). Ja teve desconto: "vou tentar de novo" e avisa ja.
+  if (saida.gatilho === 'desconto') {
+    const partes = saida.resposta ? dividirEmPartes(saida.resposta) : []
+    if (c.desconto50_em) {
+      const enviou = await enviarComoGente(c, [...partes, mensagemTentarDeNovo()], ultimaInbound, visto)
+      await pedirDescontoAoDono(c, { quando: 'já tinha desconto e pediu mais' })
+      await liberar(c.telefone, visto, enviou)
+      return enviou
+    }
+    const enviou = await enviarComoGente(c, [...partes, mensagemTentarDesconto()], ultimaInbound, visto)
+    await atualizarContato(c.telefone, { aguardando_dono: AGUARDANDO_FECHA_QUANDO })
+    await registrarEvento(c.telefone, 'desconto', { tipo: 'perguntou_quando' })
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
+
   const enviou = saida.resposta
     ? await enviarComoGente(c, partesComCitacao(saida.resposta, wamidsDasNovas), ultimaInbound, visto)
     : false
@@ -508,8 +535,6 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     if (d) await enviarComoGente(c, [mensagemDesconto50(d, { perguntaSeFecha: false })], ultimaInbound, visto)
   }
 
-  // Desconto: a Isa ja disse "vou confirmar com meu supervisor"; pausa e manda o alerta com botoes.
-  if (saida.gatilho === 'desconto') await pedirDescontoAoDono(c)
   // Nao soube responder: respondeu "vou confirmar" e o dono fica sabendo (a Isa segue ligada).
   // Escolheu o plano mas nao tem comprovante de residencia: a Isa pede CNH + documento do veiculo
   // e o time e avisado (dono, 11/09/2026). Ela segue ligada.
