@@ -83,8 +83,8 @@ export function mensagemBeneficios(p: { abertura: string | null; plano: PlanoFat
   if (p.plano.naoCobre.length) {
     linhas.push('', `não entra nesse plano: ${p.plano.naoCobre.join(', ').toLowerCase()}`)
   }
+  // Termina no PDF, sem pergunta de fechamento (dono, 12/09/2026: "responde o que foi perguntado e espera").
   linhas.push('', `tá tudo detalhado no seu PDF 👇\n${p.pdfUrl}`)
-  linhas.push('', p.temOutros ? 'esse é o que faz mais sentido pra você, ou quer que eu compare com outro?' : 'quer que eu já siga com a sua ativação nesse plano?')
   return linhas.join('\n')
 }
 
@@ -135,7 +135,7 @@ export interface ComparacaoHoje {
 /** Compara o que ele paga com cada plano dos FATOS — a IA so pode citar estes numeros. */
 export function comparacaoComHoje(fatos: Fatos, pagaHoje: number): ComparacaoHoje {
   const linhas = [
-    `⚠️ ele acabou de dizer quanto paga hoje em outra proteção/seguro: ${brl(pagaHoje)} por mês. sua resposta COMEÇA pela comparação com o número exato abaixo (não liste os planos de novo) e termina perguntando se pode seguir. comparação, plano a plano:`,
+    `ele disse quanto paga hoje em outra proteção/seguro: ${brl(pagaHoje)} por mês. se ele perguntar se compensa ou pedir comparação, use os números exatos abaixo (nunca liste os planos de novo). se não perguntar, não compare por conta própria:`,
   ]
   const dinheiro = [pagaHoje]
   for (const p of fatos.planos) {
@@ -184,8 +184,8 @@ export interface EstadoRetomada {
 export function mensagemRetomada(e: EstadoRetomada): string {
   if (e.escolheuPlano) return 'conseguiu separar os documentos? é só a foto da CNH, o documento do veículo e um comprovante de residência 🙏🏼'
   if (e.jaPerguntouProtecao || e.despediuSe) {
-    if (e.planoUnico) return `conseguiu dar uma olhada na simulação? se o ${e.planoUnico} fizer sentido pra você, eu já sigo com a ativação`
-    if (e.planoSugerido) return `conseguiu dar uma olhada na simulação? o ${e.planoSugerido.nome} ficou em ${brl(e.planoSugerido.mensal)}/mês — faz sentido pra você, ou prefere que eu compare com outro?`
+    if (e.planoUnico) return `conseguiu dar uma olhada na simulação? o ${e.planoUnico} ficou como te mandei. qualquer dúvida, é só me chamar aqui`
+    if (e.planoSugerido) return `conseguiu dar uma olhada na simulação? o ${e.planoSugerido.nome} ficou em ${brl(e.planoSugerido.mensal)}/mês. qualquer dúvida, é só me chamar aqui`
     return 'conseguiu dar uma olhada na simulação? qualquer dúvida sobre os planos é só me chamar aqui'
   }
   return PERGUNTA_TEM_PROTECAO

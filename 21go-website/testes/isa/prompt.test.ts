@@ -293,8 +293,10 @@ test('as 5 pendencias do doc respondidas pelo dono (12/09/2026)', async () => {
 
 test('bloco de venda e frases proibidas estao no prompt; comparacao com o que ele paga entra nos FATOS (auditoria 12/09/2026)', () => {
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false, comparacaoHoje: ['hoje ele paga R$ 650,00 por mês em outra proteção/seguro (ele disse). comparação, plano a plano:'] })
-  assert.match(p, /## como você vende — com fato, sem pressão, sem desconto/)
-  assert.match(p, /toda resposta termina com UM próximo passo concreto/)
+  assert.match(p, /## como você trata o cliente — simples, responde o que foi perguntado e espera/)
+  assert.match(p, /responda SÓ o que ele perguntou, curto, e PARE/)
+  assert.match(p, /emendar venda na resposta/)
+  assert.ok(!/toda resposta termina com UM próximo passo/.test(p))
   assert.match(p, /"tá caro" \/ "achei caro"/)
   assert.match(p, /"vou pensar" \/ "depois te falo"/)
   assert.match(p, /não fale mal de seguradora/)

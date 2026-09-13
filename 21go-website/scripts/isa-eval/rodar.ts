@@ -114,9 +114,14 @@ const CASOS: Caso[] = [
   { id: 'parabrisa-basico', ctx: 'ka', pergunta: 'o básico cobre para-brisa?', espera: [/70%/], evita: [/n[ãa]o cobre/i] },
   { id: 'moto-reserva', ctx: 'moto', pergunta: 'tem moto reserva ou táxi?', espera: [/n[ãa]o/i], evita: [/confirmar/i] },
   { id: 'premium-reboque', ctx: 'ka', pergunta: 'quantos km de reboque tem o premium?', espera: [/1\.400|700/], evita: [/1\.200/] },
+  // dono, 12/09/2026 (noite): responde o que foi perguntado e espera — nada de cota, valor ou "posso seguir?"
+  { id: 'filho-dirige', ctx: 'ka', pergunta: 'se meu filho dirigir o carro e bater como fica?', espera: [/livre condutor/i], evita: [/cota|6%|R\$|ativa[çc][ãa]o|posso (dar andamento|seguir)|quer que eu/i] },
+  { id: 'sem-cnh-curto', ctx: 'ka', pergunta: 'não tenho CNH, posso fazer?', espera: [/pode|sim|normal/i], evita: [/posso (dar andamento|seguir)|quer que eu|qual plano/i] },
   { id: 'financiado-outro-nome', ctx: 'ka', pergunta: 'o carro é financiado e tá no nome do meu pai. se der perda total, o dinheiro vai pra quem?', espera: [/d[ée]bitos|pend[êe]ncias|financiamento/i, /documento|registrad|propriet/i], evita: [/confirmar/i] },
 ]
 
+// Empurrao de venda depois de responder duvida (dono, 12/09: "toda hora querendo vender").
+const EMPURRAO = /posso dar andamento|quer que eu (já )?siga|posso seguir com|qual (deles|plano) faz mais sentido|quer que eu compare/i
 const ROBO = /posso te ajudar com mais alguma|fico [àa] disposi|estou aqui pra (te )?ajudar|^entendi\b|^que legal\b|[óo]tima escolha/im
 
 function historico(c: Caso): MensagemHistorico[] {
@@ -151,6 +156,7 @@ async function rodarCaso(c: Caso): Promise<{ ok: boolean; motivos: string[]; res
   for (const re of c.evita ?? []) if (re.test(s.resposta)) motivos.push(`não podia ${re}`)
   if (c.gatilho !== undefined && s.gatilho !== c.gatilho) motivos.push(`gatilho ${s.gatilho} (esperado ${c.gatilho})`)
   if (ROBO.test(s.resposta)) motivos.push('frase de robô')
+  if (EMPURRAO.test(s.resposta) && !/fechar|contrat|ativa/i.test(c.pergunta)) motivos.push('empurrou venda sem ele pedir')
   if (s.reprovados.length) motivos.push(`validador reprovou: ${s.reprovados.join(', ')}`)
   if (/deixa eu confirmar aqui/.test(s.resposta) && c.gatilho !== 'sem_informacao') motivos.push('caiu na resposta segura (JSON ilegível 2x)')
   return { ok: motivos.length === 0, motivos, resposta: s.resposta, gatilho: s.gatilho }
@@ -179,6 +185,8 @@ async function main() {
   for (const { c, r } of resultados) {
     if (r.ok) ok++
     console.log(`${r.ok ? '✔' : '✖'} ${c.id}${r.gatilho ? ` [${r.gatilho}]` : ''}`)
+    if (r.ok && process.env.ISA_EVAL_VERBOSE) console.log(`     resposta: ${r.resposta.replace(/
++/g, ' ⏎ ').slice(0, 320)}`)
     if (!r.ok) {
       for (const m of r.motivos) console.log(`     - ${m}`)
       console.log(`     resposta: ${r.resposta.replace(/\n+/g, ' ⏎ ').slice(0, 320)}`)
