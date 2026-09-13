@@ -14,6 +14,9 @@ const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigi
 
 const PREFIXO = 'isa-desc'
 const NUMERO_4824 = '5521969454824'
+// Dono (13/09/2026): "manda so o numero, que ele consegue clicar; nao precisa esse link feio gigante".
+// O WhatsApp deixa o numero clicavel sozinho; o resumo pro time vai pelo aviso, nao pelo link.
+const NUMERO_4824_BONITO = '+55 21 96945-4824'
 
 export function payloadDesconto(telefone: string, decisao: 'sim' | 'nao'): string {
   return `${PREFIXO}:${telefone}:${decisao}`
@@ -92,11 +95,10 @@ const TEXTO_TRANSFERENCIA: Record<string, string> = {
   sem_preco: 'vou pedir pra Leticya fazer a cotação do seu veículo com cuidado 🙏🏼',
 }
 
-/** O cliente toca no link e ELE escreve pro 4824 — o 4824 nunca manda a primeira mensagem. */
-export function mensagemTransferencia(p: { motivo: string; resumo: string }): string {
+/** O cliente toca no numero e ELE escreve pro 4824 — o 4824 nunca manda a primeira mensagem. */
+export function mensagemTransferencia(p: { motivo: string; resumo?: string }): string {
   const frase = TEXTO_TRANSFERENCIA[p.motivo] ?? TEXTO_TRANSFERENCIA.documento
-  const texto = `Oi Leticya! Vim do atendimento da Isa. ${p.resumo}`
-  return `${frase}\n\né só tocar aqui, que já cai com ela 👇\nhttps://wa.me/${NUMERO_4824}?text=${encodeURIComponent(texto)}`
+  return `${frase}\n\né só chamar ela nesse número 👇\n${NUMERO_4824_BONITO}`
 }
 
 /**
@@ -104,12 +106,11 @@ export function mensagemTransferencia(p: { motivo: string; resumo: string }): st
  * conversa tinha morrido; agora ela diz o que e, oferece a Leticya (o mesmo link do 4824 da
  * transferencia) e segue atendendo.
  */
-export function mensagemRobo(p: { genero: 'm' | 'f' | null; resumo: string }): string {
+export function mensagemRobo(p: { genero: 'm' | 'f' | null; resumo?: string }): string {
   const protegido = p.genero === 'f' ? 'protegida' : 'protegido'
-  const texto = `Oi Leticya! Vim do atendimento da Isa. ${p.resumo}`
   return (
     `sou uma atendente virtual inteligente 😊 tô aqui pra te ajudar com mais velocidade, pra você ficar ${protegido} o mais rápido possível\n\n` +
-    `mas se você quiser falar direto com a Leticya, é só tocar aqui 👇\nhttps://wa.me/${NUMERO_4824}?text=${encodeURIComponent(texto)}`
+    `mas se você quiser falar direto com a Leticya, é só chamar nesse número 👇\n${NUMERO_4824_BONITO}`
   )
 }
 

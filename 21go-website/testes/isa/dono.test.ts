@@ -51,22 +51,22 @@ test('desconto do dono vem na moldura do dono: "consegui um bom desconto pra voc
   assert.match(mensagemDescontoDoDono({ de: 557, para: 479 }), /consegui um bom desconto pra você 🎉\n\nde R\$ 557,00 por R\$ 479,00\n\no que acha\?/)
 })
 
-test('transferencia pro 4824 com o resumo pronto no link (quem escreve e o cliente)', () => {
+test('transferencia pro 4824: so o numero, clicavel, sem link (dono, 13/09/2026)', () => {
   const m = mensagemTransferencia({ motivo: 'documento', resumo: 'Nome: Juliano | Jeep Compass 2022' })
   assert.match(m, /vou te passar pra Leticya/)
-  assert.match(m, /https:\/\/wa\.me\/5521969454824\?text=/)
-  assert.match(decodeURIComponent(m.split('text=')[1]), /Nome: Juliano \| Jeep Compass 2022/)
+  assert.match(m, /\+55 21 96945-4824$/)
+  assert.ok(!/wa\.me|https/.test(m), 'so o numero, sem link')
   assert.match(mensagemTransferencia({ motivo: 'associado', resumo: 'x' }), /que cuida disso pra você/)
 })
 
-test('"voce e robo?": o texto do dono (11/09/2026) + o link do 4824 — e a Isa segue atendendo', () => {
+test('"voce e robo?": o texto do dono (11/09/2026) + o numero do 4824 — e a Isa segue atendendo', () => {
   const m = mensagemRobo({ genero: null, resumo: 'Nome: Juliano | Veículo: Ford Ka 2019' })
   assert.match(m, /^sou uma atendente virtual inteligente/)
   assert.match(m, /mais velocidade/)
   assert.match(m, /protegido o mais rápido possível/)
   assert.match(m, /falar direto com a Leticya/)
-  assert.match(m, /https:\/\/wa\.me\/5521969454824\?text=/)
-  assert.match(decodeURIComponent(m.split('text=')[1]), /Vim do atendimento da Isa\. Nome: Juliano/)
+  assert.match(m, /\+55 21 96945-4824$/)
+  assert.ok(!/wa\.me|https/.test(m), 'so o numero, sem link')
   assert.match(mensagemRobo({ genero: 'f', resumo: 'x' }), /protegida o mais rápido/)
 })
 
