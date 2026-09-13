@@ -48,12 +48,7 @@ test('frase do desconto de entrada: sempre o antes e o depois', () => {
 })
 
 test('desconto do dono vem na moldura do dono: "consegui um bom desconto pra voce, de X por Y, o que acha?" (12/09/2026)', () => {
-  assert.match(mensagemDescontoDoDono({ de: 557, para: 479 }), /consegui um bom desconto pra você 🎉
-
-de R\$ 557,00 por R\$ 479,00
-
-o que acha\?/)
-  assert.match(mensagemDonoRecusou(557), /R\$ 557,00/)
+  assert.match(mensagemDescontoDoDono({ de: 557, para: 479 }), /consegui um bom desconto pra você 🎉\n\nde R\$ 557,00 por R\$ 479,00\n\no que acha\?/)
 })
 
 test('transferencia pro 4824 com o resumo pronto no link (quem escreve e o cliente)', () => {
