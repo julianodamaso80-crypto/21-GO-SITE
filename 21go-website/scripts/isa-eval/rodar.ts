@@ -185,8 +185,7 @@ async function main() {
   for (const { c, r } of resultados) {
     if (r.ok) ok++
     console.log(`${r.ok ? '✔' : '✖'} ${c.id}${r.gatilho ? ` [${r.gatilho}]` : ''}`)
-    if (r.ok && process.env.ISA_EVAL_VERBOSE) console.log(`     resposta: ${r.resposta.replace(/
-+/g, ' ⏎ ').slice(0, 320)}`)
+    if (r.ok && process.env.ISA_EVAL_VERBOSE) console.log(`     resposta: ${r.resposta.replace(/\n+/g, ' ⏎ ').slice(0, 320)}`)
     if (!r.ok) {
       for (const m of r.motivos) console.log(`     - ${m}`)
       console.log(`     resposta: ${r.resposta.replace(/\n+/g, ' ⏎ ').slice(0, 320)}`)
