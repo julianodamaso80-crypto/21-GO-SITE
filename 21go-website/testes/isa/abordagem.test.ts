@@ -70,7 +70,7 @@ test('duvida: pergunta curta e o desconto sem empurrar o fechamento', () => {
   assert.equal(mensagemDuvida('bom dia 😃'), 'bom dia 😃\n\nclaro, me conta qual é a sua dúvida 😃')
   const d = mensagemDesconto50({ de: 557, para: 507 }, { perguntaSeFecha: false })
   assert.match(d, /em vez de pagar R\$ 557,00, você vai pagar R\$ 507,00$/)
-  assert.match(mensagemDesconto50({ de: 557, para: 507 }), /quer que eu já siga com a sua proteção\?$/)
+  assert.match(mensagemDesconto50({ de: 557, para: 507 }), /ficou alguma dúvida sobre o plano que eu possa esclarecer, ou quer que eu já siga com a sua ativação\?$/)
 })
 
 test('qualidade do numero: amarelo ou vermelho suspende a mensagem dos 5 min', () => {

@@ -47,8 +47,9 @@ export function valorAutorizadoValido(valor: number, ativacaoAtual: number): boo
 
 export function mensagemDesconto50(d: { de: number; para: number }, o: { perguntaSeFecha?: boolean } = {}): string {
   const base = `você acaba de ganhar um desconto na sua ativação 🎉\n\nem vez de pagar ${brl(d.de)}, você vai pagar ${brl(d.para)}`
-  // Depois de "qual e a sua duvida?", perguntar se fecha atropela o cliente.
-  return o.perguntaSeFecha === false ? base : `${base}\n\nquer que eu já siga com a sua proteção?`
+  // Depois de "qual e a sua duvida?", perguntar se fecha atropela o cliente. Dono (12/09/2026):
+  // nao ser direto demais — abrir espaco pra duvida sobre o plano antes de puxar a ativacao.
+  return o.perguntaSeFecha === false ? base : `${base}\n\nficou alguma dúvida sobre o plano que eu possa esclarecer, ou quer que eu já siga com a sua ativação?`
 }
 
 export function mensagemDescontoDoDono(d: { de: number; para: number }): string {
