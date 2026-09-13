@@ -15,6 +15,12 @@ const NUMERO_ISA = '5521980040964'
 
 const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+/** Host da requisicao → dominio limpo ("21go.site"), pro lead gravar de onde veio. */
+export function dominioDoHost(host: string | null | undefined): string | null {
+  const h = (host || '').split(',')[0].trim().toLowerCase().replace(/:\d+$/, '').replace(/^www\./, '')
+  return /^[a-z0-9.-]+$/.test(h) ? h : null
+}
+
 export function ehDominioDaCasa(hostname: string): boolean {
   const h = hostname.toLowerCase().replace(/^www\./, '')
   return DOMINIOS_DA_CASA.includes(h)

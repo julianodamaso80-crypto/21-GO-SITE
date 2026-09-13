@@ -50,6 +50,8 @@ export function jidToPhone(jid: string | null | undefined): string | null {
 
 export interface UpsertLeadInput {
   trk: string
+  /** Site de onde o lead veio (21go.site, 21go.com.br, ...). Dono (13/09/2026): a Isa so atende os .site. */
+  dominio?: string | null
   event_id?: string | null
   nome: string
   telefone: string
@@ -161,6 +163,7 @@ export async function upsertLead(input: UpsertLeadInput): Promise<{ id: string; 
     origem: input.origem ?? deriveOrigem(input.utm_source, input.utm_medium),
     indicado_por: input.indicado_por ?? null,
     consultor_slug: input.consultor_slug ?? null,
+    dominio: input.dominio ?? null,
     vendedor_slug: input.vendedor_slug ?? null,
     utm_source: input.utm_source ?? null,
     utm_medium: input.utm_medium ?? null,

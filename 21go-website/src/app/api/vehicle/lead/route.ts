@@ -1,3 +1,4 @@
+import { dominioDoHost } from '@/lib/isa/popup.regras'
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import {
@@ -259,6 +260,7 @@ export async function POST(req: NextRequest) {
       trk,
       leadId,
       ctx,
+      dominio: dominioDoHost(req.headers.get('x-forwarded-host') || req.headers.get('host')),
       quotationCode: 'quotationCode' in powercrmHs ? powercrmHs.quotationCode : undefined,
       negotiationCode: 'negotiationCode' in powercrmHs ? powercrmHs.negotiationCode : undefined,
       powercrmPayload: powercrmHs,
@@ -283,7 +285,7 @@ export async function POST(req: NextRequest) {
   // endpoint com plano EXCLUIDO, o caminho de atendimento não é acionado.
   if ((body.plano || '').toUpperCase() === 'EXCLUIDO') {
     console.log(`[lead] veiculo excluido — sem PowerCRM e sem WhatsApp lead=${leadId}`)
-    const supaExcluido = await persistLeadInSupabase({ body, trk, leadId, ctx }).catch((err) => {
+    const supaExcluido = await persistLeadInSupabase({ body, trk, leadId, ctx, dominio: dominioDoHost(req.headers.get('x-forwarded-host') || req.headers.get('host')) }).catch((err) => {
       console.error('[lead] excluido: falha persistir Supabase:', err instanceof Error ? err.message : err)
       return { ok: false, lead_id: leadId }
     })
@@ -450,6 +452,8 @@ async function avisarIndicacao(dados: {
 
 async function persistLeadInSupabase(args: {
   body: LeadInput
+  /** Dominio da requisicao (dono, 13/09/2026: a Isa so atende os .site). */
+  dominio?: string | null
   trk: string
   leadId: string
   ctx: ReturnType<typeof getRequestContext>
@@ -521,6 +525,7 @@ async function persistLeadInSupabase(args: {
     quotation_code: args.quotationCode ?? null,
     negotiation_code: args.negotiationCode ?? null,
     powercrm_payload: args.powercrmPayload as Record<string, unknown> | null,
+    dominio: args.dominio ?? null,
 
     etapa_funil: (body.plano || '').toUpperCase() === 'EXCLUIDO' ? 'excluido' : 'cotacao_enviada',
     status: (body.plano || '').toUpperCase() === 'EXCLUIDO' ? 'excluido' : 'lead',

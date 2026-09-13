@@ -52,3 +52,13 @@ test('o link abre o WhatsApp da Isa (98004-0964), nunca o 4824', () => {
   assert.match(l, /^https:\/\/wa\.me\/5521980040964\?text=/)
   assert.doesNotMatch(l, /5521969454824/)
 })
+
+test('dominio da requisicao vira dominio limpo do lead (dono, 13/09/2026: a Isa so atende os .site)', async () => {
+  const { dominioDoHost, DOMINIOS_DA_CASA } = await import('../../src/lib/isa/popup.regras.ts')
+  assert.equal(dominioDoHost('www.21go.site'), '21go.site')
+  assert.equal(dominioDoHost('21go.com.br:443'), '21go.com.br')
+  assert.equal(dominioDoHost('21goconsultoraleticya.site, 10.0.0.1'), '21goconsultoraleticya.site')
+  assert.equal(dominioDoHost(null), null)
+  assert.equal(dominioDoHost('<script>'), null)
+  assert.ok(DOMINIOS_DA_CASA.includes('21go.site') && !DOMINIOS_DA_CASA.includes('21go.com.br'))
+})

@@ -4,6 +4,7 @@ import { sql, registrarEvento } from '@/lib/isa/banco'
 import { enviarTemplate, destinoPermitido, qualidadeDoNumero, statusDoTemplate, numeroDeAlerta, EnvioBloqueado } from '@/lib/isa/cloud'
 import { alertarDono } from '@/lib/isa/alertas'
 import { dentroDoHorario } from '@/lib/isa/hora.regras'
+import { DOMINIOS_DA_CASA } from '@/lib/isa/popup.regras'
 import { numerosDeTeste } from '@/lib/isa/dono.regras'
 import {
   TEMPLATE_5MIN,
@@ -24,6 +25,7 @@ import {
  *   - uma vez por telefone: o INSERT em isa_contatos e a reivindicacao — quem ja falou com a Isa
  *     (tem contato) nunca recebe;
  *   - nunca lead de consultor (consultor_slug) — REGRA 0.1;
+ *   - so lead dos .site da casa (leads.dominio): o .com.br fica de fora (dono, 13/09/2026);
  *   - qualidade do numero YELLOW/RED na Meta suspende sozinha e avisa o dono;
  *   - destinoPermitido: em modo teste so a allowlist.
  */
@@ -87,6 +89,8 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
      WHERE l.consultor_slug IS NULL
        AND l.cotacao_planos IS NOT NULL
        AND l.origem = ANY($3::text[])
+       -- so os .site da casa (dono, 13/09/2026): lead sem dominio (antes desta coluna) fica de fora
+       AND l.dominio = ANY($5::text[])
        AND COALESCE(l.whatsapp_clicado, false) = false
        AND COALESCE(l.whatsapp_valido, true) = true
        AND l.created_at < (now() AT TIME ZONE 'UTC') - interval '5 minutes'
@@ -104,7 +108,7 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
        )
      ORDER BY l.telefone, l.created_at DESC
      LIMIT $2`,
-    [cfg.ligado_em, POR_RODADA * 4, ORIGENS_DO_SITE, teste],
+    [cfg.ligado_em, POR_RODADA * 4, ORIGENS_DO_SITE, teste, DOMINIOS_DA_CASA],
   )
 
   let enviados = 0
