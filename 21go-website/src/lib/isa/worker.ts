@@ -43,7 +43,7 @@ import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, no
 import { dividirEmPartes, partesComCitacao, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -540,9 +540,10 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     ? await enviarComoGente(c, partesComCitacao(saida.resposta, wamidsDasNovas), ultimaInbound, visto)
     : false
 
-  // Escolheu o plano e a resposta nao pediu os documentos: o proximo passo vai pelo codigo
-  // (teste de 11/09/2026 — "gostei do vip, como funciona guincho?" e a IA so explicou o guincho).
-  if (enviou && !saida.gatilho && escolheuPlano(novas.map((m) => m.content).join('\n')) && !/\bcnh\b|comprovante/i.test(saida.resposta)) {
+  // Ele disse que QUER SEGUIR e a resposta nao pediu os documentos: o proximo passo vai pelo
+  // codigo. Antes bastava escolher o plano, e a Isa pedia CNH em cima de "completo de tudo"
+  // (dono, 14/09/2026: "isso e ultima etapa"). Gostar do plano nao abre o pedido de documento.
+  if (enviou && !saida.gatilho && querFechar(novas.map((m) => m.content).join('\n')) && !/\bcnh\b|comprovante/i.test(saida.resposta)) {
     if (docsDaConversa.faltam.length === 0) {
       // Ja mandou tudo no comeco "pra organizar": nao pede de novo — fecha com a Leticya.
       await transferir(c, 'documento', enviar)

@@ -139,6 +139,19 @@ export function escolheuPlano(texto: string | null | undefined): boolean {
   return ESCOLHA.test(texto || '')
 }
 
+/**
+ * Ele decidiu SEGUIR, nao so disse de qual plano gostou. Dono, 14/09/2026 (print da Deiselane:
+ * ela respondeu "Completo de tudo" e a Isa ja pediu CNH): "nao era pra falar do doc agora, tem q
+ * se preocupar com cliente, espera oportunidade certa de mandar pedindo doc, isso e ultima etapa".
+ * Gostar de um plano NAO e fechar. Melhor errar esperando: se ele quiser seguir, ele fala.
+ */
+const QUER_FECHAR =
+  /\b(?:vou|quero|vamos|bora|pode|podemos)\s+(?:fechar|contratar|ativar)\b|\bfechar\s+(?:com|o|no|essa|isso)\b|\bfechado\b|\bvamo(?:s)?\s+nessa\b|\bcomo\s+(?:eu\s+)?fa(?:ç|c)o\s+pra\s+(?:fechar|contratar|ativar)\b|\bpode\s+(?:dar\s+sequ(?:ê|e)ncia|seguir|prosseguir)\b|\bquero\s+(?:fazer|come(?:ç|c)ar)\s+(?:a\s+)?(?:ativa(?:ç|c)(?:ã|a)o|contrato)\b/i
+
+export function querFechar(texto: string | null | undefined): boolean {
+  return QUER_FECHAR.test(texto || '')
+}
+
 /** `comemorar` = false quando a IA acabou de responder (ela ja comemorou; duas vezes soa robo). */
 export function mensagemPedidoDocumentos(comemorar = true, faltam: string[] = ['a foto da CNH', 'o documento do veículo', 'um comprovante de residência']): string {
   // Dono (12/09/2026): o que ele ja mandou no comeco nao se pede de novo.

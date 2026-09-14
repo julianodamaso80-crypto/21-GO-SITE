@@ -156,3 +156,15 @@ test('pedido de documentos so do que falta; com tudo em maos, avisa que vai fina
   assert.match(mensagemPedidoDocumentos(false, []), /já tenho seus documentos aqui/)
   assert.match(mensagemPedidoDocumentos(), /a foto da CNH, o documento do veículo e um comprovante de residência/)
 })
+
+test('gostar do plano NAO e fechar: documento e a ultima etapa (dono, 14/09/2026, print da Deiselane)', async () => {
+  const { querFechar } = await import('../../src/lib/isa/entrega.regras.ts')
+  // ela respondeu "Completo de tudo" e a Isa ja pediu CNH: isso nao pode mais acontecer
+  for (const t of ['Completo de tudo', 'gostei do premium', 'quero o básico', 'o premium mesmo', 'quanto fica o vip?', 'quero fazer uma simulação']) {
+    assert.equal(querFechar(t), false, t)
+  }
+  // so quando ELE diz que quer seguir
+  for (const t of ['Blz, vou fechar e agora?', 'quero contratar', 'pode dar sequência', 'vamos fechar', 'fechado', 'como faço pra fechar?', 'bora fechar']) {
+    assert.equal(querFechar(t), true, t)
+  }
+})
