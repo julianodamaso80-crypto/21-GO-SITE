@@ -97,9 +97,13 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
        AND l.dominio = ANY($5::text[])
        -- placa presa com outro consultor (dono, 14/09/2026): a negociacao nasceu no nome dele
        AND (l.power_responsavel IS NULL OR l.power_responsavel = $6)
-       AND COALESCE(l.whatsapp_clicado, false) = false
        AND COALESCE(l.whatsapp_valido, true) = true
-       AND l.created_at < (now() AT TIME ZONE 'UTC') - interval '5 minutes'
+       -- Quem clica no botao do site cai no 4824, chip que a Isa nao enxerga. Antes ela ignorava
+       -- TODO mundo que clicou; em 14/09/2026 o dono mostrou a Camila (PWR9883), que clicou e
+       -- nunca escreveu: 17 dos 22 que clicaram em 2 dias ficaram sem atendimento de ninguem.
+       -- Agora quem clicou espera 10 min (dono) em vez de 5, e so entra se ninguem estiver falando.
+       AND l.created_at < (now() AT TIME ZONE 'UTC')
+             - (CASE WHEN COALESCE(l.whatsapp_clicado, false) THEN interval '10 minutes' ELSE interval '5 minutes' END)
        AND l.created_at > (now() AT TIME ZONE 'UTC') - interval '24 hours'
        AND l.created_at > ($1::timestamptz AT TIME ZONE 'UTC')
        AND NOT EXISTS (
@@ -107,10 +111,17 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
            -- numero de teste do dono recebe de novo depois de cada /reiniciar
            AND NOT (c.telefone = ANY($4::text[]) AND c.abordagem5min_em IS NULL)
        )
-       AND NOT EXISTS (
-         SELECT 1 FROM public.leads o
-         WHERE o.telefone = l.telefone AND o.whatsapp_clicado
-           AND o.created_at > (now() AT TIME ZONE 'UTC') - interval '24 hours'
+       -- Conversa de verdade em QUALQUER chip (o 4824 da Leticya inclusive): a Isa nao fala por
+       -- cima. Compara os 8 ultimos digitos porque o 9 do celular diverge entre o formulario e o
+       -- numero real do WhatsApp. O corte por created_at vem primeiro: olha so o dia, nao a tabela
+       -- inteira. Numero de teste do dono fica de fora da trava, senao ele nao consegue testar.
+       AND (
+         l.telefone = ANY($4::text[])
+         OR NOT EXISTS (
+           SELECT 1 FROM public.messages m
+           WHERE m.created_at > now() - interval '24 hours'
+             AND right(split_part(m.jid, '@', 1), 8) = right(l.telefone, 8)
+         )
        )
      ORDER BY l.telefone, l.created_at DESC
      LIMIT $2`,
