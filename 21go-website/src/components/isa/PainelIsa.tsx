@@ -38,6 +38,8 @@ interface ItemConversa {
   conteudo?: string
   mensagem_tipo?: string
   media_id?: string | null
+  /** id da mensagem no WhatsApp: e o que permite responder CITANDO ela. */
+  wamid?: string | null
   evento?: string
   detalhe?: Record<string, unknown> | null
 }
@@ -418,6 +420,9 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
   const [itens, setItens] = useState<ItemConversa[]>([])
   const [sim, setSim] = useState<Simulacao | null>(null)
   const [texto, setTexto] = useState('')
+  // Dono, 14/09/2026: "se eu quiser responder pessoalmente eu consigo, seleciona e responde
+  // a mensagem que eu quiser". O balao escolhido vai como `context` e o cliente ve a citacao.
+  const [citando, setCitando] = useState<ItemConversa | null>(null)
   const [aviso, setAviso] = useState('')
   const [ocupado, setOcupado] = useState(false)
   // No celular os detalhes (simulacao + etiquetas) comecam recolhidos: abertos, comiam metade da tela.
@@ -568,7 +573,9 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
         {dias.map((d) => (
           <div key={d.dia}>
             <p className="my-4 text-center text-[11px] uppercase tracking-[0.2em] text-white/30 [font-family:var(--fonte-rotulo)]">{d.dia}</p>
-            {d.itens.map((it, i) => (it.tipo === 'evento' ? <Evento key={i} it={it} /> : <Balao key={i} it={it} />))}
+            {d.itens.map((it, i) => (it.tipo === 'evento'
+              ? <Evento key={i} it={it} />
+              : <Balao key={i} it={it} aoCitar={it.wamid ? () => setCitando(it) : undefined} />))}
           </div>
         ))}
         <div ref={fim} />
@@ -578,7 +585,12 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          if (texto.trim()) acao('/api/atendimento/responder', { texto }, () => setTexto(''))
+          if (texto.trim()) {
+            acao('/api/atendimento/responder', { texto, citar: citando?.wamid ?? null }, () => {
+              setTexto('')
+              setCitando(null)
+            })
+          }
         }}
         className="border-t border-white/[0.07] bg-[#141d45]/90 px-3 py-3 md:px-6">
         {aviso && <p className="mb-2 rounded-md bg-red-500/15 px-3 py-1.5 text-sm text-red-200">{aviso}</p>}
@@ -587,6 +599,20 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             ? 'a Isa não manda nada por cima da sua mensagem. se o cliente responder, ela segue — pra atender sozinho, desligue a chave.'
             : 'Isa desligada: quem atende esta conversa é você.'}
         </p>
+        {citando && (
+          <div className="mb-2 flex items-start gap-2 rounded-lg border-l-2 border-[#F2911D] bg-white/[0.05] px-3 py-1.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#F2911D]/85 [font-family:var(--fonte-rotulo)]">
+                respondendo {citando.direcao === 'inbound' ? 'o cliente' : citando.autor === 'isa' ? 'a Isa' : citando.autor}
+              </p>
+              <p className="truncate text-[13px] text-white/60">{citando.conteudo || 'mensagem'}</p>
+            </div>
+            <button type="button" onClick={() => setCitando(null)} aria-label="cancelar citacao"
+              className="shrink-0 rounded px-1.5 text-lg leading-none text-white/40 transition hover:text-white">
+              &times;
+            </button>
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <GravadorDeAudio
             telefone={telefone}
@@ -782,7 +808,7 @@ function BotaoAnexo({
   )
 }
 
-function Balao({ it }: { it: ItemConversa }) {
+function Balao({ it, aoCitar }: { it: ItemConversa; aoCitar?: () => void }) {
   const cliente = it.direcao === 'inbound'
   const isa = !cliente && (it.autor === 'isa' || it.autor === 'agent')
   const temMidia = (it.mensagem_tipo === 'image' || it.mensagem_tipo === 'document') && it.media_id
@@ -814,6 +840,12 @@ function Balao({ it }: { it: ItemConversa }) {
           )}
           <span className={`mt-1 block text-right text-[10.5px] ${cliente ? 'text-[#141d45]/45' : 'text-white/40'}`}>{hora(it.em)}</span>
         </div>
+        {aoCitar && (
+          <button type="button" onClick={aoCitar}
+            className="mt-0.5 px-1 text-[11px] text-white/35 transition hover:text-[#F2911D]">
+            responder
+          </button>
+        )}
       </div>
     </div>
   )

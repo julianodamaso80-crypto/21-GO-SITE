@@ -18,11 +18,13 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   const s = sessaoDoRequest(req)
   if (!s) return NextResponse.json({ erro: 'sem sessao' }, { status: 401 })
-  const b = (await req.json().catch(() => ({}))) as { telefone?: string; texto?: string }
+  const b = (await req.json().catch(() => ({}))) as { telefone?: string; texto?: string; citar?: string | null }
   const telefone = (b.telefone || '').replace(/\D/g, '')
   const texto = (b.texto || '').trim()
   if (!telefone || !texto) return NextResponse.json({ erro: 'telefone e texto' }, { status: 400 })
   if (texto.length > 4000) return NextResponse.json({ erro: 'texto muito longo' }, { status: 400 })
+  // Responder CITANDO a mensagem escolhida (dono, 14/09/2026): so o formato de wamid da Meta.
+  const citar = typeof b.citar === 'string' && /^[A-Za-z0-9=_.-]{8,128}$/.test(b.citar) ? b.citar : null
 
   const [c] = await sql<ContatoIsa>(`SELECT * FROM public.isa_contatos WHERE telefone = $1`, [telefone])
   if (!c) return NextResponse.json({ erro: 'contato nao encontrado' }, { status: 404 })
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const wamid = await enviarTexto(telefone, texto)
+    const wamid = await enviarTexto(telefone, texto, citar)
     await upsertMessage({
       conversation_id: c.conversation_id,
       whatsapp_message_id: wamid,

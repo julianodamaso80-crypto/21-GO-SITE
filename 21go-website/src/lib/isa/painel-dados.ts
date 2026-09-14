@@ -157,6 +157,8 @@ export interface ItemConversa {
   conteudo?: string
   mensagem_tipo?: string
   media_id?: string | null
+  /** id da mensagem no WhatsApp: e o que permite responder CITANDO ela. */
+  wamid?: string | null
   evento?: string
   detalhe?: unknown
 }
@@ -164,8 +166,9 @@ export interface ItemConversa {
 export async function abrirConversa(telefone: string): Promise<{ contato: ContatoIsa | null; itens: ItemConversa[] }> {
   const [contato] = await sql<ContatoIsa>(`SELECT * FROM public.isa_contatos WHERE telefone = $1`, [telefone])
   if (!contato?.conversation_id) return { contato: contato ?? null, itens: [] }
-  const msgs = await sql<{ em: string; direction: string; sender: string | null; content: string; message_type: string; media: string | null }>(
+  const msgs = await sql<{ em: string; direction: string; sender: string | null; content: string; message_type: string; media: string | null; wamid: string | null }>(
     `SELECT (created_at AT TIME ZONE 'UTC') AS em, direction, sender, content, message_type,
+            whatsapp_message_id AS wamid,
             COALESCE(raw_payload #>> '{entry,0,changes,0,value,messages,0,image,id}',
                      raw_payload #>> '{entry,0,changes,0,value,messages,0,document,id}') AS media
      FROM public.messages
@@ -187,6 +190,7 @@ export async function abrirConversa(telefone: string): Promise<{ contato: Contat
       conteudo: m.content,
       mensagem_tipo: m.message_type,
       media_id: m.media,
+      wamid: m.wamid,
     })),
     ...evs.map((e) => ({ tipo: 'evento' as const, em: new Date(e.em).toISOString(), evento: e.tipo, detalhe: e.detalhe, autor: e.por ?? undefined })),
   ].sort((a, b) => a.em.localeCompare(b.em))
