@@ -63,39 +63,263 @@ export function ehBydDeLeilao(
 }
 
 /**
- * Modelos que a 21Go NAO faz, mesmo com o Power cotando.
+ * A LISTA — o que a 21Go nao faz, mesmo com o Power cotando.
  *
- * Ordem do dono (08/09/2026), com o print na mao: um Fiat Idea ELX 1.4 2009 (placa HJG6I52,
- * FIPE R$ 26.624) saiu do site com os quatro planos e o cliente escolheu o Premium —
- * *"nenhum veiculo ideia faz, msm se tiver no power ta errado, pode tirar ideia de todos
- * sites"*.
+ * Ordem do dono (14/09/2026): *"chegou um veiculo, voce vai consultar essa lista; se tiver na
+ * lista e o que nao faz, ja segue que nao faz; ai depois voce consulta o Power"*. E por isso
+ * que ela roda ANTES do `/api/plans/` em `decidirElegibilidade`.
  *
- * ⚠️ Isto NAO e a volta da lista por nome banida em 06/08/2026. Aquela lista dizia quem PODE
- * cotar e derrubava venda de veiculo que a 21Go faz — 713 versoes auditadas depois, zero
- * divergencia a favor dela. Esta aqui so tira o que o dono mandou tirar, um nome por vez, e
- * cada entrada tem que vir de ordem dele. Nao inferir, nao "completar" a lista.
+ * ⚠️ Cada nome fica amarrado a MARCA dele. Padrao solto no texto recusa veiculo que a 21Go FAZ
+ * — medido contra as 6.900 versoes do catalogo do Power em 14/09/2026:
  *
- * Casa contra marca e modelo JUNTOS porque nem todo fluxo separa os dois: o que chega pode ser
- * a descricao inteira no campo do modelo. `\b` nas pontas pra "Idea" nao pegar "Idealle".
+ *     "smart"  pegava Hyundai Creta Smart      "MINI"  pegava BYD Dolphin Mini
+ *     "Blazer" pegava o Blazer EV (o novo)     "500"   pegava Honda CB 500 e quadriciclo BRP
+ *     "CC"     pegava JAC E-JV CC e Maserati
+ *
+ * ⚠️ Isto NAO e a volta da lista por nome banida em 06/08/2026. Aquela dizia quem PODE cotar e
+ * derrubava venda de veiculo que a 21Go faz. Esta so tira o que o dono mandou tirar, e cada
+ * entrada veio de uma linha escrita por ele. Nao inferir, nao "completar" a lista.
  */
-const MODELOS_EXCLUIDOS: { nome: string; padrao: RegExp }[] = [
-  // O dono escreveu "ideia"; a Fiat escreve "Idea". As duas grafias barram.
-  { nome: 'Fiat Idea', padrao: /\bide(i)?a\b/i },
-  // 10/09/2026, com um Meriva Maxx 1.4 2012 na mao: "nenhum meriva faz ... tirar de todos site".
-  { nome: 'Chevrolet Meriva', padrao: /\bmeriva\b/i },
-  // 12/09/2026, com um Prius 1.8 Hibrido 2017 cotado pela Isa: "nao fazemos esse carro, pode tirar
-  // de todos sites e tbm da conversa".
-  { nome: 'Toyota Prius', padrao: /\bprius\b/i },
+interface Excluido {
+  /** Como a linha aparece na lista do dono — pra achar a origem de cada recusa. */
+  nome: string
+  /** A marca a que a regra pertence. Sozinha, exclui a marca inteira. */
+  marca: RegExp
+  /** A versao dentro da marca. */
+  modelo?: RegExp
+  /** Escapa da regra (o "exceto" da lista). */
+  exceto?: RegExp
+  /** Ano-modelo ate o qual vale a exclusao — a geracao nova voltou a ser aceita. */
+  ate?: number
+}
+
+/** Marcas inteiras. Ancoradas no inicio: a marca abre o texto, venha separada ou na descricao. */
+const MARCAS: Excluido[] = [
+  { nome: 'AGRALE', marca: /^agrale\b/i },
+  { nome: 'ALFA ROMEU', marca: /^alfa\s*rom/i },
+  { nome: 'AM GEN', marca: /^am\s*gen\b/i },
+  { nome: 'ASIA MOTORS', marca: /^asia\b/i },
+  { nome: 'AUDI', marca: /^audi\b/i },
+  { nome: 'BABY', marca: /^baby\b/i },
+  { nome: 'BRM', marca: /^brm\b/i },
+  { nome: 'BUGRE', marca: /^bugre\b/i },
+  // O Power cadastra tambem como "Caoa Changan".
+  { nome: 'CHANA', marca: /^chana\b/i },
+  { nome: 'CHANGAN', marca: /^(caoa\s+)?changan\b/i },
+  // "Exceto Tiggo, que precisa comparecer na empresa" — o Tiggo segue cotando pelo Power.
+  { nome: 'CAOA CHERRY', marca: /^(caoa\s+)?chery\b/i, exceto: /\btiggo\b/i },
+  { nome: 'CHRYSLER', marca: /^chrysler\b/i },
+  { nome: 'CROSS LANDER', marca: /^cross\s*lander\b/i },
+  { nome: 'DAEWOO', marca: /^daewoo\b/i },
+  { nome: 'DAIHATSU', marca: /^daihatsu\b/i },
+  { nome: 'DODGE', marca: /^dodge\b/i },
+  { nome: 'EFFA', marca: /^effa\b/i },
+  { nome: 'FIBRAVAN', marca: /^fibravan\b/i },
+  { nome: 'FYBER', marca: /^fyber\b/i },
+  { nome: 'GELLY', marca: /^geely\b/i },
+  { nome: 'HAFEI', marca: /^hafei\b/i },
+  { nome: 'HAIMA', marca: /^haima\b/i },
+  { nome: 'JAC', marca: /^jac\b/i },
+  { nome: 'JAMBELI', marca: /^jambeli\b/i },
+  { nome: 'LADA', marca: /^lada\b/i },
+  { nome: 'LAND ROVER', marca: /^land[\s-]*rover\b/i },
+  { nome: 'LANDWIND', marca: /^landwind\b/i },
+  { nome: 'LEXUS', marca: /^lexus\b/i },
+  { nome: 'LIFAN', marca: /^lifan\b/i },
+  { nome: 'MAHINDRA', marca: /^mahindra\b/i },
+  { nome: 'MAZDA', marca: /^mazda\b/i },
+  { nome: 'MINI', marca: /^mini\b/i },
+  { nome: 'MIURA', marca: /^miura\b/i },
+  { nome: 'RELY', marca: /^rely\b/i },
+  { nome: 'SEAT', marca: /^seat\b/i },
+  { nome: 'SMART', marca: /^smart\b/i },
+  { nome: 'SSANGYONG', marca: /^ssangyong\b/i },
+  { nome: 'SUBARO', marca: /^subaru\b/i },
+  { nome: 'SUZUKI', marca: /^suzuki\b/i },
+  { nome: 'TAC', marca: /^tac\b/i },
+  { nome: 'VOLVO', marca: /^volvo\b/i },
+  { nome: 'WAKE', marca: /^wake\b/i },
 ]
 
-/** O veiculo esta na lista de excluidos? Vale acima da resposta do Power. */
+/* As marcas como o Power as escreve, pra amarrar os modelos. */
+const CHEVROLET = /chevrolet|^gm\b/i
+const CITROEN = /^citro/i
+const FIAT = /^fiat\b/i
+const FORD = /^ford\b/i
+const HONDA = /^honda\b/i
+const HYUNDAI = /^hyundai\b/i
+const KIA = /^kia\b/i
+const MITSUBISHI = /^mitsubishi\b/i
+const NISSAN = /^nissan\b/i
+const PEUGEOT = /^peugeot\b/i
+const RENAULT = /^renault\b/i
+const TOYOTA = /^toyota\b/i
+const VW = /volkswagen|^vw\b/i
+const YAMAHA = /^yamaha\b/i
+
+/** Modelos, marca por marca. Cada linha da lista do dono vira uma entrada. */
+const MODELOS: Excluido[] = [
+  // CHEVROLET. "S10 BLAZER (todos)" e a S10 antiga — o BLAZER EV e outro carro e continua.
+  { nome: 'CHEVROLET Captiva', marca: CHEVROLET, modelo: /\bcaptiva\b/i },
+  { nome: 'CHEVROLET Malibu', marca: CHEVROLET, modelo: /\bmalibu\b/i },
+  { nome: 'CHEVROLET Camaro', marca: CHEVROLET, modelo: /\bcamaro\b/i },
+  { nome: 'CHEVROLET Omega', marca: CHEVROLET, modelo: /\bomega\b/i },
+  { nome: 'CHEVROLET S10 Blazer', marca: CHEVROLET, modelo: /\bs-?10\s+blazer\b/i },
+  { nome: 'CHEVROLET Corvette', marca: CHEVROLET, modelo: /\bcorvette\b/i },
+  { nome: 'CHEVROLET Sonic', marca: CHEVROLET, modelo: /\bsonic\b/i },
+  { nome: 'CHEVROLET Bolt', marca: CHEVROLET, modelo: /\bbolt\b/i },
+  { nome: 'CHEVROLET Suburban', marca: CHEVROLET, modelo: /\bsuburban\b/i },
+  { nome: 'CHEVROLET Suprema', marca: CHEVROLET, modelo: /\bsuprema\b/i },
+  { nome: 'CHEVROLET Silverado', marca: CHEVROLET, modelo: /\bsilverado\b/i },
+  { nome: 'CHEVROLET Zafira', marca: CHEVROLET, modelo: /\bzafira\b/i },
+  // "Tracker ate 2013": o Tracker de 2014 em diante e outra geracao e segue cotando.
+  { nome: 'CHEVROLET Tracker ate 2013', marca: CHEVROLET, modelo: /\btracker\b/i, ate: 2013 },
+  // 10/09/2026, com um Meriva Maxx 1.4 2012 na mao: "nenhum meriva faz ... tirar de todos site".
+  { nome: 'CHEVROLET Meriva', marca: CHEVROLET, modelo: /\bmeriva\b/i },
+
+  // CITROEN. "C4 todos (exceto Cactus)".
+  { nome: 'CITROEN Xsara', marca: CITROEN, modelo: /\bxsara\b/i },
+  { nome: 'CITROEN Picasso', marca: CITROEN, modelo: /\bpicasso\b/i },
+  { nome: 'CITROEN Evasion', marca: CITROEN, modelo: /\bevasion\b/i },
+  { nome: 'CITROEN Xantia', marca: CITROEN, modelo: /\bxantia\b/i },
+  { nome: 'CITROEN XM', marca: CITROEN, modelo: /\bxm\b/i },
+  { nome: 'CITROEN Lounge', marca: CITROEN, modelo: /\blounge\b/i },
+  { nome: 'CITROEN C4 (exceto Cactus)', marca: CITROEN, modelo: /\bc4\b/i, exceto: /\bcactus\b/i },
+  { nome: 'CITROEN C5', marca: CITROEN, modelo: /\bc5\b/i },
+  { nome: 'CITROEN C6', marca: CITROEN, modelo: /\bc6\b/i },
+  { nome: 'CITROEN C8', marca: CITROEN, modelo: /\bc8\b/i },
+  // A lista traz "AIRcross" como se fosse marca; e modelo da Citroen.
+  { nome: 'AIRcross', marca: CITROEN, modelo: /\baircross\b/i },
+
+  // FIAT.
+  { nome: 'FIAT 500', marca: FIAT, modelo: /\b500\b/i },
+  { nome: 'FIAT Brava', marca: FIAT, modelo: /\bbrava\b/i },
+  { nome: 'FIAT Bravo', marca: FIAT, modelo: /\bbravo\b/i },
+  { nome: 'FIAT Marea', marca: FIAT, modelo: /\bmarea\b/i },
+  { nome: 'FIAT Stilo', marca: FIAT, modelo: /\bstilo\b/i },
+  { nome: 'FIAT Tempra', marca: FIAT, modelo: /\btempra\b/i },
+  { nome: 'FIAT Tipo', marca: FIAT, modelo: /\btipo\b/i },
+  // 08/09/2026: "nenhum veiculo ideia faz, msm se tiver no power ta errado". O dono escreve
+  // "ideia", a Fiat escreve "Idea" — as duas grafias barram, e o \b poupa "Idealle".
+  { nome: 'FIAT Idea', marca: FIAT, modelo: /\bide(i)?a\b/i },
+  { nome: 'FIAT Linea', marca: FIAT, modelo: /\blinea\b/i },
+  { nome: 'FIAT Freemont', marca: FIAT, modelo: /\bfreemont\b/i },
+  { nome: 'FIAT Palio Week.', marca: FIAT, modelo: /\bpalio\s+week/i },
+
+  // FORD. "EcoSport (ate 2012)": a geracao de 2013 em diante segue cotando.
+  { nome: 'FORD Edge', marca: FORD, modelo: /\bedge\b/i },
+  { nome: 'FORD Explorer', marca: FORD, modelo: /\bexplorer\b/i },
+  { nome: 'FORD Mondeo', marca: FORD, modelo: /\bmondeo\b/i },
+  { nome: 'FORD Transit', marca: FORD, modelo: /\btransit\b/i },
+  { nome: 'FORD Maverick', marca: FORD, modelo: /\bmaverick\b/i },
+  { nome: 'FORD Mustang', marca: FORD, modelo: /\bmustang\b/i },
+  { nome: 'FORD F150', marca: FORD, modelo: /\bf-?\s?150\b/i },
+  { nome: 'FORD Bronco', marca: FORD, modelo: /\bbronco\b/i },
+  { nome: 'FORD EcoSport ate 2012', marca: FORD, modelo: /\becosport\b/i, ate: 2012 },
+  { nome: 'FORD Territory', marca: FORD, modelo: /\bterritory\b/i },
+  { nome: 'FORD Focus', marca: FORD, modelo: /\bfocus\b/i },
+  { nome: 'FORD Courier', marca: FORD, modelo: /\bcourier\b/i },
+  { nome: 'FORD Escort', marca: FORD, modelo: /\bescort\b/i },
+  { nome: 'FORD Fusion', marca: FORD, modelo: /\bfusion\b/i },
+
+  // HONDA.
+  { nome: 'HONDA Accord', marca: HONDA, modelo: /\baccord\b/i },
+  { nome: 'HONDA Civic Coupe', marca: HONDA, modelo: /\bcivic\s+coup/i },
+
+  // HYUNDAI.
+  { nome: 'HYUNDAI Santa Fe', marca: HYUNDAI, modelo: /\bsanta\s*f[eé]\b/i },
+  { nome: 'HYUNDAI Sonata', marca: HYUNDAI, modelo: /\bsonata\b/i },
+  { nome: 'HYUNDAI Veracruz', marca: HYUNDAI, modelo: /\bveracruz\b/i },
+  { nome: 'HYUNDAI Veloster', marca: HYUNDAI, modelo: /\bveloster\b/i },
+  { nome: 'HYUNDAI Azera', marca: HYUNDAI, modelo: /\bazera\b/i },
+
+  // KIA. As grafias da lista ("Carniva I", "Margentis", "Serato") sao as do Power aqui.
+  { nome: 'KIA Carnival', marca: KIA, modelo: /\bcarnival\b/i },
+  { nome: 'KIA Stinger', marca: KIA, modelo: /\bstinger\b/i },
+  { nome: 'KIA Quoris', marca: KIA, modelo: /\bquoris\b/i },
+  { nome: 'KIA Picanto', marca: KIA, modelo: /\bpicanto\b/i },
+  { nome: 'KIA Niro', marca: KIA, modelo: /\bniro\b/i },
+  { nome: 'KIA Sorento', marca: KIA, modelo: /\bsorento\b/i },
+  { nome: 'KIA Stonic', marca: KIA, modelo: /\bstonic\b/i },
+  { nome: 'KIA Cadenza', marca: KIA, modelo: /\bcadenza\b/i },
+  { nome: 'KIA Optima', marca: KIA, modelo: /\boptima\b/i },
+  { nome: 'KIA Carens', marca: KIA, modelo: /\bcarens\b/i },
+  { nome: 'KIA Magentis', marca: KIA, modelo: /\bmagentis\b/i },
+  { nome: 'KIA Mohave', marca: KIA, modelo: /\bmohave\b/i },
+  { nome: 'KIA Cerato', marca: KIA, modelo: /\bcerato\b/i },
+
+  // MITSUBISHI. "L200 Outdoor (GLS) (HPE)" — so a Outdoor; Triton, Savana e Sport nao estao
+  // escritos na linha. O Power tambem cadastra como "L200 T.OUTDOOR".
+  { nome: 'MITSUBISHI Lancer', marca: MITSUBISHI, modelo: /\blancer\b/i },
+  { nome: 'MITSUBISHI L200 Outdoor', marca: MITSUBISHI, modelo: /\bl-?200\s+(t\.\s*)?outdoor\b/i },
+
+  // NISSAN.
+  { nome: 'NISSAN GT-R', marca: NISSAN, modelo: /\bgt-?r\b/i },
+  { nome: 'NISSAN X-Terra', marca: NISSAN, modelo: /\bx-?\s?terra\b/i },
+  { nome: 'NISSAN X-Trail', marca: NISSAN, modelo: /\bx-?\s?trail\b/i },
+  { nome: 'NISSAN Tiida', marca: NISSAN, modelo: /\bti+da\b/i },
+
+  // PEUGEOT. "Todos os conversiveis" = as versoes CC e Cabriolet.
+  { nome: 'PEUGEOT 306', marca: PEUGEOT, modelo: /\b306\b/ },
+  { nome: 'PEUGEOT 405', marca: PEUGEOT, modelo: /\b405\b/ },
+  { nome: 'PEUGEOT 406', marca: PEUGEOT, modelo: /\b406\b/ },
+  { nome: 'PEUGEOT 407', marca: PEUGEOT, modelo: /\b407\b/ },
+  { nome: 'PEUGEOT 408', marca: PEUGEOT, modelo: /\b408\b/ },
+  { nome: 'PEUGEOT 504', marca: PEUGEOT, modelo: /\b504\b/ },
+  { nome: 'PEUGEOT 806', marca: PEUGEOT, modelo: /\b806\b/ },
+  { nome: 'PEUGEOT 807', marca: PEUGEOT, modelo: /\b807\b/ },
+  { nome: 'PEUGEOT RCZ', marca: PEUGEOT, modelo: /\brcz\b/i },
+  { nome: 'PEUGEOT conversiveis', marca: PEUGEOT, modelo: /\bcc\b|cabrio|convers/i },
+
+  // RENAULT.
+  { nome: 'RENAULT Laguna', marca: RENAULT, modelo: /\blaguna\b/i },
+  { nome: 'RENAULT Twingo', marca: RENAULT, modelo: /\btwingo\b/i },
+  { nome: 'RENAULT Symbol', marca: RENAULT, modelo: /\bsymbol\b/i },
+  { nome: 'RENAULT Fluence', marca: RENAULT, modelo: /\bfluence\b/i },
+  { nome: 'RENAULT Zoe', marca: RENAULT, modelo: /\bzoe\b/i },
+
+  // TOYOTA. 12/09/2026, com um Prius 1.8 Hibrido 2017 cotado pela Isa: "nao fazemos esse carro".
+  { nome: 'TOYOTA Prius', marca: TOYOTA, modelo: /\bprius\b/i },
+
+  // VOLKSWAGEN.
+  { nome: 'VW Bora', marca: VW, modelo: /\bbora\b/i },
+  { nome: 'VW Passat Variant', marca: VW, modelo: /\bpassat\s+variant\b/i },
+  { nome: 'VW Eos', marca: VW, modelo: /\beos\b/i },
+  { nome: 'VW SpaceFox', marca: VW, modelo: /\bspace\s*fox\b/i },
+  { nome: 'VW Jetta', marca: VW, modelo: /\bjetta\b/i },
+
+  // YAMAHA.
+  { nome: 'YAMAHA XJ6', marca: YAMAHA, modelo: /\bxj-?6\b/i },
+]
+
+const LISTA: Excluido[] = [...MARCAS, ...MODELOS]
+
+/**
+ * O veiculo esta na lista? Vale acima da resposta do Power.
+ *
+ * `ano` e opcional porque nem todo chamador tem: a lista de modelos do formulario roda antes de
+ * o cliente escolher o ano. Sem ano, as regras com corte de ano (Tracker, EcoSport) NAO barram
+ * — esconder a familia inteira do formulario tiraria a geracao nova, que a 21Go faz.
+ */
 export function ehModeloExcluido(
   marca: string | null | undefined,
   modelo: string | null | undefined,
+  ano?: number | null,
 ): boolean {
-  const texto = `${marca || ''} ${modelo || ''}`.trim()
+  const daMarca = (marca || '').trim()
+  const daVersao = (modelo || '').trim()
+  const texto = `${daMarca} ${daVersao}`.trim()
   if (!texto) return false
-  return MODELOS_EXCLUIDOS.some((m) => m.padrao.test(texto))
+
+  return LISTA.some((r) => {
+    // Sem campo de marca separado, a descricao inteira chega no modelo e a marca abre o texto.
+    if (!r.marca.test(daMarca || texto)) return false
+    if (r.exceto?.test(texto)) return false
+    if (!r.modelo) return true
+    if (!r.modelo.test(texto)) return false
+    if (r.ate == null) return true
+    return ano != null && Number.isFinite(ano) && ano <= r.ate
+  })
 }
 
 export interface EntradaElegibilidade {
@@ -118,7 +342,7 @@ export interface EntradaElegibilidade {
 export function decidirElegibilidade(e: EntradaElegibilidade): Elegibilidade {
   // Antes do Power de proposito: sao as tres regras do site que vencem a resposta dele.
   if (!aceitaAno(e.ano)) return { acao: 'nao_fazemos', motivo: 'ano' }
-  if (ehModeloExcluido(e.marca, e.modelo)) {
+  if (ehModeloExcluido(e.marca, e.modelo, e.ano)) {
     return { acao: 'nao_fazemos', motivo: 'modelo_excluido' }
   }
   if (ehBydDeLeilao(e.marca, e.modelo, e.origem)) {
