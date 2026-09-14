@@ -597,6 +597,17 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             }}
             aoFalhar={setAviso}
           />
+          <BotaoAnexo
+            telefone={telefone}
+            desligado={jan.tom === 'fechada' || ocupado}
+            legenda={texto}
+            aoEnviar={async () => {
+              setTexto('')
+              await carregar()
+              aoMudar()
+            }}
+            aoFalhar={setAviso}
+          />
           <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={1}
             disabled={jan.tom === 'fechada'}
             onKeyDown={(e) => {
@@ -711,6 +722,63 @@ function GravadorDeAudio({
       className="h-11 w-11 shrink-0 rounded-xl border border-white/[0.08] bg-[#0f1638] text-lg text-white/70 transition hover:border-[#C7D301]/60 hover:text-[#C7D301] disabled:opacity-30">
       {enviando ? '…' : '🎤'}
     </button>
+  )
+}
+
+/**
+ * Anexar print ou documento (dono, 14/09/2026). Um <input type="file"> escondido: no computador
+ * abre o explorador; no iPhone o Safari oferece Fototeca, Tirar Foto e Arquivos sozinho — por
+ * isso NAO tem `capture`, que prenderia o botao na camera.
+ *
+ * O que estiver escrito na caixa de texto vai junto como legenda, numa mensagem so.
+ */
+function BotaoAnexo({
+  telefone,
+  desligado,
+  legenda,
+  aoEnviar,
+  aoFalhar,
+}: {
+  telefone: string
+  desligado: boolean
+  legenda: string
+  aoEnviar: () => Promise<void> | void
+  aoFalhar: (m: string) => void
+}) {
+  const campo = useRef<HTMLInputElement>(null)
+  const [enviando, setEnviando] = useState(false)
+
+  async function escolheu(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0]
+    e.target.value = '' // escolher o mesmo arquivo de novo tem que disparar outro envio
+    if (!arquivo) return
+    setEnviando(true)
+    try {
+      const form = new FormData()
+      form.append('telefone', telefone)
+      form.append('arquivo', arquivo, arquivo.name || 'arquivo')
+      if (legenda.trim()) form.append('legenda', legenda)
+      const resp = await fetch('/api/atendimento/responder-arquivo', { method: 'POST', body: form, cache: 'no-store' })
+      const j = (await resp.json().catch(() => ({}))) as { erro?: string }
+      if (!resp.ok) throw new Error(j.erro || `erro ${resp.status}`)
+      await aoEnviar()
+    } catch (err) {
+      aoFalhar(err instanceof Error ? err.message : 'não deu pra enviar o arquivo')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <>
+      <input ref={campo} type="file" onChange={escolheu} className="hidden"
+        accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" />
+      <button type="button" onClick={() => campo.current?.click()} disabled={desligado || enviando}
+        title="anexar print ou documento"
+        className="h-11 w-11 shrink-0 rounded-xl border border-white/[0.08] bg-[#0f1638] text-lg text-white/70 transition hover:border-[#C7D301]/60 hover:text-[#C7D301] disabled:opacity-30">
+        {enviando ? '…' : '📎'}
+      </button>
+    </>
   )
 }
 

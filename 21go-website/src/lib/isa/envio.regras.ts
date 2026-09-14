@@ -99,3 +99,41 @@ export function mensagemAudioNaoEntendido(abertura: string | null): string {
   const t = 'não consegui entender seu áudio 🙏🏼\n\npode mandar de novo ou escrever pra mim?'
   return abertura ? `${abertura}\n\n${t}` : t
 }
+
+/**
+ * Print ou documento que o atendente anexa no painel (dono, 14/09/2026).
+ *
+ * A Meta so aceita jpeg, png e webp como IMAGEM. O resto vai como DOCUMENTO, que ela aceita em
+ * quase todo formato e entrega com o nome do arquivo — inclusive o HEIC do iPhone: foto da
+ * galeria costuma virar jpeg no upload do Safari, mas quando nao vira, mandar como imagem volta
+ * erro da Meta e o atendente fica sem entender por que nao foi.
+ *
+ * Limite: 5 MB de imagem e 16 MB de documento. A Meta aceita documento ate 100 MB, mas o
+ * container do site tem 2 GB de RAM e o arquivo passa inteiro por ele.
+ */
+export const LIMITE_IMAGEM = 5 * 1024 * 1024
+export const LIMITE_DOCUMENTO = 16 * 1024 * 1024
+
+const IMAGENS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+
+export function tipoDeAnexo(mime: string | null | undefined): 'image' | 'document' {
+  return IMAGENS.includes((mime || '').toLowerCase().split(';')[0].trim()) ? 'image' : 'document'
+}
+
+/** Nome que o cliente ve no balao do documento. Sem isso, o WhatsApp mostra "arquivo". */
+export function nomeDoAnexo(nome: string | null | undefined, tipo: 'image' | 'document'): string {
+  const limpo = (nome || '').split(/[\\/]/).pop()?.replace(/["']/g, '').trim().slice(0, 100) || ''
+  if (limpo) return limpo
+  return tipo === 'image' ? 'imagem.jpg' : 'arquivo'
+}
+
+/** Devolve o erro pronto pro atendente ler, ou null se o arquivo pode ir. */
+export function anexoRecusado(p: { tamanho: number; tipo: 'image' | 'document' }): string | null {
+  if (p.tamanho === 0) return 'arquivo vazio'
+  const limite = p.tipo === 'image' ? LIMITE_IMAGEM : LIMITE_DOCUMENTO
+  if (p.tamanho > limite) {
+    const mb = Math.round(limite / 1024 / 1024)
+    return `arquivo grande demais — o limite é ${mb} MB para ${p.tipo === 'image' ? 'imagem' : 'documento'}`
+  }
+  return null
+}

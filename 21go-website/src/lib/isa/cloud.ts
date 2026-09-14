@@ -93,6 +93,41 @@ export async function enviarAudio(to: string, bytes: Buffer, citar: string | nul
 }
 
 /**
+ * Print ou documento pelo painel (dono, 14/09/2026): "o cliente ja manda print e doc; quero
+ * poder mandar tambem". Mesmo caminho do audio — sobe na Meta e manda pelo id.
+ *
+ * `image` so aceita jpeg/png/webp; qualquer outra coisa (PDF, planilha, e o HEIC que sai do
+ * iPhone) vai como `document`, que a Meta aceita em quase todo formato e chega com o nome do
+ * arquivo. Quem escolhe entre os dois e `tipoDeAnexo`, em envio.regras.ts.
+ */
+export async function enviarArquivo(
+  to: string,
+  bytes: Buffer,
+  p: { tipo: 'image' | 'document'; mime: string; nome: string; legenda?: string },
+): Promise<string> {
+  if (!destinoPermitido(to)) throw new EnvioBloqueado(`destino fora da allowlist: ${to.slice(0, 6)}***`)
+  const form = new FormData()
+  form.append('messaging_product', 'whatsapp')
+  form.append('type', p.mime)
+  form.append('file', new Blob([new Uint8Array(bytes)], { type: p.mime }), p.nome)
+  const up = await fetch(graph(`${phoneId()}/media`), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token()}` },
+    body: form,
+    signal: AbortSignal.timeout(60_000),
+  })
+  const j = (await up.json().catch(() => ({}))) as { id?: string; error?: { message?: string } }
+  if (!up.ok || !j.id) throw new Error(`Cloud API media ${up.status}: ${j.error?.message ?? 'sem id'}`)
+
+  const legenda = p.legenda?.trim() ? { caption: p.legenda.trim() } : {}
+  return postarMensagem(
+    p.tipo === 'image'
+      ? { to, type: 'image', image: { id: j.id, ...legenda } }
+      : { to, type: 'document', document: { id: j.id, filename: p.nome, ...legenda } },
+  )
+}
+
+/**
  * Template aprovado (UTILITY). `variaveis` na ordem dos {{1}}, {{2}}... do corpo; `payloads`, um
  * por botao de resposta rapida — volta no webhook quando alguem toca no botao.
  */
