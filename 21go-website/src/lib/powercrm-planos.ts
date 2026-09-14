@@ -79,15 +79,28 @@ export interface ConsultaDePlanos {
 /**
  * Quais planos o Power da pra esse veiculo, com o preco dele.
  *
- * Quando a consulta normal nao acha protecao, tenta de novo como veiculo de trabalho: app/taxi
- * tem tabela propria e um carro pode estar so nela. Nao negamos veiculo por ser de aplicativo
- * (ordem do dono, 31/08/2026) — se a tabela de trabalho da plano, fazemos, e o preco mostrado
- * passa a ser o dela.
+ * A tabela de veiculo de trabalho (app/taxi) so e consultada pra quem DECLAROU que o carro e
+ * de aplicativo (`trabalho`). Ela nao e segunda opiniao: quem nao e de aplicativo e cotado
+ * pela tabela normal, e se la so ha rastreador, nao fazemos o veiculo.
+ *
+ * ⚠️ Ate 14/09/2026 a consulta de trabalho era tentada SEMPRE que a normal nao dava protecao,
+ * e era isso que inventava plano. Um Peugeot 408 Allure 2.0 2012 (placa NYD0C34) so tem
+ * "Monitoramento" e "ROUBO E FURTO + Ass 24h" como carro comum — o cliente respondeu que NAO
+ * e de aplicativo e mesmo assim recebeu BASICO/Do Seu Jeito/VIP/PREMIUM, que so existem na
+ * tabela de aplicativo. Veiculo que no Power so tem rastreador nao sai com plano.
+ *
+ * O `trabalho` nao troca a tabela de quem e de aplicativo: a normal continua respondendo
+ * primeiro, e ela que manda no preco. A de trabalho so entra quando a normal nao cobre.
  */
 export async function planosDoPowerAoVivo(
   carModelId: number | string | null | undefined,
   carModelYearId: number | string | null | undefined,
-  opcoes?: { cityId?: number | null; moto?: DadosDaMoto | null },
+  opcoes?: {
+    cityId?: number | null
+    moto?: DadosDaMoto | null
+    /** O cliente declarou que o carro e de aplicativo/taxi. */
+    trabalho?: boolean
+  },
 ): Promise<ConsultaDePlanos> {
   const modelo = Number(carModelId)
   const ano = Number(carModelYearId)
@@ -101,6 +114,9 @@ export async function planosDoPowerAoVivo(
   if (normal === null) return mudo
   const daNormal = lerPlanosDoPower(normal, opcoes?.moto)
   if (daNormal.length > 0) return { planos: daNormal, tabelaDeTrabalho: false }
+
+  // Sem declaracao de aplicativo a resposta normal e a unica, e ela ja foi conclusiva.
+  if (!opcoes?.trabalho) return { planos: [], tabelaDeTrabalho: false }
 
   const trabalho = await consultar(modelo, ano, cidade, true)
   // A primeira resposta ja foi conclusiva: sem protecao na tabela normal e sem segunda opiniao.

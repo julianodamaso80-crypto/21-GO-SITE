@@ -568,6 +568,9 @@ export default function CotacaoPage() {
           year: fipeAnoCode,
           codFipe: fipeModeloCodFipe || null,
           leilao: form.leilao,
+          // Decide a tabela do Power: so quem e de aplicativo pode ser cotado pela tabela de
+          // aplicativo. Sem isto o servidor caia nela sozinho e cotava veiculo que o Power nao faz.
+          carroApp: form.carroApp,
         }),
       })
       const data = await precoRes.json()

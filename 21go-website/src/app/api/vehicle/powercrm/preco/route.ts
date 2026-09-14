@@ -36,6 +36,8 @@ interface PrecoBody {
   codFipe?: string | null
   /** Origem do veículo: 'nao' | 'leilao' | 'remarcado'. Leilão paga a faixa abaixo. */
   leilao?: string | null
+  /** 'sim' quando o cliente respondeu que o carro é de aplicativo — decide a tabela do Power. */
+  carroApp?: string | null
 }
 
 export async function POST(req: NextRequest) {
@@ -137,11 +139,15 @@ export async function POST(req: NextRequest) {
   //    Power ("Versys 650cc" -> 650). Sem isso as duas tabelas de moto dele viravam a mesma
   //    coisa e ficava sempre a primeira — uma Versys 650 saiu por R$ 257,40, o preco da
   //    tabela de Honda/Yamaha ate 400 (print de cliente, 03/09/2026).
+  //    A tabela de aplicativo/taxi so entra pra quem respondeu que o carro e de aplicativo: ela
+  //    cobre versao que a tabela comum nao cobre, e usa-la como segunda opiniao pra todo mundo
+  //    fazia o site mostrar plano pra veiculo que no Power so tem rastreador (14/09/2026).
   const consulta = await planosDoPowerAoVivo(modelId, mdlYr, {
     moto:
       tipo === 'moto'
         ? { marca: brandText, cilindrada: resolveMotoCc(0, modelText) }
         : null,
+    trabalho: String(body.carroApp || '').toLowerCase() === 'sim',
   })
 
   const veredicto = decidirElegibilidade({
