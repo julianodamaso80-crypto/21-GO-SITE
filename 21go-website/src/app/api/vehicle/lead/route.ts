@@ -309,6 +309,8 @@ export async function POST(req: NextRequest) {
     trk,
     leadId,
     ctx,
+    // 14/09/2026: esta e a chamada do lead normal — sem o dominio aqui, 149 leads ficaram fora da Isa.
+    dominio: dominioDoHost(req.headers.get('x-forwarded-host') || req.headers.get('host')),
     quotationCode: 'quotationCode' in powercrm ? powercrm.quotationCode : undefined,
     negotiationCode: 'negotiationCode' in powercrm ? powercrm.negotiationCode : undefined,
     powercrmPayload: powercrm,
