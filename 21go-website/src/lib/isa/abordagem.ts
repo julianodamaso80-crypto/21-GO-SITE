@@ -208,9 +208,15 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
        JOIN public.leads l ON l.id = c.lead_id
       WHERE c.entrada = '5min'
         AND c.ligada
-        AND c.ultimo_inbound_em IS NULL
         AND c.retomada_sem_resposta_em IS NULL
         AND c.abordagem5min_em < now() - interval '10 minutes'
+        -- Quem nunca respondeu, e tambem quem respondeu e deixou a janela fechar (dono,
+        -- 14/09/2026: "pode disparar para todos que a Isa atendeu desde ontem"). Dentro da
+        -- janela nao entra: ali ela fala por texto livre, sem template e sem custo.
+        AND (c.ultimo_inbound_em IS NULL OR c.janela_ate IS NULL OR c.janela_ate < now())
+        -- Conversa que virou assunto de gente nao leva template de robo por cima.
+        AND c.humano_em IS NULL
+        AND c.pausa_motivo IS NULL
       ORDER BY c.abordagem5min_em
       LIMIT $1`,
     [POR_RODADA],
@@ -228,7 +234,9 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
     // mandam pro mesmo telefone.
     const reivindicou = await sql(
       `UPDATE public.isa_contatos SET retomada_sem_resposta_em = now(), updated_at = now()
-        WHERE telefone = $1 AND retomada_sem_resposta_em IS NULL AND ultimo_inbound_em IS NULL
+        WHERE telefone = $1 AND retomada_sem_resposta_em IS NULL
+          -- se ele escreveu entre a fila e agora, a janela abriu: a Isa fala livre, sem template
+          AND (ultimo_inbound_em IS NULL OR janela_ate IS NULL OR janela_ate < now())
         RETURNING telefone`,
       [tel],
     )
