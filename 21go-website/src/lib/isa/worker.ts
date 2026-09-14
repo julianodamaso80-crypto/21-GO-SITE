@@ -260,6 +260,8 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   }
 
   // Entrada pelo popup ("Quero meu desconto!"): R$ 50 na ativacao, uma vez, com o antes e o depois.
+  // Esta e a UNICA porta automatica do desconto (dono, 14/09/2026) — em todo o resto, quem quiser
+  // desconto pede, e o pedido vai pro supervisor pelo gatilho "desconto".
   // Em QUALQUER mensagem pendente, nao so na primeira: no teste de 11/09/2026 havia uma mensagem
   // antiga na frente e o "Quero meu desconto" virou pedido de desconto comum (foi pro supervisor).
   const popup = novas.map((m) => entradaPopup(m.content ?? '')).find((p) => p.popup) ?? entradaPopup('')
@@ -274,8 +276,11 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     }
   }
 
-  // Toque num botao da mensagem dos 5 min: resposta montada pelo codigo (cobertura do plano ou
-  // "qual a sua duvida?") + os R$ 50, que so aqui podem aparecer — o template nao fala de oferta.
+  // Toque num botao da mensagem dos 5 min: so a resposta montada pelo codigo (cobertura do plano
+  // ou "qual a sua duvida?").
+  // Aqui tambem saiam os R$ 50. Dono, 14/09/2026: "nao e pra vc dar desconto assim pra todo mundo,
+  // so quando clica no quero desconto, fora isso vc vai ter uma conversa inteligente pra entender
+  // o cliente e ver o que ele busca". Tocar em "cobre minha regiao?" nao e pedir desconto.
   const botao = payloadsDe(novas).find((p) => p === PAYLOAD_COBRE || p === PAYLOAD_DUVIDA)
   if (botao) {
     const lead5 = await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)
@@ -287,9 +292,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
           ? mensagemCobertura({ abertura: ab, plano, pdfUrl: `${SITE}/api/pdfs/${lead5.id}` })
           : mensagemDuvida(ab),
       ]
-      const d = await concederDesconto50(c, lead5?.id ?? null)
-      if (d) partes.push(mensagemDesconto50(d, { perguntaSeFecha: botao === PAYLOAD_COBRE }))
-      await registrarEvento(c.telefone, 'botao_5min', { botao, desconto: d })
+      await registrarEvento(c.telefone, 'botao_5min', { botao })
       const enviou = await enviarComoGente(c, partes, ultimaInbound, visto)
       await liberar(c.telefone, visto, enviou)
       return enviou
