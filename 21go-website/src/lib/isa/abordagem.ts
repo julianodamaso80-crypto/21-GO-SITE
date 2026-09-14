@@ -194,6 +194,8 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
   const agora = new Date()
   if (!dentroDoHorario(agora)) return { enviados: 0, motivo: 'fora_do_horario' }
 
+  // Tambem aqui: se o 5 min estiver desligado, e esta a unica que olharia a qualidade do numero.
+  await vigiarQualidade().catch((err) => console.error('[isa] qualidade do numero:', err))
   const cfg = (await lerConfig<Config5min>('retomada')) ?? {}
   if (cfg.suspenso_em) return { enviados: 0, motivo: 'suspensa' }
   if (!(await templateLiberado(TEMPLATE_RETOMADA, 'templateRetomada', 'a retomada dos 10 min'))) {
@@ -307,12 +309,16 @@ async function vigiarQualidade(): Promise<void> {
   if (!qualidadeRuim(rating)) return
   const cfg = await lerConfig<Config5min>('5min')
   if (cfg?.suspenso_em) return
-  await gravarConfig('5min', { suspenso_em: new Date().toISOString(), motivo: `qualidade ${rating}` })
+  // As DUAS param: a retomada dos 10 min manda mais que o 5 min, e deixar so ela de pe com o
+  // numero amarelo e o caminho mais curto pra restricao na Meta.
+  const suspensao = { suspenso_em: new Date().toISOString(), motivo: `qualidade ${rating}` }
+  await gravarConfig('5min', suspensao)
+  await gravarConfig('retomada', suspensao)
   await registrarEvento('sistema', 'qualidade_suspendeu', { rating, limite }, 'sistema')
   await alertarDono({
     telefone: numeroDeAlerta() ?? 'sistema',
     nome: 'Isa',
     motivo: 'qualidade',
-    detalhe: `a qualidade do 98004-0964 na Meta ficou ${rating} — a mensagem dos 5 min foi suspensa`,
+    detalhe: `a qualidade do 98004-0964 na Meta ficou ${rating} — a mensagem dos 5 min e a retomada dos 10 min foram suspensas`,
   })
 }
