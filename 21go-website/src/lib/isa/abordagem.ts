@@ -8,9 +8,11 @@ import { DOMINIOS_DA_CASA } from '@/lib/isa/popup.regras'
 import { numerosDeTeste } from '@/lib/isa/dono.regras'
 import {
   TEMPLATE_5MIN,
+  TEMPLATE_RETOMADA,
   telefoneDeAbordagem,
   variaveisDoTemplate,
   textoDoTemplate,
+  textoDaRetomada,
   qualidadeRuim,
   templatePodeSair,
 } from '@/lib/isa/abordagem.regras'
@@ -174,6 +176,94 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
   return { enviados }
 }
 
+/**
+ * A segunda e ULTIMA mensagem de quem nao respondeu (dono, 14/09/2026): 10 min depois do
+ * resultado, o template `duvida_valores_isa` pergunta se ficou duvida nos valores ou nas
+ * coberturas. Quem nao responder nem a essa nao recebe mais nada.
+ *
+ * Travas, as mesmas do primeiro: ISA_RETOMADA=on, 8h-22h, template APPROVED+UTILITY, qualidade
+ * do numero e allowlist. E, como no 5min, `isa_config.retomada.ligado_em` marca a virada da
+ * chave: quem foi abordado ANTES de ligar nunca entra — a lista velha de quem sumiu nao vira
+ * rajada no dia em que isso for ligado.
+ */
+export async function retomarSemResposta(): Promise<{ enviados: number; motivo?: string }> {
+  if (process.env.ISA_RETOMADA !== 'on') return { enviados: 0, motivo: 'desligada' }
+  const agora = new Date()
+  if (!dentroDoHorario(agora)) return { enviados: 0, motivo: 'fora_do_horario' }
+
+  const cfg = (await lerConfig<Config5min>('retomada')) ?? {}
+  if (cfg.suspenso_em) return { enviados: 0, motivo: 'suspensa' }
+  if (!cfg.ligado_em) {
+    await gravarConfig('retomada', { ligado_em: agora.toISOString() })
+    return { enviados: 0, motivo: 'ligou_agora' }
+  }
+  if (!(await templateLiberado(TEMPLATE_RETOMADA, 'templateRetomada', 'a retomada dos 10 min'))) {
+    return { enviados: 0, motivo: 'template_nao_liberado' }
+  }
+
+  const candidatos = await sql<LeadAbordagem & { conversation_id: string | null }>(
+    `SELECT l.id, l.nome, c.telefone, l.marca_interesse, l.modelo_interesse, l.ano_interesse, c.conversation_id
+       FROM public.isa_contatos c
+       JOIN public.leads l ON l.id = c.lead_id
+      WHERE c.entrada = '5min'
+        AND c.ligada
+        AND c.ultimo_inbound_em IS NULL
+        AND c.retomada_sem_resposta_em IS NULL
+        AND c.abordagem5min_em < now() - interval '10 minutes'
+        AND c.abordagem5min_em > $1::timestamptz
+      ORDER BY c.abordagem5min_em
+      LIMIT $2`,
+    [cfg.ligado_em, POR_RODADA],
+  )
+
+  let enviados = 0
+  for (const l of candidatos) {
+    const tel = telefoneDeAbordagem(l.telefone)
+    if (!tel || !destinoPermitido(tel)) continue
+    const nv = variaveisDoTemplate({ nome: l.nome, marca: l.marca_interesse, modelo: l.modelo_interesse, ano: l.ano_interesse })
+    if (!nv) continue
+    const vars: [string, string, string] = [...nv, `${SITE}/api/pdfs/${l.id}`]
+
+    // Marcar ANTES de enviar: erro no meio nao vira segunda tentativa, e dois workers nunca
+    // mandam pro mesmo telefone.
+    const reivindicou = await sql(
+      `UPDATE public.isa_contatos SET retomada_sem_resposta_em = now(), updated_at = now()
+        WHERE telefone = $1 AND retomada_sem_resposta_em IS NULL AND ultimo_inbound_em IS NULL
+        RETURNING telefone`,
+      [tel],
+    )
+    if (reivindicou.length === 0) continue
+
+    try {
+      const wamid = await enviarTemplate(tel, TEMPLATE_RETOMADA, vars)
+      if (l.conversation_id) {
+        await upsertMessage({
+          conversation_id: l.conversation_id,
+          whatsapp_message_id: wamid,
+          evolution_instance: 'cloud_isa',
+          jid: phoneToJid(tel) ?? `${tel}@s.whatsapp.net`,
+          direction: 'outbound',
+          status: 'SENT',
+          sender: 'isa',
+          message_type: 'text',
+          content: textoDaRetomada(vars),
+          sent_at: new Date().toISOString(),
+        }).catch((err) => console.error('[isa] retomada enviada mas nao gravada:', err))
+      }
+      await registrarEvento(tel, 'retomada10min', { lead: l.id })
+      enviados++
+    } catch (err) {
+      await registrarEvento(
+        tel,
+        err instanceof EnvioBloqueado ? 'envio_bloqueado' : 'retomada_falhou',
+        { lead: l.id, erro: err instanceof Error ? err.message : String(err) },
+        'sistema',
+      )
+    }
+  }
+  return { enviados }
+}
+
 interface EstadoTemplate {
   status: string | null
   categoria: string | null
@@ -185,19 +275,23 @@ interface EstadoTemplate {
  * sozinha — o primeiro texto virou MARKETING ainda na analise — entao confere de 10 em 10 min e,
  * se deixar de poder sair, para e avisa o dono uma vez.
  */
-async function templateLiberado(): Promise<boolean> {
-  const antes = await lerConfig<EstadoTemplate>('template5min')
+async function templateLiberado(
+  nome: string = TEMPLATE_5MIN,
+  chave: string = 'template5min',
+  rotulo: string = 'a mensagem dos 5 min',
+): Promise<boolean> {
+  const antes = await lerConfig<EstadoTemplate>(chave)
   if (antes?.verificado_em && Date.now() - Date.parse(antes.verificado_em) < 10 * 60_000) return templatePodeSair(antes)
-  const agora = await statusDoTemplate(TEMPLATE_5MIN)
-  await gravarConfig('template5min', { ...agora, verificado_em: new Date().toISOString() })
+  const agora = await statusDoTemplate(nome)
+  await gravarConfig(chave, { ...agora, verificado_em: new Date().toISOString() })
   const pode = templatePodeSair(agora)
   if (!pode && antes && templatePodeSair(antes)) {
-    await registrarEvento('sistema', 'template_5min_bloqueado', agora, 'sistema')
+    await registrarEvento('sistema', `template_bloqueado`, { template: nome, ...agora }, 'sistema')
     await alertarDono({
       telefone: numeroDeAlerta() ?? 'sistema',
       nome: 'Isa',
       motivo: 'template',
-      detalhe: `o template ${TEMPLATE_5MIN} ficou ${agora.status}/${agora.categoria} na Meta — a mensagem dos 5 min parou`,
+      detalhe: `o template ${nome} ficou ${agora.status}/${agora.categoria} na Meta — ${rotulo} parou`,
     })
   }
   return pode

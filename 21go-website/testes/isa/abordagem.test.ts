@@ -6,6 +6,7 @@ import {
   telefoneDeAbordagem,
   variaveisDoTemplate,
   textoDoTemplate,
+  textoDaRetomada,
   planoDoCliente,
   mensagemCobertura,
   mensagemDuvida,
@@ -86,4 +87,14 @@ test('template so sai aprovado e como UTILITY (a Meta recategoriza pra MARKETING
   assert.equal(templatePodeSair({ status: 'APPROVED', categoria: 'MARKETING' }), false)
   assert.equal(templatePodeSair({ status: 'PENDING', categoria: 'UTILITY' }), false)
   assert.equal(templatePodeSair({ status: null, categoria: null }), false)
+})
+
+test('a retomada dos 10 min fala do mesmo documento — e o que passa como utilidade na Meta', () => {
+  const t = textoDaRetomada(['Magno', 'Mitsubishi ASX 2017', 'https://21go.site/api/pdfs/lead_x'])
+  assert.match(t, /^Olá, Magno\./)
+  assert.match(t, /continua disponível neste link/)
+  assert.ok(t.includes('https://21go.site/api/pdfs/lead_x'))
+  assert.match(t, /Ficou com alguma dúvida sobre os valores ou as coberturas, que eu possa te ajudar\?$/)
+  // O que derrubou o texto anterior pra MARKETING: falar do plano e da empresa.
+  assert.doesNotMatch(t, /o que você achou|já conhecia a 21Go|desconto|R\$/i)
 })

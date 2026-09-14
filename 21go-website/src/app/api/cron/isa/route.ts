@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processarFila } from '@/lib/isa/worker'
-import { abordarLeadsNovos } from '@/lib/isa/abordagem'
+import { abordarLeadsNovos, retomarSemResposta } from '@/lib/isa/abordagem'
 import { relatorioDiario } from '@/lib/isa/relatorio'
 
 export const runtime = 'nodejs'
@@ -23,11 +23,16 @@ export async function GET(req: NextRequest) {
       console.error('[isa] 5 min falhou:', err)
       return { enviados: 0, erro: err instanceof Error ? err.message : String(err) }
     })
+    // Segunda mensagem de quem nao respondeu ao resultado, 10 min depois (ISA_RETOMADA=on).
+    const retomada = await retomarSemResposta().catch((err) => {
+      console.error('[isa] retomada 10 min falhou:', err)
+      return { enviados: 0, erro: err instanceof Error ? err.message : String(err) }
+    })
     const relatorio = await relatorioDiario().catch((err) => {
       console.error('[isa] relatorio falhou:', err)
       return { enviado: false, erro: err instanceof Error ? err.message : String(err) }
     })
-    return NextResponse.json({ ok: true, ...fila, cincoMin, relatorio })
+    return NextResponse.json({ ok: true, ...fila, cincoMin, retomada, relatorio })
   } catch (err) {
     console.error('[isa] cron falhou:', err)
     return NextResponse.json({ ok: false, erro: err instanceof Error ? err.message : String(err) }, { status: 500 })

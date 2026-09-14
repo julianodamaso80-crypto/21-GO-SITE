@@ -19,6 +19,14 @@ export const TEMPLATE_5MIN = 'resultado_simulacao_isa'
 export const PAYLOAD_COBRE = 'isa-5min:cobre'
 export const PAYLOAD_DUVIDA = 'isa-5min:duvida'
 
+/**
+ * Segunda e ultima mensagem: quem recebeu o resultado e ficou 10 min sem responder (dono,
+ * 14/09/2026). Mesmo assunto do primeiro — o documento que ele pediu — porque so isso passa como
+ * utilidade: a Meta carimbou MARKETING o texto que perguntava o que ele achou do plano e se ja
+ * conhecia a 21Go, mesmo com `allow_category_change: false`.
+ */
+export const TEMPLATE_RETOMADA = 'duvida_valores_isa'
+
 const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 /** 55 + DDD + numero. O formulario grava com o 55; lead antigo pode vir sem. */
@@ -52,6 +60,15 @@ export function textoDoTemplate([nome, veiculo, pdfUrl]: [string, string, string
     `Resultado da sua simulação\n\nOlá, ${nome}. Conforme informado no site da 21Go, ` +
     `segue o resultado da simulação que você fez para o ${veiculo}:\n${pdfUrl}\n\n` +
     'Em caso de dúvida sobre a simulação, responda esta mensagem.'
+  )
+}
+
+/** O texto do `duvida_valores_isa` aprovado na Meta — o que fica gravado no painel. */
+export function textoDaRetomada([nome, veiculo, pdfUrl]: [string, string, string]): string {
+  return (
+    `Olá, ${nome}. O resultado da simulação que você fez para o ${veiculo} continua disponível neste link:\n` +
+    `${pdfUrl}\n\n` +
+    'Ficou com alguma dúvida sobre os valores ou as coberturas, que eu possa te ajudar?'
   )
 }
 
