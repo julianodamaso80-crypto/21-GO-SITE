@@ -539,11 +539,11 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     await registrarEvento(c.telefone, 'pediu_documentos', { faltam: docsDaConversa.faltam })
   }
 
-  // Respondeu a mensagem dos 5 min escrevendo, sem tocar no botao: os R$ 50 vem logo depois.
-  if (enviou && !saida.gatilho && c.entrada === '5min' && !c.desconto50_em) {
-    const d = await concederDesconto50(c, lead?.id ?? null)
-    if (d) await enviarComoGente(c, [mensagemDesconto50(d, { perguntaSeFecha: false })], ultimaInbound, visto)
-  }
+  // Aqui os R$ 50 saiam sozinhos pra quem respondeu a mensagem dos 5 min escrevendo qualquer
+  // coisa. Dono, 14/09/2026 (print da Deiselane, que so disse que ia analisar e voltar depois):
+  // "vc ofereceu desconto sem o cliente pedir". Desconto so quando ELE pede: pelo botao do popup,
+  // pelo botao da mensagem dos 5 min ou pedindo na conversa (gatilho "desconto"). A mensagem dos
+  // 5 min nunca prometeu o desconto, entao tirar daqui nao quebra promessa nenhuma.
 
   // Nao soube responder: respondeu "vou confirmar" e o dono fica sabendo (a Isa segue ligada).
   // Escolheu o plano mas nao tem comprovante de residencia: a Isa pede CNH + documento do veiculo

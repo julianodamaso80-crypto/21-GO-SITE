@@ -315,3 +315,22 @@ test('a IA sabe que documento ja chegou e pede so o que falta (dono, 12/09/2026)
   const tudo = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false, docs: { recebidos: ['CNH', 'documento do veículo', 'comprovante de residência'], faltam: [] } })
   assert.match(tudo, /não falta nenhum documento/)
 })
+
+test('nada de travessao nem aspas: o dono viu "cara de ia" no print da Deiselane (14/09/2026)', async () => {
+  const { semCaraDeIa, comporResposta } = await import('../../src/lib/isa/prompt.regras.ts')
+  // o caso exato do print
+  assert.equal(
+    semCaraDeIa('sua simulação fica salva aqui e o PDF tá com você — quando quiser, é só me chamar'),
+    'sua simulação fica salva aqui e o PDF tá com você, quando quiser, é só me chamar',
+  )
+  // meia-risca tambem
+  assert.doesNotMatch(semCaraDeIa('o vip – mais completo'), /[—–]/)
+  // aspas de todo tipo somem
+  assert.equal(semCaraDeIa('o plano “vip” e o "básico"'), 'o plano vip e o básico')
+  // pontuacao antes do travessao nao vira ". ,"
+  assert.equal(semCaraDeIa('pode deixar. — qualquer dúvida me chama'), 'pode deixar. qualquer dúvida me chama')
+  // numero com virgula decimal e hifen de palavra ficam intactos
+  assert.equal(semCaraDeIa('a ativação fica R$ 264,42 no pós-venda'), 'a ativação fica R$ 264,42 no pós-venda')
+  // e vale pro texto que a IA escreve, passando por comporResposta
+  assert.doesNotMatch(comporResposta(null, 'te mando o PDF — dá uma olhada'), /[—–"]/)
+})

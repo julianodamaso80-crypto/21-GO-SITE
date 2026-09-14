@@ -42,7 +42,7 @@ export function mensagensDaSimulacao(p: {
   // Leilao, remarcado, taxi ou sinistrado: o preco cai e a indenizacao tambem — dizer junto com o
   // valor, nao deixar o cliente descobrir no sinistro (auditoria de 12/09/2026).
   if (f.indenizacaoPct === 80) partes.push('como o veículo é de leilão (a mesma regra vale pra remarcado, táxi e sinistrado), a indenização em roubo, furto ou perda total é 80% da FIPE')
-  if (p.leilaoOuAppAssumido) partes.push('ah, considerei que não é de leilão nem de aplicativo — se for, me avisa que eu ajusto 👍')
+  if (p.leilaoOuAppAssumido) partes.push('ah, considerei que não é de leilão nem de aplicativo, se for me avisa que eu ajusto 👍')
   return partes
 }
 

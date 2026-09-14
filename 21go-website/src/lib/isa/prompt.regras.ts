@@ -82,12 +82,29 @@ export function semInformacaoValido(textoDoCliente: string, resposta: string): b
  * Resposta final, na ordem de uma pessoa: cumprimento (se houver), o texto oficial do dono, e o
  * que a IA escreveu pro resto da pergunta.
  */
+/**
+ * Dono (14/09/2026, print da conversa com a Deiselane): "vc nunca usa -, vc nunca usa aspas, vc
+ * nao pode falar assim igual ia". Travessao e aspas sao a marca de texto de robo. O proprio prompt
+ * e escrito com travessao, entao a IA copia o estilo: tirar aqui no codigo e a unica garantia.
+ * Vale SO pro texto que a IA escreveu; mensagem montada pelo codigo ja sai do jeito aprovado.
+ */
+export function semCaraDeIa(texto: string): string {
+  return texto
+    .replace(/[\u201C\u201D\u00AB\u00BB"]/g, '')
+    // o travessao vira a virgula que a pessoa usaria escrevendo no WhatsApp
+    .replace(/\s*[\u2014\u2013]\s*/g, ', ')
+    // ja tinha pontuacao antes do travessao: nao deixa virar ". ," nem ", ,"
+    .replace(/([,.!?;:])\s*,\s*/g, '$1 ')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]*,[ \t]*$/gm, '')
+}
+
 export function comporResposta(pronta: string | null, resposta: string, abertura: string | null = null): string {
   // Chave inventada pela IA ("processo", "prazo"...) nao existe: ignora, nunca apaga o texto.
   const chave = pronta && Object.hasOwn(CHAVES_PRONTAS, pronta) ? CHAVES_PRONTAS[pronta] : undefined
   const oficial = chave ? RESPOSTAS_PRONTAS[chave] : ''
   // A IA as vezes repete o nome interno no texto (11/09/2026: saiu "fora_do_assunto" pro cliente).
-  const texto = resposta
+  const texto = semCaraDeIa(resposta)
     .split('\n')
     .filter((l) => !NOMES_INTERNOS.has(l.trim().toLowerCase()))
     .join('\n')
@@ -350,6 +367,7 @@ export function montarPrompt(e: EntradaPrompt): string {
 
 ## como você escreve (é assim que a Leticya atende)
 - minúsculas, frases curtas, sem ponto final
+- NUNCA use travessão (—) nem aspas: é a marca de texto de robô. onde pensar em travessão, use vírgula ou comece outra mensagem
 - português correto: vírgulas no lugar certo ("me manda a placa, que eu consulto pra você"), concordância e acentos certos. informal não é errado — "tá", "pra" podem, mas sem erro de gramática
 - separe as ideias em mensagens curtas: coloque UMA LINHA EM BRANCO entre elas (no máximo 3 partes)
 - chame o cliente pelo nome UMA vez, no cumprimento do começo. depois NUNCA repita o nome dele
@@ -389,6 +407,7 @@ você se preocupa com o cliente de verdade: ouve, entende a situação dele e s�
 você se preocupa com o cliente, não em empurrar venda. dono (12/09/2026): "responde o que foi perguntado, seja simples, não fica toda hora fazendo pergunta em cima de resposta, nem toda hora querendo vender. quanto mais fala, mais abre brecha pra ele não fechar"
 - responda SÓ o que ele perguntou, curto, e PARE. depois espere ele. NÃO emende pergunta na resposta, NÃO ofereça "seguir com a ativação", NÃO puxe o próximo passo. ex.: "se meu filho dirigir e bater?" → "pode dirigir tranquilo, é livre condutor: qualquer pessoa habilitada, sem restrição de idade, e o veículo fica protegido do mesmo jeito" — e nada de cota, valor ou ativação, porque ele não perguntou isso
 - não acrescente informação que ele não pediu (cota, valores, adicionais, ativação). se ele quiser saber, ele pergunta
+- pergunta de sim ou não se responde com sim ou não, numa mensagem só, e PARA. dono (14/09/2026): "faz o básico bem feito, resposta certa, deixa o cliente perguntar se ele quer saber mais coisas". ex.: "cobre roubo e furto?" → "cobre sim, os dois planos cobrem roubo e furto" e acabou: NADA de emendar indenização de 100%, FIPE, cota de participação ou prazo
 - o próximo passo só quando ELE sinaliza: escolheu o plano, disse que quer fechar, perguntou como contrata. aí sim: documentos (só os que faltam)
 - a placa só se pede quando ELE disse que quer cotação, simulação, valor ou preço — uma vez, curto. num cumprimento, num "tudo bem?" ou numa dúvida, não. com a simulação enviada: a pergunta do fim dela já é a única — não repita
 - ele disse quanto paga hoje: só se ele PERGUNTAR se compensa ou pedir comparação, use a diferença exata dos FATOS. senão, não compare por conta própria
