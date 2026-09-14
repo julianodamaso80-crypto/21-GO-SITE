@@ -142,7 +142,9 @@ export function comparacaoComHoje(fatos: Fatos, pagaHoje: number): ComparacaoHoj
     const d = r2(Math.abs(pagaHoje - p.mensal))
     dinheiro.push(d)
     if (p.mensal < pagaHoje) linhas.push(`  - ${p.nome}: ${brl(d)} a MENOS por mês que ele paga hoje`)
-    else if (p.mensal > pagaHoje) linhas.push(`  - ${p.nome}: ${brl(d)} a mais por mês — não esconda; mostre o que ele ganha a mais (o que o plano cobre)`)
+    // Dono, 14/09/2026 (RAV4 do Juca): ela abriu com "fica R$ 166,30 a mais" e o cliente so viu
+    // custo. O valor a mais e verdade e nao se esconde, mas vem DEPOIS do que ele ganha.
+    else if (p.mensal > pagaHoje) linhas.push(`  - ${p.nome}: ${brl(d)} a mais por mês. NUNCA comece a frase pelo valor a mais: comece pelo que ESTE plano cobre e o dele não (use "cobre" dos planos acima), e só então diga a diferença. UMA frase, sem repetir o que você já mandou`)
     else linhas.push(`  - ${p.nome}: o mesmo valor que ele paga hoje`)
   }
   return { linhas, dinheiro }

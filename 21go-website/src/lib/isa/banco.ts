@@ -291,7 +291,7 @@ const CAMPOS_EDITAVEIS = new Set([
   'lead_id', 'nome', 'ligada', 'pausa_motivo', 'pausa_por', 'pausada_em', 'transferido_em', 'entrada',
   'desconto50_em', 'desconto50_de', 'desconto50_para', 'aguardando_dono', 'genero', 'preco_da_tabela',
   'retomada_em', 'abordagem5min_em', 'opcoes_versao', 'placa_pendente', 'nota',
-  'retomar_apos', 'pergunta_pendente', 'aviso_fora_horario_em',
+  'retomar_apos', 'pergunta_pendente', 'aviso_fora_horario_em', 'processado_ate',
 ])
 
 export async function atualizarContato(telefone: string, campos: Record<string, unknown>): Promise<void> {

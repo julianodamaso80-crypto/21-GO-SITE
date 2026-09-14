@@ -88,7 +88,11 @@ test('quanto ele paga hoje vira fato calculado, com as diferencas (11/09/2026 21
   assert.match(c.linhas.find((l) => l.includes('VIP'))!, /R\$ 422,59 a MENOS/)
   assert.ok(c.dinheiro.includes(650) && c.dinheiro.includes(422.59) && c.dinheiro.includes(477.3))
   const caro = comparacaoComHoje(fatos, 150)
-  assert.match(caro.linhas.find((l) => l.includes('VIP'))!, /R\$ 77,41 a mais[^\n]*não esconda/)
+  // o valor a mais aparece, mas a Isa nao pode ABRIR por ele (dono, 14/09/2026, RAV4 do Juca)
+  const linhaVip = caro.linhas.find((l) => l.includes('VIP'))!
+  assert.match(linhaVip, /77,41 a mais/)
+  assert.match(linhaVip, /NUNCA comece a frase pelo valor a mais/)
+  assert.match(linhaVip, /comece pelo que ESTE plano cobre/)
 })
 
 test('retomada pelo momento do cliente, sem repetir e sem nome (12/09/2026 13:43)', () => {
