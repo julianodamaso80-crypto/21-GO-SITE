@@ -7,6 +7,7 @@ import {
   type Direction,
   type MessageStatus,
 } from '@/lib/supabase-store'
+import { atenderRecrutamento } from '@/lib/consultor-recrutamento'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -158,6 +159,15 @@ async function handleMessageUpsert(instance: string, data: EvolutionEventData) {
     raw_payload: data,
     sent_at: sentAt,
   })
+
+  // Quem chegou pelo "Quero Ser Consultor" do /seja-consultor recebe a resposta com o
+  // treinamento e o link do grupo. Nunca em grupo do WhatsApp e nunca no que NOS enviamos —
+  // só mensagem recebida de pessoa. Falha aqui não derruba a gravação, que é o que importa.
+  if (!fromMe && !jid.endsWith('@g.us')) {
+    await atenderRecrutamento({ telefone: phone, texto: content, nome: data.pushName ?? null }).catch(
+      (err) => console.error('[consultor] falhou:', err instanceof Error ? err.message : err),
+    )
+  }
 }
 
 async function handleMessageUpdate(instance: string, data: EvolutionEventData) {
