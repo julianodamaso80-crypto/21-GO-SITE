@@ -1,4 +1,5 @@
 import { dominioDoHost } from '@/lib/isa/popup.regras'
+import { getNegotiation } from '@/lib/powercrm'
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import {
@@ -304,6 +305,10 @@ export async function POST(req: NextRequest) {
 
   // 2) Persistência no Supabase (lead_attribution unificado em public.leads)
   //    Idempotente, não bloqueia o fluxo principal.
+  // Placa presa com outro consultor (dono, 14/09/2026): o Power cria a cotacao, mas a negociacao nasce
+  // com o responsibleId dele. A Isa nao pode atender esse lead — a mensagem dos 5 min le esta coluna.
+  const powerResponsavel = await responsavelNoPower('negotiationCode' in powercrm ? powercrm.negotiationCode : undefined, leadId)
+
   const supaResult = await persistLeadInSupabase({
     body,
     trk,
@@ -311,6 +316,7 @@ export async function POST(req: NextRequest) {
     ctx,
     // 14/09/2026: esta e a chamada do lead normal — sem o dominio aqui, 149 leads ficaram fora da Isa.
     dominio: dominioDoHost(req.headers.get('x-forwarded-host') || req.headers.get('host')),
+    powerResponsavel,
     quotationCode: 'quotationCode' in powercrm ? powercrm.quotationCode : undefined,
     negotiationCode: 'negotiationCode' in powercrm ? powercrm.negotiationCode : undefined,
     powercrmPayload: powercrm,
@@ -456,6 +462,8 @@ async function persistLeadInSupabase(args: {
   body: LeadInput
   /** Dominio da requisicao (dono, 13/09/2026: a Isa so atende os .site). */
   dominio?: string | null
+  /** responsibleId da negociacao no Power (placa presa com outro consultor quando nao e a casa). */
+  powerResponsavel?: string | null
   trk: string
   leadId: string
   ctx: ReturnType<typeof getRequestContext>
@@ -528,6 +536,7 @@ async function persistLeadInSupabase(args: {
     negotiation_code: args.negotiationCode ?? null,
     powercrm_payload: args.powercrmPayload as Record<string, unknown> | null,
     dominio: args.dominio ?? null,
+    power_responsavel: args.powerResponsavel ?? null,
 
     etapa_funil: (body.plano || '').toUpperCase() === 'EXCLUIDO' ? 'excluido' : 'cotacao_enviada',
     status: (body.plano || '').toUpperCase() === 'EXCLUIDO' ? 'excluido' : 'lead',
@@ -1214,5 +1223,19 @@ async function registerOutboundMessage(args: {
     })
   } catch (err) {
     console.warn('[lead] registerOutboundMessage falhou:', err instanceof Error ? err.message : err)
+  }
+}
+
+/** responsibleId da negociacao no Power; null se nao deu pra ler (nunca segura o lead por isso). */
+async function responsavelNoPower(negotiationCode: string | undefined, leadId: string): Promise<string | null> {
+  if (!negotiationCode || !POWERAPI_TOKEN) return null
+  try {
+    const r = await getNegotiation(negotiationCode, leadId)
+    const raw = r.raw as { responsibleId?: unknown } | null | undefined
+    const id = typeof raw?.responsibleId === 'string' ? raw.responsibleId.trim() : ''
+    return id || null
+  } catch (err) {
+    console.warn('[lead] responsavel no Power nao lido:', err instanceof Error ? err.message : err)
+    return null
   }
 }

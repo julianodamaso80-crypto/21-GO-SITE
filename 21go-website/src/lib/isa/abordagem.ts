@@ -31,6 +31,8 @@ import {
  */
 
 const POR_RODADA = 5
+// slsmnNwId da Leticya no Power: negociacao com outro responsavel = placa presa com outro consultor.
+const RESPONSAVEL_DA_CASA = process.env.POWERCRM_DEFAULT_SLSMN_NW_ID || 'WDVMKnkq'
 const SITE = 'https://21go.site'
 // Origens que o formulario do site grava (deriveOrigem). Fica de fora o que o CRM espelha
 // (power_crm, manual, seja_consultor) e o que a propria Isa cria (isa_whatsapp).
@@ -91,6 +93,8 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
        AND l.origem = ANY($3::text[])
        -- so os .site da casa (dono, 13/09/2026): lead sem dominio (antes desta coluna) fica de fora
        AND l.dominio = ANY($5::text[])
+       -- placa presa com outro consultor (dono, 14/09/2026): a negociacao nasceu no nome dele
+       AND (l.power_responsavel IS NULL OR l.power_responsavel = $6)
        AND COALESCE(l.whatsapp_clicado, false) = false
        AND COALESCE(l.whatsapp_valido, true) = true
        AND l.created_at < (now() AT TIME ZONE 'UTC') - interval '5 minutes'
@@ -108,7 +112,7 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
        )
      ORDER BY l.telefone, l.created_at DESC
      LIMIT $2`,
-    [cfg.ligado_em, POR_RODADA * 4, ORIGENS_DO_SITE, teste, DOMINIOS_DA_CASA],
+    [cfg.ligado_em, POR_RODADA * 4, ORIGENS_DO_SITE, teste, DOMINIOS_DA_CASA, RESPONSAVEL_DA_CASA],
   )
 
   let enviados = 0

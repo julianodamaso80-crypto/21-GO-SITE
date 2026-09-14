@@ -4,6 +4,7 @@ import { lerConfig, gravarConfig } from '@/lib/isa/abordagem'
 import { alertarDono } from '@/lib/isa/alertas'
 import { enviarTexto, numeroDeAlerta } from '@/lib/isa/cloud'
 import { diaNoRio, horaNoRio } from '@/lib/isa/hora.regras'
+import { DOMINIOS_DA_CASA } from '@/lib/isa/popup.regras'
 
 /**
  * Relatorio diario da Isa pro dono (auditoria de 12/09/2026): o que aconteceu ONTEM e, o mais
@@ -60,6 +61,11 @@ export async function relatorioDiario(): Promise<{ enviado: boolean; motivo?: st
     [hoje],
   )
 
+  // Cobertura (dono, 14/09/2026): todo lead dos .site que nao clicou em "Quero contratar" tem que cair na
+  // Isa — as unicas excecoes sao contato errado, veiculo que nao fazemos e placa presa com outro
+  // consultor. Quem sobra fora disso e falha nossa e aparece aqui com ⚠️.
+  const cobertura = await coberturaDaIsa()
+
   const [ano, mes, dia] = hoje.split('-').map(Number)
   const ontem = new Date(Date.UTC(ano, mes - 1, dia - 1))
   const rotulo = `${String(ontem.getUTCDate()).padStart(2, '0')}/${String(ontem.getUTCMonth() + 1).padStart(2, '0')}`
@@ -71,6 +77,8 @@ export async function relatorioDiario(): Promise<{ enviado: boolean; motivo?: st
     `mandaram documento: ${n.documentos}`,
     `não soube responder: ${n.nao_soube}${n.pendentes ? ` (${n.pendentes} ainda sem resposta)` : ''}`,
   ]
+  linhas.push('', `cobertura (24 h, leads dos .site sem clique no Quero contratar): ${cobertura.total}`)
+  for (const c of cobertura.itens) linhas.push(`${c.situacao.startsWith('⚠️') ? '' : '• '}${c.situacao}: ${c.n}`)
   if (perguntas.length) {
     linhas.push('', 'o que ela não soube:')
     for (const p of perguntas) if (p.pergunta) linhas.push(`• ${p.pergunta.replace(/\s+/g, ' ').slice(0, 120)}`)
@@ -84,4 +92,41 @@ export async function relatorioDiario(): Promise<{ enviado: boolean; motivo?: st
     await alertarDono({ telefone: para, nome: 'Isa', motivo: 'relatorio', detalhe: linhas.join('\n') })
   }
   return { enviado: true }
+}
+
+interface LinhaCobertura {
+  situacao: string
+  n: number
+}
+
+/**
+ * Leads das ultimas 24 h dos .site, sem clique em "Quero contratar", classificados: na Isa, ou o
+ * motivo de nao estar. "⚠️ sem motivo" = deveria estar e nao esta (o que o dono viu no Power).
+ */
+export async function coberturaDaIsa(): Promise<{ total: number; itens: LinhaCobertura[] }> {
+  const casa = process.env.POWERCRM_DEFAULT_SLSMN_NW_ID || 'WDVMKnkq'
+  const itens = await sql<LinhaCobertura & { n: string }>(
+    `WITH l AS (
+       SELECT l.*, (c.telefone IS NOT NULL) AS na_isa
+       FROM public.leads l
+       LEFT JOIN public.isa_contatos c
+         ON c.telefone = l.telefone OR c.telefone = substr(l.telefone, 1, 4) || '9' || substr(l.telefone, 5)
+       WHERE l.created_at > (now() AT TIME ZONE 'UTC') - interval '24 hours'
+         AND l.created_at < (now() AT TIME ZONE 'UTC') - interval '6 minutes'
+         AND l.consultor_slug IS NULL
+         AND l.dominio = ANY($1::text[])
+         AND COALESCE(l.whatsapp_clicado, false) = false
+     )
+     SELECT CASE
+         WHEN na_isa THEN 'na Isa'
+         WHEN COALESCE(whatsapp_valido, true) = false THEN 'contato errado'
+         WHEN status = 'excluido' OR etapa_funil = 'excluido' OR cotacao_planos IS NULL THEN 'veículo que não fazemos'
+         WHEN power_responsavel IS NOT NULL AND power_responsavel <> $2 THEN 'placa presa com outro consultor'
+         ELSE '⚠️ sem motivo — deveria estar na Isa'
+       END AS situacao, count(*)::text AS n
+     FROM l GROUP BY 1 ORDER BY 2 DESC`,
+    [DOMINIOS_DA_CASA, casa],
+  )
+  const lista = itens.map((i) => ({ situacao: i.situacao, n: Number(i.n) }))
+  return { total: lista.reduce((a, b) => a + b.n, 0), itens: lista }
 }
