@@ -307,10 +307,13 @@ export async function atualizarContato(telefone: string, campos: Record<string, 
 }
 
 /**
- * Quem sumiu depois da simulacao: ja recebeu cotacao, a Isa falou por ultimo ha 1 h ou mais, a
- * janela de 24 h ainda esta aberta e ainda nao houve retomada desde a ultima fala da Isa (e nem
- * nas ultimas 24 h). Dono (11/09/2026): "se ele nao responder depois de 1 hr voce chama ele de
- * novo" — uma vez so por silencio.
+ * Quem sumiu depois da simulacao: ja recebeu cotacao, a Isa falou por ultimo ha 10 min ou mais, a
+ * janela de 24 h ainda esta aberta e essa pessoa NUNCA recebeu retomada.
+ *
+ * Dono, 14/09/2026: "10 minutos pra todo mundo, sendo que vc so manda uma vez, nao vai ficar toda
+ * hora mandando a mesma mensagem". Antes era 1 h e podia repetir a cada 24 h; agora e UMA por
+ * pessoa. O /reiniciar zera retomada_em (teste volta a receber) e adiarRetomada tambem, pra quem
+ * se despediu levar a unica retomada no dia seguinte em vez de perde-la.
  */
 export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
   return sql<ContatoIsa>(
@@ -320,9 +323,9 @@ export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
        WHERE ligada AND lead_id IS NOT NULL AND conversation_id IS NOT NULL
          AND ultima_resposta_em IS NOT NULL
          AND ultima_resposta_em > COALESCE(ultimo_inbound_em, '-infinity'::timestamptz)
-         AND ultima_resposta_em < now() - interval '1 hour'
+         AND ultima_resposta_em < now() - interval '10 minutes'
          AND janela_ate > now() + interval '10 minutes'
-         AND (retomada_em IS NULL OR (retomada_em < ultima_resposta_em AND retomada_em < now() - interval '24 hours'))
+         AND retomada_em IS NULL
          AND (humano_em IS NULL OR humano_em < ultima_resposta_em)
          AND (retomar_apos IS NULL OR retomar_apos < now())
          AND processando_desde IS NULL
