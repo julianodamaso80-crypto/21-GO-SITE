@@ -78,12 +78,22 @@ const MOTO_TERCEIROS_EXTRA = 22
 
 /* ─────────────────────────────────────────────────────────────────────────
  * MATRIZ DE COBERTURAS — formato oficial do PowerCRM 21Go
- * Cada cell é null (× não incluído) ou string (✓ + detalhe; '' = só ✓).
+ * Cada cell é null (✕ vermelho, não incluso) ou string (✓ + detalhe; '' = só ✓).
+ * As linhas saem separadas em dois blocos (`grupo`): o que a 21Go PAGA e o que você ACIONA.
  * ───────────────────────────────────────────────────────────────────────── */
 
 interface CoverageRow {
   label: string
-  /** ordem dos planos = ['basico','do-seu-jeito','vip','premium'] OU plano único */
+  /**
+   * Explicacao curta embaixo do rotulo. O print do PowerCRM so tem o nome da cobertura, e
+   * "Carro amigo" / "Socorro mecanico" nao dizem nada pra quem nunca contratou protecao.
+   * Cada frase aqui sai do gabarito ditado pelo dono (10-12/09/2026) — o que nao esta la
+   * fica SEM hint, nunca com texto inventado.
+   */
+  hint?: string
+  /** Separa a tabela em dois blocos: o que a 21Go paga x o que voce aciona na hora do aperto. */
+  grupo: 'cobertura' | 'assistencia'
+  /** ordem dos planos = ['basico','do-seu-jeito','vip','premium'] OU plano unico */
   carros?: [string | null, string | null, string | null, string | null]
   suv?: string | null
   moto?: string | null
@@ -91,25 +101,87 @@ interface CoverageRow {
 }
 
 const COVERAGE_TABLE: CoverageRow[] = [
-  { label: 'Roubo',                                          carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
-  { label: 'Furto',                                          carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
-  { label: 'Incêndio',                                       carros: ['Proveniente de colisão', 'Proveniente de colisão', 'Proveniente de colisão', 'Proveniente de colisão'],          suv: 'Proveniente de colisão', moto: null, especial: 'Proveniente de colisão' },
-  { label: 'Fenômenos da natureza',                          carros: [null, '', '', ''],                                                                        suv: '', moto: '', especial: '' },
-  { label: 'Colisão',                                        carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
-  { label: 'Danos a terceiros',                              carros: ['R$ 5.000,00', 'R$ 10.000,00', 'R$ 50.000,00', 'R$ 100.000,00'],                          suv: 'R$ 50.000,00', moto: null, especial: 'R$ 50.000,00' },
-  { label: 'Carro reserva',                                  carros: [null, null, '07 dias (roubo e furto)', '15 dias'],                                        suv: '07 dias (roubo e furto)', moto: null, especial: '07 dias (roubo e furto)' },
-  { label: 'Parabrisa',                                      carros: ['', '', '', ''],                                                                        suv: '', moto: null, especial: '' },
-  { label: 'Carro amigo',                                    carros: [null, '25 km de raio', '25 km de raio', ''],                                              suv: '25 km de raio', moto: null, especial: '25 km de raio' },
-  { label: 'Cobertura Todos os Vidros',                      carros: [null, null, null, ''],                                                                    suv: null, moto: null, especial: null },
-  { label: 'Monitoramento 24h',                              carros: ['Valor acima de R$ 50.000', 'Valor acima de R$ 50.000', 'Valor acima de R$ 50.000', 'Valor acima de R$ 50.000'], suv: 'Valor acima de R$ 50.000', moto: 'Acima de R$ 15.000', especial: 'Valor acima de R$ 50.000' },
-  { label: 'Reboque',                                        carros: ['200 km (totais)', '400 km (totais)', '1.000 km (totais)', '1.400 km (totais)'],          suv: '1.000 km (totais)', moto: '1.000 km (totais)', especial: '1.000 km (totais)' },
-  { label: 'Chaveiro',                                       carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
-  { label: 'Substituição de pneu furado',                    carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
-  { label: 'Auxílio na falta de combustível',                carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
-  { label: 'Hospedagem em hotel',                            carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
-  { label: 'Táxi',                                           carros: ['25 km', '50 km', '100 km', '150 km'],                                                    suv: '100 km', moto: null, especial: '100 km' },
-  { label: 'Retorno a domicílio',                            carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
-  { label: 'Socorro mecânico / elétrico',                    carros: ['', '', '', ''],                                                                          suv: '', moto: '', especial: '' },
+  { label: 'Roubo', grupo: 'cobertura',
+    hint: 'Indenização de 100% da tabela FIPE',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Furto', grupo: 'cobertura',
+    hint: 'Indenização de 100% da tabela FIPE',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Incêndio', grupo: 'cobertura',
+    carros: ['Proveniente de colisão', 'Proveniente de colisão', 'Proveniente de colisão', 'Proveniente de colisão'],
+    suv: 'Proveniente de colisão', moto: null, especial: 'Proveniente de colisão' },
+
+  { label: 'Fenômenos da natureza', grupo: 'cobertura',
+    hint: 'Alagamento, enchente e outros eventos da natureza',
+    carros: [null, '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Colisão', grupo: 'cobertura',
+    hint: 'Conserto do veículo com peças originais',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Danos a terceiros', grupo: 'cobertura',
+    hint: 'Prejuízo causado a outro veículo ou pessoa',
+    carros: ['R$ 5.000,00', 'R$ 10.000,00', 'R$ 50.000,00', 'R$ 100.000,00'],
+    suv: 'R$ 50.000,00', moto: null, especial: 'R$ 50.000,00' },
+
+  { label: 'Para-brisa', grupo: 'cobertura',
+    hint: 'A 21Go cobre 70% do valor do para-brisa',
+    carros: ['70% do valor', '70% do valor', '70% do valor', '70% do valor'],
+    suv: '70% do valor', moto: null, especial: '70% do valor' },
+
+  { label: 'Cobertura Todos os Vidros', grupo: 'cobertura',
+    hint: 'Demais vidros, espelhos e lentes dos faróis',
+    carros: [null, null, null, ''], suv: null, moto: null, especial: null },
+
+  { label: 'Monitoramento 24h', grupo: 'cobertura',
+    hint: 'Rastreador já incluso na mensalidade',
+    carros: ['Valor acima de R$ 50.000', 'Valor acima de R$ 50.000', 'Valor acima de R$ 50.000', 'Valor acima de R$ 50.000'],
+    suv: 'Valor acima de R$ 50.000', moto: 'Acima de R$ 15.000', especial: 'Valor acima de R$ 50.000' },
+
+  { label: 'Carro reserva', grupo: 'assistencia',
+    carros: [null, null, '07 dias (roubo e furto)', '15 dias'],
+    suv: '07 dias (roubo e furto)', moto: null, especial: '07 dias (roubo e furto)' },
+
+  { label: 'Carro amigo', grupo: 'assistencia',
+    hint: 'Motorista até você quando não tiver condições de dirigir',
+    carros: [null, '25 km de raio', '25 km de raio', ''],
+    suv: '25 km de raio', moto: null, especial: '25 km de raio' },
+
+  { label: 'Reboque', grupo: 'assistencia',
+    hint: 'Quilometragem total, somando ida e volta',
+    carros: ['200 km (totais)', '400 km (totais)', '1.000 km (500 + 500)', '1.400 km (700 + 700)'],
+    suv: '1.000 km (500 + 500)', moto: '1.000 km (500 + 500)', especial: '1.000 km (500 + 500)' },
+
+  { label: 'Chaveiro', grupo: 'assistencia',
+    hint: 'A 21Go paga o serviço; a peça fica por sua conta',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Substituição de pneu furado', grupo: 'assistencia',
+    hint: 'Leva ao borracheiro mais próximo, em até 20 km',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Auxílio na falta de combustível', grupo: 'assistencia',
+    hint: 'Leva o veículo até o posto mais próximo, em até 20 km',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Hospedagem em hotel', grupo: 'assistencia',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Táxi', grupo: 'assistencia',
+    carros: ['25 km', '50 km', '100 km', '150 km'],
+    suv: '100 km', moto: null, especial: '100 km' },
+
+  { label: 'Retorno a domicílio', grupo: 'assistencia',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Socorro mecânico / elétrico', grupo: 'assistencia',
+    hint: 'Socorro na hora da pane — o conserto não entra',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
+
+  { label: 'Clube de Benefícios', grupo: 'assistencia',
+    carros: ['', '', '', ''], suv: '', moto: '', especial: '' },
 ]
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -444,23 +516,67 @@ function renderComparisonPage(
     })
     .join('')
 
-  const rowsHTML = visibleRows
-    .map((row) => {
-      const cellsHTML = cols
-        .map((col) => {
-          const v = getCell(row, col)
-          if (v === null) {
-            return `<td class="cell no"><span class="cell-icon no">×</span></td>`
-          }
-          if (v === '') {
-            return `<td class="cell yes"><span class="cell-icon ok">✓</span></td>`
-          }
-          return `<td class="cell yes"><span class="cell-icon ok">✓</span><span class="cell-detail">${v}</span></td>`
-        })
-        .join('')
-      return `<tr><th class="row-label">${row.label}</th>${cellsHTML}</tr>`
-    })
-    .join('')
+  function rowsHTML(rows: CoverageRow[]): string {
+    return rows
+      .map((row) => {
+        const cellsHTML = cols
+          .map((col) => {
+            const v = getCell(row, col)
+            // O × cinza-claro de antes sumia na folha impressa e o cliente lia a linha
+            // inteira como incluída. Vermelho cheio + a palavra embaixo (21Go, 14/09/2026).
+            if (v === null) {
+              return `<td class="cell no"><span class="cell-icon no">✕</span><span class="cell-detail no">não incluso</span></td>`
+            }
+            if (v === '') {
+              return `<td class="cell yes"><span class="cell-icon ok">✓</span></td>`
+            }
+            return `<td class="cell yes"><span class="cell-icon ok">✓</span><span class="cell-detail">${v}</span></td>`
+          })
+          .join('')
+        const labelHTML = row.hint
+          ? `<span class="row-label-name">${row.label}</span><span class="row-label-hint">${row.hint}</span>`
+          : `<span class="row-label-name">${row.label}</span>`
+        return `<tr><th class="row-label">${labelHTML}</th>${cellsHTML}</tr>`
+      })
+      .join('')
+  }
+
+  /** Uma tabela fechada (cabeçalho dos planos + linhas), pra repetir o cabeçalho na 2ª página. */
+  function tabelaHTML(eyebrow: string, titulo: string, rows: CoverageRow[]): string {
+    if (rows.length === 0) return ''
+    return `<section class="comparison">
+      <table class="cmp-table${duasPaginas ? '' : ' densa'}">
+        <thead>
+          <tr>
+            <th class="cmp-corner">
+              <span class="cmp-corner-eyebrow">${eyebrow}</span>
+              <span class="cmp-corner-title">${titulo}</span>
+            </th>
+            ${colsHTML}
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHTML(rows)}
+        </tbody>
+      </table>
+    </section>`
+  }
+
+  const legendaHTML = `<div class="legenda">
+    <span class="legenda-item"><span class="cell-icon ok">✓</span> incluído no plano</span>
+    <span class="legenda-item"><span class="cell-icon no">✕</span> não incluso nesse plano</span>
+    <span class="legenda-nota">Valores e coberturas conforme o regulamento da 21Go.</span>
+  </div>`
+
+  const linhasCobertura = visibleRows.filter((r) => r.grupo === 'cobertura')
+  const linhasAssistencia = visibleRows.filter((r) => r.grupo === 'assistencia')
+
+  /**
+   * Duas paginas so quando a tabela e longa (os 4 planos de carro, SUV, especiais: 19-20 linhas).
+   * Moto tem 13 — partida em duas, a primeira pagina ficava com 5 linhas de meio palmo de altura
+   * cada, porque a tabela estica pra preencher a folha.
+   */
+  const duasPaginas = visibleRows.length > 14
 
   // O PDF vai na mao do cliente e sobrevive a conversa: o botao dele precisa
   // levar de volta pra quem fez a venda, nao pro rodizio da casa.
@@ -520,22 +636,49 @@ function renderComparisonPage(
 
     ${infoBlock}
 
-    <section class="comparison">
-      <table class="cmp-table">
-        <thead>
-          <tr>
-            <th class="cmp-corner">
-              <span class="cmp-corner-eyebrow">Comparativo</span>
-              <span class="cmp-corner-title">Coberturas e benefícios</span>
-            </th>
-            ${colsHTML}
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHTML}
-        </tbody>
-      </table>
+    ${
+      duasPaginas
+        ? tabelaHTML('Parte 1 de 2', 'O que está coberto', linhasCobertura)
+        : tabelaHTML('Comparativo', 'Coberturas e assistência 24h', visibleRows)
+    }
+
+    ${legendaHTML}
+
+    ${duasPaginas ? `
+    <div class="footer-meta">
+      Simulação criada em ${ctx.hoje} · válida até ${ctx.validade} · página 1 de 2
+    </div>
+
+  </div>
+
+  <div class="page">
+
+    <header class="hero">
+      <div class="brand">
+        ${
+          ctx.logoUrl
+            ? `<img src="${ctx.logoUrl}" class="brand-logo" alt="21Go"/>`
+            : `<span class="brand-text">21Go</span>`
+        }
+      </div>
+      <a class="wpp-btn" href="${linkWhatsApp}">
+        <span class="wpp-icon">💬</span>
+        <span class="wpp-text"><b>Falar no WhatsApp</b><br/>Seu consultor 21Go</span>
+      </a>
+    </header>
+
+    <section class="greet compacta">
+      <h1>Assistência 24 horas</h1>
+      <p class="greet-sub">
+        O que você pode acionar a qualquer hora, todos os dias, em qualquer lugar do Brasil —
+        para o seu <b>${input.placa ? `${input.placa} – ` : ''}${ctx.veiculoTitulo}</b>.
+      </p>
     </section>
+
+    ${tabelaHTML('Parte 2 de 2', 'O que você pode acionar', linhasAssistencia)}
+
+    ${legendaHTML}
+    ` : ''}
 
     <footer class="pdf-footer${input.consultorSlug ? ' so-botao' : ''}">
       ${
@@ -566,7 +709,7 @@ function renderComparisonPage(
     </footer>
 
     <div class="footer-meta">
-      Simulação criada em ${ctx.hoje} · válida até ${ctx.validade} · Atendimento em todo o Brasil
+      Simulação criada em ${ctx.hoje} · válida até ${ctx.validade}${duasPaginas ? ' · página 2 de 2' : ''} · Atendimento em todo o Brasil
     </div>
 
   </div>
@@ -696,6 +839,8 @@ function renderHTML(input: QuotePdfInput): string {
     flex-direction: column;
     overflow: hidden;
   }
+  /* Duas paginas: coberturas na 1, assistencia na 2. */
+  .page + .page { break-before: page; page-break-before: always; }
   .laranja { color: #F2911D; font-weight: 700; }
   .verde { color: #25C168; }
 
@@ -728,6 +873,7 @@ function renderHTML(input: QuotePdfInput): string {
 
   /* GREETING compacto */
   .greet { margin-bottom: 8px; }
+  .greet.compacta { margin-bottom: 10px; }
   .greet h1 {
     font-size: 16px; font-weight: 700;
     color: #0F172A; margin: 0 0 2px;
@@ -870,6 +1016,9 @@ function renderHTML(input: QuotePdfInput): string {
   }
   .cmp-table {
     width: 100%;
+    /* 100% da altura: com a tabela partida em duas paginas sobrava um bloco branco no pe
+       de cada uma — esticando, a folga vira respiro entre as linhas. */
+    height: 100%;
     border-collapse: collapse;
     font-size: 9.5px;
   }
@@ -937,31 +1086,62 @@ function renderHTML(input: QuotePdfInput): string {
   .cmp-table tbody tr:nth-child(even) { background: #FAFAFA; }
   .row-label {
     text-align: left;
-    padding: 5px 12px;
-    font-size: 9.5px; font-weight: 500;
+    padding: 10px 12px;
+    font-weight: 500;
     color: #1F2937;
   }
+  .row-label-name {
+    display: block;
+    font-size: 10.5px; font-weight: 600;
+    color: #0F172A; line-height: 1.25;
+  }
+  .row-label-hint {
+    display: block;
+    font-size: 8.5px; font-weight: 500;
+    color: #64748B; line-height: 1.3;
+    margin-top: 2px;
+  }
   .cell {
-    padding: 5px 6px;
+    padding: 10px 6px;
     text-align: center;
     border-left: 1px solid #F1F5F9;
     vertical-align: middle;
   }
-  .cell.no { opacity: 0.45; }
   .cell-icon {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 14px; height: 14px;
+    width: 17px; height: 17px;
     border-radius: 50%;
-    font-size: 9px; font-weight: 800;
+    font-size: 10.5px; font-weight: 800;
     flex-shrink: 0; line-height: 1;
   }
   .cell-icon.ok { background: #25C168; color: #fff; }
-  .cell-icon.no { background: #E5E7EB; color: #94A3B8; }
+  /* Vermelho cheio, mesmo peso do verde: na folha impressa o cinza de antes sumia. */
+  .cell-icon.no { background: #E5484D; color: #fff; }
   .cell-detail {
     display: block;
-    font-size: 8.5px; font-weight: 500;
+    font-size: 9px; font-weight: 500;
     color: #64748B;
-    margin-top: 2px; line-height: 1.2;
+    margin-top: 3px; line-height: 1.25;
+  }
+  .cell-detail.no { color: #C2262A; font-weight: 600; }
+  /* Pagina unica (moto): as 13 linhas com explicacao nao cabem no respiro da versao de
+     duas paginas — estouravam o rodape, que e cortado pelo overflow da .page. */
+  .cmp-table.densa .row-label { padding: 3px 12px; }
+  .cmp-table.densa .cell { padding: 3px 6px; }
+  .cmp-table.densa .row-label-hint { line-height: 1.2; }
+
+  .legenda {
+    display: flex; align-items: center; gap: 14px;
+    padding: 6px 12px; margin-bottom: 6px;
+    font-size: 8.5px; color: #475569;
+  }
+  .legenda-item {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-weight: 600;
+  }
+  .legenda-nota {
+    margin-left: auto;
+    color: #94A3B8; font-style: italic;
   }
 
   /* FOOTER compacto */
