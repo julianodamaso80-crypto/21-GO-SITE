@@ -52,6 +52,11 @@ interface Caso {
   espera?: RegExp[]
   evita?: RegExp[]
   gatilho?: SaidaCerebro['gatilho']
+  /**
+   * Pergunta fechada: a resposta nao pode passar deste tamanho. Dono (14/09/2026): "nunca
+   * responder em excesso, se ele perguntou algo explica aqui e nao inventa a mais".
+   */
+  maximo?: number
   /** Fora do Rio (sem adesivo). */
   foraDoRio?: boolean
   pagaHoje?: number
@@ -95,7 +100,6 @@ const CASOS: Caso[] = [
   { id: 'taxi', ctx: 'ka', pergunta: 'como funciona o táxi?', espera: [/2 pessoas/i] },
   { id: 'retorno-domicilio', ctx: 'ka', pergunta: 'e se eu passar mal dirigindo?', espera: [/20 ?km/, /retorno a domic[íi]lio/i] },
   { id: 'carro-amigo', ctx: 'ka', pergunta: 'o que é o carro amigo?', gatilho: 'sem_informacao', espera: [/confirmar/i] },
-  { id: 'som-do-carro', ctx: 'ka', pergunta: 'cobre roubo do som e das rodas?', gatilho: 'sem_informacao', espera: [/confirmar/i] },
   { id: 'indicacao', ctx: 'ka', pergunta: 'se eu indicar um amigo ganho o que?', espera: [/50 reais|50,00|R\$ ?50/i, /10%/] },
   { id: 'pagamento', ctx: 'ka', pergunta: 'como eu pago a mensalidade?', espera: [/boleto/i, /aplicativo|app\b/i, /pix/i], evita: [/carn[êe]|whatsapp/i] },
   { id: 'vencimento', ctx: 'ka', pergunta: 'qual o dia do vencimento?', espera: [/\b10\b/, /\b20\b/] },
@@ -115,7 +119,7 @@ const CASOS: Caso[] = [
   { id: 'passageiros', ctx: 'ka', pergunta: 'cobre os passageiros se eu bater?', espera: [/n[ãa]o/i], evita: [/confirmar/i] },
   { id: 'alagamento', ctx: 'ka', pergunta: 'se o carro alagar na enchente cobre?', espera: [/fen[ôo]menos|cota|100%/i], evita: [/confirmar/i] },
   { id: 'exterior', ctx: 'ka', pergunta: 'se eu viajar pro Uruguai continuo protegido?', espera: [/n[ãa]o|brasil|território/i], evita: [/confirmar/i] },
-  { id: 'fipe-mes', ctx: 'ka', pergunta: 'se roubarem, pagam a fipe de quando?', espera: [/m[êe]s/i, /sinistro|roubo/i], evita: [/confirmar/i] },
+  { id: 'fipe-mes', ctx: 'ka', pergunta: 'se roubarem, pagam a fipe de quando?', espera: [/m[êe]s/i, /sinistro|roubo|ocorrido|aconteceu|fato/i], evita: [/confirmar/i] },
   { id: 'reajuste', ctx: 'ka', pergunta: 'a mensalidade sobe todo ano?', espera: [/n[ãa]o/i], evita: [/confirmar/i] },
   { id: 'parabrisa-basico', ctx: 'ka', pergunta: 'o básico cobre para-brisa?', espera: [/70%/], evita: [/n[ãa]o cobre/i] },
   { id: 'moto-reserva', ctx: 'moto', pergunta: 'tem moto reserva ou táxi?', espera: [/n[ãa]o/i], evita: [/confirmar/i] },
@@ -123,6 +127,15 @@ const CASOS: Caso[] = [
   // dono, 12/09/2026 (noite): responde o que foi perguntado e espera — nada de cota, valor ou "posso seguir?"
   { id: 'filho-dirige', ctx: 'ka', pergunta: 'se meu filho dirigir o carro e bater como fica?', espera: [/livre condutor/i], evita: [/cota|6%|R\$|ativa[çc][ãa]o|posso (dar andamento|seguir)|quer que eu/i] },
   { id: 'sem-cnh-curto', ctx: 'ka', pergunta: 'não tenho CNH, posso fazer?', espera: [/pode|sim|normal/i], evita: [/posso (dar andamento|seguir)|quer que eu|qual plano/i] },
+  // Prints do dono de 14/09/2026 — ela respondia certo e emendava o que ninguem perguntou.
+  { id: 'excesso-roubo-furto', ctx: 'ka', pergunta: 'Cobre roubo e furto também?',
+    espera: [/cobre sim/i], evita: [/100%|cota de participa|fipe/i], maximo: 120, gatilho: null },
+  { id: 'excesso-carro-reserva', ctx: 'ka', pergunta: 'tem carro reserva no vip?',
+    espera: [/7 dias|07 dias|sete dias/i], evita: [/ativa[çc][ãa]o|R\$ ?2\d\d|desconto/i], maximo: 190, gatilho: null },
+  { id: 'excesso-vou-ver-concorrente', ctx: 'ka',
+    antes: [['out', 'o valor certinho de hoje pro seu carro no plano básico é R$ 172,70']],
+    pergunta: 'Entendi, vou ver com a Atual e dependendo do valor que eles me passarem eu volto a falar com vocês.',
+    evita: [/desconto|placa|qual plano|quando (voc[êe]|vc) (pretende|fecha)/i], maximo: 220, gatilho: null },
   { id: 'financiado-outro-nome', ctx: 'ka', pergunta: 'o carro é financiado e tá no nome do meu pai. se der perda total, o dinheiro vai pra quem?', espera: [/d[ée]bitos|pend[êe]ncias|financiamento/i, /documento|registrad|propriet/i], evita: [/confirmar/i] },
 ]
 
@@ -163,6 +176,7 @@ async function rodarCaso(c: Caso): Promise<{ ok: boolean; motivos: string[]; res
   if (c.gatilho !== undefined && s.gatilho !== c.gatilho) motivos.push(`gatilho ${s.gatilho} (esperado ${c.gatilho})`)
   if (ROBO.test(s.resposta)) motivos.push('frase de robô')
   if (EMPURRAO.test(s.resposta) && !/fechar|contrat|ativa/i.test(c.pergunta)) motivos.push('empurrou venda sem ele pedir')
+  if (c.maximo && s.resposta.length > c.maximo) motivos.push(`resposta em excesso: ${s.resposta.length} caracteres (maximo ${c.maximo})`)
   if (s.reprovados.length) motivos.push(`validador reprovou: ${s.reprovados.join(', ')}`)
   if (/deixa eu confirmar aqui/.test(s.resposta) && c.gatilho !== 'sem_informacao') motivos.push('caiu na resposta segura (JSON ilegível 2x)')
   return { ok: motivos.length === 0, motivos, resposta: s.resposta, gatilho: s.gatilho }
