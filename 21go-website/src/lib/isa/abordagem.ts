@@ -182,9 +182,12 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
  * coberturas. Quem nao responder nem a essa nao recebe mais nada.
  *
  * Travas, as mesmas do primeiro: ISA_RETOMADA=on, 8h-22h, template APPROVED+UTILITY, qualidade
- * do numero e allowlist. E, como no 5min, `isa_config.retomada.ligado_em` marca a virada da
- * chave: quem foi abordado ANTES de ligar nunca entra — a lista velha de quem sumiu nao vira
- * rajada no dia em que isso for ligado.
+ * do numero e allowlist.
+ *
+ * Pega TODO mundo que passou dos 10 min, inclusive quem ja estava parado antes de isto existir
+ * (dono, 14/09/2026: "pode disparar para todos com mais de 10 minutos"). Nao ha corte por data
+ * de proposito: o freio e o POR_RODADA do cron de 1 min (5 por minuto) e o
+ * `retomada_sem_resposta_em`, que garante uma vez por pessoa para sempre.
  */
 export async function retomarSemResposta(): Promise<{ enviados: number; motivo?: string }> {
   if (process.env.ISA_RETOMADA !== 'on') return { enviados: 0, motivo: 'desligada' }
@@ -193,10 +196,6 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
 
   const cfg = (await lerConfig<Config5min>('retomada')) ?? {}
   if (cfg.suspenso_em) return { enviados: 0, motivo: 'suspensa' }
-  if (!cfg.ligado_em) {
-    await gravarConfig('retomada', { ligado_em: agora.toISOString() })
-    return { enviados: 0, motivo: 'ligou_agora' }
-  }
   if (!(await templateLiberado(TEMPLATE_RETOMADA, 'templateRetomada', 'a retomada dos 10 min'))) {
     return { enviados: 0, motivo: 'template_nao_liberado' }
   }
@@ -210,10 +209,9 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
         AND c.ultimo_inbound_em IS NULL
         AND c.retomada_sem_resposta_em IS NULL
         AND c.abordagem5min_em < now() - interval '10 minutes'
-        AND c.abordagem5min_em > $1::timestamptz
       ORDER BY c.abordagem5min_em
-      LIMIT $2`,
-    [cfg.ligado_em, POR_RODADA],
+      LIMIT $1`,
+    [POR_RODADA],
   )
 
   let enviados = 0
