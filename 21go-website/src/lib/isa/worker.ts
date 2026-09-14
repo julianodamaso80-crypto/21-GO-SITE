@@ -25,7 +25,7 @@ import {
 import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente } from '@/lib/isa/acoes'
 import { alertarDono, alertarPergunta } from '@/lib/isa/alertas'
-import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao, ehSoCumprimento, mensagemCumprimento, perguntouTudoBem } from '@/lib/isa/venda.regras'
+import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao, ehSoCumprimento, mensagemCumprimento, perguntouTudoBem, ehSoAgradecimento, mensagemAgradecimento } from '@/lib/isa/venda.regras'
 import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor, AGUARDANDO_FECHA_QUANDO, mensagemTentarDesconto, mensagemVouFalarComSupervisor, mensagemTentarDeNovo } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
@@ -366,6 +366,17 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     const texto = mensagemCumprimento({ cumprimento: cumprimento(agora), primeiroNome: primeiroNomeDe(c.nome ?? lead?.nome ?? null), eleJaPerguntouTudoBem: perguntouTudoBem(textoNovas) })
     await registrarEvento(c.telefone, 'cumprimento', { por: 'codigo' })
     const enviou = await enviarComoGente(c, [texto], ultimaInbound, visto)
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
+
+  // "obrigado" / "valeu, tchau" sozinho: uma linha e PARA. Dono (14/09/2026): "cliente ja
+  // agradeceu, nao inventa" — a Isa agradecia de volta e emendava "me diz, como posso te ajudar?",
+  // reabrindo a conversa que ela mesma tinha fechado. Depois do "oi" de proposito: "bom dia" e
+  // cumprimento, nao despedida.
+  if (novas.length === 1 && ehSoAgradecimento(textoNovas) && c.aguardando_dono !== AGUARDANDO_FECHA_QUANDO) {
+    await registrarEvento(c.telefone, 'agradecimento', { por: 'codigo' })
+    const enviou = await enviarComoGente(c, [mensagemAgradecimento()], ultimaInbound, visto)
     await liberar(c.telefone, visto, enviou)
     return enviou
   }

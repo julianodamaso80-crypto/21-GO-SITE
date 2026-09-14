@@ -14,6 +14,7 @@ import {
   jaPerguntouProtecao,
   PERGUNTA_TEM_PROTECAO,
   ehSoCumprimento,
+  ehSoAgradecimento,
   mensagemCumprimento,
   perguntouTudoBem,
 } from '../../src/lib/isa/venda.regras.ts'
@@ -115,4 +116,19 @@ test('"oi" sozinho: resposta simpatica pelo codigo, sem placa (dono, 13/09/2026)
   assert.equal(mensagemCumprimento({ cumprimento: 'bom dia', primeiroNome: null, eleJaPerguntouTudoBem: false }), 'bom dia, tudo bem? 😃 como posso te ajudar?')
   assert.match(mensagemCumprimento({ cumprimento: 'boa tarde', primeiroNome: 'Ana', eleJaPerguntouTudoBem: true }), /^boa tarde, Ana! tudo ótimo por aqui, e você\? 😃 me diz, como posso te ajudar\?$/)
   assert.ok(perguntouTudoBem('boa noite, tudo bem?') && !perguntouTudoBem('oi'))
+})
+
+test('ehSoAgradecimento: "obrigado" seco encerra, "ok" e "vou pensar" nao', () => {
+  // Dono (14/09/2026): cliente ja agradeceu, a Isa respondeu "por nada! me diz, como posso te
+  // ajudar?" e reabriu a conversa que ela mesma tinha fechado.
+  for (const t of ['Obrigado', 'obrigada!', 'valeu', 'vlw', 'obg', 'brigado', 'grato', 'tchau',
+                   'até mais', 'obrigado 🙏', 'valeu, tchau']) {
+    assert.ok(ehSoAgradecimento(t), t)
+  }
+  // "ok"/"entendi" costumam vir esperando o proximo passo dela, e "vou pensar" tem resposta
+  // pronta propria — nenhum dos dois pode virar "imagina!".
+  for (const t of ['ok', 'entendi', 'beleza', 'vou pensar', 'obrigado, qual o valor?',
+                   'obrigado por enquanto vou ver com a atual', '']) {
+    assert.ok(!ehSoAgradecimento(t), t)
+  }
 })

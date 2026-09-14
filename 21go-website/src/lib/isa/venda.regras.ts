@@ -216,6 +216,34 @@ export function mensagemCumprimento(p: { cumprimento: string; primeiroNome: stri
   return `${p.cumprimento}${nome}, tudo bem? 😃 como posso te ajudar?`
 }
 
+/* ───────────────────────── "obrigado" ───────────────────────── */
+
+const SO_AGRADECIMENTO =
+  /^(?:(?:muito |mto |mt )?(?:obrigad[oa]+|brigad[oa]+|obg|obgd|grat[oa]|valeu|vlw|falou|tchau|at[eé] mais|at[eé] logo|at[eé] breve|abra[cç]o|bom final de semana)[\s,!.?]*)+$/
+
+/**
+ * A mensagem e SO agradecimento ou despedida ("obrigado", "valeu, tchau").
+ *
+ * Fica de fora de proposito o "ok"/"entendi"/"beleza" (ele costuma estar esperando o proximo
+ * passo dela) e o "vou pensar" (tem resposta pronta propria). Diferente de `ehDespedida`, que e
+ * mais larga porque so decide se a RETOMADA espera.
+ */
+export function ehSoAgradecimento(texto: string | null | undefined): boolean {
+  const t = norm(texto).replace(/[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u200d\ufe0f]/gu, '').trim()
+  return !!t && SO_AGRADECIMENTO.test(t)
+}
+
+/**
+ * Resposta ao "obrigado": uma linha, sem pergunta, sem puxar assunto.
+ *
+ * Dono (14/09/2026): *"falando demais aqui tb, cliente ja agradeceu, nao inventa"*. A Isa tinha
+ * acabado de dizer "quando quiser e so me chamar" e emendou "me diz, como posso te ajudar?",
+ * reabrindo a conversa que ela mesma fechou.
+ */
+export function mensagemAgradecimento(): string {
+  return 'imagina! 🙏🏼'
+}
+
 export function perguntouTudoBem(texto: string | null | undefined): boolean {
   return /\b(tudo (bem|bom|certo)|td (bem|bom)|como vai|beleza)\b/.test(norm(texto))
 }
