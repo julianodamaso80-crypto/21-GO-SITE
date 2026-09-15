@@ -51,6 +51,16 @@ export function partesComCitacao(texto: string, wamids: (string | undefined)[]):
   })
 }
 
+/**
+ * Tira a marcacao [1], [2]... que a IA usa pra dizer qual mensagem cada parte responde. E anotacao
+ * INTERNA: o cliente nunca pode ver. Em 15/09/2026 saiu "[2] podemos sim! pra gente seguir..." pro
+ * Pierre, porque dois caminhos do worker mandavam o texto da IA por dividirEmPartes, que nao
+ * limpava. Agora a limpeza mora no envio, por onde TODA parte passa: caminho novo nao vaza.
+ */
+export function semMarcaDeParte(texto: string): string {
+  return texto.replace(/^\s*\[\d{1,2}\]\s*/, '')
+}
+
 const palavras = (s: string) => s.split(/\s+/).filter(Boolean).length
 
 /** Segundos de "digitando..." entre a parte que acabou de sair e a proxima. */

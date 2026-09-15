@@ -39,7 +39,7 @@ import {
 import { transcrever } from '@/lib/isa/transcrever'
 import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, nomeDoDoc, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura, type TipoMidia } from '@/lib/isa/ler-midia.regras'
-import { dividirEmPartes, partesComCitacao, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
+import { dividirEmPartes, partesComCitacao, semMarcaDeParte, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao } from '@/lib/isa/entrega.regras'
@@ -840,6 +840,8 @@ export async function enviarComoGente(
   // Lista = partes ja montadas (a simulacao vai inteira numa mensagem); texto = divide na linha em branco.
   const partes: ParteEnvio[] = (Array.isArray(texto) ? texto : dividirEmPartes(texto))
     .map((p) => (typeof p === 'string' ? { texto: p, citar: null } : p))
+    // a marcacao [1], [2] e interna: nunca chega no cliente, venha de que caminho vier
+    .map((p) => ({ ...p, texto: semMarcaDeParte(p.texto) }))
     .filter((p) => p.texto)
   if (partes.length === 0) return false
 

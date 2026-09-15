@@ -107,3 +107,17 @@ test('[CORTADO]: so o marcador e "nao entendeu"; frase + marcador vai pra IA ped
   assert.ok(ehInaudivel('[INAUDIVEL] [CORTADO]'))
   assert.ok(!ehInaudivel('queria saber se vocês fazem carro de [CORTADO]'))
 })
+
+test('a marcacao [1],[2] e interna e NUNCA chega no cliente (dono, 15/09/2026)', async () => {
+  const { semMarcaDeParte } = await import('../../src/lib/isa/envio.regras.ts')
+  // o caso do Pierre: saiu "[2] podemos sim! pra gente seguir com o plano basico..."
+  assert.equal(semMarcaDeParte('[2] podemos sim! pra gente seguir'), 'podemos sim! pra gente seguir')
+  assert.equal(semMarcaDeParte('[10] pode fazer normalmente'), 'pode fazer normalmente')
+  assert.equal(semMarcaDeParte('  [1]   com espaco antes'), 'com espaco antes')
+  // texto sem marcacao fica intacto
+  assert.equal(semMarcaDeParte('bom dia, Pierre'), 'bom dia, Pierre')
+  // colchete no MEIO da frase nao e marcacao: nao mexe
+  assert.equal(semMarcaDeParte('o valor [2] vezes'), 'o valor [2] vezes')
+  // nao confunde com numero solto
+  assert.equal(semMarcaDeParte('2 saidas por mes'), '2 saidas por mes')
+})
