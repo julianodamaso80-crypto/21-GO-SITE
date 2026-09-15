@@ -168,3 +168,16 @@ test('gostar do plano NAO e fechar: documento e a ultima etapa (dono, 14/09/2026
     assert.equal(querFechar(t), true, t)
   }
 })
+
+test('condicional e "eu te chamo" NAO sao fechar (dono, 15/09/2026, print do cliente)', async () => {
+  const { querFechar } = await import('../../src/lib/isa/entrega.regras.ts')
+  // a frase exata que fez a Isa pedir documento sem motivo
+  assert.equal(querFechar('Entendi obrigado caso eu for fechar com vocês eu entro em contato obrigado.'), false)
+  for (const t of ['se eu fechar hoje tem desconto?', 'quando eu for fechar eu te chamo', 'depois eu falo com você', 'qualquer coisa eu chamo', 'talvez eu feche semana que vem']) {
+    assert.equal(querFechar(t), false, t)
+  }
+  // e o que continua valendo como fechar
+  for (const t of ['vou fechar', 'quero contratar', 'pode dar sequência', 'Blz, vou fechar e agora?', 'fechado']) {
+    assert.equal(querFechar(t), true, t)
+  }
+})

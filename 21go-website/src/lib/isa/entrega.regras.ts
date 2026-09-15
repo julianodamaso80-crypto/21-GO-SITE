@@ -148,8 +148,19 @@ export function escolheuPlano(texto: string | null | undefined): boolean {
 const QUER_FECHAR =
   /\b(?:vou|quero|vamos|bora|pode|podemos)\s+(?:fechar|contratar|ativar)\b|\bfechar\s+(?:com|o|no|essa|isso)\b|\bfechado\b|\bvamo(?:s)?\s+nessa\b|\bcomo\s+(?:eu\s+)?fa(?:ç|c)o\s+pra\s+(?:fechar|contratar|ativar)\b|\bpode\s+(?:dar\s+sequ(?:ê|e)ncia|seguir|prosseguir)\b|\bquero\s+(?:fazer|come(?:ç|c)ar)\s+(?:a\s+)?(?:ativa(?:ç|c)(?:ã|a)o|contrato)\b/i
 
+/**
+ * "caso eu for fechar com voces eu entro em contato" NAO e fechar: e adiar. Dono, 15/09/2026:
+ * "se ele falou que entra em contato vc nao tinha que pedir doc pra ele". O verbo sob condicional
+ * (se / caso / quando / assim que) e o "eu te chamo depois" viram espera, nunca pedido de documento.
+ */
+const FECHAR_CONDICIONAL = /\b(se|caso|quando|assim que|talvez)\b[^.?!\n]{0,24}\b(fechar|contratar|ativar)\b/i
+const ELE_QUE_VAI_CHAMAR =
+  /\b(entro|entrarei|entramos)\s+em\s+contato\b|\bte\s+(chamo|aviso|falo|retorno)\b|\bqualquer\s+coisa\s+(eu\s+)?(chamo|falo|aviso)\b|\bdepois\s+(eu\s+)?(falo|chamo|vejo|retorno)\b/i
+
 export function querFechar(texto: string | null | undefined): boolean {
-  return QUER_FECHAR.test(texto || '')
+  const t = texto || ''
+  if (FECHAR_CONDICIONAL.test(t) || ELE_QUE_VAI_CHAMAR.test(t)) return false
+  return QUER_FECHAR.test(t)
 }
 
 /** `comemorar` = false quando a IA acabou de responder (ela ja comemorou; duas vezes soa robo). */
