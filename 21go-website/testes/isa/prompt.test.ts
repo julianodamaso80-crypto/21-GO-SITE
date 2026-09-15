@@ -336,3 +336,13 @@ test('nada de travessao nem aspas: o dono viu "cara de ia" no print da Deiselane
   // e vale pro texto que a IA escreve, passando por comporResposta
   assert.doesNotMatch(comporResposta(null, 'te mando o PDF — dá uma olhada'), /[—–"]/)
 })
+
+test('km do reboque conta do local do ASSOCIADO, nunca da base do guincho (dono, 15/09/2026)', async () => {
+  const { GABARITO_21GO } = await import('../../src/lib/isa/prompt.regras.ts')
+  // "mas a ida conta de onde o guincho esta?" — nao: a empresa aciona o guincho mais proximo
+  assert.match(GABARITO_21GO, /aciona o guincho MAIS PRÓXIMO de onde o associado está/)
+  assert.match(GABARITO_21GO, /a conta começa no local dele, nunca na base do guincho/)
+  assert.match(GABARITO_21GO, /500 km da volta do guincho até o lugar onde o associado estava/)
+  // o texto antigo dizia "voltar a base" e era o que ela respondia errado
+  assert.doesNotMatch(GABARITO_21GO, /500 km pra o guincho voltar à base/)
+})
