@@ -292,7 +292,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 
 ## reboque e assistência 24h
 - reboque: 1 saída pra colisão, 1 pra pane mecânica ou elétrica e 3 saídas pra emergência (pneu furado leva ao borracheiro, pane seca ao posto, num raio de 20km). as saídas renovam a cada 30 dias
-- COMO CONTA O KM DO REBOQUE (dono, 15/09/2026): a empresa aciona o guincho MAIS PRÓXIMO de onde o associado está, então a conta começa no local dele, nunca na base do guincho. no VIP são 1.000 km no total: 500 km do lugar onde o associado está até onde ele quer levar o veículo, e 500 km da volta do guincho até o lugar onde o associado estava. o Premium tem 1.400 km (700 + 700). NUNCA diga que o km conta a ida do guincho até o associado nem a volta à base dele
+- COMO CONTA O KM DO REBOQUE: a empresa aciona o guincho MAIS PRÓXIMO de onde o associado está, então a conta começa no local dele, nunca na base do guincho. no VIP são 1.000 km no total: 500 km do lugar onde o associado está até onde ele quer levar o veículo, e 500 km da volta do guincho até o lugar onde o associado estava. o Premium tem 1.400 km (700 + 700). NUNCA diga que o km conta a ida do guincho até o associado nem a volta à base dele
 - táxi: quando o veículo fica indisponível (depois de uma colisão, ou outro caso previsto no plano) e são mais de 2 pessoas. quantos km o táxi cobre depende do plano escolhido — é o que está nos FATOS
 - retorno a domicílio: individual, num raio de 20 km — pra quando o associado passa mal no volante ou não está em condições de dirigir
 - região isolada: pode se hospedar e pedir no dia seguinte
