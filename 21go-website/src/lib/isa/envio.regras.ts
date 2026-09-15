@@ -61,6 +61,21 @@ export function semMarcaDeParte(texto: string): string {
   return texto.replace(/^\s*\[\d{1,2}\]\s*/, '')
 }
 
+/**
+ * Chegaram varias mensagens: quais ficaram SEM resposta. A IA marca cada parte com [1], [2]...
+ * e e por ai que o envio cita o balao certo. Dono, 15/09/2026: a Lara perguntou da regiao e das
+ * formas de pagamento, e a Isa respondeu so a primeira, sem citar nenhuma. Agora o cerebro
+ * confere e manda reescrever quando falta alguma.
+ */
+export function marcasQueFaltam(resposta: string, quantasMensagens: number): number[] {
+  if (quantasMensagens < 2) return []
+  const tem = new Set<number>()
+  for (const m of resposta.matchAll(/(?:^|\n)\s*\[(\d{1,2})\]/g)) tem.add(Number(m[1]))
+  const faltam: number[] = []
+  for (let i = 1; i <= quantasMensagens; i++) if (!tem.has(i)) faltam.push(i)
+  return faltam
+}
+
 const palavras = (s: string) => s.split(/\s+/).filter(Boolean).length
 
 /** Segundos de "digitando..." entre a parte que acabou de sair e a proxima. */

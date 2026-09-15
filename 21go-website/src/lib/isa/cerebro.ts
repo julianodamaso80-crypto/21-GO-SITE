@@ -1,5 +1,6 @@
 import 'server-only'
 import { montarPrompt, comporResposta, abertura, tirarCumprimento, tirarNomeRepetido, ehRepeticao, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
+import { marcasQueFaltam } from '@/lib/isa/envio.regras'
 import { validarNumeros, extrairNumeros, type Permitidos } from '@/lib/isa/validador.regras'
 import { tirarFrasesDeRobo, comparacaoComHoje } from '@/lib/isa/venda.regras'
 import { lerJsonTolerante } from '@/lib/isa/json.regras'
@@ -166,7 +167,8 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
 
   // O que o cliente mandou desde a ultima resposta da Isa.
   const iUltimaNossa = e.historico.map((m) => m.direction).lastIndexOf('outbound')
-  const doCliente = e.historico.slice(iUltimaNossa + 1).filter((m) => m.direction === 'inbound').map((m) => m.content).join('\n')
+  const novasDoCliente = e.historico.slice(iUltimaNossa + 1).filter((m) => m.direction === 'inbound' && (m.content || '').trim())
+  const doCliente = novasDoCliente.map((m) => m.content).join('\n')
 
   let bruto = await chamarIA(conversa)
   let saida: Omit<SaidaCerebro, 'reprovados'>
@@ -251,6 +253,22 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
   if (vazaInterno(saida.resposta)) {
     console.warn('[isa] resposta barrada (vazamento/fora do assunto):', saida.resposta.slice(0, 200))
     saida = { ...saida, resposta: comporResposta('fora_do_assunto', '', aberturaDoCodigo), gatilho: null }
+  }
+
+  // Ele mandou 2 ou mais mensagens e a resposta deixou alguma de fora: manda reescrever UMA vez.
+  // Dono, 15/09/2026: "se o cliente mandou 2 mensagens vc vai clicar em responder cada mensagem
+  // que ele perguntou... use sempre essa funcao quando ele mandar 2 ou mais mensagens".
+  const faltam = marcasQueFaltam(saida.resposta, novasDoCliente.length)
+  if (faltam.length && saida.resposta) {
+    conversa.push({ role: 'assistant', content: JSON.stringify(saida) })
+    conversa.push({
+      role: 'user',
+      content:
+        `(instrução interna, não é o cliente) você deixou sem resposta a(s) mensagem(ns) ${faltam.map((n) => `[${n}]`).join(', ')}. ` +
+        'reescreva respondendo TODAS, uma parte por mensagem, cada parte começando com o número dela ' +
+        '(ex.: "[2] o pagamento pode ser..."), separadas por linha em branco. mesmo formato JSON.',
+    })
+    saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo, nome)
   }
 
   let v = validarNumeros(saida.resposta, permitidos)

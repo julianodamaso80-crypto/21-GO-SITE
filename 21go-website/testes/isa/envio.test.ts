@@ -121,3 +121,18 @@ test('a marcacao [1],[2] e interna e NUNCA chega no cliente (dono, 15/09/2026)',
   // nao confunde com numero solto
   assert.equal(semMarcaDeParte('2 saidas por mes'), '2 saidas por mes')
 })
+
+test('2 mensagens = responde as DUAS, citando cada uma (dono, 15/09/2026, caso da Lara)', async () => {
+  const { marcasQueFaltam } = await import('../../src/lib/isa/envio.regras.ts')
+  // o erro: ela respondeu so a regiao e deixou a pergunta de pagamento sem resposta
+  assert.deepEqual(marcasQueFaltam('vale sim, atendemos o brasil todo', 2), [1, 2])
+  assert.deepEqual(marcasQueFaltam('[1] vale sim, atendemos o brasil todo', 2), [2])
+  // respondeu as duas: nada falta
+  assert.deepEqual(marcasQueFaltam('[1] vale sim\n\n[2] boleto, pix ou cartão no app', 2), [])
+  // uma mensagem so nao precisa de marca nenhuma
+  assert.deepEqual(marcasQueFaltam('vale sim, atendemos o brasil todo', 1), [])
+  // tres mensagens
+  assert.deepEqual(marcasQueFaltam('[1] a\n\n[3] c', 3), [2])
+  // marca no MEIO da linha nao conta (tem que abrir a parte)
+  assert.deepEqual(marcasQueFaltam('o valor [2] vezes', 2), [1, 2])
+})
