@@ -51,3 +51,44 @@ export async function paraOggOpus(bytes: Buffer): Promise<Buffer | null> {
     ff.stdin.end(bytes)
   })
 }
+
+/**
+ * Audio do cliente pra TOCAR no painel. O WhatsApp entrega ogg/opus, que o Safari (e o app no
+ * iPhone) nao reproduz — vira mp4/aac, que toca em tudo. Dono, 14/09/2026: "tenho q conseguir
+ * escutar o audio que cliente enviar por completo".
+ */
+export async function paraM4a(bytes: Buffer): Promise<Buffer | null> {
+  return new Promise((resolve) => {
+    const ff = spawn('ffmpeg', [
+      '-hide_banner', '-loglevel', 'error',
+      '-i', 'pipe:0',
+      '-vn', '-map_metadata', '-1',
+      '-c:a', 'aac', '-b:a', '64k', '-ar', '44100', '-ac', '1',
+      // mp4 em pipe so fecha com fragmentado: sem isto o ffmpeg falha ao escrever o indice
+      '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
+      '-f', 'mp4', 'pipe:1',
+    ])
+    const partes: Buffer[] = []
+    let erro = ''
+    const fim = setTimeout(() => ff.kill('SIGKILL'), TIMEOUT_MS)
+    ff.stdout.on('data', (d: Buffer) => partes.push(d))
+    ff.stderr.on('data', (d: Buffer) => { erro += d.toString().slice(0, 300) })
+    ff.on('error', (err) => {
+      clearTimeout(fim)
+      console.warn('[isa] ffmpeg nao rodou (m4a):', err.message)
+      resolve(null)
+    })
+    ff.on('close', (code) => {
+      clearTimeout(fim)
+      const saida = Buffer.concat(partes)
+      if (code !== 0 || saida.length === 0) {
+        console.warn('[isa] conversao pra m4a falhou:', code, erro)
+        resolve(null)
+        return
+      }
+      resolve(saida)
+    })
+    ff.stdin.on('error', () => {})
+    ff.stdin.end(bytes)
+  })
+}

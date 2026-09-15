@@ -66,11 +66,16 @@ export function vazaInterno(resposta: string): boolean {
 const INICIO_DE_PERGUNTA =
   /^(quanto|qual|quais|como|onde|quando|porque|por que|pq|pode|posso|podem|aceita|aceitam|tem|teria|tenho que|cobre|cobrem|precisa|preciso|faz|fazem|voces|vcs|vc|e se|se eu|se o|se a|o que|oq|da pra|funciona|existe|sao|serve|vale|queria saber|gostaria de saber|me explica|duvida)\b/
 
+// Pergunta que nao comeca com palavra interrogativa nem tem "?" (dono, 14/09/2026: "Danos a
+// terceiros como funciona" foi engolido como se fosse resposta de outra coisa).
+const PERGUNTA_NO_MEIO =
+  /\b(como (que )?funciona|como (eu )?fa(c|ç)o|quanto (custa|fica|sai|e)|o que (e|significa|cobre|acontece)|tem como|me explica|me fala|queria saber|gostaria de saber|funciona como)\b/
+
 export function ehPergunta(texto: string | null | undefined): boolean {
   const t = (texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
   if (!t) return false
   if (t.includes('?')) return true
-  return t.split(/\n+/).some((linha) => INICIO_DE_PERGUNTA.test(linha.trim()))
+  return t.split(/\n+/).some((linha) => INICIO_DE_PERGUNTA.test(linha.trim()) || PERGUNTA_NO_MEIO.test(linha))
 }
 
 /** "Nao soube" de verdade: ele perguntou E a Isa disse que vai confirmar. So assim sai alerta. */
@@ -329,7 +334,7 @@ function blocoFatos(f: Fatos, comAdesivo: boolean): string {
   linhas.push(`veículo: ${v.descricao}${v.ano ? ` ${v.ano}` : ''}${v.fipe ? ` · FIPE ${brl(v.fipe)}` : ''}`)
   linhas.push(`tipo: ${v.moto ? 'moto' : v.eletrico ? 'carro elétrico/híbrido' : 'carro'}`)
   linhas.push(
-    `cota de participação: ${f.cotaPct}% do valor do veículo${f.cotaValor ? ` (${brl(f.cotaValor)})` : ''} — só paga em REPARO (colisão, batida, fenômeno da natureza, qualquer conserto). roubo, furto e perda total NÃO pagam cota`,
+    `cota de participação (a franquia): ${f.cotaPct}% do valor do veículo. diga SEMPRE a porcentagem, NUNCA o valor em reais, nem que ele peça "o valor da franquia" (dono). só paga em REPARO (colisão, batida, fenômeno da natureza, qualquer conserto). roubo, furto e perda total NÃO pagam cota`,
   )
   linhas.push(`indenização em roubo, furto ou perda total: ${f.indenizacaoPct}% da FIPE`)
   linhas.push(

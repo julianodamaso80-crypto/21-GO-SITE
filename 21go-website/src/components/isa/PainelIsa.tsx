@@ -812,6 +812,9 @@ function Balao({ it, aoCitar }: { it: ItemConversa; aoCitar?: () => void }) {
   const cliente = it.direcao === 'inbound'
   const isa = !cliente && (it.autor === 'isa' || it.autor === 'agent')
   const temMidia = (it.mensagem_tipo === 'image' || it.mensagem_tipo === 'document') && it.media_id
+  // Audio do cliente toca aqui dentro (dono, 14/09/2026). A rota converte ogg/opus em mp4/aac,
+  // senao o Safari e o app no iPhone nao reproduzem.
+  const ehAudio = it.mensagem_tipo === 'audio' && !!it.media_id
   return (
     <div className={`mb-2 flex ${cliente ? 'justify-start' : 'justify-end'}`}>
       <div className={`max-w-[85%] md:max-w-[62%] ${cliente ? '' : 'text-right'}`}>
@@ -827,6 +830,13 @@ function Balao({ it, aoCitar }: { it: ItemConversa; aoCitar?: () => void }) {
               ? 'rounded-tr-sm border-l-2 border-[#C7D301] bg-[#293C82] text-white'
               : 'rounded-tr-sm bg-[#F2911D]/20 text-[#FFE4C4] ring-1 ring-[#F2911D]/30'
         }`}>
+          {ehAudio && (
+            <audio
+              controls
+              preload="metadata"
+              src={`/api/atendimento/midia?id=${encodeURIComponent(it.media_id!)}`}
+              className="mb-1 block w-full min-w-[220px] max-w-[260px]" />
+          )}
           {temMidia ? (
             <a href={`/api/atendimento/midia?id=${encodeURIComponent(it.media_id!)}`} target="_blank" rel="noreferrer" className="font-semibold underline">
               {it.mensagem_tipo === 'image' ? '🖼 abrir imagem' : '📄 abrir documento'}

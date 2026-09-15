@@ -86,7 +86,9 @@ test('cota em reais e valores dos beneficios oficiais tambem sao permitidos', ()
     numerosDosBeneficios: [50000],
   })
   assert.equal(f.cotaValor, 6992.4) // 6% de 116.540
-  assert.ok(f.numerosPermitidos.dinheiro.includes(6992.4))
+  // o VALOR da cota nao e numero permitido: dono, 14/09/2026, "qd perguntado da franquia vc
+  // fala somente a %, nao falar valor". Fora da lista, o validador barra se ela calcular.
+  assert.ok(!f.numerosPermitidos.dinheiro.includes(6992.4))
   assert.ok(f.numerosPermitidos.dinheiro.includes(50000))
   assert.deepEqual(f.planos[0].cobre, ['Danos a Terceiros R$50.000'])
   assert.deepEqual(f.planos[0].naoCobre, ['Todos os Vidros'])

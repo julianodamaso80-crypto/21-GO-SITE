@@ -383,7 +383,12 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   // Protocolo do desconto (dono, 12/09/2026), etapa 2: a Isa perguntou "se eu conseguir, você
   // pretende fechar quando?" e ele respondeu — a resposta vai no aviso pro supervisor e ela pausa.
-  if (c.aguardando_dono === AGUARDANDO_FECHA_QUANDO) {
+  //
+  // Mas se em vez de responder ele PERGUNTOU ("Danos a terceiros como funciona", "Tem cota?"),
+  // isso nao e o "quando": antes, as duas perguntas eram descartadas e ela so dizia "vou falar
+  // com ele" (dono, 14/09/2026: "ela viajou mt, nao respondeu dano a terceiro"). Agora a pergunta
+  // cai no caminho normal, ela responde, e o protocolo segue esperando o "quando".
+  if (c.aguardando_dono === AGUARDANDO_FECHA_QUANDO && !ehPergunta(textoNovas)) {
     const enviou = await enviarComoGente(c, [mensagemVouFalarComSupervisor()], ultimaInbound, visto)
     await pedirDescontoAoDono(c, { quando: textoNovas.trim() })
     await liberar(c.telefone, visto, enviou)

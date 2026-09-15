@@ -170,7 +170,9 @@ export async function abrirConversa(telefone: string): Promise<{ contato: Contat
     `SELECT (created_at AT TIME ZONE 'UTC') AS em, direction, sender, content, message_type,
             whatsapp_message_id AS wamid,
             COALESCE(raw_payload #>> '{entry,0,changes,0,value,messages,0,image,id}',
-                     raw_payload #>> '{entry,0,changes,0,value,messages,0,document,id}') AS media
+                     raw_payload #>> '{entry,0,changes,0,value,messages,0,document,id}',
+                     -- audio do cliente: sem isto o painel nao tinha o que tocar
+                     raw_payload #>> '{entry,0,changes,0,value,messages,0,audio,id}') AS media
      FROM public.messages
      WHERE conversation_id = $1 AND evolution_instance = 'cloud_isa'
      ORDER BY created_at DESC LIMIT 300`,

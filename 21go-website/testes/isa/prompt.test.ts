@@ -38,8 +38,10 @@ test('se a IA cumprimentar mesmo assim, a linha sai (senao fica "boa tarde" duas
 
 test('moto leva cota de 15% no prompt, nunca 6%', () => {
   const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false })
-  assert.match(p, /cota de participação: 15%/)
-  assert.doesNotMatch(p, /cota de participação: 6%/)
+  assert.match(p, /cota de participação \(a franquia\): 15%/)
+  assert.doesNotMatch(p, /cota de participação \(a franquia\): 6%/)
+  // a % vai; o valor em reais NUNCA (dono, 14/09/2026)
+  assert.match(p, /NUNCA o valor em reais/)
 })
 
 test('genero desconhecido: pelo nome e sem deduzir; conhecido: senhor/senhora', () => {

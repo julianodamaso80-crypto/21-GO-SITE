@@ -159,7 +159,9 @@ export function montarFatos(e: EntradaFatos): Fatos {
   const dinheiro = new Set<number>(NUMEROS_FIXOS.dinheiro)
   const cotaValor = e.fipe ? r2((e.fipe * cotaPct) / 100) : null
   if (e.fipe) dinheiro.add(r2(e.fipe))
-  if (cotaValor) dinheiro.add(cotaValor)
+  // O VALOR da cota nao entra: dono, 14/09/2026, "qd perguntado da franquia vc fala somente
+  // a %, nao falar valor". Fora da lista, o validador barra se a IA calcular por conta.
+  // O campo continua existindo pra quem precisa dele fora da conversa.
   for (const v of e.numerosDosBeneficios || []) dinheiro.add(r2(v))
   if (e.fipe && e.leilao) dinheiro.add(r2(e.fipe * 0.8))
   if (e.ativacaoReferencia) dinheiro.add(r2(e.ativacaoReferencia))
