@@ -69,12 +69,20 @@ interface Simulacao {
   planos: { nome: string; mensal: number }[]
 }
 
-const ABAS: { id: Aba; rotulo: string }[] = [
-  { id: 'precisa', rotulo: 'Precisa de você' },
-  { id: 'todos', rotulo: 'Todos' },
-  { id: 'isa', rotulo: 'Isa' },
-  { id: 'off', rotulo: 'Off' },
-  { id: 'transferidos', rotulo: 'Transferidos' },
+/**
+ * Uma cor por aba (dono, 14/09/2026: "off deixa na cor laranja, precisa de vc deixa amarelo,
+ * melhora essas cores"). Antes so "Precisa de voce" tinha cor e o resto era cinza.
+ *
+ * Laranja e amarelo sao os da marca (#F2911D, #C7D301). O azul da marca (#293C82) e escuro demais
+ * pra ler sobre o fundo #141d45, entao a aba da Isa usa um azul clareado da mesma familia.
+ * A cor vai em `style`: o Tailwind nao gera classe a partir de variavel.
+ */
+const ABAS: { id: Aba; rotulo: string; cor: string }[] = [
+  { id: 'precisa', rotulo: 'Precisa de você', cor: '#C7D301' },
+  { id: 'todos', rotulo: 'Todos', cor: '#E9ECF8' },
+  { id: 'isa', rotulo: 'Isa', cor: '#7B9BE8' },
+  { id: 'off', rotulo: 'Off', cor: '#F2911D' },
+  { id: 'transferidos', rotulo: 'Transferidos', cor: '#9AA6C8' },
 ]
 
 const MOTIVO: Record<string, string> = {
@@ -323,12 +331,17 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
             const urgente = a.id === 'precisa' && precisa > 0
             return (
               <button key={a.id} onClick={() => setAba(a.id)}
-                className={`relative shrink-0 rounded-full px-3 py-1.5 text-[13px] font-semibold uppercase tracking-wide transition [font-family:var(--fonte-rotulo)] ${
-                  ativo ? (urgente ? 'bg-[#F2911D] text-[#141d45]' : 'bg-[#E9ECF8] text-[#141d45]') : urgente ? 'bg-[#F2911D]/15 text-[#F2911D]' : 'bg-white/[0.05] text-white/60 hover:text-white'
-                }`}>
+                className="relative shrink-0 rounded-full px-3 py-1.5 text-[13px] font-semibold uppercase tracking-wide transition [font-family:var(--fonte-rotulo)] hover:brightness-110"
+                style={ativo
+                  ? { backgroundColor: a.cor, color: '#141d45' }
+                  // 26 = ~15% de opacidade em hex: a cor aparece apagada e o texto fica legivel
+                  : { backgroundColor: `${a.cor}26`, color: a.cor }}>
                 {a.rotulo}
-                {a.id === 'precisa' && precisa > 0 && (
-                  <span className={`ml-1.5 rounded-full px-1.5 text-[11px] ${ativo ? 'bg-[#141d45] text-[#F2911D]' : 'bg-[#F2911D] text-[#141d45]'}`}>{precisa}</span>
+                {urgente && (
+                  <span className="ml-1.5 rounded-full px-1.5 text-[11px]"
+                    style={ativo ? { backgroundColor: '#141d45', color: a.cor } : { backgroundColor: a.cor, color: '#141d45' }}>
+                    {precisa}
+                  </span>
                 )}
               </button>
             )
