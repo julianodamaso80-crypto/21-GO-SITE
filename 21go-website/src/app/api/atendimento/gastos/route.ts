@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
-import { resumirGastos, pontosDaResposta } from '@/lib/isa/gastos.regras'
+import { resumirGastos, pontosDaResposta, janelaDoPedido } from '@/lib/isa/gastos.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,8 +14,6 @@ export const dynamic = 'force-dynamic'
  * A metrica e `pricing_analytics`: a `conversation_analytics` parou de devolver custo quando a
  * Meta passou a cobrar por MENSAGEM em vez de por conversa. O custo vem em DOLAR.
  */
-const MAX_DIAS = 90
-
 export async function GET(req: NextRequest) {
   if (!sessaoDoRequest(req)) return NextResponse.json({ erro: 'sem sessao' }, { status: 401 })
 
@@ -23,10 +21,11 @@ export async function GET(req: NextRequest) {
   const token = (process.env.WA_TOKEN || '').trim()
   if (!waba || !token) return NextResponse.json({ erro: 'WABA da Isa sem configuração no servidor' }, { status: 503 })
 
-  const pedido = Number(req.nextUrl.searchParams.get('dias') || 30)
-  const dias = Number.isFinite(pedido) ? Math.min(Math.max(Math.trunc(pedido), 1), MAX_DIAS) : 30
-  const fim = Math.floor(Date.now() / 1000)
-  const inicio = fim - dias * 86400
+  // O CRM manda `de`/`ate` (o filtro personalizado da tela); `dias` segue valendo como atalho.
+  const p = req.nextUrl.searchParams
+  const { de, ate, inicio, fim, dias } = janelaDoPedido({
+    dias: p.get('dias'), de: p.get('de'), ate: p.get('ate'),
+  })
 
   const url = new URL(`https://graph.facebook.com/v22.0/${encodeURIComponent(waba)}`)
   url.searchParams.set(
@@ -64,5 +63,5 @@ export async function GET(req: NextRequest) {
     // sem a moeda o CRM nao converte nada, que e o lado seguro do erro
   }
 
-  return NextResponse.json({ waba, dias, moeda, ...resumirGastos(pontosDaResposta(corpo)) })
+  return NextResponse.json({ waba, dias, de, ate, moeda, ...resumirGastos(pontosDaResposta(corpo)) })
 }
