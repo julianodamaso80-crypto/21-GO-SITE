@@ -20,19 +20,20 @@ test('o erro que o dono quer evitar: 10h no Rio ja sao 13h UTC, e continua bom d
   assert.equal(cumprimento(dezDaManha), 'bom dia')
 })
 
-test('horario de atendimento 8h ate 22h (22h ja e fora)', () => {
-  assert.equal(dentroDoHorario(rio('07:59')), false)
+test('horario de atendimento 7h ate 22h (22h ja e fora) — dono, 15/09/2026', () => {
+  assert.equal(dentroDoHorario(rio('06:59')), false)
+  assert.equal(dentroDoHorario(rio('07:00')), true)
   assert.equal(dentroDoHorario(rio('08:00')), true)
   assert.equal(dentroDoHorario(rio('21:59')), true)
   assert.equal(dentroDoHorario(rio('22:00')), false)
   assert.equal(dentroDoHorario(rio('23:30')), false)
 })
 
-test('proxima abertura: de madrugada e hoje as 8h; depois das 22h e amanha as 8h', () => {
-  assert.equal(proximaAbertura(rio('03:00')).toISOString(), rio('08:00').toISOString())
-  assert.equal(proximaAbertura(rio('23:10')).toISOString(), rio('08:00', '2026-09-11').toISOString())
+test('proxima abertura: de madrugada e hoje as 7h; depois das 22h e amanha as 7h', () => {
+  assert.equal(proximaAbertura(rio('03:00')).toISOString(), rio('07:00').toISOString())
+  assert.equal(proximaAbertura(rio('23:10')).toISOString(), rio('07:00', '2026-09-11').toISOString())
   // Virada de mes
-  assert.equal(proximaAbertura(rio('22:30', '2026-09-30')).toISOString(), rio('08:00', '2026-10-01').toISOString())
+  assert.equal(proximaAbertura(rio('22:30', '2026-09-30')).toISOString(), rio('07:00', '2026-10-01').toISOString())
 })
 
 test('cumprimenta no comeco, no primeiro contato do dia e depois de 4 h — nao a cada mensagem', () => {

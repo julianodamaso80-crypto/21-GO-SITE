@@ -8,7 +8,8 @@
 
 export type Cumprimento = 'bom dia' | 'boa tarde' | 'boa noite'
 
-const ABRE = 8
+// Dono, 15/09/2026: o atendimento comeca as 7h (era 8h).
+const ABRE = 7
 const FECHA = 22
 
 function horaMinutoRio(d: Date): { h: number; m: number; ano: number; mes: number; dia: number } {

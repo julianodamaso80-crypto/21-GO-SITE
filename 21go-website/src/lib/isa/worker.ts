@@ -15,7 +15,6 @@ import {
   reiniciarContato,
   humanoFalouDepois,
   textosLidos,
-  contatosSemAvisoForaDoHorario,
   adiarRetomada,
   jaPediuDocumentos,
   sql,
@@ -74,7 +73,6 @@ export async function processarFila(): Promise<ResultadoFila> {
   const noHorario = dentroDoHorario(agora)
   // Fora do horario so os numeros de teste do dono (ele testa 24 h); cliente espera as 8h.
   const teste = numerosDeTeste({ allowlist: process.env.ISA_ALLOWLIST, alerta: numeroDeAlerta() })
-  if (!noHorario) await avisarForaDoHorario(teste).catch((err) => console.error('[isa] aviso fora do horario:', err))
   if (!noHorario && teste.length === 0) return { processados: 0, respondidos: 0, foraDoHorario: true }
   if (noHorario) await retomarSumidos().catch((err) => console.error('[isa] retomada:', err))
 
@@ -97,21 +95,16 @@ export async function processarFila(): Promise<ResultadoFila> {
   }
 }
 
-const MENSAGEM_FORA_HORARIO = 'oi! nosso atendimento é das 8h às 22h 🙏🏼\n\nassim que abrir eu te respondo por aqui, pode deixar'
-
 /**
- * 22h-8h: quem escreveu recebe UM aviso por noite dizendo que a resposta vem as 8h (antes era
- * silencio ate de manha). Atras de ISA_AVISO_FORA_HORARIO=on ate o dono aprovar o texto.
+ * FORA DO HORARIO ELA FICA MUDA. Aqui havia um aviso ("nosso atendimento e das 8h as 22h"), que
+ * chegou a sair pra 4 clientes. Dono, 15/09/2026: "se o associado mandar mensagem e vc tiver fora
+ * do horario vc nao vai responder nada, vai ficar muda, e qd der seu horario de comecar vc vai dar
+ * bom dia e vai responder oq ele perguntou... humano nao avisa que horario e tal, ele atende ou
+ * nao atende".
+ *
+ * A mensagem dele nao se perde: soltarSemProcessar solta a trava sem mexer no processado_ate,
+ * entao as 7h a fila pega a conversa e responde, com o cumprimento da hora certa.
  */
-async function avisarForaDoHorario(teste: string[]): Promise<void> {
-  if (process.env.ISA_AVISO_FORA_HORARIO !== 'on') return
-  for (const c of await contatosSemAvisoForaDoHorario(teste)) {
-    if (!destinoPermitido(c.telefone)) continue
-    await atualizarContato(c.telefone, { aviso_fora_horario_em: new Date().toISOString() })
-    const enviou = await enviarComoGente(c, MENSAGEM_FORA_HORARIO, undefined, c.ultimo_inbound_em)
-    await registrarEvento(c.telefone, 'aviso_fora_horario', { enviou })
-  }
-}
 
 const ADIAR_DESPEDIDA_MS = 20 * 60 * 60 * 1000
 
