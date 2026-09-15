@@ -50,5 +50,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ erro: 'a Meta não respondeu' }, { status: 502 })
   }
 
-  return NextResponse.json({ waba, dias, moeda: 'USD', ...resumirGastos(pontosDaResposta(corpo)) })
+  // A MOEDA DA CONTA decide se o valor precisa de conversao. A WABA da Isa ("21 Go - Vendas")
+  // e BRL: em 14/09/2026 o painel multiplicou por 5,50 e mostrou 5x o gasto real.
+  let moeda: string | null = null
+  try {
+    const r = await fetch(`https://graph.facebook.com/v22.0/${encodeURIComponent(waba)}?fields=currency`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10_000),
+      cache: 'no-store',
+    })
+    moeda = ((await r.json().catch(() => ({}))) as { currency?: string }).currency ?? null
+  } catch {
+    // sem a moeda o CRM nao converte nada, que e o lado seguro do erro
+  }
+
+  return NextResponse.json({ waba, dias, moeda, ...resumirGastos(pontosDaResposta(corpo)) })
 }
