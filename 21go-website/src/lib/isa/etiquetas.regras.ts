@@ -1,6 +1,10 @@
 /**
- * Etiquetas dos contatos da Isa — pra organizar e filtrar no painel e no CRM (dono, 11/09/2026:
- * "falta enviar doc, mandei pra vistoria, quente, frio, vai fechar, algumas coisas assim").
+ * Etiquetas dos contatos da Isa — pra organizar e filtrar no painel e no CRM.
+ *
+ * Dono (15/09/2026): so estas 4 — "falando com leticya, enviou documento, frio, fechou". As
+ * colunas do funil sao estas mesmas etiquetas (ver `funil.regras.ts`), com os mesmos ids, e por
+ * isso a ordem aqui e a do funil: Frio por ultimo.
+ *
  * Lista fechada: etiqueta digitada solta vira bagunca no filtro. Logica pura.
  */
 
@@ -13,20 +17,22 @@ export interface Etiqueta {
 }
 
 export const ETIQUETAS: Etiqueta[] = [
-  { id: 'quente', nome: 'Quente', cor: '#F2911D', claro: false },
-  { id: 'vai_fechar', nome: 'Vai fechar', cor: '#C7D301', claro: true },
-  { id: 'falta_doc', nome: 'Falta documento', cor: '#FDE68A', claro: true },
-  { id: 'vistoria', nome: 'Vistoria', cor: '#93C5FD', claro: true },
-  // Carro amassado/com defeito: a Leticya avalia pelas fotos (dono, 12/09/2026).
-  { id: 'avaria', nome: 'Avaria (avaliar)', cor: '#FCA5A5', claro: true },
+  { id: 'leticya', nome: 'Falando com Leticya', cor: '#F2911D', claro: false },
+  { id: 'documento', nome: 'Enviou documento', cor: '#93C5FD', claro: true },
   { id: 'fechou', nome: 'Fechou', cor: '#22C55E', claro: false },
   { id: 'frio', nome: 'Frio', cor: '#64748B', claro: false },
-  { id: 'sem_retorno', nome: 'Sem retorno', cor: '#CBD5E1', claro: true },
 ]
 
 const IDS = new Set(ETIQUETAS.map((e) => e.id))
 
-/** So ids conhecidos, sem repetir, na ordem da lista oficial. */
+/**
+ * So ids conhecidos, sem repetir, na ordem da lista oficial.
+ *
+ * As etiquetas que o dono cortou em 15/09/2026 (quente, vai_fechar, falta_doc, vistoria, avaria,
+ * sem_retorno) continuam gravadas em `isa_contatos.etiquetas` e simplesmente param de aparecer —
+ * `ChipEtiqueta` ignora id desconhecido. Nada e apagado do banco: basta devolver a etiqueta a
+ * lista pra marcacao antiga voltar a tela.
+ */
 export function normalizarEtiquetas(lista: unknown): string[] {
   if (!Array.isArray(lista)) return []
   const pedidas = new Set(lista.filter((x): x is string => typeof x === 'string' && IDS.has(x)))
@@ -35,4 +41,25 @@ export function normalizarEtiquetas(lista: unknown): string[] {
 
 export function etiquetaValida(id: string | null | undefined): boolean {
   return !!id && IDS.has(id)
+}
+
+/**
+ * Etiquetas que a Isa usa como ESTADO, nao como rotulo: ficam gravadas no contato mas nao
+ * aparecem na tela nem no filtro. Hoje so 'avaria' — ela e a memoria de que a Isa pediu as fotos
+ * do amassado, e e o que faz a proxima foto ir pra Leticya (`worker.ts`). Saiu da tela em
+ * 15/09/2026 junto com as outras, mas apagar do banco desligaria essa transferencia.
+ */
+export const ETIQUETAS_DE_SISTEMA: readonly string[] = ['avaria']
+
+/**
+ * O que gravar quando alguem mexe nas etiquetas pelo painel: as escolhidas na tela, mantendo o
+ * estado interno que o contato ja tinha. Sem isso, o primeiro clique numa etiqueta zerava o
+ * 'avaria' e a foto do amassado deixava de ser transferida.
+ */
+export function etiquetasParaGravar(pedidas: unknown, gravadas: unknown): string[] {
+  const escolhidas = normalizarEtiquetas(pedidas)
+  const manter = Array.isArray(gravadas)
+    ? ETIQUETAS_DE_SISTEMA.filter((id) => gravadas.includes(id) && !escolhidas.includes(id))
+    : []
+  return [...escolhidas, ...manter]
 }

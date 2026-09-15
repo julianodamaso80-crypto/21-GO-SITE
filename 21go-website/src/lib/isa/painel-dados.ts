@@ -86,7 +86,6 @@ export async function listarFunil(): Promise<CardFunil[]> {
   const linhas = await sql<
     Omit<CardFunil, 'etapa' | 'plano' | 'valor'> & {
       planos: { id: string; name: string; monthly: number }[] | null
-      tem_simulacao: boolean
       escolheu: boolean
       documento: boolean
     }
@@ -95,7 +94,6 @@ export async function listarFunil(): Promise<CardFunil[]> {
             NULLIF(TRIM(CONCAT_WS(' ', l.marca_interesse, l.modelo_interesse, l.ano_interesse)), '') AS veiculo,
             l.valor_fipe_consultado AS fipe, l.cotacao_planos AS planos,
             u.content AS ultima, (u.created_at AT TIME ZONE 'UTC') AS ultima_em,
-            (l.id IS NOT NULL) AS tem_simulacao,
             EXISTS (SELECT 1 FROM public.isa_eventos e WHERE e.telefone = c.telefone AND e.tipo = 'pediu_documentos') AS escolheu,
             (c.pausa_motivo = 'documento') AS documento
      FROM public.isa_contatos c
@@ -123,7 +121,6 @@ export async function listarFunil(): Promise<CardFunil[]> {
       valor: p?.monthly ?? null,
       etapa: etapaDoCard({
         etapa: l.etapa_manual,
-        temSimulacao: !!l.tem_simulacao,
         escolheuPlano: !!l.escolheu,
         mandouDocumento: !!l.documento,
       }),
