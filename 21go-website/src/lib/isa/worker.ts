@@ -333,10 +333,15 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // PLACA E ACHADA PELO CODIGO, nunca pela IA (bug de 11/09/2026: "Pyv8i13" virou um HB20 inventado,
   // sem consulta, sem lead no Power e sem PDF). Placa nova na mensagem = consulta direto.
   const placaDita = placaNoTexto(novas.map((m) => m.content).join('\n'))
-  const placaDoLead = (lead?.placa_interesse || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
   const textoNovas = novas.map((m) => m.content).join('\n')
   const cumprimentarAgora = precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora)
-  if (placaDita && placaDita !== placaDoLead) {
+  // Placa que o CLIENTE digitou e SEMPRE pedido de cotacao, mesmo sendo a mesma de antes. Aqui
+  // havia um `placaDita !== placaDoLead` que pulava a cotacao quando a placa ja estava no lead:
+  // em 14/09/2026 o Guilherme reenviou a mesma placa pedindo a cotacao do carro certo, a mensagem
+  // caiu na IA e ela prometeu ("ja puxo a simulacao") sem cotar nada, e ainda inventou "assim que
+  // o sistema carregar". Dono: "era so vc ter feito a cotacao normal do veiculo, nao sei pq foi
+  // inventar... vai seguir mesmo padrao, pergunta se tem leilao e se roda em app e faz a cotacao".
+  if (placaDita) {
     await registrarEvento(c.telefone, 'placa', { placa: placaDita, por: 'codigo' })
     // Dono (11/09/2026): chegou a placa, pergunta leilao e aplicativo juntos ANTES dos valores —
     // a nao ser que ele ja tenha dito na mesma mensagem.
