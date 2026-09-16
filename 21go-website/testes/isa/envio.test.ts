@@ -149,3 +149,31 @@ test('falha passageira da Meta tenta de novo; erro de regra nao (Rafael, 15/09/2
     assert.equal(ehFalhaPassageira(m), false, m)
   }
 })
+
+test('2 mensagens seguidas em turnos separados: a resposta CITA a mensagem (dono, 16/09/2026)', async () => {
+  const { citarMensagemRespondida } = await import('../../src/lib/isa/envio.regras.ts')
+  const agora = new Date('2026-09-16T16:07:00Z')
+  const m = (id: string, dir: string, seg: number, content = 'x') =>
+    ({ direction: dir, content, whatsapp_message_id: id, criada_em: new Date(agora.getTime() - seg * 1000).toISOString() })
+  // o caso real: "moto seria 257,40" e "carro seria 269,53" com segundos de diferenca
+  const hist = [m('w_moto', 'inbound', 60), m('isa1', 'outbound', 50), m('w_carro', 'inbound', 40)]
+  const partes = [{ texto: 'isso mesmo, pro carro o vip e 269,53', citar: null }]
+  assert.equal(citarMensagemRespondida(partes, hist, agora)[0].citar, 'w_carro')
+
+  // mensagem unica, sem outra dele por perto: nao cita
+  const so = [m('isa0', 'outbound', 400), m('w_um', 'inbound', 30)]
+  assert.equal(citarMensagemRespondida(partes, so, agora)[0].citar, null)
+
+  // a outra mensagem dele e antiga (fora da janela): nao conta
+  const antiga = [m('w_velha', 'inbound', 3600), m('w_nova', 'inbound', 20)]
+  assert.equal(citarMensagemRespondida(partes, antiga, agora)[0].citar, null)
+
+  // ja citado pelo [n]: nao sobrescreve
+  const jaCitada = [{ texto: 'a', citar: 'w_x' }]
+  assert.equal(citarMensagemRespondida(jaCitada, hist, agora)[0].citar, 'w_x')
+
+  // resposta em varias partes: cita so a primeira, como no WhatsApp
+  const varias = citarMensagemRespondida([{ texto: 'a', citar: null }, { texto: 'b', citar: null }], hist, agora)
+  assert.equal(varias[0].citar, 'w_carro')
+  assert.equal(varias[1].citar, null)
+})

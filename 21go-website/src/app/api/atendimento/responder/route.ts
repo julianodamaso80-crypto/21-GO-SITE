@@ -45,6 +45,9 @@ export async function POST(req: NextRequest) {
       message_type: 'text',
       content: texto,
       sent_at: new Date().toISOString(),
+      // Guarda QUAL mensagem foi citada, pro painel mostrar o balao de resposta. Sem isso a citacao
+      // chegava no WhatsApp do cliente, mas no painel a mensagem aparecia solta (dono, 16/09/2026).
+      raw_payload: citar ? { context: { message_id: citar } } : undefined,
     })
   } catch (err) {
     if (err instanceof EnvioBloqueado) {

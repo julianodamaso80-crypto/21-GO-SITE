@@ -87,6 +87,32 @@ export function ehFalhaPassageira(mensagem: string): boolean {
   return /\(#(1|2|4)\)|\b(131000|133004|130429|80007)\b|temporarily unavailable|service unavailable|try again later|timeout|timed out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|fetch failed|socket hang up|\b50[0234]\b/i.test(mensagem)
 }
 
+/**
+ * O cliente mandou 2 ou mais mensagens em sequencia, mas elas chegaram com segundos de diferenca
+ * e viraram turnos separados, cada um com UMA mensagem. partesComCitacao so cita quando chegam
+ * juntas, entao nada era citado. Dono, 16/09/2026 (moto e carro, 13:06): "cliente mandou 2
+ * mensagem ou mais vc tem q responder a mensagem que ele mandou, selecionar o responder e sempre
+ * responder cada mensagem separada".
+ *
+ * Se houve 2+ mensagens dele nos ultimos minutos, a primeira parte cita a que esta sendo
+ * respondida (a mais recente). Uma so vez por resposta, como no WhatsApp. Citacao ja feita pelo
+ * [n] nao e sobrescrita.
+ */
+export function citarMensagemRespondida(
+  partes: ParteEnvio[],
+  historico: { direction: string; content: string; whatsapp_message_id: string; criada_em: string }[],
+  agora: Date,
+  janelaMs = 3 * 60_000,
+): ParteEnvio[] {
+  if (partes.length === 0 || partes.some((p) => p.citar)) return partes
+  const doCliente = historico.filter((m) => m.direction === 'inbound' && (m.content || '').trim())
+  const recentes = doCliente.filter((m) => agora.getTime() - new Date(m.criada_em).getTime() < janelaMs)
+  if (recentes.length < 2) return partes
+  const alvo = doCliente[doCliente.length - 1]?.whatsapp_message_id
+  if (!alvo) return partes
+  return partes.map((p, i) => (i === 0 ? { ...p, citar: alvo } : p))
+}
+
 const palavras = (s: string) => s.split(/\s+/).filter(Boolean).length
 
 /** Segundos de "digitando..." entre a parte que acabou de sair e a proxima. */

@@ -40,6 +40,8 @@ interface ItemConversa {
   media_id?: string | null
   /** id da mensagem no WhatsApp: e o que permite responder CITANDO ela. */
   wamid?: string | null
+  /** wamid da mensagem que esta respondeu: vira o balao de citacao em cima do texto. */
+  citou?: string | null
   evento?: string
   detalhe?: Record<string, unknown> | null
 }
@@ -487,6 +489,9 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
 
   const jan = janela(contato?.janela_ate ?? null)
   const nome = contato?.nome || telefoneBonito(telefone)
+  // Pra achar a mensagem citada por um balao sem varrer a lista a cada render.
+  const porWamid = useMemo(() => new Map(itens.filter((i) => i.wamid).map((i) => [i.wamid as string, i])), [itens])
+
   const dias = useMemo(() => {
     const out: { dia: string; itens: ItemConversa[] }[] = []
     for (const it of itens) {
@@ -588,7 +593,8 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             <p className="my-4 text-center text-[11px] uppercase tracking-[0.2em] text-white/30 [font-family:var(--fonte-rotulo)]">{d.dia}</p>
             {d.itens.map((it, i) => (it.tipo === 'evento'
               ? <Evento key={i} it={it} />
-              : <Balao key={i} it={it} aoCitar={it.wamid ? () => setCitando(it) : undefined} />))}
+              : <Balao key={i} it={it} citado={it.citou ? porWamid.get(it.citou) : undefined}
+                  aoCitar={it.wamid ? () => setCitando(it) : undefined} />))}
           </div>
         ))}
         <div ref={fim} />
@@ -837,7 +843,7 @@ function BotaoAnexo({
   )
 }
 
-function Balao({ it, aoCitar }: { it: ItemConversa; aoCitar?: () => void }) {
+function Balao({ it, aoCitar, citado }: { it: ItemConversa; aoCitar?: () => void; citado?: ItemConversa }) {
   const cliente = it.direcao === 'inbound'
   const isa = !cliente && (it.autor === 'isa' || it.autor === 'agent')
   const temMidia = (it.mensagem_tipo === 'image' || it.mensagem_tipo === 'document') && it.media_id
@@ -859,6 +865,16 @@ function Balao({ it, aoCitar }: { it: ItemConversa; aoCitar?: () => void }) {
               ? 'rounded-tr-sm border-l-2 border-[#C7D301] bg-[#293C82] text-white'
               : 'rounded-tr-sm bg-[#F2911D]/20 text-[#FFE4C4] ring-1 ring-[#F2911D]/30'
         }`}>
+          {/* Balao de citacao, como no WhatsApp: mostra a mensagem que esta respondeu. Antes a
+              citacao ia pro cliente mas aqui a mensagem aparecia solta (dono, 16/09/2026). */}
+          {citado && (
+            <span className="mb-1.5 block rounded-md border-l-2 border-[#F2911D] bg-black/15 px-2 py-1 text-[12.5px] leading-snug">
+              <span className="block font-semibold opacity-80">
+                {citado.direcao === 'inbound' ? 'cliente' : citado.autor === 'isa' ? 'Isa' : citado.autor}
+              </span>
+              <span className="line-clamp-2 block opacity-75">{citado.conteudo || 'mensagem'}</span>
+            </span>
+          )}
           {ehAudio && (
             <audio
               controls

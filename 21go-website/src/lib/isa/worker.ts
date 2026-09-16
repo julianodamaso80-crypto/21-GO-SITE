@@ -40,7 +40,7 @@ import {
 import { transcrever } from '@/lib/isa/transcrever'
 import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, nomeDoDoc, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura, type TipoMidia } from '@/lib/isa/ler-midia.regras'
-import { dividirEmPartes, partesComCitacao, semMarcaDeParte, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
+import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, semMarcaDeParte, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao } from '@/lib/isa/entrega.regras'
@@ -564,7 +564,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   }
 
   const enviou = saida.resposta
-    ? await enviarComoGente(c, partesComCitacao(saida.resposta, wamidsDasNovas), ultimaInbound, visto)
+    ? await enviarComoGente(c, citarMensagemRespondida(partesComCitacao(saida.resposta, wamidsDasNovas), hist, agora), ultimaInbound, visto)
     : false
 
   // Ele disse que QUER SEGUIR e a resposta nao pediu os documentos: o proximo passo vai pelo
@@ -901,6 +901,8 @@ export async function enviarComoGente(
         message_type: 'text',
         content: partes[i].texto,
         sent_at: new Date().toISOString(),
+        // mesma coisa pra citacao da Isa: sem gravar, o dono nao via que ela respondeu a mensagem certa
+        raw_payload: partes[i].citar ? { context: { message_id: partes[i].citar } } : undefined,
       }).catch((err) => console.error('[isa] resposta enviada mas nao gravada:', err))
     } catch (err) {
       const bloqueado = err instanceof EnvioBloqueado
