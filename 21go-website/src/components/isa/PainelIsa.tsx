@@ -97,6 +97,7 @@ const MOTIVO: Record<string, string> = {
   desconto: 'pediu desconto',
   manual: 'desligada no painel',
   humano_assumiu: 'humano assumiu',
+  loop: 'trava: mensagem demais sem resposta',
 }
 
 const EVENTO: Record<string, string> = {
@@ -124,6 +125,7 @@ const EVENTO: Record<string, string> = {
   '5min': 'mensagem dos 5 min enviada',
   botao_5min: 'tocou no botão dos 5 min',
   erro: 'erro',
+  trava_loop: 'TRAVA: Isa segurou mensagens repetidas e pausou',
 }
 
 const ETIQUETA_POR_ID = new Map(ETIQUETAS.map((e) => [e.id, e]))

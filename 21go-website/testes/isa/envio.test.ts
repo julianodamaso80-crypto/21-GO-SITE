@@ -183,3 +183,15 @@ test('2 mensagens seguidas em turnos separados: a resposta CITA a mensagem (dono
   assert.equal(varias[0].citar, 'w_carro')
   assert.equal(varias[1].citar, null)
 })
+
+test('trava geral: a Isa nunca manda mensagem demais sem o cliente responder (dono, 16/09/2026)', async () => {
+  const { passaDoLimiteSemResposta, LIMITE_SEM_RESPOSTA } = await import('../../src/lib/isa/envio.regras.ts')
+  assert.equal(LIMITE_SEM_RESPOSTA, 7)
+  // resposta normal: simulacao inteira (peraí + resultado + observacao + pergunta) depois do template dos 5 min
+  assert.equal(passaDoLimiteSemResposta(1, 4), false)
+  // + a retomada dos 10 min
+  assert.equal(passaDoLimiteSemResposta(5, 1), false)
+  // o loop do Carlos: 3 da 1a cotacao + 3 da 2a, e a 3a ja nao sai
+  assert.equal(passaDoLimiteSemResposta(6, 2), true)
+  assert.equal(passaDoLimiteSemResposta(7, 1), true)
+})

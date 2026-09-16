@@ -29,6 +29,7 @@ const MOTIVO_LEGIVEL: Record<string, string> = {
   qualidade: 'qualidade do numero caiu na Meta',
   template: 'template da mensagem dos 5 min deixou de ser utilidade aprovada',
   relatorio: 'relatorio diario da Isa',
+  loop: 'TRAVA: a Isa ia mandar mensagem demais sem o cliente responder — pausei e nada saiu',
 }
 
 export async function alertarDono(p: { telefone: string; nome: string | null; motivo: string; detalhe: string }): Promise<void> {

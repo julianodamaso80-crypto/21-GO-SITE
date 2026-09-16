@@ -40,7 +40,7 @@ import {
 import { transcrever } from '@/lib/isa/transcrever'
 import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, nomeDoDoc, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura, type TipoMidia } from '@/lib/isa/ler-midia.regras'
-import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, semMarcaDeParte, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
+import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca } from '@/lib/isa/entrega.regras'
@@ -880,6 +880,27 @@ export async function enviarComoGente(
     .map((p) => ({ ...p, texto: semCaraDeIa(semMarcaDeParte(p.texto)) }))
     .filter((p) => p.texto)
   if (partes.length === 0) return false
+
+  // Trava geral contra loop (ver passaDoLimiteSemResposta): conta o que a conversa ja recebeu desde
+  // a ultima mensagem dele, nas ultimas 2 horas. Estourou: nao manda nada, pausa e avisa o dono.
+  if (sender === 'isa') {
+    const [r] = await sql<{ n: string }>(
+      `SELECT count(*) AS n FROM public.messages m
+       WHERE m.conversation_id = $1 AND m.evolution_instance = 'cloud_isa' AND m.direction = 'outbound'
+         AND m.created_at > GREATEST(
+           now() - interval '2 hours',
+           COALESCE((SELECT max(i.created_at) FROM public.messages i
+                     WHERE i.conversation_id = $1 AND i.evolution_instance = 'cloud_isa' AND i.direction = 'inbound'),
+                    '-infinity'::timestamptz))`,
+      [c.conversation_id],
+    )
+    const jaEnviadas = Number(r?.n ?? 0)
+    if (passaDoLimiteSemResposta(jaEnviadas, partes.length)) {
+      await registrarEvento(c.telefone, 'trava_loop', { jaEnviadas, ia_mandar: partes.length, texto: partes[0].texto.slice(0, 120) })
+      await pausarEAvisar(c, 'loop', `a Isa ia mandar a ${jaEnviadas + 1}a mensagem sem o cliente responder — segurei, pausei e nada saiu. Confere a conversa.`)
+      return false
+    }
+  }
 
   if (ultimaInboundWamid) await marcarLidaEDigitando(ultimaInboundWamid)
   await dormir(1 + Math.random())

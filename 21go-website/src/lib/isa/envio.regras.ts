@@ -205,3 +205,18 @@ export function anexoRecusado(p: { tamanho: number; tipo: 'image' | 'document' }
   }
   return null
 }
+
+/**
+ * Trava geral contra loop: quantas mensagens a Isa pode mandar sem o cliente responder.
+ *
+ * Dono, 16/09/2026, depois das 14 simulacoes do Carlos: "nao deixa acontecer isso de novo". A
+ * correcao daquele defeito (jaCotouEssaPlaca) cobre aquele caminho; esta trava cobre QUALQUER
+ * caminho futuro. Uma resposta normal cabe folgado: template dos 5 min (1) + simulacao inteira
+ * (ate 4) + retomada dos 10 min (1). Passou disso sem ele escrever, e defeito: nao manda, pausa e
+ * avisa o dono.
+ */
+export const LIMITE_SEM_RESPOSTA = 7
+
+export function passaDoLimiteSemResposta(jaEnviadasSemResposta: number, vaiEnviar: number): boolean {
+  return jaEnviadasSemResposta + vaiEnviar > LIMITE_SEM_RESPOSTA
+}
