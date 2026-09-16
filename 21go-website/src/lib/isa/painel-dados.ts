@@ -45,7 +45,7 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Pr
   return sql<ItemLista>(
     `SELECT c.telefone, COALESCE(c.nome, cv.pushname) AS nome, c.ligada, c.pausa_motivo, c.transferido_em,
             c.aguardando_dono, c.preco_da_tabela, c.janela_ate, c.etiquetas, c.pergunta_pendente,
-            u.content AS ultima, u.direction AS ultima_direcao, (u.created_at AT TIME ZONE 'UTC') AS ultima_em
+            u.content AS ultima, u.direction AS ultima_direcao, (mov.em AT TIME ZONE 'UTC') AS ultima_em
      FROM public.isa_contatos c
      LEFT JOIN public.conversations cv ON cv.id = c.conversation_id
      LEFT JOIN LATERAL (
@@ -53,13 +53,27 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Pr
        WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa'
        ORDER BY m.created_at DESC LIMIT 1
      ) u ON true
+     -- Ordem do WhatsApp de verdade (dono, 16/09/2026: "quem mandar mensagem vai ficando acima"):
+     -- sobe quando o CLIENTE escreve ou quando o lead acabou de chegar. Mensagem automatica nossa
+     -- (resultado dos 5 min, retomada dos 10 min) nao mexe na ordem — era ela que empurrava quem
+     -- nunca respondeu pra cima de quem estava conversando.
+     LEFT JOIN LATERAL (
+       SELECT GREATEST(
+         (SELECT m.created_at FROM public.messages m
+          WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa' AND m.direction = 'inbound'
+          ORDER BY m.created_at DESC LIMIT 1),
+         (SELECT m.created_at FROM public.messages m
+          WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa'
+          ORDER BY m.created_at ASC LIMIT 1)
+       ) AS em
+     ) mov ON true
      WHERE c.conversation_id IS NOT NULL
        -- Dono (13/09/2026): TODO lead dos .site que nao clicou em "Quero contratar" entra aqui — quem
        -- clicou no desconto e quem recebeu a mensagem dos 5 min, respondendo ou nao.
        AND (${FILTRO[aba]})
        AND ($1 = '' OR c.telefone LIKE '%' || $1 || '%' OR COALESCE(c.nome, cv.pushname, '') ILIKE '%' || $1 || '%')
        AND ($2 = '' OR $2 = ANY(c.etiquetas))
-     ORDER BY u.created_at DESC NULLS LAST
+     ORDER BY mov.em DESC NULLS LAST
      LIMIT 500`,
     [termo, etiqueta],
   )
