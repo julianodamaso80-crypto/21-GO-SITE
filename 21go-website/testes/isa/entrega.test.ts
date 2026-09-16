@@ -196,3 +196,9 @@ test('placa ja cotada depois da ultima mensagem dele nao cota de novo (loop do C
   // sem data da mensagem nao arrisca pular
   assert.equal(jaCotouEssaPlaca('EES5918', { placa: 'EES5918', em: '2026-09-16T19:37:15.000Z' }, null), false)
 })
+
+test('todo BYD vai pro contato da Leticya, sem excecao (dono, 16/09/2026)', async () => {
+  const { ehByd } = await import('../../src/lib/isa/entrega.regras.ts')
+  for (const m of ['BYD', 'byd', ' BYD ', 'BYD King GS 1.5']) assert.equal(ehByd(m), true, m)
+  for (const m of ['Fiat', 'VW - VolksWagen', '', null]) assert.equal(ehByd(m), false, String(m))
+})

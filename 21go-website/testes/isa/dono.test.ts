@@ -126,3 +126,24 @@ test('pergunta pendente: o 4240 vira supervisor e "nao"/"ignora" pula (auditoria
   for (const t of ['não aceitamos motorhome', 'sim, cobre', '72 horas úteis']) assert.ok(!donoPulouPergunta(t), t)
   assert.match(mensagemRespostaConfirmada('  72 horas úteis '), /^consegui confirmar aqui 🙏🏼\n\n72 horas úteis$/)
 })
+
+test('desconto automatico na ativacao: R$ 70, ou R$ 100 acima de R$ 300 (dono, 16/09/2026)', async () => {
+  const { valorDoDescontoAutomatico, mensagemDescontoAutomatico, descontoAutomaticoNaHora, ESPERA_DESCONTO_MIN } = await import('../../src/lib/isa/dono.regras.ts')
+  assert.equal(valorDoDescontoAutomatico(249), 70)
+  assert.equal(valorDoDescontoAutomatico(300), 70)
+  assert.equal(valorDoDescontoAutomatico(300.01), 100)
+  assert.equal(valorDoDescontoAutomatico(719.52), 100)
+  // nunca deixa a ativacao zerada ou negativa
+  assert.equal(valorDoDescontoAutomatico(60), 0)
+
+  const m = mensagemDescontoAutomatico({ de: 277.41, para: 207.41 })
+  assert.match(m, /não pagar a ativação eu não consigo/)
+  assert.match(m, /o que eu consegui foi R\$ 70,00 de desconto/)
+  assert.match(m, /de R\$ 277,41 por R\$ 207,41/)
+
+  // volta 6 minutos depois de dizer que ia falar com o supervisor
+  assert.equal(ESPERA_DESCONTO_MIN, 6)
+  const pediu = new Date('2026-09-16T20:17:00Z')
+  assert.equal(descontoAutomaticoNaHora(pediu, new Date('2026-09-16T20:22:59Z')), false)
+  assert.equal(descontoAutomaticoNaHora(pediu, new Date('2026-09-16T20:23:00Z')), true)
+})

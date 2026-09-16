@@ -93,6 +93,7 @@ const TEXTO_TRANSFERENCIA: Record<string, string> = {
   documento: 'vou te passar pra Leticya, que vai finalizar com você 🙏🏼',
   associado: 'vou te passar pra Leticya, que cuida disso pra você 🙏🏼',
   sem_preco: 'vou pedir pra Leticya fazer a cotação do seu veículo com cuidado 🙏🏼',
+  byd: 'quem cuida da proteção do seu BYD é a Leticya, ela vai te atender pessoalmente 🙏🏼',
 }
 
 /** O cliente toca no numero e ELE escreve pro 4824 — o 4824 nunca manda a primeira mensagem. */
@@ -160,4 +161,30 @@ export function donoPulouPergunta(texto: string | null): boolean {
 /** Mensagem pro cliente com a resposta do dono, quando a IA nao reescreveu (rede). */
 export function mensagemRespostaConfirmada(resposta: string): string {
   return `consegui confirmar aqui 🙏🏼\n\n${resposta.trim()}`
+}
+
+/**
+ * Desconto automatico na ativacao (dono, 16/09/2026): o cliente diz que nao consegue a ativacao →
+ * a Isa diz que vai falar com o supervisor → 6 minutos depois volta sozinha com R$ 70 de desconto,
+ * ou R$ 100 se a ativacao passar de R$ 300. Uma vez so: pediu de novo, pausa e avisa o time.
+ */
+export const ESPERA_DESCONTO_MIN = 6
+
+export function valorDoDescontoAutomatico(ativacao: number): number {
+  const valor = ativacao > 300 ? 100 : 70
+  // Ativacao pequena demais: nao da desconto que zere ou inverta o valor.
+  return valor < ativacao ? valor : 0
+}
+
+export function descontoAutomaticoNaHora(pediuEm: Date, agora: Date): boolean {
+  return agora.getTime() - pediuEm.getTime() >= ESPERA_DESCONTO_MIN * 60_000
+}
+
+export function mensagemDescontoAutomatico(d: { de: number; para: number }): string {
+  const valor = Math.round((d.de - d.para) * 100) / 100
+  return (
+    'falei com meu supervisor aqui 🙏🏼\n\n' +
+    `não pagar a ativação eu não consigo, mas o que eu consegui foi ${brl(valor)} de desconto\n\n` +
+    `de ${brl(d.de)} por ${brl(d.para)}, o que acha?`
+  )
 }

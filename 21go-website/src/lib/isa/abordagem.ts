@@ -98,6 +98,8 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
        -- placa presa com outro consultor (dono, 14/09/2026): a negociacao nasceu no nome dele
        AND (l.power_responsavel IS NULL OR l.power_responsavel = $6)
        AND COALESCE(l.whatsapp_valido, true) = true
+       -- BYD e todo da Leticya, pelo 4824 (dono, 16/09/2026): a Isa nao aborda
+       AND upper(trim(COALESCE(l.marca_interesse, ''))) NOT LIKE 'BYD%'
        -- Quem clica no botao do site cai no 4824, chip que a Isa nao enxerga. Antes ela ignorava
        -- TODO mundo que clicou; em 14/09/2026 o dono mostrou a Camila (PWR9883), que clicou e
        -- nunca escreveu: 17 dos 22 que clicaram em 2 dias ficaram sem atendimento de ninguem.
@@ -228,6 +230,8 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
         -- Conversa que virou assunto de gente nao leva template de robo por cima.
         AND c.humano_em IS NULL
         AND c.pausa_motivo IS NULL
+        -- BYD e todo da Leticya (dono, 16/09/2026)
+        AND upper(trim(COALESCE(l.marca_interesse, ''))) NOT LIKE 'BYD%'
       ORDER BY c.abordagem5min_em
       LIMIT $1`,
     [POR_RODADA],

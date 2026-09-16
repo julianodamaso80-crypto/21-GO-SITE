@@ -29,6 +29,7 @@ const MOTIVO_LEGIVEL: Record<string, string> = {
   qualidade: 'qualidade do numero caiu na Meta',
   template: 'template da mensagem dos 5 min deixou de ser utilidade aprovada',
   relatorio: 'relatorio diario da Isa',
+  byd: 'cliente de BYD (transferido pro 4824)',
   loop: 'TRAVA: a Isa ia mandar mensagem demais sem o cliente responder — pausei e nada saiu',
 }
 

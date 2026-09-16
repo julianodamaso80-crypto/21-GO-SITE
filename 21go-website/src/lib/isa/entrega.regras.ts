@@ -193,3 +193,12 @@ export function jaCotouEssaPlaca(
   if ((ultimoOrcamento.placa || '').toUpperCase() !== placa.toUpperCase()) return false
   return new Date(ultimoOrcamento.em).getTime() >= new Date(ultimaMensagemDeleEm).getTime()
 }
+
+/**
+ * BYD: todo, sem excecao, e atendido no contato da Leticya (4824), nunca pela Isa. Dono, 16/09/2026:
+ * "todos byd sem excecao vai cair no outro contato da leticya". O site ja dispara texto + PDF de BYD
+ * pelo 4824 (BYD_AUTO_DISPATCH).
+ */
+export function ehByd(marca: string | null | undefined): boolean {
+  return (marca || '').trim().toUpperCase().startsWith('BYD')
+}

@@ -63,7 +63,7 @@ async function gravarSaida(c: ContatoIsa, wamid: string, texto: string, sender =
 /** Documento, associado, sem preco: manda o link do 4824 com o resumo, pausa e avisa o dono. */
 export async function transferir(
   c: ContatoIsa,
-  motivo: 'documento' | 'associado' | 'sem_preco' | 'avaria' | 'manual',
+  motivo: 'documento' | 'associado' | 'sem_preco' | 'avaria' | 'manual' | 'byd',
   enviar: (partes: string[]) => Promise<boolean>,
   opcoes: { avisarDono?: boolean; por?: string } = {},
 ): Promise<void> {
@@ -79,6 +79,20 @@ export async function transferir(
   await registrarEvento(c.telefone, 'transferiu', { motivo, para: '4824' }, opcoes.por ?? 'isa')
   // Transferencia feita pelo proprio dono no painel nao precisa avisar ele mesmo.
   if (opcoes.avisarDono !== false) await alertarDono({ telefone: c.telefone, nome: c.nome, motivo, detalhe: r.texto })
+}
+
+/**
+ * A Isa ja disse "vou falar com o supervisor" e o desconto automatico (desconto-auto.ts) ainda nao
+ * saiu? Entao um novo pedido nao recomeca o protocolo: ela so reforca que ja esta vendo.
+ */
+export async function descontoAutomaticoPendente(telefone: string): Promise<boolean> {
+  const [d] = await sql<{ tipo: string | null }>(
+    `SELECT detalhe->>'tipo' AS tipo FROM public.isa_eventos
+      WHERE telefone = $1 AND tipo = 'desconto' AND created_at > now() - interval '12 hours'
+      ORDER BY created_at DESC LIMIT 1`,
+    [telefone],
+  )
+  return d?.tipo === 'perguntou_quando' || d?.tipo === 'vou_falar'
 }
 
 /** Robo, xingamento, validador: a Isa fica calada e o dono e avisado. */

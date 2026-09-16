@@ -23,7 +23,7 @@ import {
   type MensagemHistorico,
 } from '@/lib/isa/banco'
 import { pensar } from '@/lib/isa/cerebro'
-import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente } from '@/lib/isa/acoes'
+import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente, descontoAutomaticoPendente } from '@/lib/isa/acoes'
 import { alertarDono, alertarPergunta } from '@/lib/isa/alertas'
 import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao, ehSoCumprimento, mensagemCumprimento, perguntouTudoBem, ehSoAgradecimento, mensagemAgradecimento } from '@/lib/isa/venda.regras'
 import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor, AGUARDANDO_FECHA_QUANDO, mensagemTentarDesconto, mensagemVouFalarComSupervisor, mensagemTentarDeNovo } from '@/lib/isa/dono.regras'
@@ -43,7 +43,7 @@ import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, no
 import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, ehByd } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -229,6 +229,15 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const ultimaInbound = novas[novas.length - 1]?.whatsapp_message_id
 
   const enviar = (partes: string[]) => enviarComoGente(c, partes, ultimaInbound, visto)
+
+  // Todo BYD, sem excecao, e atendido no contato da Leticya (dono, 16/09/2026). A Isa nao cota, nao
+  // negocia e nao da desconto: transfere na primeira mensagem.
+  const leadDoByd = await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)
+  if (leadDoByd && ehByd(leadDoByd.marca_interesse)) {
+    await transferir(c, 'byd', enviar)
+    await liberar(c.telefone, visto, true)
+    return true
+  }
 
   // So chegou audio que nao deu pra entender: pede pra repetir, sem passar pela IA (ela
   // "entendia" o que nao foi dito — teste do dono de 11/09/2026).
@@ -419,9 +428,12 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // isso nao e o "quando": antes, as duas perguntas eram descartadas e ela so dizia "vou falar
   // com ele" (dono, 14/09/2026: "ela viajou mt, nao respondeu dano a terceiro"). Agora a pergunta
   // cai no caminho normal, ela responde, e o protocolo segue esperando o "quando".
+  // Dono, 16/09/2026: a Isa nao pausa mais nem espera o dono aqui. Diz que vai falar com o supervisor
+  // e o cron volta sozinho em 6 min com o desconto (desconto-auto.ts).
   if (c.aguardando_dono === AGUARDANDO_FECHA_QUANDO && !ehPergunta(textoNovas)) {
     const enviou = await enviarComoGente(c, [mensagemVouFalarComSupervisor()], ultimaInbound, visto)
-    await pedirDescontoAoDono(c, { quando: textoNovas.trim() })
+    await atualizarContato(c.telefone, { aguardando_dono: null })
+    await registrarEvento(c.telefone, 'desconto', { tipo: 'vou_falar', quando: textoNovas.trim().slice(0, 120) })
     await liberar(c.telefone, visto, enviou)
     return enviou
   }
@@ -565,6 +577,11 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       await liberar(c.telefone, visto, enviou)
       return enviou
     }
+    if (await descontoAutomaticoPendente(c.telefone)) {
+      const enviou = await enviarComoGente(c, [...partes, mensagemVouFalarComSupervisor()], ultimaInbound, visto)
+      await liberar(c.telefone, visto, enviou)
+      return enviou
+    }
     const enviou = await enviarComoGente(c, [...partes, mensagemTentarDesconto()], ultimaInbound, visto)
     await atualizarContato(c.telefone, { aguardando_dono: AGUARDANDO_FECHA_QUANDO })
     await registrarEvento(c.telefone, 'desconto', { tipo: 'perguntou_quando' })
@@ -692,6 +709,10 @@ async function orcarEEnviar(
 
   if (orc.tipo === 'ok') {
     await atualizarContato(c.telefone, { lead_id: orc.lead.id, preco_da_tabela: orc.tabela })
+    if (ehByd(orc.lead.marca_interesse)) {
+      await transferir({ ...c, lead_id: orc.lead.id }, 'byd', (partes) => enviarComoGente(c, partes, p.ultimaInbound, p.visto))
+      return true
+    }
     const fatos = fatosDoLead(orc.lead, p.desconto)
     const partes = mensagensDaSimulacao({
       abertura: null,
@@ -782,6 +803,10 @@ async function cotarModeloEEnviar(
   await registrarEvento(c.telefone, 'orcamento', { modelo: p.modelText, ano: p.ano, resultado: orc.tipo })
   if (orc.tipo === 'ok') {
     await atualizarContato(c.telefone, { lead_id: orc.lead.id, preco_da_tabela: orc.tabela })
+    if (ehByd(orc.lead.marca_interesse)) {
+      await transferir({ ...c, lead_id: orc.lead.id }, 'byd', (partes) => enviarComoGente(c, partes, p.ultimaInbound, p.visto))
+      return true
+    }
     const partes = mensagensDaSimulacao({
       abertura: null,
       nome: orc.lead.nome || c.nome,

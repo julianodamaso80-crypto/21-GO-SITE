@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { processarFila } from '@/lib/isa/worker'
 import { abordarLeadsNovos, retomarSemResposta } from '@/lib/isa/abordagem'
 import { relatorioDiario } from '@/lib/isa/relatorio'
+import { entregarDescontosAutomaticos } from '@/lib/isa/desconto-auto'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -28,11 +29,16 @@ export async function GET(req: NextRequest) {
       console.error('[isa] retomada 10 min falhou:', err)
       return { enviados: 0, erro: err instanceof Error ? err.message : String(err) }
     })
+    // Desconto na ativacao que a Isa prometeu ver com o supervisor: volta sozinha em 6 min.
+    const desconto = await entregarDescontosAutomaticos().catch((err) => {
+      console.error('[isa] desconto automatico falhou:', err)
+      return { enviados: 0, erro: err instanceof Error ? err.message : String(err) }
+    })
     const relatorio = await relatorioDiario().catch((err) => {
       console.error('[isa] relatorio falhou:', err)
       return { enviado: false, erro: err instanceof Error ? err.message : String(err) }
     })
-    return NextResponse.json({ ok: true, ...fila, cincoMin, retomada, relatorio })
+    return NextResponse.json({ ok: true, ...fila, cincoMin, retomada, desconto, relatorio })
   } catch (err) {
     console.error('[isa] cron falhou:', err)
     return NextResponse.json({ ok: false, erro: err instanceof Error ? err.message : String(err) }, { status: 500 })
