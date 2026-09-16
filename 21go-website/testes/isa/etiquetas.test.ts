@@ -50,7 +50,7 @@ test('"avaria" e estado do worker, nao rotulo: o painel nao pode apaga-la', () =
   assert.deepEqual(etiquetasParaGravar(['avaria'], ['avaria']), ['avaria'])
 })
 
-test('etiquetas que tiram o contato do "precisa de voce": Frio e Falando com Leticya (dono, 16/09/2026)', async () => {
+test('etiquetas que tiram o contato do "precisa de voce": Frio, Falando com Leticya e Fechou (dono, 16/09/2026)', async () => {
   const { ETIQUETAS_FORA_DA_FILA } = await import('../../src/lib/isa/etiquetas.regras.ts')
-  assert.deepEqual([...ETIQUETAS_FORA_DA_FILA].sort(), ['frio', 'leticya'])
+  assert.deepEqual([...ETIQUETAS_FORA_DA_FILA].sort(), ['fechou', 'frio', 'leticya'])
 })
