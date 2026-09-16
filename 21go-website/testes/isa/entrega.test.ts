@@ -181,3 +181,18 @@ test('condicional e "eu te chamo" NAO sao fechar (dono, 15/09/2026, print do cli
     assert.equal(querFechar(t), true, t)
   }
 })
+
+test('placa ja cotada depois da ultima mensagem dele nao cota de novo (loop do Carlos, 16/09/2026)', async () => {
+  const { jaCotouEssaPlaca } = await import('../../src/lib/isa/entrega.regras.ts')
+  const msg = '2026-09-16T19:36:46.000Z'
+  // o caso real: cotou EES5918 as 16:37 e a mensagem dele era das 16:36 -> nao cota de novo
+  assert.equal(jaCotouEssaPlaca('EES5918', { placa: 'EES5918', em: '2026-09-16T19:37:15.000Z' }, msg), true)
+  // ele mandou a placa DE NOVO depois da cotacao: cota (pedido do dono de 14/09/2026)
+  assert.equal(jaCotouEssaPlaca('EES5918', { placa: 'EES5918', em: '2026-09-16T19:30:00.000Z' }, msg), false)
+  // placa diferente: cota
+  assert.equal(jaCotouEssaPlaca('ABC1D23', { placa: 'EES5918', em: '2026-09-16T19:37:15.000Z' }, msg), false)
+  // nunca cotou
+  assert.equal(jaCotouEssaPlaca('EES5918', null, msg), false)
+  // sem data da mensagem nao arrisca pular
+  assert.equal(jaCotouEssaPlaca('EES5918', { placa: 'EES5918', em: '2026-09-16T19:37:15.000Z' }, null), false)
+})

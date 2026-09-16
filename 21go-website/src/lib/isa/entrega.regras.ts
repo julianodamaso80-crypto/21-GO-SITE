@@ -172,3 +172,24 @@ export function mensagemPedidoDocumentos(comemorar = true, faltam: string[] = ['
     : 'já tenho seus documentos aqui, então vou te passar pra Leticya finalizar a sua ativação'
   return comemorar ? `que ótimo! 🥳\n\n${pedido}` : pedido
 }
+
+/**
+ * A placa destas mensagens ja foi cotada? Entao nao cota de novo.
+ *
+ * Loop de 16/09/2026 (Carlos, EES5918): a mensagem automatica do site traz a placa E uma duvida
+ * ("fiz uma simulacao e fiquei com uma duvida"). Depois de cotar, a Isa deixa a mensagem pendente
+ * pra responder a duvida na rodada seguinte — e na rodada seguinte achava a placa de novo e cotava
+ * de novo. 14 simulacoes em 6 minutos, ate o cliente mandar audio reclamando.
+ *
+ * Placa reenviada DEPOIS da cotacao continua cotando (dono, 14/09/2026): so pula quando a cotacao e
+ * mais nova que a ultima mensagem dele.
+ */
+export function jaCotouEssaPlaca(
+  placa: string,
+  ultimoOrcamento: { placa: string | null; em: string } | null,
+  ultimaMensagemDeleEm: string | null,
+): boolean {
+  if (!ultimoOrcamento || !ultimaMensagemDeleEm) return false
+  if ((ultimoOrcamento.placa || '').toUpperCase() !== placa.toUpperCase()) return false
+  return new Date(ultimoOrcamento.em).getTime() >= new Date(ultimaMensagemDeleEm).getTime()
+}

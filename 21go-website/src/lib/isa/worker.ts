@@ -43,7 +43,7 @@ import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, no
 import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, semMarcaDeParte, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -358,7 +358,16 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // caiu na IA e ela prometeu ("ja puxo a simulacao") sem cotar nada, e ainda inventou "assim que
   // o sistema carregar". Dono: "era so vc ter feito a cotacao normal do veiculo, nao sei pq foi
   // inventar... vai seguir mesmo padrao, pergunta se tem leilao e se roda em app e faz a cotacao".
-  if (placaDita) {
+  // A placa destas mensagens ja foi cotada nesta leva (ficou pendente so a duvida que veio junto):
+  // segue pra IA responder a duvida em vez de cotar de novo — ver jaCotouEssaPlaca.
+  const ultimoOrcamento = placaDita
+    ? (await sql<{ placa: string | null; em: string }>(
+        `SELECT detalhe->>'placa' AS placa, created_at AS em FROM public.isa_eventos
+         WHERE telefone = $1 AND tipo = 'orcamento' ORDER BY created_at DESC LIMIT 1`,
+        [c.telefone],
+      ))[0] ?? null
+    : null
+  if (placaDita && !jaCotouEssaPlaca(placaDita, ultimoOrcamento, visto)) {
     await registrarEvento(c.telefone, 'placa', { placa: placaDita, por: 'codigo' })
     // Dono (11/09/2026): chegou a placa, pergunta leilao e aplicativo juntos ANTES dos valores —
     // a nao ser que ele ja tenha dito na mesma mensagem.
