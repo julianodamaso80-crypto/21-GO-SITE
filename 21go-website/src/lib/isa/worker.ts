@@ -17,6 +17,7 @@ import {
   textosLidos,
   adiarRetomada,
   jaPediuDocumentos,
+  ultimaConsultaFoiRecusa,
   sql,
   type ContatoIsa,
   type MensagemHistorico,
@@ -39,7 +40,7 @@ import {
 import { transcrever } from '@/lib/isa/transcrever'
 import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, nomeDoDoc, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura, type TipoMidia } from '@/lib/isa/ler-midia.regras'
-import { dividirEmPartes, partesComCitacao, semMarcaDeParte, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
+import { dividirEmPartes, partesComCitacao, semMarcaDeParte, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao } from '@/lib/isa/entrega.regras'
@@ -116,6 +117,12 @@ const ADIAR_DESPEDIDA_MS = 20 * 60 * 60 * 1000
 async function retomarSumidos(): Promise<void> {
   for (const c of await contatosParaRetomar()) {
     if (!destinoPermitido(c.telefone)) continue
+    // Recusou o veiculo: nao ha o que retomar. contatosParaRetomar ja marcou retomada_em, entao
+    // ele nao volta pra fila a cada minuto.
+    if (await ultimaConsultaFoiRecusa(c.telefone, c.reiniciada_em)) {
+      await registrarEvento(c.telefone, 'retomada_pulada', { motivo: 'nao_fazemos' })
+      continue
+    }
     const hist = await historico(c.conversation_id as string, 30, c.reiniciada_em)
     const ultimaDele = [...hist].reverse().find((m) => m.direction === 'inbound')
     const despediuSe = !!ultimaDele && ehDespedida(ultimaDele.content)
@@ -142,6 +149,23 @@ async function retomarSumidos(): Promise<void> {
     const enviou = await enviarComoGente(c, `${ab}${texto}`, undefined, c.ultimo_inbound_em)
     await registrarEvento(c.telefone, 'retomada', { enviou, texto })
     if (enviou) await liberar(c.telefone, null, true)
+  }
+}
+
+/**
+ * Ate 3 tentativas, esperando 3 s e depois 6 s, so quando a falha e passageira. Sem isso uma
+ * indisponibilidade de segundos da Meta virava cliente sem resposta: o liberar() marca a mensagem
+ * como tratada mesmo quando o envio falhou.
+ */
+async function comRetentativa<T>(fn: () => Promise<T>): Promise<T> {
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      return await fn()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (err instanceof EnvioBloqueado || tentativa >= 3 || !ehFalhaPassageira(msg)) throw err
+      await dormir(tentativa * 3)
+    }
   }
 }
 
@@ -863,7 +887,8 @@ export async function enviarComoGente(
       break
     }
     try {
-      const wamid = await enviarTexto(c.telefone, partes[i].texto, partes[i].citar)
+      // Falha passageira da Meta ou da rede: tenta de novo antes de desistir (Rafael, 15/09/2026).
+      const wamid = await comRetentativa(() => enviarTexto(c.telefone, partes[i].texto, partes[i].citar))
       enviadas++
       await upsertMessage({
         conversation_id: c.conversation_id,

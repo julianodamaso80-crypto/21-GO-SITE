@@ -76,6 +76,17 @@ export function marcasQueFaltam(resposta: string, quantasMensagens: number): num
   return faltam
 }
 
+/**
+ * A falha foi da Meta ou da rede, e tentar de novo em segundos resolve? Em 15/09/2026 a Isa foi
+ * responder o Rafael e a Meta devolveu "(#2) Service temporarily unavailable". Ninguem tentou de
+ * novo, a mensagem dele ficou sem resposta, a janela de 24h fechou e no dia seguinte a Leticya nao
+ * conseguia mais escrever pra ele. Erro de regra (janela fechada, numero invalido) NAO e passageiro:
+ * repetir so gasta tempo.
+ */
+export function ehFalhaPassageira(mensagem: string): boolean {
+  return /\(#(1|2|4)\)|\b(131000|133004|130429|80007)\b|temporarily unavailable|service unavailable|try again later|timeout|timed out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|fetch failed|socket hang up|\b50[0234]\b/i.test(mensagem)
+}
+
 const palavras = (s: string) => s.split(/\s+/).filter(Boolean).length
 
 /** Segundos de "digitando..." entre a parte que acabou de sair e a proxima. */

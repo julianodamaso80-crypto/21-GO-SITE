@@ -136,3 +136,16 @@ test('2 mensagens = responde as DUAS, citando cada uma (dono, 15/09/2026, caso d
   // marca no MEIO da linha nao conta (tem que abrir a parte)
   assert.deepEqual(marcasQueFaltam('o valor [2] vezes', 2), [1, 2])
 })
+
+test('falha passageira da Meta tenta de novo; erro de regra nao (Rafael, 15/09/2026)', async () => {
+  const { ehFalhaPassageira } = await import('../../src/lib/isa/envio.regras.ts')
+  // o erro exato que deixou o Rafael sem resposta
+  assert.equal(ehFalhaPassageira('Cloud API 400 2: (#2) Service temporarily unavailable'), true)
+  for (const m of ['fetch failed', 'ETIMEDOUT', 'socket hang up', 'Cloud API 503', '(#131000) Something went wrong', 'request timed out']) {
+    assert.equal(ehFalhaPassageira(m), true, m)
+  }
+  // erro de regra: repetir nao adianta
+  for (const m of ['(#131047) Re-engagement message', '(#100) Invalid parameter', '(#131026) Message undeliverable', 'destino fora da allowlist']) {
+    assert.equal(ehFalhaPassageira(m), false, m)
+  }
+})

@@ -372,6 +372,22 @@ export async function jaPediuDocumentos(telefone: string, desde: string | null):
   return r.length > 0
 }
 
+/**
+ * A ultima consulta de placa desta conversa deu "nao fazemos"? Dono, 16/09/2026, no Rafael: a Isa
+ * recusou a Meriva e depois mandou a retomada "hoje voce tem alguma protecao pro seu veiculo?".
+ * "ja falou que nao faz, nao tem pq vc perguntar se ele possui protecao".
+ */
+export async function ultimaConsultaFoiRecusa(telefone: string, desde: string | null): Promise<boolean> {
+  const r = await sql<{ resultado: string | null }>(
+    `SELECT detalhe->>'resultado' AS resultado FROM public.isa_eventos
+      WHERE telefone = $1 AND tipo = 'orcamento'
+        AND created_at > COALESCE($2::timestamptz, '-infinity'::timestamptz)
+      ORDER BY id DESC LIMIT 1`,
+    [telefone, desde],
+  )
+  return r[0]?.resultado === 'nao_fazemos'
+}
+
 /** Textos lidos de foto/PDF do cliente nesta conversa ("📎 ..."), depois de /reiniciar. */
 export async function textosLidos(conversationId: string, desde: string | null): Promise<string[]> {
   const r = await sql<{ content: string }>(
