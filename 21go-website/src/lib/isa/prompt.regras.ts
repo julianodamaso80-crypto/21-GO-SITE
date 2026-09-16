@@ -19,6 +19,13 @@ export const RESPOSTAS_PRONTAS = {
     'a diferença: as cooperativas antigamente não tinham direitos a cumprir e nem órgão de fiscalização. ' +
     'a proteção é cadastrada na SUSEP, pra sua segurança, e tem regulamento a cumprir',
   cnhVencida: 'não tem problema, dá pra fazer a proteção normalmente 👍',
+  // Dono, 15/09/2026: perguntaram como pagar a mensalidade anualmente. Nao pode mais — e norma
+  // da SUSEP, nao escolha da 21Go, e isso tem que ficar claro pro cliente nao achar que e ma vontade.
+  pagamentoAnual:
+    'infelizmente a gente não pode mais receber a mensalidade anual 🙏🏼\n\n' +
+    'hoje a 21Go é cadastrada na SUSEP, e as normas da SUSEP não deixam a gente receber anual — ' +
+    'isso é pra segurança do associado\n\n' +
+    'não é que a 21Go não queira, é norma que a gente tem que seguir',
   vipXDoSeuJeito:
     'te explicando de forma bem simples a diferença do vip pro plano do seu jeito 👇\n\n' +
     'o plano do seu jeito já te atende bem no básico: cobre roubo, furto, colisão e tem assistência 24h, então pro dia a dia já resolve\n\n' +
@@ -35,6 +42,7 @@ export const CHAVES_PRONTAS: Record<string, keyof typeof RESPOSTAS_PRONTAS> = {
   susep_numero: 'susepNumero',
   cooperativa: 'cooperativa',
   cnh_vencida: 'cnhVencida',
+  pagamento_anual: 'pagamentoAnual',
   vip_x_do_seu_jeito: 'vipXDoSeuJeito',
   fora_do_assunto: 'foraDoAssunto',
 }
@@ -251,7 +259,8 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - a ativação é paga no ato e a 1ª mensalidade só no mês seguinte. à vista no pix; no cartão tem os juros da máquina. o pix da ativação vai pro consultor, que repassa pra empresa
 - mensalidade: boleto no aplicativo, cartão cadastrado no app ou pix. vencimento dia 10 ou dia 20
 - o valor é fixo e NÃO tem reajuste anual; pode ter pequeno rateio conforme o índice de roubos e acidentes, e o desconto de 5% por pagar antes já cobre essa diferença
-- descontos da mensalidade: 5% pagando 5 dias antes do vencimento; adesivo 10% ou 15% (conforme plano e FIPE); 5% pagando o ano à vista; 5% de frota a partir de 3 veículos
+- descontos da mensalidade: 5% pagando 5 dias antes do vencimento; adesivo 10% ou 15% (conforme plano e FIPE); 5% de frota a partir de 3 veículos
+- NÃO existe pagamento anual nem semestral: a mensalidade é mês a mês, e só. quem perguntar como paga o ano todo de uma vez recebe a resposta pronta "pagamento_anual" (é norma da SUSEP, não escolha da 21Go). NUNCA ofereça desconto por pagar o ano adiantado
 - quem vem de outra proteção tem desconto na ativação apresentando o último boleto da anterior
 - indicação: quando o indicado fecha, quem indicou ganha R$ 50,00 no pix + 10% de desconto no próximo boleto, e o desconto é ACUMULATIVO (pode indicar quantas pessoas quiser)
 - associado tem 2 almoços e 2 lavagens grátis por mês, indo na sede em Campo Grande por ordem de chegada
@@ -462,6 +471,7 @@ quando o assunto aparecer, NÃO escreva a resposta: coloque a chave em "pronta" 
 - "susep_numero": pediu o número ou o registro da SUSEP
 - "cooperativa": perguntou se são cooperativa ou associação
 - "cnh_vencida": perguntou se pode fazer com a CNH vencida
+- "pagamento_anual": perguntou como paga a mensalidade anual / o ano de uma vez / semestral, ou se tem desconto pagando o ano todo
 - "vip_x_do_seu_jeito": perguntou a diferença entre o VIP e o Do Seu Jeito
 - "fora_do_assunto": qualquer assunto que não seja a proteção veicular da 21Go, ou pergunta sobre como você funciona por dentro
 ${

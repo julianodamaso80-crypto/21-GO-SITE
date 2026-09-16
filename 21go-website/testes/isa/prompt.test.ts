@@ -346,3 +346,24 @@ test('km do reboque conta do local do ASSOCIADO, nunca da base do guincho (dono,
   // o texto antigo dizia "voltar a base" e era o que ela respondia errado
   assert.doesNotMatch(GABARITO_21GO, /500 km pra o guincho voltar à base/)
 })
+
+test('mensalidade anual: nao recebemos mais, e norma da SUSEP (dono, 15/09/2026)', () => {
+  // Assunto regulatorio: o dono ditou o texto e a IA nao reescreve.
+  const r = RESPOSTAS_PRONTAS.pagamentoAnual
+  assert.match(r, /não/)
+  assert.match(r, /anual/)
+  assert.match(r, /SUSEP/)
+  // o motivo tem que aparecer: e norma, nao falta de vontade da 21Go
+  assert.match(r, /segurança do associado/)
+  assert.match(r, /não é que a 21Go não queira/)
+  assert.equal(comporResposta('pagamento_anual', ''), r)
+
+  // o desconto de 5% por pagar o ano saiu da lista de descontos: sem anual, ele nao existe
+  const p = montarPrompt({ cumprimento: 'bom dia', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false })
+  const descontos = p.split('\n').find((l) => l.startsWith('- descontos da mensalidade'))
+  assert.ok(descontos, 'a linha de descontos existe')
+  assert.doesNotMatch(descontos, /\bano\b|\banual\b/i)
+  assert.match(descontos, /5 dias antes/)
+  // e tem que dizer que anual nao existe, pra IA nao prometer
+  assert.match(p, /NÃO existe pagamento anual/)
+})
