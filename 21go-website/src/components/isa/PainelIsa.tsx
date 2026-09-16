@@ -612,6 +612,22 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             ? 'a Isa não manda nada por cima da sua mensagem. se o cliente responder, ela segue — pra atender sozinho, desligue a chave.'
             : 'Isa desligada: quem atende esta conversa é você.'}
         </p>
+        {/* Janela fechada: a Meta so aceita template. Em vez da caixa morta, o botao que manda a
+            mensagem aprovada e reabre a conversa quando o cliente responder (dono, 16/09/2026:
+            "eu sempre tenho que conseguir responder todos"). */}
+        {jan.tom === 'fechada' && (
+          <div className="mb-2 rounded-lg border border-[#F2911D]/40 bg-[#F2911D]/10 px-3 py-2.5">
+            <p className="text-[13px] text-[#FFE4C4]">
+              Passaram 24h desde a última mensagem dele, e o WhatsApp só deixa mandar a mensagem aprovada.
+              Quando ele responder, você volta a escrever normalmente.
+            </p>
+            <button type="button" disabled={ocupado}
+              onClick={() => acao('/api/atendimento/reabrir', {})}
+              className="mt-2 w-full rounded-lg bg-[#F2911D] px-4 py-2.5 text-sm font-semibold text-[#141d45] transition hover:brightness-110 disabled:opacity-40 sm:w-auto">
+              {ocupado ? 'enviando…' : 'Mandar mensagem pra retomar a conversa'}
+            </button>
+          </div>
+        )}
         {citando && (
           <div className="mb-2 flex items-start gap-2 rounded-lg border-l-2 border-[#F2911D] bg-white/[0.05] px-3 py-1.5">
             <div className="min-w-0 flex-1">
