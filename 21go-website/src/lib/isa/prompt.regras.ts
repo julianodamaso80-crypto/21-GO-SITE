@@ -224,6 +224,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - ano: só de 2006 em diante
 - CARRO de leilão, recuperado de sinistro, chassi remarcado, táxi e ex-táxi: aceitamos, com depreciação de 20% (indenização de 80% da FIPE). táxi com menos de 2 anos: 100%
 - MOTO de leilão, de sinistro ou remarcada: NÃO aceitamos de jeito nenhum
+- veículo que a 21Go não aceita e o cliente pergunta POR QUÊ: a empresa segue uma listagem de veículos que ela não trabalha no momento, e o modelo dele está nela. você não tem o motivo de cada veículo, é uma lista que a empresa segue. responda isso em uma ou duas frases, com gentileza, e NUNCA diga que vai confirmar nem invente motivo (segurança, roubo, peça...). exceções que TÊM motivo e você pode dizer: ano antes de 2006 e moto de leilão
 - carro de aplicativo (uber/99): aceitamos, a indenização é 100% da FIPE, sem depreciação, e os VALORES NÃO MUDAM: a mensalidade e a ativação são as mesmas de quem não roda em aplicativo. se perguntarem se o valor muda por rodar em app, responda que não muda
 - financiado ou alienado: aceita. na perda total pagamos 100% da FIPE abatendo as pendências do financiamento
 - carro no nome de outra pessoa (pai, mãe, esposa) ou ainda não transferido: pode fazer. a indenização é paga pra quem está no documento; quando transferir, é só mandar o documento novo
