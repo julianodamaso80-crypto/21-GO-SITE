@@ -1,7 +1,8 @@
 /**
  * Etiquetas dos contatos da Isa — pra organizar e filtrar no painel e no CRM.
  *
- * Dono (15/09/2026): so estas 4 — "falando com leticya, enviou documento, frio, fechou". As
+ * Dono (15/09/2026): "falando com leticya, enviou documento, frio, fechou"; em 16/09 entraram
+ * Quente e Vistoria. As
  * colunas do funil sao estas mesmas etiquetas (ver `funil.regras.ts`), com os mesmos ids, e por
  * isso a ordem aqui e a do funil: Frio por ultimo.
  *
@@ -17,8 +18,12 @@ export interface Etiqueta {
 }
 
 export const ETIQUETAS: Etiqueta[] = [
+  // Dono, 16/09/2026: "faz uma tag quente tbm e funil tbm"
+  { id: 'quente', nome: 'Quente', cor: '#EF4444', claro: false },
   { id: 'leticya', nome: 'Falando com Leticya', cor: '#F2911D', claro: false },
   { id: 'documento', nome: 'Enviou documento', cor: '#93C5FD', claro: true },
+  // Dono, 16/09/2026: "faz uma tag vistoria e coloca no funil tbm"
+  { id: 'vistoria', nome: 'Vistoria', cor: '#C4B5FD', claro: true },
   { id: 'fechou', nome: 'Fechou', cor: '#22C55E', claro: false },
   { id: 'frio', nome: 'Frio', cor: '#64748B', claro: false },
 ]

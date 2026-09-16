@@ -10,11 +10,11 @@ import {
 test('as 4 etiquetas que o dono pediu, e so essas (15/09/2026)', () => {
   assert.deepEqual(
     ETIQUETAS.map((e) => e.id),
-    ['leticya', 'documento', 'fechou', 'frio'],
+    ['quente', 'leticya', 'documento', 'vistoria', 'fechou', 'frio'],
   )
   assert.deepEqual(
     ETIQUETAS.map((e) => e.nome),
-    ['Falando com Leticya', 'Enviou documento', 'Fechou', 'Frio'],
+    ['Quente', 'Falando com Leticya', 'Enviou documento', 'Vistoria', 'Fechou', 'Frio'],
   )
   for (const e of ETIQUETAS) assert.ok(e.cor, e.id)
 })
@@ -30,11 +30,11 @@ test('so etiqueta conhecida entra, sem repetir e na ordem oficial', () => {
 
 test('etiqueta que o dono cortou some da tela sem quebrar nada', () => {
   // Continuam gravadas no banco, mas nao aparecem mais (ChipEtiqueta ignora id desconhecido).
-  const cortadas = ['quente', 'vai_fechar', 'falta_doc', 'vistoria', 'avaria', 'sem_retorno']
+  const cortadas = ['vai_fechar', 'falta_doc', 'avaria', 'sem_retorno']
   assert.deepEqual(normalizarEtiquetas(cortadas), [])
   for (const id of cortadas) assert.equal(etiquetaValida(id), false, id)
   // contato com etiqueta antiga + nova mostra so a nova
-  assert.deepEqual(normalizarEtiquetas(['quente', 'fechou']), ['fechou'])
+  assert.deepEqual(normalizarEtiquetas(['vai_fechar', 'fechou']), ['fechou'])
 })
 
 test('"avaria" e estado do worker, nao rotulo: o painel nao pode apaga-la', () => {

@@ -1,12 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ETAPAS, ehEtapa, etapaDoCard, etapaCompativel } from '../../src/lib/isa/funil.regras.ts'
+import { ETAPAS, ehEtapa, etapaDoCard, etapaCompativel, etiquetasAoMover } from '../../src/lib/isa/funil.regras.ts'
 import { ETIQUETAS } from '../../src/lib/isa/etiquetas.regras.ts'
 
 test('o funil comeca no Simulou e termina no Frio (dono, 15/09/2026)', () => {
   assert.deepEqual(
     ETAPAS.map((e) => e.id),
-    ['simulou', 'leticya', 'documento', 'fechou', 'frio'],
+    ['simulou', 'quente', 'leticya', 'documento', 'vistoria', 'fechou', 'frio'],
   )
   // a coluna "Novo" saiu: quem nao simulou tambem entra no Simulou
   assert.equal(ehEtapa('novo'), false)
@@ -45,12 +45,43 @@ test('card que ficou na coluna antiga nao se perde ao trocar o funil', () => {
   assert.equal(etapaCompativel('novo'), 'simulou')
   assert.equal(etapaCompativel('escolheu'), 'leticya')
   assert.equal(etapaCompativel('documentos'), 'documento')
-  // "vistoria" era depois do documento e nao tem mais coluna: fica no documento
-  assert.equal(etapaCompativel('vistoria'), 'documento')
+  // "vistoria" voltou a ser coluna (dono, 16/09/2026)
+  assert.equal(etapaCompativel('vistoria'), 'vistoria')
   assert.equal(etapaCompativel('fechado'), 'fechou')
   assert.equal(etapaCompativel('perdido'), 'frio')
   assert.equal(etapaCompativel('lixo'), null)
   assert.equal(etapaCompativel(null), null)
   // quem foi arrastado pra uma coluna antiga aparece na nova, sem precisar arrastar de novo
   assert.equal(etapaDoCard({ etapa: 'perdido', escolheuPlano: true, mandouDocumento: true }), 'frio')
+})
+
+test('a etiqueta anda com o funil: pos a tag, o card vai pra coluna (dono, 16/09/2026)', () => {
+  const base = { etapa: null, escolheuPlano: false, mandouDocumento: false }
+  assert.equal(etapaDoCard({ ...base, etiquetas: ['fechou'] }), 'fechou')
+  // a tag vence o que foi arrastado antes e o que o fluxo calculou
+  assert.equal(etapaDoCard({ etapa: 'leticya', escolheuPlano: true, mandouDocumento: true, etiquetas: ['fechou'] }), 'fechou')
+  // varias tags: vale a mais adiantada no funil
+  assert.equal(etapaDoCard({ ...base, etiquetas: ['leticya', 'documento'] }), 'documento')
+  assert.equal(etapaDoCard({ ...base, etiquetas: ['documento', 'fechou', 'leticya'] }), 'fechou')
+  // tag que nao e coluna (avaria, de sistema) nao mexe
+  assert.equal(etapaDoCard({ ...base, mandouDocumento: true, etiquetas: ['avaria'] }), 'documento')
+  // sem tag: continua como antes
+  assert.equal(etapaDoCard({ ...base, etiquetas: [] }), 'simulou')
+})
+
+test('mover o card acerta as etiquetas pra coluna nova', () => {
+  // pra frente: ganha a tag da coluna e guarda as de antes
+  assert.deepEqual(etiquetasAoMover(['leticya'], 'fechou'), ['leticya', 'fechou'])
+  // pra tras: perde as tags das colunas que ficaram a frente
+  assert.deepEqual(etiquetasAoMover(['leticya', 'documento', 'fechou'], 'documento'), ['leticya', 'documento'])
+  assert.equal(etapaDoCard({ etapa: null, escolheuPlano: false, mandouDocumento: false, etiquetas: ['documento', 'vistoria'] }), 'vistoria')
+  // de volta pro Simulou: sai toda tag de coluna, a de sistema fica
+  assert.deepEqual(etiquetasAoMover(['leticya', 'avaria'], 'simulou'), ['avaria'])
+  // sem repetir
+  assert.deepEqual(etiquetasAoMover(['fechou'], 'fechou'), ['fechou'])
+  // e o card fica mesmo na coluna escolhida
+  for (const destino of ['simulou', 'quente', 'leticya', 'documento', 'vistoria', 'fechou', 'frio']) {
+    const tags = etiquetasAoMover(['quente', 'leticya', 'documento', 'vistoria', 'fechou', 'frio'], destino)
+    assert.equal(etapaDoCard({ etapa: destino, escolheuPlano: true, mandouDocumento: true, etiquetas: tags }), destino, destino)
+  }
 })

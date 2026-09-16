@@ -1,5 +1,5 @@
 import 'server-only'
-import { etapaDoCard } from '@/lib/isa/funil.regras'
+import { etapaDoCard, etiquetasAoMover } from '@/lib/isa/funil.regras'
 import { planosQueAparecem } from '@/lib/isa/fatos.regras'
 import { ETIQUETAS_FORA_DA_FILA } from '@/lib/isa/etiquetas.regras'
 import { sql, type ContatoIsa } from '@/lib/isa/banco'
@@ -141,6 +141,7 @@ export async function listarFunil(): Promise<CardFunil[]> {
         etapa: l.etapa_manual,
         escolheuPlano: !!l.escolheu,
         mandouDocumento: !!l.documento,
+        etiquetas: l.etiquetas,
       }),
     }
   })
@@ -155,6 +156,17 @@ export async function gravarEtapa(telefone: string, etapa: string | null): Promi
      WHERE telefone = $1`,
     [telefone, etapa],
   )
+  // A etiqueta anda com o funil (dono, 16/09/2026): mover o card grava a tag da coluna, senao a tag
+  // antiga puxava o card de volta.
+  if (etapa) {
+    const [c] = await sql<{ etiquetas: string[] | null }>(`SELECT etiquetas FROM public.isa_contatos WHERE telefone = $1`, [telefone])
+    if (c) {
+      await sql(`UPDATE public.isa_contatos SET etiquetas = $2::text[], updated_at = now() WHERE telefone = $1`, [
+        telefone,
+        etiquetasAoMover(c.etiquetas, etapa),
+      ])
+    }
+  }
 }
 
 export async function contarPrecisa(): Promise<number> {

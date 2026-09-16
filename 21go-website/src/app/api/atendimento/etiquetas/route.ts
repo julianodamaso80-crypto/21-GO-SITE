@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
   if (atual.length === 0) return NextResponse.json({ erro: 'contato nao encontrado' }, { status: 404 })
   const etiquetas = etiquetasParaGravar(b.etiquetas, atual[0].etiquetas)
   const r = await sql(
-    `UPDATE public.isa_contatos SET etiquetas = $2::text[], updated_at = now() WHERE telefone = $1 RETURNING telefone`,
+    // A tag manda na coluna do funil: a posicao arrastada antes sai, senao tirar a tag nao tirava o card.
+    `UPDATE public.isa_contatos SET etiquetas = $2::text[], etapa = NULL, etapa_em = NULL, updated_at = now() WHERE telefone = $1 RETURNING telefone`,
     [telefone, etiquetas],
   )
   if (r.length === 0) return NextResponse.json({ erro: 'contato nao encontrado' }, { status: 404 })
