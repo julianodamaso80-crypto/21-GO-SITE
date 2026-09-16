@@ -28,6 +28,8 @@ interface ItemLista {
   etiquetas: string[]
   /** "Vou confirmar e ja te retorno" sem resposta ainda (auditoria 12/09/2026). */
   pergunta_pendente: { texto: string; em: string } | null
+  /** Mensagens do cliente depois da nossa ultima resposta (bolinha verde). */
+  sem_resposta?: number
 }
 
 interface ItemConversa {
@@ -381,11 +383,19 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
                       <span className="truncate font-semibold">{c.nome || telefoneBonito(c.telefone)}</span>
-                      <span className="shrink-0 text-[11px] text-white/40">{hora(c.ultima_em)}</span>
+                      <span className={`shrink-0 text-[11px] ${c.sem_resposta ? 'font-semibold text-[#25D366]' : 'text-white/40'}`}>{hora(c.ultima_em)}</span>
                     </span>
-                    <span className="mt-0.5 block truncate text-[13px] text-white/50">
-                      {c.ultima_direcao === 'outbound' && <span className="text-white/35">↳ </span>}
-                      {c.ultima || '—'}
+                    <span className="mt-0.5 flex items-center gap-2">
+                      <span className={`min-w-0 flex-1 truncate text-[13px] ${c.sem_resposta ? 'text-white/80' : 'text-white/50'}`}>
+                        {c.ultima_direcao === 'outbound' && <span className="text-white/35">↳ </span>}
+                        {c.ultima || '—'}
+                      </span>
+                      {/* Bolinha do WhatsApp: quantas mensagens dele estao sem resposta (dono, 16/09/2026) */}
+                      {!!c.sem_resposta && (
+                        <span className="grid h-5 min-w-[20px] shrink-0 place-items-center rounded-full bg-[#25D366] px-1.5 text-[11px] font-bold text-[#0b141a]">
+                          {c.sem_resposta}
+                        </span>
+                      )}
                     </span>
                     {(precisaGente || c.transferido_em || c.preco_da_tabela || c.etiquetas?.length > 0) && (
                       <span className="mt-1.5 flex flex-wrap gap-1">

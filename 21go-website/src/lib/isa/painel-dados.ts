@@ -25,6 +25,8 @@ export interface ItemLista {
   janela_ate: string | null
   etiquetas: string[]
   pergunta_pendente: { texto: string; em: string } | null
+  /** Mensagens do cliente depois da nossa ultima resposta — a bolinha verde do WhatsApp. */
+  sem_resposta: number
 }
 
 const FILTRO: Record<Aba, string> = {
@@ -45,7 +47,16 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Pr
   return sql<ItemLista>(
     `SELECT c.telefone, COALESCE(c.nome, cv.pushname) AS nome, c.ligada, c.pausa_motivo, c.transferido_em,
             c.aguardando_dono, c.preco_da_tabela, c.janela_ate, c.etiquetas, c.pergunta_pendente,
-            u.content AS ultima, u.direction AS ultima_direcao, (mov.em AT TIME ZONE 'UTC') AS ultima_em
+            u.content AS ultima, u.direction AS ultima_direcao, (mov.em AT TIME ZONE 'UTC') AS ultima_em,
+            -- Dono, 16/09/2026: "nao consigo identificar se tem mensagem pra responder". Conta o que
+            -- ele escreveu depois da nossa ultima mensagem (Isa ou time), igual a bolinha do WhatsApp.
+            -- so conta quando a ultima mensagem e dele: resposta nossa por ultimo ja e zero, sem varrer nada
+            CASE WHEN u.direction <> 'inbound' THEN 0 ELSE
+            (SELECT count(*)::int FROM public.messages i
+              WHERE i.conversation_id = c.conversation_id AND i.evolution_instance = 'cloud_isa' AND i.direction = 'inbound'
+                AND i.created_at > COALESCE((SELECT max(o.created_at) FROM public.messages o
+                                             WHERE o.conversation_id = c.conversation_id AND o.evolution_instance = 'cloud_isa'
+                                               AND o.direction = 'outbound'), '-infinity'::timestamptz)) END AS sem_resposta
      FROM public.isa_contatos c
      LEFT JOIN public.conversations cv ON cv.id = c.conversation_id
      LEFT JOIN LATERAL (
