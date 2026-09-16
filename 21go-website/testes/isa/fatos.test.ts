@@ -56,8 +56,11 @@ test('valores do plano: com adesivo e pagando em dia, arredondados como na tela'
   assert.equal(p.mensalEmDia, 415.15)
 })
 
-test('carro de aplicativo soma R$ 20 na mensalidade, como a tela', () => {
-  assert.equal(montarFatos({ ...base, carroApp: true }).planos[0].mensal, 457)
+test('carro de aplicativo NAO muda o preco (dono, 16/09/2026)', () => {
+  // a Isa somava R$ 20 e disse ao cliente "sobre o valor mudar, vou confirmar"
+  const semApp = montarFatos({ ...base, carroApp: false }).planos[0].mensal
+  assert.equal(montarFatos({ ...base, carroApp: true }).planos[0].mensal, semApp)
+  assert.equal(semApp, 437)
 })
 
 test('rastreador obrigatorio no RJ ja vem embutido: carro > 50 mil, app > 35 mil, moto > 15 mil', () => {

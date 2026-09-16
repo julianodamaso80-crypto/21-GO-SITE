@@ -70,9 +70,6 @@ export interface QuotePdfInput {
   planos?: PlanoDaTela[] | null
 }
 
-/** Carro de app: +R$ 20/mes em todos os planos exibidos. */
-const CARRO_APP_EXTRA = 20
-
 /** Moto: Danos a Terceiros opcional, +R$ 22/mes (so planos de moto). */
 const MOTO_TERCEIROS_EXTRA = 22
 
@@ -328,10 +325,7 @@ function aplicarExtras(plans: QuotePlanFull[], input: QuotePdfInput): QuotePlanF
     )
   }
 
-  // Se for carro de aplicativo, soma +R$ 20/mês em TODOS os planos exibidos.
-  if (input.carroApp) {
-    return out.map((p) => ({ ...p, monthly: p.monthly + CARRO_APP_EXTRA }))
-  }
+  // Carro de aplicativo NAO muda o preco (aqui somava +R$ 20). Dono, 16/09/2026: "valores nao mudam para carro de aplicativo".
   return out
 }
 

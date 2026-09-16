@@ -9,7 +9,7 @@
  *   - adesivo: VIP/Premium/SUV/Especial ate 30 mil = 10%, acima = 15%; Basico/Do Seu Jeito ate
  *     60 mil = 10%, acima = 15%; moto nao tem.
  *   - em dia (5 dias antes): 5%, arredondado em centavos como a tela.
- *   - carro de aplicativo: + R$ 20 na mensalidade (CARRO_APP_EXTRA do pdf-quote).
+ *   - carro de aplicativo: o preco NAO muda (dono, 16/09/2026).
  * O valor COMBINADO adesivo + em dia fica de fora de proposito: a tela multiplica (0,85 x 0,95)
  * e o PDF soma (15% + 5%), entao qualquer numero combinado discordaria de um dos dois.
  *
@@ -68,7 +68,6 @@ export interface Fatos {
   numerosPermitidos: { dinheiro: number[]; pct: number[] }
 }
 
-const CARRO_APP_EXTRA = 20
 const RASTREADOR = { instalacao: 100, mensal: 19.9 }
 /** FIPE a partir da qual o rastreador e obrigatorio no RJ (gabarito do dono, 10/09/2026). */
 export const RASTREADOR_OBRIGATORIO = { moto: 15000, app: 35000, carro: 50000 }
@@ -141,7 +140,7 @@ export function montarFatos(e: EntradaFatos): Fatos {
   const rastreadorEmbutido = noRio && fipe > limite
 
   const planos: PlanoFatos[] = e.planos.map((p) => {
-    const mensal = r2(p.mensal + (e.carroApp && !moto ? CARRO_APP_EXTRA : 0))
+    const mensal = r2(p.mensal)
     const pct = adesivoPct(p.id, e.fipe)
     return {
       id: p.id,

@@ -756,12 +756,11 @@ export default function CotacaoPage() {
 
   const selectedPlan = plans[selectedPlanIdx] || null
   const planInfo = selectedPlan ? PLAN_INFO[selectedPlan.id as PlanId] : null
-  // Carro de aplicativo: +R$ 20/mês na mensalidade (regra 21Go)
-  const carroAppExtra = form.carroApp === 'sim' ? 20 : 0
   // Moto com Danos a Terceiros opcional: +R$ 22/mês (só planos de moto)
   const selIsMoto = selectedPlan?.id === 'moto-400' || selectedPlan?.id === 'moto-1000'
   const motoTerceirosExtra = form.danosTerceiros === 'sim' && selIsMoto ? 22 : 0
-  const price = (selectedPlan?.monthly || 0) + carroAppExtra + motoTerceirosExtra
+  // Carro de aplicativo NAO muda o preco. Aqui somava +R$ 20; Dono, 16/09/2026: "valores nao mudam para carro de aplicativo".
+  const price = (selectedPlan?.monthly || 0) + motoTerceirosExtra
   const priceFormatted = formatPrice(price)
   // Benefícios exibidos: motos com Danos a Terceiros opcional ganham a linha extra.
   const planFeatures = planInfo
@@ -789,10 +788,10 @@ export default function CotacaoPage() {
   const vipOrder: PlanId[] = ['vip', 'suv', 'moto-1000', 'moto-400', 'especial', 'premium', 'do-seu-jeito', 'basico']
   const vipPlan = vipOrder.map((id) => plans.find((p) => p.id === id)).find((p) => !!p) || null
   const vipIsMoto = vipPlan?.id === 'moto-400' || vipPlan?.id === 'moto-1000'
-  const vipMonthly = (vipPlan?.monthly || 0) + carroAppExtra
+  const vipMonthly = (vipPlan?.monthly || 0)
     + (form.danosTerceiros === 'sim' && vipIsMoto ? 22 : 0)
   const isBYD = (vehicle?.marca || '').trim().toUpperCase() === 'BYD'
-  // `price` = mensalidade cheia do plano selecionado (ja com carroApp/danos a terceiros).
+  // `price` = mensalidade cheia do plano selecionado (ja com danos a terceiros da moto).
   // Consultor com ativacao fixa combinada na venda usa o numero dele; os demais
   // (e a casa) seguem a tabela. BYD nao entra no acordo — ver consultores-ativacao.
   const taxaAtivacao = ativacaoDoConsultor(
@@ -848,7 +847,7 @@ export default function CotacaoPage() {
   // novo o que o site já sabe.
   const planMonthlyOf = (p: QuotePlan) => {
     const pIsMoto = p.id === 'moto-400' || p.id === 'moto-1000'
-    return p.monthly + carroAppExtra + (form.danosTerceiros === 'sim' && pIsMoto ? 22 : 0)
+    return p.monthly + (form.danosTerceiros === 'sim' && pIsMoto ? 22 : 0)
   }
   // O `c=` vai explicito: sem ele, o botao dependia SO do cookie `c21go_dono`
   // pra saber de quem e a venda, e cookie e a rede — nao o cinto. Aqui na tela

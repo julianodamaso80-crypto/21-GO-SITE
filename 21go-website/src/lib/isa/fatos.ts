@@ -64,13 +64,12 @@ export function ativacoesDoLead(
 ): { referencia: number | null; porPlano: Record<string, number> } {
   const planos = o.todosOsPlanos ? lead.cotacao_planos || [] : planosQueAparecem(lead.cotacao_planos || [])
   const moto = planos.some((p) => p.id === 'moto-400' || p.id === 'moto-1000')
-  const extraApp = lead.carro_app && !moto ? 20 : 0
   const ref = ORDEM_REFERENCIA.map((id) => planos.find((p) => p.id === id)).find(Boolean) || planos[0]
   if (!ref) return { referencia: null, porPlano: {} }
   const isBYD = (lead.marca_interesse || '').trim().toUpperCase().startsWith('BYD')
-  const base = ref.monthly + extraApp
+  const base = ref.monthly
   const porPlano: Record<string, number> = {}
-  for (const p of planos) porPlano[p.id] = calcActivation(base, isBYD, p.monthly + extraApp)
+  for (const p of planos) porPlano[p.id] = calcActivation(base, isBYD, p.monthly)
   return { referencia: calcActivation(base, isBYD), porPlano }
 }
 
