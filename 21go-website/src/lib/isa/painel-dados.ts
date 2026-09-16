@@ -30,7 +30,10 @@ const FILTRO: Record<Aba, string> = {
   todos: 'true',
   // Pausou sozinha num gatilho (e nao foi transferido) ou esta esperando o dono decidir desconto.
   // ...ou ficou devendo uma resposta ("vou confirmar e ja te retorno" — auditoria 12/09/2026).
-  precisa: `(NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR (c.aguardando_dono IS NOT NULL AND c.aguardando_dono <> 'fecha_quando') OR c.pergunta_pendente IS NOT NULL`,
+  // Etiqueta FRIO tira da fila (dono, 16/09/2026: "se eu selecionar tag frio ele sai de precisa
+  // de mim"). Os parenteses em volta dos OR sao obrigatorios: sem eles o AND so valeria pro ultimo.
+  precisa: `((NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR (c.aguardando_dono IS NOT NULL AND c.aguardando_dono <> 'fecha_quando') OR c.pergunta_pendente IS NOT NULL)
+    AND NOT ('frio' = ANY(COALESCE(c.etiquetas, '{}'::text[])))`,
   isa: 'c.ligada',
   off: 'NOT c.ligada',
   transferidos: 'c.transferido_em IS NOT NULL',

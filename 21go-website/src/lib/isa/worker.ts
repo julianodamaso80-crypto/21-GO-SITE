@@ -41,7 +41,7 @@ import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, nomeDoDoc, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura, type TipoMidia } from '@/lib/isa/ler-midia.regras'
 import { dividirEmPartes, partesComCitacao, semMarcaDeParte, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
-import { abertura, falaDeAdesivo, ehPergunta } from '@/lib/isa/prompt.regras'
+import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
@@ -841,7 +841,10 @@ export async function enviarComoGente(
   const partes: ParteEnvio[] = (Array.isArray(texto) ? texto : dividirEmPartes(texto))
     .map((p) => (typeof p === 'string' ? { texto: p, citar: null } : p))
     // a marcacao [1], [2] e interna: nunca chega no cliente, venha de que caminho vier
-    .map((p) => ({ ...p, texto: semMarcaDeParte(p.texto) }))
+    // Nem [n] nem travessao/aspas chegam no cliente, venha de onde vier: texto da IA, resposta
+    // pronta ou mensagem do codigo. Em 16/09/2026 o travessao saiu de uma resposta PRONTA, que
+    // o filtro antigo (so no texto da IA) deixava passar. Dono: "errando de novo".
+    .map((p) => ({ ...p, texto: semCaraDeIa(semMarcaDeParte(p.texto)) }))
     .filter((p) => p.texto)
   if (partes.length === 0) return false
 

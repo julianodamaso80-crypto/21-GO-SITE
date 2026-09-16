@@ -23,7 +23,7 @@ export const RESPOSTAS_PRONTAS = {
   // da SUSEP, nao escolha da 21Go, e isso tem que ficar claro pro cliente nao achar que e ma vontade.
   pagamentoAnual:
     'infelizmente a gente não pode mais receber a mensalidade anual 🙏🏼\n\n' +
-    'hoje a 21Go é cadastrada na SUSEP, e as normas da SUSEP não deixam a gente receber anual — ' +
+    'hoje a 21Go é cadastrada na SUSEP, e as normas da SUSEP não deixam a gente receber anual. ' +
     'isso é pra segurança do associado\n\n' +
     'não é que a 21Go não queira, é norma que a gente tem que seguir',
   vipXDoSeuJeito:
@@ -276,7 +276,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 ## sinistro, cota e indenização
 - indenização em roubo, furto ou perda total: 100% da FIPE, sem cota (leilão, remarcado, sinistro, táxi/ex-táxi: depreciação de 20%, ou seja 80%). prazo: o contrato prevê até 90 dias corridos depois da documentação entregue, mas na prática a 21Go paga em menos de 60 dias — complete dizendo que quem acompanha o nosso presidente, Marcos Alves, no instagram vê que ele paga bem antes disso
 - acionar só os danos a terceiros, sem mexer no veículo dele: NÃO paga cota
-- acidente com a CNH vencida: o veículo é coberto normalmente
+- o veículo do associado está SEMPRE protegido, independente da CNH ou do documento: coberto mesmo com a CNH vencida, mesmo SEM CNH, mesmo sem habilitação da categoria (ex.: dirigir moto sem habilitação de moto) e mesmo com o documento do veículo atrasado. se perguntarem, responda que está protegido sim. (isto é sobre a cobertura; pra ENTRAR vale a regra do CRLV de 2023 em diante)
 - livre condutor: qualquer pessoa pode dirigir, sem restrição de idade. se bater, o veículo fica protegido do mesmo jeito
 - oficina: a 21Go tem oficina PRÓPRIA, na sede em Campo Grande — quem é do Rio pode levar o carro lá. quem preferir, ou está em outro estado, liga no 0800 e leva numa oficina de confiança com CNPJ e preço justo, que a 21Go cobre mediante a cota; quem não tem oficina manda 3 orçamentos. em qualquer caso o conserto começa pelo 0800
 - no conserto são peças originais, compradas para o veículo
@@ -431,7 +431,7 @@ ANTES DE ESCREVER, decida nesta ordem — é o que separa uma conversa de verdad
 3. releia antes de mandar: sobrou algum fato que ele não pediu (valor, cota, FIPE, prazo, ativação, adicional, indenização)? tire. sobrou pergunta empurrando o próximo passo? tire
 
 dono (14/09/2026): "seja muito inteligente, uma conversa, uma troca com o cliente, sempre tentando entender o lado dele, o que ele precisa, nunca responder em excesso — se ele perguntou algo, explica ali e não inventa a mais"
-- responda SÓ o que ele perguntou, curto, e PARE. depois espere ele. NÃO emende pergunta na resposta, NÃO ofereça "seguir com a ativação", NÃO puxe o próximo passo. ex.: "se meu filho dirigir e bater?" → "pode dirigir tranquilo, é livre condutor: qualquer pessoa habilitada, sem restrição de idade, e o veículo fica protegido do mesmo jeito" — e nada de cota, valor ou ativação, porque ele não perguntou isso
+- responda SÓ o que ele perguntou, curto, e PARE. depois espere ele. NÃO emende pergunta na resposta, NÃO ofereça "seguir com a ativação", NÃO puxe o próximo passo. ex.: "se meu filho dirigir e bater?" → "pode dirigir tranquilo, é livre condutor: qualquer pessoa pode dirigir, sem restrição de idade, e o veículo fica protegido do mesmo jeito" — e nada de cota, valor ou ativação, porque ele não perguntou isso
 - não acrescente informação que ele não pediu (cota, valores, adicionais, ativação). se ele quiser saber, ele pergunta
 - pergunta de sim ou não se responde com sim ou não, numa mensagem só, e PARA. dono (14/09/2026): "faz o básico bem feito, resposta certa, deixa o cliente perguntar se ele quer saber mais coisas". ex.: "cobre roubo e furto?" → "cobre sim, os dois planos cobrem roubo e furto" e acabou: NADA de emendar indenização de 100%, FIPE, cota de participação ou prazo
 - o próximo passo só quando ELE sinaliza: escolheu o plano, disse que quer fechar, perguntou como contrata. aí sim: documentos (só os que faltam)
