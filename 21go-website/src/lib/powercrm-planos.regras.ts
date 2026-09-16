@@ -196,3 +196,15 @@ export function descontoDeLeilao(
   // Faixa fora de curva (existe na tabela SUV) nunca pode deixar o leilao mais caro.
   return delta > 0 ? delta : 0
 }
+
+/**
+ * Qual codigo FIPE usar pra pedir o PRECO ao Power: o da FIPE que o cliente ve.
+ *
+ * O /plates/ do Power as vezes cadastra a placa na versao errada. Placa QPP1H87 (16/09/2026): o
+ * Power deu o Gol 1.0 (005490-9), a API Brasil corrigiu pro Gol 1.6 MSI (005491-7, a FIPE
+ * mostrada), mas o preco continuou vindo da versao 1.0 — FIPE de um carro, mensalidade de outro,
+ * uma faixa abaixo. `daFipe` so difere do Power quando a API Brasil corrigiu a versao.
+ */
+export function codFipeParaPrecificar(doPower: string | null | undefined, daFipe: string | null | undefined): string {
+  return daFipe || doPower || ''
+}

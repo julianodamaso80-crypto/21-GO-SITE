@@ -45,6 +45,7 @@ import { aceitaAno, decidirElegibilidade } from './elegibilidade.regras'
 import { planoNoPowerCrm } from '@/data/vehicle-allowlist'
 import { planosDoPowerAoVivo } from './powercrm-planos'
 import { planosDoPowerParaTela } from './planos-para-tela'
+import { codFipeParaPrecificar } from './powercrm-planos.regras'
 
 const POWERCRM_BASE_URL = process.env.POWERCRM_BASE_URL || 'https://api.powercrm.com.br'
 const POWERAPI_TOKEN = process.env.POWERAPI_TOKEN || ''
@@ -477,7 +478,8 @@ export async function lookupPlate(
   )
 
   let internals: { mdl?: number; mdlYr?: number; cityId?: number } = {}
-  const codFipeParaPower = pcCodFipe || fipeCode
+  // A versao do preco tem que ser a da FIPE mostrada (ver codFipeParaPrecificar).
+  const codFipeParaPower = codFipeParaPrecificar(pcCodFipe, fipeCode)
   if (pcVehicle && codFipeParaPower && year) {
     try {
       internals = await resolvePowerInternals(pcVehicle, tipo, year, codFipeParaPower)
