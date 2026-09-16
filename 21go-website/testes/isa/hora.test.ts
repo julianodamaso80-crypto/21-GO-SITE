@@ -48,3 +48,16 @@ test('dentro do horario a proxima abertura e agora', () => {
   const agora = rio('15:00')
   assert.equal(proximaAbertura(agora).toISOString(), agora.toISOString())
 })
+
+test('primeira mensalidade: fechou do 1 ao 15 vence dia 10 do mes seguinte; do 16 em diante, dia 20 (dono, 16/09/2026)', async () => {
+  const { primeiroVencimento } = await import('../../src/lib/isa/hora.regras.ts')
+  // exemplos do dono
+  assert.equal(primeiroVencimento(new Date('2026-09-16T15:00:00-03:00')), '20/10')
+  assert.equal(primeiroVencimento(new Date('2026-09-02T15:00:00-03:00')), '10/10')
+  assert.equal(primeiroVencimento(new Date('2026-09-15T23:59:00-03:00')), '10/10')
+  assert.equal(primeiroVencimento(new Date('2026-09-30T10:00:00-03:00')), '20/10')
+  // virada do ano
+  assert.equal(primeiroVencimento(new Date('2026-12-20T10:00:00-03:00')), '20/01')
+  // vale o dia no Rio: 16/09 as 22h no Rio ja e 17/09 em UTC, e continua dia 20
+  assert.equal(primeiroVencimento(new Date('2026-09-15T22:30:00-03:00')), '10/10')
+})

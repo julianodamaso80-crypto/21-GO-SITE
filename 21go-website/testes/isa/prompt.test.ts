@@ -381,3 +381,11 @@ test('gabarito do dono, 16/09/2026: leilao E remarcado continua 80%, oficina rec
   assert.match(p, /manda o orçamento pra 21Go/)
   assert.match(p, /21Go paga direto pra oficina/)
 })
+
+test('vencimento: fala so a data da primeira mensalidade, nunca a regra nem "escolher" (dono, 16/09/2026)', () => {
+  const p = montarPrompt({ cumprimento: 'boa tarde', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false, primeiroVencimento: '20/10' })
+  assert.match(p, /sua primeira mensalidade vai vir dia 20\/10/)
+  assert.doesNotMatch(p, /vencimento dia 10 ou dia 20/)
+  assert.match(p, /NUNCA diga que dá pra escolher/)
+  assert.match(p, /"mudar_vencimento"/)
+})

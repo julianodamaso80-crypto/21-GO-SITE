@@ -30,6 +30,7 @@ const MOTIVO_LEGIVEL: Record<string, string> = {
   template: 'template da mensagem dos 5 min deixou de ser utilidade aprovada',
   relatorio: 'relatorio diario da Isa',
   byd: 'cliente de BYD (transferido pro 4824)',
+  mudar_vencimento: 'cliente pediu pra mudar o dia do vencimento (a Isa disse que vai tentar)',
   loop: 'TRAVA: a Isa ia mandar mensagem demais sem o cliente responder — pausei e nada saiu',
 }
 

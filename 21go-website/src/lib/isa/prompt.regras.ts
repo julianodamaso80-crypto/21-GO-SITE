@@ -49,7 +49,7 @@ export const CHAVES_PRONTAS: Record<string, keyof typeof RESPOSTAS_PRONTAS> = {
 
 const NOMES_INTERNOS = new Set([
   ...Object.keys(CHAVES_PRONTAS),
-  'desconto', 'robo', 'hostil', 'associado', 'sem_informacao', 'sem_comprovante', 'avaria', 'validador', 'null',
+  'desconto', 'robo', 'hostil', 'associado', 'sem_informacao', 'sem_comprovante', 'avaria', 'mudar_vencimento', 'validador', 'null',
   // nomes dos campos do JSON (11/09/2026: saiu uma mensagem so com a palavra "pronta")
   'resposta', 'pronta', 'gatilho', 'genero', 'placa', 'sem_placa', 'leilao', 'app',
 ])
@@ -260,7 +260,8 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 
 ## pagamento, ativação e descontos
 - a ativação é paga no ato e a 1ª mensalidade só no mês seguinte. à vista no pix; no cartão tem os juros da máquina. o pix da ativação vai pro consultor, que repassa pra empresa
-- mensalidade: boleto no aplicativo, cartão cadastrado no app ou pix. vencimento dia 10 ou dia 20
+- mensalidade: boleto no aplicativo, cartão cadastrado no app ou pix
+- vencimento: o associado NÃO escolhe a data. se perguntar quando vem ou vence a primeira mensalidade, responda só a frase com a data de HOJE (está no fim, em "primeira mensalidade"). NUNCA explique como a data é definida e NUNCA diga que dá pra escolher o dia. se ele pedir pra mudar o dia, diga que vai tentar e marque o gatilho "mudar_vencimento"
 - o valor é fixo e NÃO tem reajuste anual; pode ter pequeno rateio conforme o índice de roubos e acidentes, e o desconto de 5% por pagar antes já cobre essa diferença
 - descontos da mensalidade: 5% pagando 5 dias antes do vencimento; adesivo 10% ou 15% (conforme plano e FIPE); 5% de frota a partir de 3 veículos
 - NÃO existe pagamento anual nem semestral: a mensalidade é mês a mês, e só. quem perguntar como paga o ano todo de uma vez recebe a resposta pronta "pagamento_anual" (é norma da SUSEP, não escolha da 21Go). NUNCA ofereça desconto por pagar o ano adiantado
@@ -329,6 +330,8 @@ export interface EntradaPrompt {
   comparacaoHoje?: string[]
   /** Documentos de contratacao que ele JA mandou nesta conversa (nomes curtos) e o que falta. */
   docs?: { recebidos: string[]; faltam: string[] }
+  /** "DD/MM" da primeira mensalidade de quem fecha hoje (hora.regras primeiroVencimento). */
+  primeiroVencimento?: string
 }
 
 /**
@@ -497,7 +500,9 @@ ${AINDA_NAO_SABE.map((x) => `- ${x}`).join('\n')}
 
 ## FATOS deste cliente (a única fonte de números)
 ${e.fatos ? blocoFatos(e.fatos, !!e.falaDeAdesivo) : 'ainda não há simulação deste cliente. para passar valor você PRECISA da placa — mas só peça quando ELE pedir cotação/simulação/valor: "me manda a placa do veículo, que eu consulto pra você". se for zero km ou ele não tiver placa, peça o modelo, o ano e o nome do veículo. num "oi" ou numa dúvida, não peça placa nenhuma. não passe nenhum valor sem simulação.'}
-${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativação — não existe outro desconto automático.' : ''}
+${e.primeiroVencimento ? `
+primeira mensalidade (se ele fechar hoje): sua primeira mensalidade vai vir dia ${e.primeiroVencimento}
+` : ''}${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativação — não existe outro desconto automático.' : ''}
 ${e.comparacaoHoje?.length ? `\n${e.comparacaoHoje.join('\n')}` : ''}
 ${e.docs?.recebidos.length ? `\ndocumentos que ele JÁ mandou nesta conversa: ${e.docs.recebidos.join(', ')}. ${e.docs.faltam.length ? `quando ele escolher o plano, peça SÓ o que falta: ${e.docs.faltam.join(', ')}` : 'não falta nenhum documento: quando ele escolher o plano, diga que já tem tudo e que vai passar pra Leticya finalizar'}` : ''}
 
@@ -509,9 +514,10 @@ ${e.docs?.recebidos.length ? `\ndocumentos que ele JÁ mandou nesta conversa: ${
 - "sem_informacao": perguntou algo que você não sabe responder com certeza. se ele perguntou VÁRIAS coisas e você sabe uma delas, responda essa primeiro e diga que vai confirmar SÓ o que falta — nunca jogue no "vou confirmar" o que está no gabarito
 - "sem_comprovante": escolheu o plano e disse que não tem comprovante de residência (responda normalmente pedindo CNH e documento do veículo)
 - "avaria": o veículo tem amassado, risco ou peça com defeito. peça as FOTOS do que está amassado — quando ele mandar, a Leticya avalia
+- "mudar_vencimento": pediu pra mudar o dia do vencimento da mensalidade. responda que vai tentar (ex.: vou tentar ver isso pra você 🙏🏼), sem prometer; o time é avisado
 
 ## saída — responda SÓ com JSON válido, sem texto fora dele
-{"resposta": "texto pro cliente, com linha em branco entre as partes, sem cumprimento", "pronta": null ou "susep"|"susep_numero"|"cooperativa"|"cnh_vencida"|"vip_x_do_seu_jeito"|"fora_do_assunto", "gatilho": null ou "desconto"|"robo"|"hostil"|"associado"|"sem_informacao"|"sem_comprovante", "genero": null ou "m"|"f", "placa": null ou "ABC1D23", "sem_placa": null ou {"marca": "...", "modelo": "...", "ano": 2020}, "leilao": null ou true|false, "app": null ou true|false}
+{"resposta": "texto pro cliente, com linha em branco entre as partes, sem cumprimento", "pronta": null ou "susep"|"susep_numero"|"cooperativa"|"cnh_vencida"|"pagamento_anual"|"vip_x_do_seu_jeito"|"fora_do_assunto", "gatilho": null ou "desconto"|"robo"|"hostil"|"associado"|"sem_informacao"|"sem_comprovante"|"avaria"|"mudar_vencimento", "genero": null ou "m"|"f", "placa": null ou "ABC1D23", "sem_placa": null ou {"marca": "...", "modelo": "...", "ano": 2020}, "leilao": null ou true|false, "app": null ou true|false}
 
 - "placa": SÓ se o cliente mandou uma placa nas mensagens NOVAS (não repita placa antiga do histórico). quando vier placa, o sistema consulta e manda a simulação sozinho — deixe "resposta" vazia
 - "sem_placa": zero km ou ele não tem/não sabe a placa e já disse marca, modelo e ano. se ele COMPLETAR a versão depois ("manual", "o LT", "turbo"), preencha de novo "sem_placa" com a marca, o modelo e o ano que ele já disse na conversa + o detalhe novo no "modelo" — não pergunte de novo o que ele já respondeu

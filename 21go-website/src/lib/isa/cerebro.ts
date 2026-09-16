@@ -4,7 +4,7 @@ import { marcasQueFaltam } from '@/lib/isa/envio.regras'
 import { validarNumeros, extrairNumeros, type Permitidos } from '@/lib/isa/validador.regras'
 import { tirarFrasesDeRobo, comparacaoComHoje, ehSoConcordancia } from '@/lib/isa/venda.regras'
 import { lerJsonTolerante } from '@/lib/isa/json.regras'
-import { cumprimento } from '@/lib/isa/hora.regras'
+import { cumprimento, primeiroVencimento } from '@/lib/isa/hora.regras'
 import { NUMEROS_FIXOS, type Fatos } from '@/lib/isa/fatos.regras'
 import type { MensagemHistorico } from '@/lib/isa/banco'
 
@@ -23,7 +23,7 @@ const MODELO = process.env.ISA_MODELO || 'google/gemini-3.1-pro-preview'
 const RESERVA = 'google/gemini-2.5-flash'
 const raciocina = (modelo: string) => /pro|thinking/i.test(modelo)
 
-export type Gatilho = 'desconto' | 'robo' | 'hostil' | 'associado' | 'sem_informacao' | 'sem_comprovante' | 'avaria' | 'validador' | null
+export type Gatilho = 'desconto' | 'robo' | 'hostil' | 'associado' | 'sem_informacao' | 'sem_comprovante' | 'avaria' | 'mudar_vencimento' | 'validador' | null
 
 export interface SaidaCerebro {
   resposta: string
@@ -39,7 +39,7 @@ export interface SaidaCerebro {
 // Sem simulacao a Isa nao tem preco nenhum: so os valores fixos do gabarito (uma lista so, em fatos.regras).
 const PERMITIDOS_SEM_FATOS: Permitidos = NUMEROS_FIXOS
 
-const GATILHOS = new Set(['desconto', 'robo', 'hostil', 'associado', 'sem_informacao', 'sem_comprovante', 'avaria'])
+const GATILHOS = new Set(['desconto', 'robo', 'hostil', 'associado', 'sem_informacao', 'sem_comprovante', 'avaria', 'mudar_vencimento'])
 
 function primeiroNome(nome: string | null): string | null {
   const n = (nome || '').trim().split(/\s+/)[0]
@@ -159,6 +159,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
     falaDeAdesivo: e.falaDeAdesivo,
     comparacaoHoje: comparacao?.linhas,
     docs: e.docs,
+    primeiroVencimento: primeiroVencimento(e.agora),
   })
   const base = e.fatos?.numerosPermitidos ?? PERMITIDOS_SEM_FATOS
   // O valor que ele paga hoje e as diferencas sao fatos calculados: a IA pode cita-los.

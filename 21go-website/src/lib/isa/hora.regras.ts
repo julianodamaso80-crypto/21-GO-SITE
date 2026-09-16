@@ -44,6 +44,17 @@ export function cumprimento(agora: Date): Cumprimento {
   return 'boa noite'
 }
 
+/**
+ * Dia da primeira mensalidade de quem fecha em `agora` (no Rio). Dono, 16/09/2026: o associado nunca
+ * escolhe — fechou do dia 1 ao 15, vence dia 10 do mes seguinte; do 16 ao fim do mes, dia 20.
+ * "fechei dia 16/09 vai vir dia 20/10, fechei dia 02/09 vai vir dia 10/10". Devolve "DD/MM".
+ */
+export function primeiroVencimento(agora: Date): string {
+  const { dia, mes } = horaMinutoRio(agora)
+  const proximo = mes === 12 ? 1 : mes + 1
+  return `${dia <= 15 ? '10' : '20'}/${String(proximo).padStart(2, '0')}`
+}
+
 /** A Isa atende das 8h as 22h. Fora disso ela silencia e responde a fila as 8h. */
 export function dentroDoHorario(agora: Date): boolean {
   const { h } = horaMinutoRio(agora)

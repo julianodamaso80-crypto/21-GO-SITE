@@ -619,6 +619,11 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   if (saida.gatilho === 'sem_comprovante') {
     await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_comprovante', detalhe: ultimoTexto.slice(0, 200) })
   }
+  // Pediu pra mudar o dia do vencimento: a Isa disse que vai tentar e o time e avisado (dono, 16/09/2026).
+  if (saida.gatilho === 'mudar_vencimento') {
+    await registrarEvento(c.telefone, 'mudar_vencimento', { texto: textoNovas.trim().slice(0, 200) })
+    await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'mudar_vencimento', detalhe: textoNovas.trim().slice(0, 200) })
+  }
   if (saida.gatilho === 'sem_informacao') {
     // A promessa "ja te retorno" vira pendencia: aparece em "Precisa de voce" e o dono responde
     // pelo WhatsApp — a Isa entrega ao cliente (acoes.responderPerguntaPendente).
