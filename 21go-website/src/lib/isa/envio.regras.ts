@@ -105,10 +105,16 @@ export function citarMensagemRespondida(
   janelaMs = 3 * 60_000,
 ): ParteEnvio[] {
   if (partes.length === 0 || partes.some((p) => p.citar)) return partes
-  const doCliente = historico.filter((m) => m.direction === 'inbound' && (m.content || '').trim())
-  const recentes = doCliente.filter((m) => agora.getTime() - new Date(m.criada_em).getTime() < janelaMs)
-  if (recentes.length < 2) return partes
-  const alvo = doCliente[doCliente.length - 1]?.whatsapp_message_id
+  // Dono, 16/09/2026: "qd tiver somente 1 pergunta vc nao precisa responder selecionando ela, so qd
+  // tiver 2 ou mais". Conta so o que ainda esta SEM resposta (depois da nossa ultima mensagem): num
+  // pergunta-e-resposta normal cada pergunta chega sozinha e sai sem citacao, como gente faz.
+  const ultimaNossa = historico.map((m) => m.direction).lastIndexOf('outbound')
+  const pendentes = historico
+    .slice(ultimaNossa + 1)
+    .filter((m) => m.direction === 'inbound' && (m.content || '').trim())
+    .filter((m) => agora.getTime() - new Date(m.criada_em).getTime() < janelaMs)
+  if (pendentes.length < 2) return partes
+  const alvo = pendentes[pendentes.length - 1]?.whatsapp_message_id
   if (!alvo) return partes
   return partes.map((p, i) => (i === 0 ? { ...p, citar: alvo } : p))
 }

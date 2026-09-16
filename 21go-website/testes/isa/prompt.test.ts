@@ -119,7 +119,10 @@ test('adesivo: so com DDD 21, e so colando na sede em Campo Grande (dono, 11/09/
   const { falaDeAdesivo } = await import('../../src/lib/isa/prompt.regras.ts')
   assert.equal(falaDeAdesivo('5521992208062'), true)
   assert.equal(falaDeAdesivo('5511987654321'), false)
-  assert.equal(falaDeAdesivo('5524999998888'), false)
+  // Dono, 16/09/2026: adesivo e pra quem e do RJ (estado) — DDD 21, 22 e 24
+  assert.equal(falaDeAdesivo('5524999998888'), true)
+  assert.equal(falaDeAdesivo('5522997124140'), true)
+  assert.equal(falaDeAdesivo('5527999998888'), false)
   assert.equal(falaDeAdesivo(null), false)
 
   const carro = montarFatos({
@@ -129,6 +132,8 @@ test('adesivo: so com DDD 21, e so colando na sede em Campo Grande (dono, 11/09/
   const rio = montarPrompt({ cumprimento: 'bom dia', primeiroNome: null, genero: null, fatos: carro, jaGanhouDesconto: false, falaDeAdesivo: true })
   assert.match(rio, /com adesivo \(15%\)/)
   assert.match(rio, /sede da 21Go, em Campo Grande/)
+  // ou o tecnico cola quando vai instalar o rastreador (dono, 16/09/2026)
+  assert.match(rio, /técnico/)
   const fora = montarPrompt({ cumprimento: 'bom dia', primeiroNome: null, genero: null, fatos: carro, jaGanhouDesconto: false, falaDeAdesivo: false })
   assert.doesNotMatch(fora, /com adesivo \(/)
   assert.match(fora, /NUNCA puxe o assunto adesivo/)
@@ -366,4 +371,13 @@ test('mensalidade anual: nao recebemos mais, e norma da SUSEP (dono, 15/09/2026)
   assert.match(descontos, /5 dias antes/)
   // e tem que dizer que anual nao existe, pra IA nao prometer
   assert.match(p, /NÃO existe pagamento anual/)
+})
+
+test('gabarito do dono, 16/09/2026: leilao E remarcado continua 80%, oficina recebe direto da 21Go', () => {
+  const p = montarPrompt({ cumprimento: 'bom dia', primeiroNome: null, genero: null, fatos, jaGanhouDesconto: false })
+  // "qq leilao ou remarcado e 80%, pode ser os 2 nao muda isso"
+  assert.match(p, /leilão E chassi remarcado ao mesmo tempo.*80%/)
+  // "faz orcamento na oficina, manda pra 21Go e a 21Go faz o pagamento direto pra oficina"
+  assert.match(p, /manda o orçamento pra 21Go/)
+  assert.match(p, /21Go paga direto pra oficina/)
 })

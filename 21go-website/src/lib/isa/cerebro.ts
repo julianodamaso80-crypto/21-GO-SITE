@@ -2,7 +2,7 @@ import 'server-only'
 import { montarPrompt, comporResposta, abertura, tirarCumprimento, tirarNomeRepetido, ehRepeticao, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
 import { marcasQueFaltam } from '@/lib/isa/envio.regras'
 import { validarNumeros, extrairNumeros, type Permitidos } from '@/lib/isa/validador.regras'
-import { tirarFrasesDeRobo, comparacaoComHoje } from '@/lib/isa/venda.regras'
+import { tirarFrasesDeRobo, comparacaoComHoje, ehSoConcordancia } from '@/lib/isa/venda.regras'
 import { lerJsonTolerante } from '@/lib/isa/json.regras'
 import { cumprimento } from '@/lib/isa/hora.regras'
 import { NUMEROS_FIXOS, type Fatos } from '@/lib/isa/fatos.regras'
@@ -134,7 +134,7 @@ export interface EntradaCerebro {
   genero: Genero
   fatos: Fatos | null
   jaGanhouDesconto: boolean
-  /** DDD 21: so entao a Isa fala de adesivo (prompt.regras falaDeAdesivo). */
+  /** DDD do RJ (21, 22, 24): so entao a Isa fala de adesivo (prompt.regras falaDeAdesivo). */
   falaDeAdesivo: boolean
   historico: MensagemHistorico[]
   agora: Date
@@ -209,6 +209,8 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
       console.warn('[isa] vazia de novo — bruto:', bruto.slice(0, 400))
       // Sem pergunta (um "oie"), "vou confirmar" nao faz sentido e nao gera alerta.
       if (!ehPergunta(doCliente)) {
+        // "Certo", "ok": ele so concordou. A IA acertou em nao dizer nada; a Isa fica quieta.
+        if (ehSoConcordancia(doCliente)) return { ...saida, resposta: '', gatilho: null, reprovados: [] }
         return { ...saida, resposta: comporResposta(null, 'me diz, como posso te ajudar? 🙏🏼', aberturaDoCodigo), gatilho: null, reprovados: [] }
       }
       return {

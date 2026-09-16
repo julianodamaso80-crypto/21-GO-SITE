@@ -39,6 +39,13 @@ export function normalizarEtiquetas(lista: unknown): string[] {
   return ETIQUETAS.map((e) => e.id).filter((id) => pedidas.has(id))
 }
 
+/**
+ * Etiquetas que tiram o contato da fila "precisa de voce": ja tem gente cuidando (Leticya) ou nao
+ * vale mais a pena correr atras (Frio). Dono, 16/09/2026: "se eu coloquei tag falando com leticya
+ * vc tira do precisa de vc" (o Frio ja saia desde a manha).
+ */
+export const ETIQUETAS_FORA_DA_FILA: readonly string[] = ['frio', 'leticya']
+
 export function etiquetaValida(id: string | null | undefined): boolean {
   return !!id && IDS.has(id)
 }

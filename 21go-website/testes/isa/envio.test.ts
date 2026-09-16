@@ -155,10 +155,16 @@ test('2 mensagens seguidas em turnos separados: a resposta CITA a mensagem (dono
   const agora = new Date('2026-09-16T16:07:00Z')
   const m = (id: string, dir: string, seg: number, content = 'x') =>
     ({ direction: dir, content, whatsapp_message_id: id, criada_em: new Date(agora.getTime() - seg * 1000).toISOString() })
-  // o caso real: "moto seria 257,40" e "carro seria 269,53" com segundos de diferenca
-  const hist = [m('w_moto', 'inbound', 60), m('isa1', 'outbound', 50), m('w_carro', 'inbound', 40)]
+  // o caso real: "moto seria 257,40" e "carro seria 269,53" com segundos de diferenca, as duas
+  // chegando antes de a Isa responder
+  const hist = [m('w_moto', 'inbound', 60), m('w_carro', 'inbound', 40)]
   const partes = [{ texto: 'isso mesmo, pro carro o vip e 269,53', citar: null }]
   assert.equal(citarMensagemRespondida(partes, hist, agora)[0].citar, 'w_carro')
+
+  // Dono, 16/09/2026 (print da mensalidade no mes seguinte): UMA pergunta sem resposta se responde
+  // normal, como gente — a de antes ja tinha sido respondida, entao nao cita
+  const umaPorVez = [m('w_franquia', 'inbound', 60), m('isa1', 'outbound', 50), m('w_mensalidade', 'inbound', 40)]
+  assert.equal(citarMensagemRespondida(partes, umaPorVez, agora)[0].citar, null)
 
   // mensagem unica, sem outra dele por perto: nao cita
   const so = [m('isa0', 'outbound', 400), m('w_um', 'inbound', 30)]

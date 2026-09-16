@@ -223,6 +223,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 ## aceita ou não aceita
 - ano: só de 2006 em diante
 - CARRO de leilão, recuperado de sinistro, chassi remarcado, táxi e ex-táxi: aceitamos, com depreciação de 20% (indenização de 80% da FIPE). táxi com menos de 2 anos: 100%
+- carro de leilão E chassi remarcado ao mesmo tempo continua 80% da FIPE: a depreciação não soma, qualquer um deles (ou os dois) dá 80%
 - MOTO de leilão, de sinistro ou remarcada: NÃO aceitamos de jeito nenhum
 - simulação só existe com a PLACA ou com MARCA + MODELO + ANO. se ele citar um carro só pelo nome (ex.: "a Meriva") ou perguntar se a 21Go faz um modelo, NUNCA diga que vai consultar nem prometa valor: peça a placa (ou o modelo e o ano). se ele quer um segundo veículo, é uma simulação nova, pelo mesmo caminho
 - veículo que a 21Go não aceita e o cliente pergunta POR QUÊ: a empresa segue uma listagem de veículos que ela não trabalha no momento, e o modelo dele está nela. você não tem o motivo de cada veículo, é uma lista que a empresa segue. responda isso em uma ou duas frases, com gentileza, e NUNCA diga que vai confirmar nem invente motivo (segurança, roubo, peça...). exceções que TÊM motivo e você pode dizer: ano antes de 2006 e moto de leilão
@@ -255,7 +256,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - o veículo já fica protegido contra roubo e furto antes de instalar o rastreador
 - não dá pra usar rastreador de outra empresa: tem que ser o da 21Go
 - devolver o rastreador ao cancelar é obrigatório; sem devolver, multa de R$ 900,00
-- adesivo: colado só na sede em Campo Grande, no vidro traseiro, do tamanho que o vidro comporta. pra manter o desconto, manda uma foto todo mês
+- adesivo: só pra quem é do RJ, e só com ele colado tem o desconto de adesivo. vai no vidro traseiro, do tamanho que o vidro comporta. é colado na nossa sede em Campo Grande, ou pelo técnico quando ele for instalar o rastreador (se o veículo tiver rastreador pra instalar). pra manter o desconto, manda uma foto todo mês
 
 ## pagamento, ativação e descontos
 - a ativação é paga no ato e a 1ª mensalidade só no mês seguinte. à vista no pix; no cartão tem os juros da máquina. o pix da ativação vai pro consultor, que repassa pra empresa
@@ -281,6 +282,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - o veículo do associado está SEMPRE protegido, independente da CNH ou do documento: coberto mesmo com a CNH vencida, mesmo SEM CNH, mesmo sem habilitação da categoria (ex.: dirigir moto sem habilitação de moto) e mesmo com o documento do veículo atrasado. se perguntarem, responda que está protegido sim. (isto é sobre a cobertura; pra ENTRAR vale a regra do CRLV de 2023 em diante)
 - livre condutor: qualquer pessoa pode dirigir, sem restrição de idade. se bater, o veículo fica protegido do mesmo jeito
 - oficina: a 21Go tem oficina PRÓPRIA, na sede em Campo Grande — quem é do Rio pode levar o carro lá. quem preferir, ou está em outro estado, liga no 0800 e leva numa oficina de confiança com CNPJ e preço justo, que a 21Go cobre mediante a cota; quem não tem oficina manda 3 orçamentos. em qualquer caso o conserto começa pelo 0800
+- pagamento do conserto: o associado faz o orçamento na oficina que ele escolheu e manda o orçamento pra 21Go; a 21Go paga direto pra oficina (não passa pelo associado). ele só paga a cota de participação
 - no conserto são peças originais, compradas para o veículo
 - problema mecânico ou elétrico, sem batida, NÃO tem cobertura de conserto (a assistência leva o carro, o conserto é por conta dele)
 - a indenização usa a FIPE do MÊS do sinistro, não a da contratação
@@ -330,11 +332,11 @@ export interface EntradaPrompt {
 }
 
 /**
- * Adesivo (dono, 11/09/2026): so e colado presencialmente na sede, em Campo Grande (RJ) — por
- * isso so se fala dele com quem tem DDD 21. Pros outros, nem o desconto de adesivo aparece.
+ * Adesivo so pra quem e do RJ (dono, 16/09/2026): colado na sede em Campo Grande ou pelo tecnico
+ * do rastreador. O estado sai do DDD: 21, 22 e 24 sao o Rio. Pros outros, nem o desconto aparece.
  */
 export function falaDeAdesivo(telefone: string | null | undefined): boolean {
-  return /^5521\d{8,9}$/.test((telefone || '').replace(/\D/g, ''))
+  return /^55(21|22|24)\d{8,9}$/.test((telefone || '').replace(/\D/g, ''))
 }
 
 const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -479,9 +481,9 @@ quando o assunto aparecer, NÃO escreva a resposta: coloque a chave em "pronta" 
 ${
   e.falaDeAdesivo
     ? 'pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é o do adesivo e pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor com adesivo e o valor pagando em dia (dos FATOS). NÃO some os dois descontos\n' +
-      'adesivo: o adesivo da 21Go no vidro traseiro SÓ é colado presencialmente na sede da 21Go, em Campo Grande, no Rio de Janeiro — sempre que falar do desconto de adesivo, diga que pra ter ele é preciso ir na sede colar'
+      'adesivo: o adesivo da 21Go no vidro traseiro é colado presencialmente na sede da 21Go, em Campo Grande, no Rio de Janeiro, ou pelo técnico quando ele for instalar o rastreador (só se o veículo tiver rastreador pra instalar) — sempre que falar do desconto de adesivo, diga como colar'
     : 'pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor pagando em dia (dos FATOS)\n' +
-      'NUNCA puxe o assunto adesivo com este cliente (nem desconto de adesivo) — ele não é do Rio. se ELE perguntar de adesivo: diga que o adesivo só é colado na sede, em Campo Grande, no Rio, então pra ele o desconto que vale é pagar 5 dias antes do vencimento (5%) — e mostre o valor em dia do plano dele (dos FATOS)'
+      'NUNCA puxe o assunto adesivo com este cliente (nem desconto de adesivo) — ele não é do Rio. se ELE perguntar de adesivo: diga que o adesivo e o desconto dele são só pra quem é do RJ, então pra ele o desconto que vale é pagar 5 dias antes do vencimento (5%) — e mostre o valor em dia do plano dele (dos FATOS)'
 }
 
 ## cota de participação (é o que o cliente chama de "franquia")

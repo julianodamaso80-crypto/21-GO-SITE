@@ -136,3 +136,10 @@ test('ehSoAgradecimento: "obrigado" seco encerra, "ok" e "vou pensar" nao', () =
     assert.ok(!ehSoAgradecimento(t), t)
   }
 })
+
+test('"Certo" sozinho e concordancia, nao pergunta: a Isa nao responde nada (dono, 16/09/2026)', async () => {
+  const { ehSoConcordancia } = await import('../../src/lib/isa/venda.regras.ts')
+  for (const t of ['Certo', 'ok', 'Entendi', 'perfeito!', 'ta bom', 'show 👍']) assert.ok(ehSoConcordancia(t), t)
+  // cumprimento continua recebendo resposta; pergunta e pedido tambem
+  for (const t of ['oi', 'bom dia', 'Oq não cobre ?', 'Plano Vip', 'certo, e o vidro?']) assert.ok(!ehSoConcordancia(t), t)
+})

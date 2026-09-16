@@ -163,6 +163,15 @@ export function ehDespedida(texto: string | null | undefined): boolean {
   return !!t && DESPEDIDA.test(t)
 }
 
+/**
+ * "Certo", "ok", "entendi": o cliente so concordou, nao perguntou nada. Dono, 16/09/2026 (Jeferson):
+ * "cara falou so certo, e algo que ele concordou, nao teve pergunta" — e a Isa respondeu "me diz,
+ * como posso te ajudar?" citando o "Certo". Cumprimento fica de fora: "oi" merece resposta.
+ */
+export function ehSoConcordancia(texto: string | null | undefined): boolean {
+  return ehDespedida(texto) && !ehSoCumprimento(texto)
+}
+
 export const PERGUNTA_TEM_PROTECAO = 'hoje você tem alguma proteção pro seu veículo?'
 
 export interface EstadoRetomada {
