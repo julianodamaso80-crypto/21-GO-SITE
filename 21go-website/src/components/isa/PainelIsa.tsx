@@ -627,8 +627,12 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
         {jan.tom === 'fechada' && (
           <div className="mb-2 rounded-lg border border-[#F2911D]/40 bg-[#F2911D]/10 px-3 py-2.5">
             <p className="text-[13px] text-[#FFE4C4]">
-              Passaram 24h desde a última mensagem dele, e o WhatsApp só deixa mandar a mensagem aprovada.
-              Quando ele responder, você volta a escrever normalmente.
+              {/* Sem janela_ate = ele nunca escreveu (lead novo que so recebeu o resultado). Dono,
+                  16/09/2026: o "passaram 24h" fazia lead de agora parecer de ontem. */}
+              {contato?.janela_ate
+                ? 'Passaram 24h desde a última mensagem dele, e o WhatsApp só deixa mandar a mensagem aprovada.'
+                : 'Ele ainda não respondeu. Até ele escrever, o WhatsApp só deixa mandar a mensagem aprovada.'}
+              {' '}Quando ele responder, você volta a escrever normalmente.
             </p>
             <button type="button" disabled={ocupado}
               onClick={() => acao('/api/atendimento/reabrir', {})}
@@ -680,7 +684,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
                 ;(e.currentTarget.form as HTMLFormElement | null)?.requestSubmit()
               }
             }}
-            placeholder={jan.tom === 'fechada' ? 'janela de 24h fechada — a Meta só aceita template' : 'responder pelo 98004-0964…'}
+            placeholder={jan.tom === 'fechada' ? (contato?.janela_ate ? 'janela de 24h fechada — a Meta só aceita template' : 'ele ainda não respondeu — a Meta só aceita template') : 'responder pelo 98004-0964…'}
             className="max-h-40 min-h-[44px] flex-1 resize-y rounded-xl border border-white/[0.08] bg-[#0f1638] px-3 py-2.5 text-[15px] text-[#E9ECF8] caret-[#C7D301] outline-none placeholder:text-white/30 focus:border-[#C7D301]/60 disabled:opacity-40" />
           <button disabled={ocupado || !texto.trim() || jan.tom === 'fechada'}
             className="h-11 rounded-xl bg-[#F2911D] px-5 font-semibold text-[#141d45] transition hover:brightness-110 disabled:opacity-30">
