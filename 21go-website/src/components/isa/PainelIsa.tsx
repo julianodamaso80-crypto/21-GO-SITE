@@ -506,19 +506,15 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
     <>
       {/* cabecalho */}
       <header className="border-b border-white/[0.07] bg-[#141d45]/85 px-4 py-3 backdrop-blur md:px-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <button onClick={aoVoltar} className="rounded-md px-2 py-1 text-lg text-white/60 md:hidden">←</button>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-lg font-bold leading-tight">{nome}</p>
-            <p className="text-xs text-white/45 [font-family:var(--fonte-mono)]">{telefoneBonito(telefone)}</p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          {/* No celular nome e telefone ocupam a linha inteira (dono, 16/09/2026: o nome virava "J...") */}
+          <div className="flex min-w-0 basis-full items-center gap-2 md:basis-auto md:flex-1">
+            <button onClick={aoVoltar} className="-ml-2 shrink-0 rounded-md px-2 py-1 text-lg text-white/60 md:hidden">←</button>
+            <div className="min-w-0 flex-1">
+              <p className="break-words text-lg font-bold leading-tight md:truncate">{nome}</p>
+              <p className="text-sm text-white/55 [font-family:var(--fonte-mono)]">{telefoneBonito(telefone)}</p>
+            </div>
           </div>
-          <button type="button" onClick={() => setDetalhes((d) => !d)}
-            className="rounded-md bg-white/[0.06] px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/60 md:hidden">
-            {detalhes ? 'detalhes ▴' : 'detalhes ▾'}
-          </button>
-          <span className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wide [font-family:var(--fonte-rotulo)] ${
-            jan.tom === 'ok' ? 'bg-white/[0.06] text-white/60' : jan.tom === 'alerta' ? 'bg-[#F2911D]/15 text-[#F2911D]' : 'bg-red-500/15 text-red-300'
-          }`}>⏱ {jan.texto}</span>
           {contato && (
             <button disabled={ocupado} onClick={() => acao('/api/atendimento/isa', { ligada: !contato.ligada })}
               title={contato.ligada ? 'desligar a Isa neste contato' : 'ligar a Isa — ela lê a conversa inteira'}
@@ -536,7 +532,30 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
               ↪ 4824
             </button>
           )}
+          {(sim || contato?.pausa_motivo || (contato?.aguardando_dono && contato.aguardando_dono !== 'fecha_quando') || contato?.pergunta_pendente) && (
+            <button type="button" onClick={() => setDetalhes((d) => !d)}
+              className="ml-auto rounded-md bg-white/[0.06] px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/60 md:hidden">
+              {detalhes ? 'detalhes ▴' : 'detalhes ▾'}
+            </button>
+          )}
         </div>
+
+        {/* Etiquetas sempre a vista, inclusive no celular: e por elas que se decide transferir. */}
+        {contato && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            <span className="mr-0.5 text-[11px] uppercase tracking-[0.16em] text-white/35 [font-family:var(--fonte-rotulo)]">etiquetas</span>
+            {ETIQUETAS.map((e) => {
+              const tem = (contato.etiquetas || []).includes(e.id)
+              return (
+                <ChipEtiqueta key={e.id} id={e.id} ativa={tem} onClick={() => {
+                  if (ocupado) return
+                  const nova = tem ? contato.etiquetas.filter((x) => x !== e.id) : [...(contato.etiquetas || []), e.id]
+                  acao('/api/atendimento/etiquetas', { etiquetas: nova })
+                }} />
+              )
+            })}
+          </div>
+        )}
 
         <div className={detalhes ? 'block' : 'hidden md:block'}>
         {(sim || contato?.pausa_motivo || (contato?.aguardando_dono && contato.aguardando_dono !== 'fecha_quando') || contato?.pergunta_pendente) && (
@@ -565,22 +584,6 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
               <Etiqueta tom="laranja">a Isa prometeu retornar: “{contato.pergunta_pendente.texto.slice(0, 90)}” — responda aqui ou pelo WhatsApp de avisos</Etiqueta>
             )}
             {!contato?.ligada && contato?.pausa_motivo && <Etiqueta tom="laranja">pausada: {MOTIVO[contato.pausa_motivo] || contato.pausa_motivo}</Etiqueta>}
-          </div>
-        )}
-
-        {contato && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            <span className="mr-0.5 text-[11px] uppercase tracking-[0.16em] text-white/35 [font-family:var(--fonte-rotulo)]">etiquetas</span>
-            {ETIQUETAS.map((e) => {
-              const tem = (contato.etiquetas || []).includes(e.id)
-              return (
-                <ChipEtiqueta key={e.id} id={e.id} ativa={tem} onClick={() => {
-                  if (ocupado) return
-                  const nova = tem ? contato.etiquetas.filter((x) => x !== e.id) : [...(contato.etiquetas || []), e.id]
-                  acao('/api/atendimento/etiquetas', { etiquetas: nova })
-                }} />
-              )
-            })}
           </div>
         )}
         </div>
