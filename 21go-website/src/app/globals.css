@@ -304,3 +304,15 @@ html[data-painel],
 html[data-painel] body {
   background: #0B1120 !important;
 }
+
+/* Blog so nos `.site`. No `.com.br` (e nos sites de consultor, que moram nele)
+   somem o link do menu, o do rodape e a vitrine de posts da home. O atributo
+   `data-sem-blog` e posto pelo script inline do layout, antes da pintura, e as
+   rotas em si sao redirecionadas pelo middleware. O seletor por final de href
+   pega tambem `/manghi/blog`, que e como o Link reescreve no site do consultor. */
+html[data-sem-blog] a[href="/blog"],
+html[data-sem-blog] a[href$="/blog"],
+html[data-sem-blog] li:has(> a[href$="/blog"]),
+html[data-sem-blog] [data-blog-preview] {
+  display: none !important;
+}

@@ -78,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var h=(location.hostname||'').toLowerCase();if(${JSON.stringify(
               Object.keys(PAINEL_POR_HOST),
-            )}.indexOf(h)>=0)document.documentElement.setAttribute('data-painel','1')}catch(e){}})()`,
+            )}.indexOf(h)>=0)document.documentElement.setAttribute('data-painel','1');if(/(^|\\.)21go\\.com\\.br$/.test(h))document.documentElement.setAttribute('data-sem-blog','1')}catch(e){}})()`,
           }}
         />
         <ConsultorProvider>

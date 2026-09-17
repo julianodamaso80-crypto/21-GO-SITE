@@ -17,7 +17,7 @@ export function BlogPreview() {
   const isInView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
-    <section ref={ref} className="bg-white py-20 lg:py-28">
+    <section ref={ref} data-blog-preview className="bg-white py-20 lg:py-28">
       <motion.div
         variants={staggerContainer}
         initial="hidden"

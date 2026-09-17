@@ -8,6 +8,7 @@ import {
   DIAS_COOKIE_VENDEDOR,
 } from '@/lib/consultores-painel'
 import { painelDoHost, vendedorDoCaminho } from '@/lib/painel/rotas'
+import { hostSemBlog } from '@/lib/dominio-sem-blog'
 
 /**
  * Site por consultor: `21go.com.br/julianodamaso` serve o MESMO site de sempre,
@@ -67,6 +68,31 @@ export function middleware(req: NextRequest) {
 
   const segmentos = pathname.split('/').filter(Boolean)
   const primeiro = segmentos[0]
+
+  /**
+   * Blog so existe nos `.site`. No `.com.br` as rotas de blog deixam de servir.
+   *
+   * - `/manghi/blog/...` volta pra home DO CONSULTOR, nunca pra casa: a visita e
+   *   dele (REGRA 0.1), e mandar pro `21go.site` levaria o cliente pro WhatsApp
+   *   da casa.
+   * - `/blog/...` sem slug: se o cookie diz que a visita e de um consultor, idem.
+   *   Sem dono (Googlebot, link antigo), 308 pro MESMO artigo no `21go.site` —
+   *   o canonical ja apontava pra la, entao o redirect so confirma o que o
+   *   Google ja tinha como endereco oficial.
+   */
+  if (hostSemBlog(req.headers.get('host'))) {
+    const slugDono = primeiro?.toLowerCase()
+    if (segmentos[1] === 'blog' && slugDono && FORMATO_SLUG.test(slugDono) && !ROTAS_RESERVADAS.has(slugDono)) {
+      return NextResponse.redirect(new URL(`/${slugDono}`, req.url), 308)
+    }
+    if (primeiro === 'blog') {
+      const dono = req.cookies.get(COOKIE_DONO)?.value
+      if (dono && FORMATO_SLUG.test(dono)) {
+        return NextResponse.redirect(new URL(`/${dono}`, req.url), 307)
+      }
+      return NextResponse.redirect(`https://21go.site${pathname}${search}`, 308)
+    }
+  }
 
   /**
    * `/ConsultorFulano` e o mesmo endereco que `/consultorfulano`.

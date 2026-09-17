@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { headers } from 'next/headers'
 import { getPostSlugs } from '@/lib/blog'
+import { hostSemBlog } from '@/lib/dominio-sem-blog'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,5 +46,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
+  if (hostSemBlog(host)) {
+    return staticEntries.filter((e) => !e.url.endsWith('/blog'))
+  }
   return [...staticEntries, ...blogEntries]
 }
