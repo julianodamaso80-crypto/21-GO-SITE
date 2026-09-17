@@ -42,7 +42,7 @@ const FILTRO: Record<Aba, string> = {
   transferidos: 'c.transferido_em IS NOT NULL',
 }
 
-export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Promise<ItemLista[]> {
+export async function listarContatos(aba: Aba, busca: string, etiqueta = '', usuario = ''): Promise<ItemLista[]> {
   const termo = busca.trim()
   return sql<ItemLista>(
     `SELECT c.telefone, COALESCE(c.nome, cv.pushname) AS nome, c.ligada, c.pausa_motivo, c.transferido_em,
@@ -54,9 +54,12 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Pr
             CASE WHEN u.direction <> 'inbound' THEN 0 ELSE
             (SELECT count(*)::int FROM public.messages i
               WHERE i.conversation_id = c.conversation_id AND i.evolution_instance = 'cloud_isa' AND i.direction = 'inbound'
-                AND i.created_at > COALESCE((SELECT max(o.created_at) FROM public.messages o
-                                             WHERE o.conversation_id = c.conversation_id AND o.evolution_instance = 'cloud_isa'
-                                               AND o.direction = 'outbound'), '-infinity'::timestamptz)) END AS sem_resposta
+                AND i.created_at > GREATEST(
+                      COALESCE((SELECT max(o.created_at) FROM public.messages o
+                                WHERE o.conversation_id = c.conversation_id AND o.evolution_instance = 'cloud_isa'
+                                  AND o.direction = 'outbound'), '-infinity'::timestamptz),
+                      -- abrir a conversa no painel ja conta como lido, por usuario
+                      COALESCE((c.visto_por ->> $3)::timestamptz, '-infinity'::timestamptz))) END AS sem_resposta
      FROM public.isa_contatos c
      LEFT JOIN public.conversations cv ON cv.id = c.conversation_id
      LEFT JOIN LATERAL (
@@ -86,7 +89,7 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = ''): Pr
        AND ($2 = '' OR $2 = ANY(c.etiquetas))
      ORDER BY mov.em DESC NULLS LAST
      LIMIT 500`,
-    [termo, etiqueta],
+    [termo, etiqueta, usuario],
   )
 }
 

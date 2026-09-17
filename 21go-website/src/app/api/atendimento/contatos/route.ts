@@ -9,12 +9,13 @@ export const dynamic = 'force-dynamic'
 const ABAS = new Set(['todos', 'precisa', 'isa', 'off', 'transferidos'])
 
 export async function GET(req: NextRequest) {
-  if (!sessaoDoRequest(req)) return NextResponse.json({ erro: 'sem sessao' }, { status: 401 })
+  const sessao = sessaoDoRequest(req)
+  if (!sessao) return NextResponse.json({ erro: 'sem sessao' }, { status: 401 })
   const aba = req.nextUrl.searchParams.get('aba') || 'todos'
   if (!ABAS.has(aba)) return NextResponse.json({ erro: 'aba invalida' }, { status: 400 })
   const busca = (req.nextUrl.searchParams.get('q') || '').slice(0, 60)
   const e = req.nextUrl.searchParams.get('e') || ''
   const etiqueta = etiquetaValida(e) ? e : ''
-  const [contatos, precisa] = await Promise.all([listarContatos(aba as Aba, busca, etiqueta), contarPrecisa()])
+  const [contatos, precisa] = await Promise.all([listarContatos(aba as Aba, busca, etiqueta, sessao.u), contarPrecisa()])
   return NextResponse.json({ contatos, precisa })
 }

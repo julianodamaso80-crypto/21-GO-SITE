@@ -2,16 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
 import { abrirConversa } from '@/lib/isa/painel-dados'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
+import { marcarVisto } from '@/lib/isa/banco'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
-  if (!sessaoDoRequest(req)) return NextResponse.json({ erro: 'sem sessao' }, { status: 401 })
+  const sessao = sessaoDoRequest(req)
+  if (!sessao) return NextResponse.json({ erro: 'sem sessao' }, { status: 401 })
   const t = (req.nextUrl.searchParams.get('t') || '').replace(/\D/g, '')
   if (!t) return NextResponse.json({ erro: 'telefone' }, { status: 400 })
   const { contato, itens } = await abrirConversa(t)
   if (!contato) return NextResponse.json({ erro: 'nao encontrado' }, { status: 404 })
+  // abriu a conversa = leu o que estava esperando; a bolinha verde some pra quem abriu
+  await marcarVisto(t, sessao.u).catch(() => {})
   const lead = await leadDoCliente(t, contato.lead_id, contato.reiniciada_em).catch(() => null)
   const desconto =
     contato.desconto50_de && contato.desconto50_para

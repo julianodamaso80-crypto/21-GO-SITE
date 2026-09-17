@@ -277,6 +277,20 @@ export async function gravarTranscricao(messageId: string, texto: string): Promi
   ])
 }
 
+/**
+ * Quem abre a conversa no painel "leu" o que estava esperando, como no WhatsApp (dono, 17/09/2026:
+ * "eu abri a mensagem esse 1 tem q sumir"). Guarda por usuario: a Leticya abrir nao apaga o aviso
+ * do dono, e vice-versa.
+ */
+export async function marcarVisto(telefone: string, usuario: string): Promise<void> {
+  await sql(
+    `UPDATE public.isa_contatos
+        SET visto_por = COALESCE(visto_por, '{}'::jsonb) || jsonb_build_object($2::text, to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSZ'))
+      WHERE telefone = $1`,
+    [telefone, usuario],
+  )
+}
+
 export async function registrarEvento(telefone: string, tipo: string, detalhe: unknown, por = 'isa'): Promise<void> {
   await sql(`INSERT INTO public.isa_eventos (telefone, tipo, detalhe, por) VALUES ($1, $2, $3, $4)`, [
     telefone,
