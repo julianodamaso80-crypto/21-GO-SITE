@@ -109,6 +109,32 @@ function normalizeSemantic(sim: number): number {
 }
 
 /** Score combinado: metade semantica normalizada, metade overlap lexical. */
+/**
+ * Score entre o titulo candidato e titulos que ainda NAO sao artigo (pauta em estoque).
+ *
+ * O Agente 03 compara com o que ja foi PUBLICADO. Faltava comparar com o que esta na
+ * fila: em 17/09/2026 uma rodada aprovou 4 pautas de "pneu de carro eletrico" de uma
+ * vez — o dedupe do lote olhava so overlap lexical, e com 'carro' e 'eletrico' fora da
+ * conta de termos distintivos elas dividiam so a palavra "pneu" (overlap 0.25).
+ * Embedder local, custo zero.
+ */
+export async function scoreContraTitulos(
+  candidato: string,
+  outros: string[],
+): Promise<{ titulo: string; score: number } | null> {
+  if (outros.length === 0) return null;
+  const emb = await embedPassage(candidato);
+  let pior: { titulo: string; score: number } | null = null;
+  for (const t of outros) {
+    const e = await embedPassage(t);
+    let dot = 0;
+    for (let i = 0; i < emb.length; i++) dot += (emb[i] ?? 0) * (e[i] ?? 0);
+    const score = combinedScore(Math.max(0, Math.min(1, dot)), lexicalOverlap(candidato, t));
+    if (!pior || score > pior.score) pior = { titulo: t, score };
+  }
+  return pior;
+}
+
 export function combinedScore(semantic: number, lexical: number): number {
   return 0.5 * normalizeSemantic(semantic) + 0.5 * lexical;
 }

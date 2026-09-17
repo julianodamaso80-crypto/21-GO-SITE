@@ -8,8 +8,10 @@ import type { Job } from 'bullmq';
 import { child } from '../lib/logger.js';
 import { withRun } from '../db/repositories/agent-runs.js';
 import { listPending } from '../db/repositories/keywords.js';
+import { query } from '../db/pg.js';
+import { config } from '../config.js';
 import { insertRecommendation } from '../db/repositories/indexing.js';
-import { lexicalOverlap } from '../lib/similarity.js';
+import { lexicalOverlap, scoreContraTitulos, CANNIBAL_THRESHOLD } from '../lib/similarity.js';
 import { agent01 } from '../agents/01-keyword-research.js';
 import { agent02 } from '../agents/02-seo-strategist.js';
 import { agent03 } from '../agents/03-anti-repetition.js';
@@ -75,6 +77,23 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
   const approvedTitles: string[] = [];
   let refreshQueued = 0;
 
+  // Titulos que JA estao na fila esperando virar artigo. Sem isto, a rodada nao sabe o
+  // que o estoque tem: em 17/09/2026 quatro pautas de "pneu de carro eletrico" foram
+  // aprovadas na mesma rodada e o Agente 03 nao pegou nenhuma, porque ele compara com
+  // artigo PUBLICADO e nenhuma delas era artigo ainda.
+  const titulosEmEstoque = (
+    await query<{ title: string }>(
+      `SELECT t.title FROM seo.topics t
+       LEFT JOIN seo.briefings b ON b.topic_id = t.id
+       LEFT JOIN seo.articles a ON a.briefing_id = b.id
+       WHERE t.company_id = $1
+         AND t.decision = 'APROVAR_ARTIGO_NOVO'
+         AND a.id IS NULL`,
+      [config.COMPANY_ID],
+    )
+  ).map((r) => r.title);
+  log.info({ pautas_em_estoque: titulosEmEstoque.length }, 'titulos que a rodada nao pode repetir');
+
   for (const kw of pendingKws) {
     try {
       const r = await withRun(
@@ -104,7 +123,11 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
         // seo.articles. Duas keywords irmas da mesma rodada ("o que e RM no documento"
         // e "RM no documento do carro") passavam as duas e viravam 2 posts gemeos.
         const titulo = r.output.proposed_title ?? kw.keyword;
-        const colisao = approvedTitles.find((t) => lexicalOverlap(titulo, t) >= 0.5);
+        // Compara com o lote E com a pauta que ja esta na fila esperando virar artigo.
+        const irma = await scoreContraTitulos(titulo, [...approvedTitles, ...titulosEmEstoque]);
+        const colisao =
+          approvedTitles.find((t) => lexicalOverlap(titulo, t) >= 0.5) ??
+          (irma && irma.score >= CANNIBAL_THRESHOLD ? irma.titulo : undefined);
         if (colisao) {
           log.info({ kw: kw.keyword, titulo, colide_com: colisao }, 'pauta irma no mesmo lote — adiada');
           continue;
