@@ -118,15 +118,28 @@ function normalizeSemantic(sim: number): number {
  * conta de termos distintivos elas dividiam so a palavra "pneu" (overlap 0.25).
  * Embedder local, custo zero.
  */
+const _embCache = new Map<string, number[]>();
+
+/** Embedding de titulo com memoria: a rodada semanal compara 220 pautas contra a
+ * mesma lista de ~50 titulos, e sem cache sao 11 mil embeddings por execucao. */
+async function embedTitulo(t: string): Promise<number[]> {
+  const chave = t.trim().toLowerCase();
+  const cache = _embCache.get(chave);
+  if (cache) return cache;
+  const e = await embedPassage(t);
+  _embCache.set(chave, e);
+  return e;
+}
+
 export async function scoreContraTitulos(
   candidato: string,
   outros: string[],
 ): Promise<{ titulo: string; score: number } | null> {
   if (outros.length === 0) return null;
-  const emb = await embedPassage(candidato);
+  const emb = await embedTitulo(candidato);
   let pior: { titulo: string; score: number } | null = null;
   for (const t of outros) {
-    const e = await embedPassage(t);
+    const e = await embedTitulo(t);
     let dot = 0;
     for (let i = 0; i < emb.length; i++) dot += (emb[i] ?? 0) * (e[i] ?? 0);
     const score = combinedScore(Math.max(0, Math.min(1, dot)), lexicalOverlap(candidato, t));
