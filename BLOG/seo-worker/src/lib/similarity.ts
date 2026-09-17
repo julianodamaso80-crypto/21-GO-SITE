@@ -131,6 +131,45 @@ async function embedTitulo(t: string): Promise<number[]> {
   return e;
 }
 
+/** Primeiro termo distintivo do titulo — na pratica, o ASSUNTO ("pneu", "guincho", "ipva"). */
+function assuntoDoTitulo(s: string): string | null {
+  const tokens = s.toLowerCase()
+    .normalize('NFD').replace(/[\p{Diacritic}]/gu, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length >= 3 && !TERMOS_ONIPRESENTES.has(t));
+  return tokens[0] ?? null;
+}
+
+/**
+ * Threshold de titulo-x-titulo. NAO e o mesmo do Agente 03 (0.40), que compara o probe
+ * "titulo + keyword + categoria" contra o corpo dos artigos. Titulo curto contra titulo
+ * curto no e5 fica sempre alto: em 17/09/2026 usar 0.40 aqui cortou o estoque INTEIRO
+ * (58 pautas). Calibrado com pares reais do blog:
+ *   irmas      0.553 .. 1.000  ("Pneu ... mais caro?" x "Pneu ... e diferente?")
+ *   distintas  0.161 .. 0.575  ("Vistoria no Detran" x "Emplacamento no Detran")
+ * As faixas se cruzam, entao o score sozinho nao decide: exige tambem que o ASSUNTO
+ * (primeiro termo distintivo) seja o mesmo. "Vistoria" x "Emplacamento" passa; dois
+ * titulos que comecam em "Pneu" nao.
+ */
+export const IRMA_THRESHOLD = 0.5;
+
+/**
+ * Pauta irma: mesmo assunto e score alto contra algum titulo da lista.
+ * Usada pra comparar pauta nova com o que JA ESTA NA FILA (o Agente 03 compara com o
+ * que foi publicado).
+ */
+export async function pautaIrma(
+  candidato: string,
+  outros: string[],
+): Promise<{ titulo: string; score: number } | null> {
+  const assunto = assuntoDoTitulo(candidato);
+  if (!assunto) return null;
+  const mesmoAssunto = outros.filter((t) => assuntoDoTitulo(t) === assunto);
+  const pior = await scoreContraTitulos(candidato, mesmoAssunto);
+  return pior && pior.score >= IRMA_THRESHOLD ? pior : null;
+}
+
 export async function scoreContraTitulos(
   candidato: string,
   outros: string[],

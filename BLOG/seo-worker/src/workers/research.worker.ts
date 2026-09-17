@@ -11,7 +11,7 @@ import { listPending } from '../db/repositories/keywords.js';
 import { query } from '../db/pg.js';
 import { config } from '../config.js';
 import { insertRecommendation } from '../db/repositories/indexing.js';
-import { lexicalOverlap, scoreContraTitulos, CANNIBAL_THRESHOLD } from '../lib/similarity.js';
+import { lexicalOverlap, pautaIrma } from '../lib/similarity.js';
 import { agent01 } from '../agents/01-keyword-research.js';
 import { agent02 } from '../agents/02-seo-strategist.js';
 import { agent03 } from '../agents/03-anti-repetition.js';
@@ -124,10 +124,9 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
         // e "RM no documento do carro") passavam as duas e viravam 2 posts gemeos.
         const titulo = r.output.proposed_title ?? kw.keyword;
         // Compara com o lote E com a pauta que ja esta na fila esperando virar artigo.
-        const irma = await scoreContraTitulos(titulo, [...approvedTitles, ...titulosEmEstoque]);
+        const irma = await pautaIrma(titulo, [...approvedTitles, ...titulosEmEstoque]);
         const colisao =
-          approvedTitles.find((t) => lexicalOverlap(titulo, t) >= 0.5) ??
-          (irma && irma.score >= CANNIBAL_THRESHOLD ? irma.titulo : undefined);
+          approvedTitles.find((t) => lexicalOverlap(titulo, t) >= 0.5) ?? irma?.titulo;
         if (colisao) {
           log.info({ kw: kw.keyword, titulo, colide_com: colisao }, 'pauta irma no mesmo lote — adiada');
           continue;
