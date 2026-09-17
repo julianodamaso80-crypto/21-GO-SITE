@@ -28,6 +28,8 @@ interface JobData {
   categorias?: string[];
   /** Teto de pautas orfas briefadas nesta execucao (0 desliga). */
   orfas_limit?: number;
+  /** false = nao chama o DataForSEO (refill diario). Pesquisa paga so no cron semanal. */
+  use_dataforseo?: boolean;
 }
 
 interface WorkerResult {
@@ -55,9 +57,9 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
 
   // ===== Agente 01 — Keyword Research =====
   const keywordsResult = await withRun(
-    { agent_id: '01-keyword-research', triggered_by, input: { limit, dry_run } },
+    { agent_id: '01-keyword-research', triggered_by, input: { limit, dry_run, use_dataforseo: job.data.use_dataforseo } },
     async () => {
-      const r = await agent01.run({ limit }, ctx);
+      const r = await agent01.run({ limit, use_dataforseo: job.data.use_dataforseo }, ctx);
       return { result: r, finish: { output: r.output } };
     },
   );

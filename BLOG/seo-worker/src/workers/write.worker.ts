@@ -5,6 +5,7 @@
  * Articles sempre saem com status='in_review' (apos Reviewer).
  * Publisher (Fase 8) e que move pra 'published' depois (so se AUTO_PUBLISH ou aprovacao manual).
  */
+import { MIX_DIARIO, CATEGORIAS_DO_SLOT, somaPorSlot, type SlotDiario } from '../lib/mix-diario.js';
 import type { Job } from 'bullmq';
 import { child } from '../lib/logger.js';
 import { withRun } from '../db/repositories/agent-runs.js';
@@ -62,19 +63,9 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   // - Pra cada slot vazio, pega briefing dessa categoria
   // - Apos 3 slots, processa bonus ate `limit` total
   // ============================================================
-  type Slot = 'carros' | 'motos' | 'frotas' | 'byd';
-  /**
-   * Slots com QUANTIDADE. BYD tem 2 vagas proprias (decisao do dono em 2026-08-03):
-   * o objetivo e captar dono de BYD, que e um publico com dor especifica (bateria cara,
-   * seguradora que recusa ou cobra caro em eletrico chines) e ticket alto.
-   * Os 3 slots tradicionais continuam intactos — BYD nao tira espaco deles.
-   */
-  const SLOTS_DIARIOS: Array<{ cat: Slot; qtd: number }> = [
-    { cat: 'carros', qtd: 1 },
-    { cat: 'motos', qtd: 1 },
-    { cat: 'frotas', qtd: 1 },
-    { cat: 'byd', qtd: 2 },
-  ];
+  type Slot = SlotDiario;
+  // Mix do dia (3 BYD, 3 carros, 3 motos, 1 frota) — ver lib/mix-diario.ts.
+  const SLOTS_DIARIOS = MIX_DIARIO;
   const SLOTS_OBRIGATORIOS: Slot[] = SLOTS_DIARIOS.map((s) => s.cat);
 
   // Conta artigos por categoria criados hoje
@@ -102,7 +93,7 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   // Quanto falta de cada categoria pra fechar a cota do dia
   const faltaPorSlot = new Map<Slot, number>();
   for (const s of SLOTS_DIARIOS) {
-    const falta = Math.max(0, s.qtd - (articlesHoje[s.cat] ?? 0));
+    const falta = Math.max(0, s.qtd - somaPorSlot(s.cat, articlesHoje));
     if (falta > 0) faltaPorSlot.set(s.cat, falta);
   }
   const slotsFaltando = [...faltaPorSlot.keys()];
@@ -118,7 +109,7 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
      FROM seo.briefings b
      JOIN seo.topics t ON t.id = b.topic_id
      LEFT JOIN seo.articles a ON a.briefing_id = b.id
-     WHERE a.id IS NULL AND t.category IN ('carros','motos','frotas','byd')
+     WHERE a.id IS NULL AND t.category IN ('carros','educativo','motos','frotas','byd')
      GROUP BY t.category`,
   );
   const stockMap: Record<string, number> = {};
@@ -130,7 +121,7 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   // Threshold proporcional a cota: BYD consome 2/dia, entao precisa de estoque maior
   // pra nao secar antes do proximo research semanal.
   const catsSemEstoque = SLOTS_DIARIOS
-    .filter((s) => (stockMap[s.cat] ?? 0) < s.qtd * 2)
+    .filter((s) => somaPorSlot(s.cat, stockMap) < s.qtd * 2)
     .map((s) => s.cat);
   const REFILL_THRESHOLD = 2; // mantido no log pra referencia
   if (catsSemEstoque.length > 0) {
@@ -139,7 +130,15 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
       const { queueResearch } = await import('../queue.js');
       await queueResearch.add(
         'refill-consolidado',
-        { limit: 20, triggered_by: `refill:${catsSemEstoque.join('+')}`, categorias: catsSemEstoque },
+        {
+          limit: 20,
+          triggered_by: `refill:${catsSemEstoque.join('+')}`,
+          categorias: catsSemEstoque.flatMap((c) => CATEGORIAS_DO_SLOT[c]),
+          // DataForSEO so na pesquisa semanal (ordem do dono, 17/09/2026). O refill do
+          // dia reaproveita pauta ja aprovada e keyword ja paga.
+          use_dataforseo: false,
+          orfas_limit: 20,
+        },
         { jobId: `refill-${new Date().toISOString().slice(0, 10)}` }, // 1x por dia, idempotente
       );
     } catch (e) {
@@ -178,7 +177,7 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
 
   // 1. Preenche slots obrigatorios primeiro (respeitando a cota de cada categoria)
   for (const [slot, falta] of faltaPorSlot) {
-    const candidatos = briefsByCategory[slot] ?? [];
+    const candidatos = CATEGORIAS_DO_SLOT[slot].flatMap((c) => briefsByCategory[c] ?? []);
     for (let i = 0; i < falta; i++) {
       const c = candidatos.shift();
       if (!c) {
@@ -188,6 +187,10 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
         );
         break;
       }
+      // `candidatos` e uma copia (junta carros + educativo); tira o briefing da lista
+      // da categoria tambem, senao o bonus logo abaixo escreveria o mesmo artigo de novo.
+      const daCategoria = briefsByCategory[c.topic.category];
+      if (daCategoria) daCategoria.splice(daCategoria.indexOf(c), 1);
       briefingsToProcess.push({ ...c, slot });
     }
   }

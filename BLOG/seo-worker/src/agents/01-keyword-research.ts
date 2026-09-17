@@ -12,6 +12,7 @@
  * Saida: upsert em seo.keywords (idempotente por keyword_normalized).
  * NUNCA preenche search_volume/difficulty/cpc inventando.
  */
+import { MIX_DIARIO, CATEGORIAS_DO_SLOT } from '../lib/mix-diario.js';
 import type { Agent } from './_types.js';
 import type { KeywordCategory, KeywordRow } from '../db/repositories/keywords.js';
 import { upsertKeyword } from '../db/repositories/keywords.js';
@@ -35,7 +36,10 @@ const log = child('agent:01-keyword-research');
  * Agora o pool cobre ~7 semanas sem repetir seed, com rotacao por menos-recente-uso
  * (janela de 30 dias) e um teto por execucao pra segurar o custo do DataForSEO.
  */
-const SEEDS_POR_EXECUCAO = 6;
+// 24 por execucao desde 17/09/2026: o DataForSEO passou a rodar SO na pesquisa
+// semanal (o refill diario nao chama mais), e ela alimenta 10 artigos/dia. Com 79
+// seeds e janela de 30 dias, 24 por semana cobre o pool inteiro no mes.
+const SEEDS_POR_EXECUCAO = 24;
 const JANELA_ROTACAO_DIAS = 30;
 
 /**
@@ -376,14 +380,24 @@ export const agent01: Agent<Input, Output> = {
         const porMenosRecente = (a: { seed: string }, b: { seed: string }) =>
           (usadaEm.get(a.seed.toLowerCase().trim()) ?? 0) - (usadaEm.get(b.seed.toLowerCase().trim()) ?? 0);
 
-        // BYD tem vagas RESERVADAS na rotacao: com 48 seeds e 6 por execucao, o cluster
-        // passaria varias rodadas sem ser pesquisado — e ele precisa alimentar 2
-        // artigos/dia. Sem reserva, o slot obrigatorio de BYD fica sem briefing.
-        const SEEDS_BYD_RESERVADAS = 2;
-        const seedsByd = BASE_SEEDS.filter((s) => s.category === 'byd').sort(porMenosRecente).slice(0, SEEDS_BYD_RESERVADAS);
-        const seedsOutras = BASE_SEEDS.filter((s) => s.category !== 'byd').sort(porMenosRecente)
-          .slice(0, Math.max(0, SEEDS_POR_EXECUCAO - seedsByd.length));
-        const seedsDaVez = [...seedsByd, ...seedsOutras];
+        // Seeds divididas na PROPORCAO do mix diario (3 BYD, 3 carros, 3 motos, 1 frota).
+        // Sem a divisao, a rotacao por menos-recente entregava a execucao a quem tinha
+        // mais seed no pool (carros tem 26, motos 11): o slot de motos ficaria sem pauta.
+        const totalMix = MIX_DIARIO.reduce((t, m) => t + m.qtd, 0);
+        const escolhidas = new Set<(typeof BASE_SEEDS)[number]>();
+        for (const m of MIX_DIARIO) {
+          const vagas = Math.round((SEEDS_POR_EXECUCAO * m.qtd) / totalMix);
+          BASE_SEEDS.filter((s) => CATEGORIAS_DO_SLOT[m.cat].includes(s.category))
+            .sort(porMenosRecente)
+            .slice(0, vagas)
+            .forEach((s) => escolhidas.add(s));
+        }
+        // Categoria com pool pequeno pode nao preencher a vaga — sobra vai pras menos recentes.
+        for (const s of [...BASE_SEEDS].sort(porMenosRecente)) {
+          if (escolhidas.size >= SEEDS_POR_EXECUCAO) break;
+          escolhidas.add(s);
+        }
+        const seedsDaVez = [...escolhidas];
 
         log.info({
           pool: BASE_SEEDS.length,
@@ -454,7 +468,8 @@ export const agent01: Agent<Input, Output> = {
     // sozinha levou as 40 vagas e as seeds de BYD — que rodaram na mesma execucao —
     // nao inseriram NENHUMA keyword. BYD entra com peso 2 porque tem cota de 2
     // artigos/dia contra 1 das demais.
-    const PESO: Partial<Record<KeywordCategory, number>> = { byd: 2 };
+    // Peso = cota do mix diario; o slot de carros divide a vez com `educativo`.
+    const PESO: Partial<Record<KeywordCategory, number>> = { byd: 3, carros: 2, educativo: 1, motos: 3, frotas: 1 };
     const ordenado = intercalarPorCategoria(collected, PESO);
 
     let inserted = 0;
