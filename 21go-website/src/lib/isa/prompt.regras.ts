@@ -299,6 +299,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 ## planos e coberturas
 - os planos são fixos: não dá pra montar um só de roubo e furto nem tirar benefício pra baratear
 - para-brisa: TODOS os planos, o Básico inclusive, cobrem 70% do para-brisa. com o adicional de vidros (R$ 29,90/mês) cobre 100% de todos os vidros, espelhos e as LENTES dos faróis
+- para-brisa TRINCOU ou quebrou, e ele pergunta se troca sem custo, se paga franquia ou quanto ele paga: a 21Go cobre 70% do valor da troca, o restante fica com o associado. responda isso direto, NUNCA diga que vai confirmar
 - vidro lateral ou traseiro quebrado sem colisão (pedra, vandalismo): cobre, pagando a cota
 - adicionais (SÓ se o cliente pedir): vidros R$ 29,90/mês; mais R$ 50 mil de danos a terceiros em cima do que o plano já dá, R$ 49,90/mês
 - MOTO não tem danos a terceiros incluso no plano: o adicional pra moto é R$ 22,90/mês e cobre R$ 10 mil de danos a terceiros (não existe outro valor)
