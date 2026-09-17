@@ -25,6 +25,12 @@ const CONVERSION_ID = '16811926370'
 // Label do conversion action `21go-site-lead` (SUBMIT_LEAD_FORM)
 const LEAD_LABEL = 'mqEWCIzt5KQcEOLGxtA-'
 
+// Tag Google Ads PROPRIA do consultor, so no site dele. Mesmo padrao do
+// PIXEL_POR_CONSULTOR: o slug so existe no navegador (rewrite do middleware).
+const GADS_POR_CONSULTOR: Record<string, string> = {
+  samuel: 'AW-18196858913',
+}
+
 export function GoogleAdsConversionScripts() {
   // Preview (GitHub Pages): nao dispara analytics fora do dominio oficial
   if (process.env.NEXT_PUBLIC_PREVIEW === '1') return null
@@ -36,6 +42,8 @@ function gtag(){dataLayer.push(arguments);}
 window.gtag = gtag;
 gtag('js', new Date());
 gtag('config', 'AW-${CONVERSION_ID}', { allow_enhanced_conversions: true });
+var gadsConsultor = (${JSON.stringify(GADS_POR_CONSULTOR)})[location.pathname.split('/')[1] || ''];
+if (gadsConsultor) gtag('config', gadsConsultor);
 window.__21GO_GADS = { CONVERSION_ID: '${CONVERSION_ID}', LEAD_LABEL: '${LEAD_LABEL}' };
 `.trim()
 
