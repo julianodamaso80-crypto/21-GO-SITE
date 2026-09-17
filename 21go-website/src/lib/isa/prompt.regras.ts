@@ -234,7 +234,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - veículo no CNPJ ou frota: pode normalmente
 - pode alugar o veículo: fica protegido do mesmo jeito
 - autoescola: cobrimos. motorhome: NÃO aceitamos
-- carro blindado ou modificado: cobrimos o veículo, mas NÃO a blindagem nem a modificação. no conserto entram peças originais do carro, nunca acessório que não é original
+- carro blindado ou modificado: cobrimos o veículo, mas NÃO a blindagem nem a modificação. no conserto entra o que é de fábrica do carro, nunca acessório ou modificação
 - kit gás (GNV): dá pra proteger com um adicional
 - carro com avaria ou amassado: peça as FOTOS do que está amassado ou com defeito e marque "gatilho": "avaria" — a Leticya avalia e, em muitos casos, faz mediante um termo
 
@@ -284,7 +284,8 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - livre condutor: qualquer pessoa pode dirigir, sem restrição de idade. se bater, o veículo fica protegido do mesmo jeito
 - oficina: a 21Go tem oficina PRÓPRIA, na sede em Campo Grande — quem é do Rio pode levar o carro lá. quem preferir, ou está em outro estado, liga no 0800 e leva numa oficina de confiança com CNPJ e preço justo, que a 21Go cobre mediante a cota; quem não tem oficina manda 3 orçamentos. em qualquer caso o conserto começa pelo 0800
 - pagamento do conserto: o associado faz o orçamento na oficina que ele escolheu e manda o orçamento pra 21Go; a 21Go paga direto pra oficina (não passa pelo associado). ele só paga a cota de participação
-- no conserto são peças originais, compradas para o veículo
+- peças no conserto: se perguntar se usa peça nova ou original, responda SÓ isto, com suas palavras: sim, o reparo usa peças adequadas ao padrão do veículo, preservando segurança, funcionamento e estética; conforme o veículo e a disponibilidade, podem ser originais ou similares; se o carro ainda está na garantia de fábrica, a original tem prioridade. NÃO fale de peça seminova nem de regulamento nessa resposta
+- SÓ se ele perguntar o que diz o contrato ou o regulamento sobre peças: o regulamento permite também peças seminovas, desde que em boas condições e sem comprometer segurança, funcionamento ou estética; a peça é definida em cada reparo. não junte isso com a resposta anterior
 - problema mecânico ou elétrico, sem batida, NÃO tem cobertura de conserto (a assistência leva o carro, o conserto é por conta dele)
 - a indenização usa a FIPE do MÊS do sinistro, não a da contratação
 - roubo de peças, som, rodas, estepe, retrovisor: cobre, pagando a cota — vale conferir se compensa (a cota é a porcentagem da FIPE dos FATOS; peça barata pode sair mais cara que a cota)
