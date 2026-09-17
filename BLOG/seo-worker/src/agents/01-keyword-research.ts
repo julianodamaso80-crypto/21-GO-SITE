@@ -136,6 +136,34 @@ const BASE_SEEDS: Array<{ seed: string; category: KeywordCategory }> = [
   { seed: 'desvalorizacao carro eletrico', category: 'byd' },
   { seed: 'perda total carro eletrico', category: 'byd' },
   { seed: 'carro hibrido manutencao', category: 'byd' },
+  // Ampliado em 17/09/2026: com 42 artigos publicados no cluster, as seeds acima
+  // devolvem so keyword que ja tem artigo — a rodada de 17/09 trouxe 3 keywords de
+  // BYD e as 3 viraram ATUALIZAR. Estes angulos vieram dos 15 artigos escritos a mao
+  // que passaram pelo anti-canibalizacao, ou seja, sao dor real ainda sem pagina.
+  { seed: 'guincho carro eletrico', category: 'byd' },
+  { seed: 'cabo de recarga', category: 'byd' },
+  { seed: 'carregador de parede', category: 'byd' },
+  { seed: 'bateria 12v', category: 'byd' },
+  { seed: 'pneu carro eletrico', category: 'byd' },
+  { seed: 'carro eletrico alagado', category: 'byd' },
+  { seed: 'blindagem carro eletrico', category: 'byd' },
+  { seed: 'posto de recarga', category: 'byd' },
+  { seed: 'autonomia carro eletrico', category: 'byd' },
+  { seed: 'consumo carro eletrico', category: 'byd' },
+  { seed: 'peca carro eletrico', category: 'byd' },
+  { seed: 'vistoria carro eletrico', category: 'byd' },
+  { seed: 'emplacamento carro eletrico', category: 'byd' },
+  { seed: 'carro eletrico usado', category: 'byd' },
+  // Frota: as 10 seeds anteriores tambem secaram (a rodada de 17/09 trouxe ZERO
+  // keyword de frota). Estas atacam quem vive de rodar, que e o publico de frota.
+  { seed: 'moto delivery', category: 'frotas' },
+  { seed: 'motoboy', category: 'frotas' },
+  { seed: 'entregador de aplicativo', category: 'frotas' },
+  { seed: 'carro por aplicativo', category: 'frotas' },
+  { seed: 'rastreador de frota', category: 'frotas' },
+  { seed: 'manutencao de frota', category: 'frotas' },
+  { seed: 'aluguel de frota', category: 'frotas' },
+  { seed: 'frota de empresa', category: 'frotas' },
   // ---- Lote 2026-08-13: dores de POSSE ainda nao exploradas ----
   // O pool anterior cobria bem roubo/furto/colisao, mas o dono de veiculo tem uma
   // fila de problemas que tambem terminam em "e agora?" — e sao justamente onde a
