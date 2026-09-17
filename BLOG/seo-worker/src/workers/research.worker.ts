@@ -208,12 +208,28 @@ export async function handleResearchJob(job: Job<JobData>): Promise<WorkerResult
   if (!dry_run && alvoOrfas > 0) {
     const { listApprovedWithoutBriefing, updateDecision } = await import('../db/repositories/topics.js');
     const candidatas = await listApprovedWithoutBriefing(alvoOrfas * 5, job.data.categorias);
-    const titulosDoLote = [...approvedTitles];
+    // Compara tambem com a pauta que JA tem briefing esperando o writer: sem isso o
+    // reaproveitamento repete o que a propria fila ja vai escrever.
+    const titulosJaBriefados = (
+      await query<{ title: string }>(
+        `SELECT t.title FROM seo.topics t
+         JOIN seo.briefings b ON b.topic_id = t.id
+         LEFT JOIN seo.articles a ON a.briefing_id = b.id
+         WHERE t.company_id = $1 AND a.id IS NULL`,
+        [config.COMPANY_ID],
+      )
+    ).map((r) => r.title);
+    const titulosDoLote = [...approvedTitles, ...titulosJaBriefados];
 
     for (const topic of candidatas) {
       if (orfas_briefadas >= alvoOrfas) break;
       try {
-        const irma = titulosDoLote.find((t) => lexicalOverlap(topic.title, t) >= 0.5);
+        // Mesma regra da pauta nova: irma = mesmo ASSUNTO + score alto. Sem isto, o
+        // reaproveitamento briefava 5 pautas de "pneu" e 2 de "guincho" de uma vez
+        // (17/09/2026) — o overlap lexical sozinho nao pega, porque elas dividem so
+        // a primeira palavra.
+        const porScore = await pautaIrma(topic.title, titulosDoLote);
+        const irma = titulosDoLote.find((t) => lexicalOverlap(topic.title, t) >= 0.5) ?? porScore?.titulo;
         if (irma) {
           log.info({ titulo: topic.title, colide_com: irma }, 'pauta orfa irma no mesmo lote — adiada');
           continue;
