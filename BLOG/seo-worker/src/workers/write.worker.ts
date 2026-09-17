@@ -203,16 +203,25 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
   // a canibalizacao que a esteira deveria evitar.
   const remaining = Math.max(0, limit - briefingsToProcess.length);
   if (remaining > 0) {
-    const cotaDe = new Map(SLOTS_DIARIOS.map((s) => [s.cat as string, s.qtd]));
-    // teto = cota do dia + 1 (categoria sem cota propria, como 'educativo', pode 1).
+    // Teto = a cota do SLOT no mix (3 BYD, 3 carros+educativo, 3 motos, 1 frota).
+    // Antes era cota+1 por categoria solta: quando faltava pauta de BYD, o bonus
+    // completava o dia com carros e o mix que o dono definiu deixava de existir
+    // (17/09/2026: plano saiu com 5 de carros e 0 de BYD). Categoria fora do mix nao
+    // entra no bonus.
     // Em modo lote o teto sobe pro valor pedido, mas continua EXISTINDO: mesmo numa
     // publicacao grande, despejar 8 artigos da mesma categoria no mesmo dia e o
     // caminho mais curto pra eles competirem entre si no Google.
     const tetoLote = job.data.lote ? Math.max(2, job.data.teto_por_categoria ?? 4) : null;
-    const tetoDe = (cat: string) => tetoLote ?? (cotaDe.get(cat) ?? 0) + 1;
+    const slotDe = (cat: string) => SLOTS_DIARIOS.find((m) => CATEGORIAS_DO_SLOT[m.cat].includes(cat));
+    const tetoDe = (cat: string) => tetoLote ?? slotDe(cat)?.qtd ?? 0;
+    const grupoDe = (cat: string) => (tetoLote ? cat : slotDe(cat)?.cat ?? cat);
     const jaPlanejado = new Map<string, number>();
+    for (const [cat, n] of Object.entries(articlesHoje)) {
+      jaPlanejado.set(grupoDe(cat), (jaPlanejado.get(grupoDe(cat)) ?? 0) + n);
+    }
     for (const p of briefingsToProcess) {
-      jaPlanejado.set(p.topic.category, (jaPlanejado.get(p.topic.category) ?? 0) + (articlesHoje[p.topic.category] ?? 0) + 1);
+      const g = grupoDe(p.topic.category);
+      jaPlanejado.set(g, (jaPlanejado.get(g) ?? 0) + 1);
     }
 
     const remainingBriefs: Array<{ briefing: BriefingRow; topic: TopicRow }> = [];
@@ -227,12 +236,12 @@ export async function handleWriteJob(job: Job<JobData>): Promise<WorkerResult> {
     for (const r of remainingBriefs) {
       if (adicionados >= remaining) break;
       const cat = r.topic.category;
-      const totalCat = (jaPlanejado.get(cat) ?? articlesHoje[cat] ?? 0);
+      const totalCat = jaPlanejado.get(grupoDe(cat)) ?? 0;
       if (totalCat >= tetoDe(cat)) {
         log.debug({ categoria: cat, total: totalCat, teto: tetoDe(cat) }, 'bonus recusado — teto da categoria');
         continue;
       }
-      jaPlanejado.set(cat, totalCat + 1);
+      jaPlanejado.set(grupoDe(cat), totalCat + 1);
       briefingsToProcess.push({ ...r, slot: 'bonus' });
       adicionados++;
     }
