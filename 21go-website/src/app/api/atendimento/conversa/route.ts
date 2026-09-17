@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
       ? {
           leadId: lead!.id,
           veiculo: `${f.veiculo.descricao}${f.veiculo.ano ? ` ${f.veiculo.ano}` : ''}`,
+          // Só existe quando a Isa consultou a placa; o lead do site não grava.
+          placa: lead!.placa_interesse || null,
           fipe: f.veiculo.fipe,
           ativacao: f.ativacaoReferencia,
           desconto,
