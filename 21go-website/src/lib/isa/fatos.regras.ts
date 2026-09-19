@@ -6,8 +6,8 @@
  *
  * As regras copiam o que a TELA de cotacao faz (src/app/cotacao/page.tsx), para o cliente ouvir
  * da Isa o mesmo numero que viu no site:
- *   - adesivo: VIP/Premium/SUV/Especial ate 30 mil = 10%, acima = 15%; Basico/Do Seu Jeito ate
- *     60 mil = 10%, acima = 15%; moto nao tem.
+ *   - adesivo: adesivoPct() abaixo (VIP/SUV/Especial cortam em 30 mil; Premium, Basico e
+ *     Do Seu Jeito em 60 mil; moto nao tem).
  *   - em dia (5 dias antes): 5%, arredondado em centavos como a tela.
  *   - carro de aplicativo: o preco NAO muda (dono, 16/09/2026).
  * O valor COMBINADO adesivo + em dia fica de fora de proposito: a tela multiplica (0,85 x 0,95)
@@ -50,6 +50,8 @@ export interface PlanoFatos {
   adesivoPct: 10 | 15 | null
   mensalComAdesivo: number | null
   mensalEmDia: number
+  /** Adesivo + 5 dias antes: os descontos SOMAM, cada um sobre a mensalidade cheia (dono, 11/09/2026). */
+  mensalAdesivoEmDia: number | null
   ativacao: number | null
   cobre: string[]
   naoCobre: string[]
@@ -122,10 +124,20 @@ export function ehEletricoOuHibrido(v: { marca: string | null; modelo: string | 
   return PALAVRAS_ELETRICO.test(`${v.modelo || ''} ${v.combustivel || ''}`)
 }
 
-/** Mesmo corte da tela de cotacao. Moto nao tem adesivo. */
+/**
+ * Desconto do adesivo 21Go no vidro traseiro. UMA regra so: a tela de cotacao e o PDF importam
+ * daqui. Antes a conta estava copiada nos tres e o Premium saia com 15% entre 30 e 60 mil (C3
+ * FIPE 37.506 do Gabriel, 19/09/2026).
+ *
+ * Regra do dono (19/09/2026, "FIPE PARA ADESIVOS"):
+ *   - VIP (e as tabelas VIP SUV e VIP Especiais): ate 30 mil = 10%, acima = 15%
+ *   - Do Seu Jeito e Basico: ate 60 mil = 10%, acima = 15%
+ *   - Premium: ate 60 mil = 10%, acima de 60 mil = 15%
+ *   - moto nao tem adesivo
+ */
 export function adesivoPct(planoId: string, fipe: number | null): 10 | 15 | null {
   if (planoId === 'moto-400' || planoId === 'moto-1000') return null
-  const corte = ['vip', 'premium', 'suv', 'especial'].includes(planoId) ? 30000 : 60000
+  const corte = ['vip', 'suv', 'especial'].includes(planoId) ? 30000 : 60000
   return (fipe || 0) > corte ? 15 : 10
 }
 
@@ -149,6 +161,7 @@ export function montarFatos(e: EntradaFatos): Fatos {
       adesivoPct: pct,
       mensalComAdesivo: pct ? r2(mensal * (1 - pct / 100)) : null,
       mensalEmDia: r2(mensal * 0.95),
+      mensalAdesivoEmDia: pct ? r2(mensal * (1 - (pct + 5) / 100)) : null,
       ativacao: e.ativacaoPorPlano[p.id] ?? null,
       cobre: (p.beneficios || []).filter((b) => b.included).map((b) => b.text),
       naoCobre: (p.beneficios || []).filter((b) => !b.included).map((b) => b.text),
@@ -172,6 +185,7 @@ export function montarFatos(e: EntradaFatos): Fatos {
     dinheiro.add(p.mensal)
     dinheiro.add(p.mensalEmDia)
     if (p.mensalComAdesivo) dinheiro.add(p.mensalComAdesivo)
+    if (p.mensalAdesivoEmDia) dinheiro.add(p.mensalAdesivoEmDia)
     if (p.ativacao) dinheiro.add(r2(p.ativacao))
   }
 

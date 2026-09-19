@@ -144,7 +144,31 @@ export function lerPlanosDoPower(
     lidos.push({ id, nomePower: nome, monthly: preco })
   }
 
-  return resolverMoto(lidos, moto).sort((a, b) => ORDEM.indexOf(a.id) - ORDEM.indexOf(b.id))
+  return resolverMoto(soATabelaDoVeiculo(lidos), moto).sort((a, b) => ORDEM.indexOf(a.id) - ORDEM.indexOf(b.id))
+}
+
+const TABELA_SUV: PlanId[] = ['suv', 'basico']
+const TABELA_CARRO: PlanId[] = ['basico', 'do-seu-jeito', 'vip', 'premium']
+
+/**
+ * O Power manda a tabela do veiculo PRIMEIRO e emenda outras tabelas depois (medido em
+ * 19/09/2026): Creta = VIP SUV + Basico, e depois a de carro e o VIP Especiais; Corolla XEi =
+ * Basico/Do Seu Jeito/VIP/Premium, e depois o VIP Especiais. A tela do consultor mostra so a
+ * primeira. Ler todas misturava tres precos pro mesmo carro (VIP 466,27 no site, Especiais
+ * 577,51 no PDF, VIP SUV 484,80 no Power).
+ *
+ * Fica a tabela do PRIMEIRO plano. Basico existe na de SUV e na de carro: quando ele abre a
+ * lista, quem decide e o proximo (VIP SUV logo depois = tabela SUV). Moto passa direto: quem
+ * escolhe entre as duas tabelas de moto e o `resolverMoto`.
+ */
+function soATabelaDoVeiculo(lidos: PlanoLidoDoPower[]): PlanoLidoDoPower[] {
+  const primeiro = lidos[0]?.id
+  if (!primeiro || EH_MOTO(primeiro)) return lidos
+  const tabela: PlanId[] =
+    primeiro === 'especial' ? ['especial']
+      : primeiro === 'suv' || (primeiro === 'basico' && lidos[1]?.id === 'suv') ? TABELA_SUV
+        : TABELA_CARRO
+  return lidos.filter((p) => tabela.includes(p.id))
 }
 
 /**

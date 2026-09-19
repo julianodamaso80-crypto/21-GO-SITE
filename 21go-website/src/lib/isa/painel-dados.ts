@@ -71,10 +71,17 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = '', usu
      -- sobe quando o CLIENTE escreve ou quando o lead acabou de chegar. Mensagem automatica nossa
      -- (resultado dos 5 min, retomada dos 10 min) nao mexe na ordem — era ela que empurrava quem
      -- nunca respondeu pra cima de quem estava conversando.
+     -- Resposta de GENTE do time (Leticya, dono) sobe como no WhatsApp (dono, 19/09/2026: "tem q
+     -- ficar por ordem de chegada igual e no whatsapp"). A hora na lista e esta mesma, pra ordem e
+     -- relogio nunca discordarem.
      LEFT JOIN LATERAL (
        SELECT GREATEST(
          (SELECT m.created_at FROM public.messages m
           WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa' AND m.direction = 'inbound'
+          ORDER BY m.created_at DESC LIMIT 1),
+         (SELECT m.created_at FROM public.messages m
+          WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa' AND m.direction = 'outbound'
+            AND COALESCE(m.sender, 'isa') NOT IN ('isa', 'agent', 'system', 'sistema')
           ORDER BY m.created_at DESC LIMIT 1),
          (SELECT m.created_at FROM public.messages m
           WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa'

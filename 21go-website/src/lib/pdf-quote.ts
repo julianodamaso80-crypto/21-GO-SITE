@@ -20,6 +20,7 @@ import {
 import { LOGO_21GO_BASE64 } from './assets/logo-base64'
 import { temParcelamento } from './consultores-parcelamento'
 import { ativacaoDoConsultor } from './consultores-ativacao'
+import { adesivoPct } from './isa/fatos.regras'
 
 export interface QuotePdfInput {
   /**
@@ -385,15 +386,10 @@ function renderComparisonPage(
   // Plano REF (VIP de carros, ou o primeiro disponível pra outros tipos)
   const ref = ctx.referencePlan
   const refIsCarro = ctx.refIsCarro
-  // Regra oficial 21Go pro desconto adesivo:
-  //   VIP/Premium/SUV/Especial: até 30k FIPE = 10% | acima = 15%
-  //   Do Seu Jeito/Básico:      até 60k FIPE = 10% | acima = 15%
+  // Desconto adesivo: regra única em lib/isa/fatos.regras (a mesma da tela e da Isa).
   // Combinacao "Adesivo + em dia": ADITIVO (5% + adesivo%). Ex: 5+15 = 20%.
   // Antes era multiplicativo (0.95 * 0.85 = 19%) — corrigido a pedido.
-  const refIsVipOrPremium =
-    !!ref && ['vip', 'premium', 'suv', 'especial'].includes(ref.id)
-  const refStickerThreshold = refIsVipOrPremium ? 30000 : 60000
-  const refStickerPct = input.fipe > refStickerThreshold ? 15 : 10
+  const refStickerPct = (ref && adesivoPct(ref.id, input.fipe)) ?? 10
   const refStickerMultiplier = 1 - refStickerPct / 100
   const refStickerPlusEarlyPct = refStickerPct + 5
   const refStickerPlusEarlyMultiplier = 1 - refStickerPlusEarlyPct / 100

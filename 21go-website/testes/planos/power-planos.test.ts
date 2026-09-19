@@ -154,3 +154,50 @@ test('moto continua com um plano so — nunca as duas tabelas na tela', () => {
   const planos = lerPlanosDoPower(VERSYS_650, { marca: 'KAWASAKI', cilindrada: 650 })
   assert.equal(planos.length, 1)
 })
+
+
+/*
+ * Respostas REAIS medidas em 19/09/2026 (cityId 3658). O Power manda a tabela do veiculo PRIMEIRO
+ * e emenda outras depois; a tela do consultor mostra so a primeira (print do Creta do Jorge:
+ * VIP SUV 484,80 e Basico 424,50). O site lia todas, e a Isa ("tem Especiais -> so Especiais")
+ * acabava oferecendo justamente a tabela emendada.
+ */
+const R = (name: string, priceValue: number) => ({ name, priceValue })
+const ids = (xs: { id: string; monthly: number }[]) => xs.map((p) => `${p.id} ${p.monthly}`)
+
+test('Creta Limited 2022: so a tabela SUV que vem primeiro (a do print do Power)', () => {
+  const planos = lerPlanosDoPower([
+    R('VIP SUV', 484.8), R('BÁSICO', 424.5), R('ROUBO E FURTO + Ass 24h + Monitoramento', 484.8),
+    R('BÁSICO', 406.02), R('Do Seu Jeito', 418), R('VIP', 466.27), R('VIP ESPECIAIS', 577.51),
+  ])
+  assert.deepEqual(ids(planos), ['basico 424.5', 'suv 484.8'])
+})
+
+test('Compass 2022: VIP SUV 507 e Basico 437, sem o Especiais emendado no fim', () => {
+  const planos = lerPlanosDoPower([
+    R('VIP SUV', 507), R('BÁSICO', 437), R('ROUBO E FURTO + Ass 24h + Monitoramento', 507),
+    R('VIP ESPECIAIS', 606.75), R('Monitoramento', 49.9),
+  ])
+  assert.deepEqual(ids(planos), ['basico 437', 'suv 507'])
+})
+
+test('Corolla XEi 2017: os 4 planos de carro, sem o Especiais emendado', () => {
+  const planos = lerPlanosDoPower([
+    R('BÁSICO', 345.79), R('Do Seu Jeito', 357.8), R('VIP', 418.88), R('PREMIUM', 523.22),
+    R('VIP ESPECIAIS', 489.9), R('Monitoramento', 49.9), R('ROUBO E FURTO + Ass 24h + Monitoramento', 418.85),
+  ])
+  assert.deepEqual(ids(planos), ['basico 345.79', 'do-seu-jeito 357.8', 'vip 418.88', 'premium 523.22'])
+})
+
+test('Sportage 2010: tabela SUV primeiro; o Basico repetido da tabela de carro nao entra', () => {
+  const planos = lerPlanosDoPower([
+    R('VIP SUV', 213), R('BÁSICO', 169.3), R('ROUBO E FURTO + Ass 24h + Monitoramento', 213),
+    R('BÁSICO', 150.81), R('Do Seu Jeito', 162.8), R('VIP', 194.42), R('PREMIUM', 255.25),
+  ])
+  assert.deepEqual(ids(planos), ['basico 169.3', 'suv 213'])
+})
+
+test('Especiais so fica quando e a tabela do veiculo (vem primeiro)', () => {
+  const planos = lerPlanosDoPower([R('VIP ESPECIAIS', 238.5), R('BÁSICO', 129.61), R('VIP', 159.49)])
+  assert.deepEqual(ids(planos), ['especial 238.5'])
+})

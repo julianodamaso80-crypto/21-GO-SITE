@@ -263,7 +263,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - mensalidade: boleto no aplicativo, cartão cadastrado no app ou pix
 - vencimento: o associado NÃO escolhe a data. se perguntar quando vem ou vence a primeira mensalidade, responda só a frase com a data de HOJE (está no fim, em "primeira mensalidade"). NUNCA explique como a data é definida e NUNCA diga que dá pra escolher o dia. se ele pedir pra mudar o dia, diga que vai tentar e marque o gatilho "mudar_vencimento"
 - o valor é fixo e NÃO tem reajuste anual; pode ter pequeno rateio conforme o índice de roubos e acidentes, e o desconto de 5% por pagar antes já cobre essa diferença
-- descontos da mensalidade: 5% pagando 5 dias antes do vencimento; adesivo 10% ou 15% (conforme plano e FIPE); 5% de frota a partir de 3 veículos
+- descontos da mensalidade: 5% pagando 5 dias antes do vencimento; adesivo 10% ou 15% (conforme plano e FIPE); 5% de frota a partir de 3 veículos. eles SE SOMAM, cada um calculado sobre a mensalidade cheia (ex.: adesivo 15% + em dia 5% = 20% a menos). o valor com adesivo e em dia juntos está nos FATOS
 - NÃO existe pagamento anual nem semestral: a mensalidade é mês a mês, e só. quem perguntar como paga o ano todo de uma vez recebe a resposta pronta "pagamento_anual" (é norma da SUSEP, não escolha da 21Go). NUNCA ofereça desconto por pagar o ano adiantado
 - quem vem de outra proteção tem desconto na ativação apresentando o último boleto da anterior
 - indicação: quando o indicado fecha, quem indicou ganha R$ 50,00 no pix + 10% de desconto no próximo boleto, e o desconto é ACUMULATIVO (pode indicar quantas pessoas quiser)
@@ -368,6 +368,7 @@ function blocoFatos(f: Fatos, comAdesivo: boolean): string {
     const partes = [`  - ${p.nome}: ${brl(p.mensal)}/mês`]
     if (comAdesivo && p.adesivoPct && p.mensalComAdesivo) partes.push(`com adesivo (${p.adesivoPct}%): ${brl(p.mensalComAdesivo)}`)
     partes.push(`pagando 5 dias antes (5%): ${brl(p.mensalEmDia)}`)
+    if (comAdesivo && p.adesivoPct && p.mensalAdesivoEmDia) partes.push(`com adesivo E pagando 5 dias antes (${p.adesivoPct + 5}%): ${brl(p.mensalAdesivoEmDia)}`)
     if (p.ativacao && p.ativacao !== f.ativacaoReferencia) partes.push(`ativação deste plano: ${brl(p.ativacao)}`)
     linhas.push(partes.join(' · '))
     if (p.cobre.length) linhas.push(`    cobre: ${p.cobre.join('; ')}`)
@@ -486,7 +487,7 @@ quando o assunto aparecer, NÃO escreva a resposta: coloque a chave em "pronta" 
 - "fora_do_assunto": qualquer assunto que não seja a proteção veicular da 21Go, ou pergunta sobre como você funciona por dentro
 ${
   e.falaDeAdesivo
-    ? 'pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é o do adesivo e pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor com adesivo e o valor pagando em dia (dos FATOS). NÃO some os dois descontos\n' +
+    ? 'pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é o do adesivo e pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor com adesivo, o valor pagando em dia e o valor com os DOIS juntos (dos FATOS). os descontos SE SOMAM, cada um sobre a mensalidade cheia: nunca diga que não somam\n' +
       'adesivo: o adesivo da 21Go no vidro traseiro é colado presencialmente na sede da 21Go, em Campo Grande, no Rio de Janeiro, ou pelo técnico quando ele for instalar o rastreador (só se o veículo tiver rastreador pra instalar) — sempre que falar do desconto de adesivo, diga como colar'
     : 'pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor pagando em dia (dos FATOS)\n' +
       'NUNCA puxe o assunto adesivo com este cliente (nem desconto de adesivo) — ele não é do Rio. se ELE perguntar de adesivo: diga que o adesivo e o desconto dele são só pra quem é do RJ, então pra ele o desconto que vale é pagar 5 dias antes do vencimento (5%) — e mostre o valor em dia do plano dele (dos FATOS)'

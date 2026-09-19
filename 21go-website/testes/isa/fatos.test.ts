@@ -38,10 +38,14 @@ test('indenizacao 100% da FIPE; leilao/remarcado 80%', () => {
   assert.equal(montarFatos({ ...base, leilao: true }).indenizacaoPct, 80)
 })
 
-test('adesivo igual a tela do site: VIP/Premium/SUV/Especial corta em 30 mil, Basico/Do Seu Jeito em 60 mil, moto nao tem', () => {
+test('adesivo (dono, 19/09/2026): VIP/SUV/Especial cortam em 30 mil; Premium, Basico e Do Seu Jeito em 60 mil; moto nao tem', () => {
   assert.equal(adesivoPct('vip', 30000), 10)
   assert.equal(adesivoPct('vip', 30001), 15)
-  assert.equal(adesivoPct('premium', 45000), 15) // a faixa 30-60 mil do Premium segue o site
+  // print do Gabriel: C3 FIPE 37.506 no Premium saiu com 15%. A regra do dono: Premium so
+  // passa a 15% ACIMA de 60 mil.
+  assert.equal(adesivoPct('premium', 37506), 10)
+  assert.equal(adesivoPct('premium', 60000), 10)
+  assert.equal(adesivoPct('premium', 60001), 15)
   assert.equal(adesivoPct('basico', 60000), 10)
   assert.equal(adesivoPct('do-seu-jeito', 60001), 15)
   assert.equal(adesivoPct('moto-400', 20000), null)
@@ -54,6 +58,9 @@ test('valores do plano: com adesivo e pagando em dia, arredondados como na tela'
   assert.equal(p.adesivoPct, 15)
   assert.equal(p.mensalComAdesivo, 371.45) // o print do dono
   assert.equal(p.mensalEmDia, 415.15)
+  // os descontos SOMAM, cada um sobre a mensalidade cheia (dono, 11/09/2026): 437 - 15% - 5% = 437 x 0,80
+  assert.equal(p.mensalAdesivoEmDia, 349.6)
+  assert.ok(f.numerosPermitidos.dinheiro.includes(349.6), 'o valor combinado tem que poder ser dito')
 })
 
 test('carro de aplicativo NAO muda o preco (dono, 16/09/2026)', () => {

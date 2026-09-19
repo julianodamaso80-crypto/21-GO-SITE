@@ -39,6 +39,7 @@ import { temParcelamento } from '@/lib/consultores-parcelamento'
 import { ativacaoDoConsultor } from '@/lib/consultores-ativacao'
 import { isPlacaFormatValid, normalizePlaca, validatePlaca } from '@/lib/placa'
 import PopupSaida from '@/components/isa/PopupSaida'
+import { adesivoPct } from '@/lib/isa/fatos.regras'
 import { mensagemDoPopup } from '@/lib/isa/popup.regras'
 
 /* ─── Types ─── */
@@ -821,20 +822,16 @@ export default function CotacaoPage() {
   const discountPrice = Math.round(price * 0.95 * 100) / 100
   const discountFormatted = formatPrice(discountPrice)
 
-  // Desconto adesivo no vidro traseiro (não se aplica a motos)
-  // Regra oficial 21Go:
-  //   VIP/Premium/SUV/Especial: até 30k FIPE = 10% | acima de 30k = 15%
-  //   Do Seu Jeito/Básico:      até 60k FIPE = 10% | acima de 60k = 15%
+  // Desconto adesivo no vidro traseiro (não se aplica a motos): regra única em lib/isa/fatos.regras
   const fipeValue = vehicle?.fipeValue || 0
   const planId = selectedPlan?.id || ''
   const isMoto = planId === 'moto-400' || planId === 'moto-1000'
-  const isVipOrPremium = planId === 'vip' || planId === 'premium' || planId === 'suv' || planId === 'especial'
-  const stickerThreshold = isVipOrPremium ? 30000 : 60000
-  const stickerPct = fipeValue > stickerThreshold ? 15 : 10
+  const stickerPct = adesivoPct(planId, fipeValue) ?? 10
   const stickerPrice = Math.round(price * (1 - stickerPct / 100) * 100) / 100
   const stickerPriceFormatted = formatPrice(stickerPrice)
-  // Adesivo + pontualidade combinados (não se substituem)
-  const stickerPlusEarlyPrice = Math.round(stickerPrice * 0.95 * 100) / 100
+  // Adesivo + pontualidade: SOMAM, cada um sobre a mensalidade cheia (dono, 11/09/2026) — a mesma
+  // conta do PDF. Antes multiplicava (0,85 x 0,95) e a tela dava um valor diferente do PDF.
+  const stickerPlusEarlyPrice = Math.round(price * (1 - (stickerPct + 5) / 100) * 100) / 100
   const stickerPlusEarlyFormatted = formatPrice(stickerPlusEarlyPrice)
 
   // ── CTA de contratação (reaproveitado em vários pontos do resultado) ──
