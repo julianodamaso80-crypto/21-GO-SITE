@@ -50,6 +50,7 @@ import { placaNoTexto } from '@/lib/isa/placa.regras'
 import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
 import { identifyPlate } from '@/lib/plate-identify'
 import { isLeilaoOrigin } from '@/data/pricing'
+import { recrutamentoNaIsa } from '@/lib/consultor-recrutamento'
 
 /**
  * A fila da Isa. Roda disparada pelo webhook (10,5 s depois da mensagem) e por um cron de 1 em
@@ -227,6 +228,25 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   const agora = new Date()
   const ultimaInbound = novas[novas.length - 1]?.whatsapp_message_id
+
+  // "Quero Ser Consultor" (dono, 21/09/2026): o formulario abre este numero, mas quem quer ser
+  // consultor ouve o recado do recrutamento e NUNCA o atendimento de venda. Vai inteiro numa
+  // mensagem, como era no 4824.
+  const recrutamento = await recrutamentoNaIsa({
+    telefone: c.telefone,
+    nome: c.nome,
+    novas: novas.map((m) => m.content),
+    historico: (await historico(c.conversation_id, 30, c.reiniciada_em))
+      .filter((m) => m.direction === 'inbound')
+      .map((m) => m.content),
+    enviar: (texto) => enviarComoGente(c, [texto], ultimaInbound, visto),
+  })
+  if (recrutamento) {
+    const enviou = recrutamento !== 'nada'
+    await registrarEvento(c.telefone, 'recrutamento_consultor', { acao: recrutamento })
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
 
   const enviar = (partes: string[]) => enviarComoGente(c, partes, ultimaInbound, visto)
 

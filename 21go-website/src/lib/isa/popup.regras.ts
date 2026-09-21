@@ -11,7 +11,7 @@
  */
 
 export const DOMINIOS_DA_CASA = ['21go.site', '21goconsultoraleticya.site']
-const NUMERO_ISA = '5521980040964'
+export const NUMERO_ISA = '5521980040964'
 
 const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -24,6 +24,16 @@ export function dominioDoHost(host: string | null | undefined): string | null {
 export function ehDominioDaCasa(hostname: string): boolean {
   const h = hostname.toLowerCase().replace(/^www\./, '')
   return DOMINIOS_DA_CASA.includes(h)
+}
+
+/**
+ * O formulario do "Quero Ser Consultor" pede `/api/wa?para=isa` (dono, 21/09/2026: responder pelo
+ * numero oficial, que nao paga a conversa aberta pelo cliente). So vale nos .site da casa: a Isa
+ * nunca atende o .com.br, e site de consultor e resolvido antes, pelo slug (REGRA 0.1).
+ */
+export function formularioVaiPraIsa(para: string | null, host: string | null | undefined): boolean {
+  const dominio = dominioDoHost(host)
+  return para === 'isa' && !!dominio && ehDominioDaCasa(dominio)
 }
 
 export function podeMostrarPopup(p: {

@@ -7,6 +7,7 @@ import {
   podeResponder,
   precisaBoasVindas,
   decidir,
+  ehDoRecrutamento,
   LINK_GRUPO,
 } from '../../src/lib/consultor-recrutamento.regras.ts'
 
@@ -87,4 +88,17 @@ test('quem nunca veio pelo botao nao e respondido: o 4824 e da casa', () => {
     decidir({ texto: 'oi, quero cotar meu Onix', boasVindasEm: null, avisoVirtualEm: null, agora }),
     'nada',
   )
+})
+
+test('no numero da Isa, quem veio pelo formulario fica no recrutamento e nunca cai na venda', () => {
+  // chegou agora pelo botao
+  assert.equal(ehDoRecrutamento({ textos: [TEXTO_DO_FORMULARIO], boasVindasEm: null }), true)
+  // ja tinha mandado o formulario antes e agora pergunta outra coisa (mesmo com a trava fechada,
+  // sem boas-vindas gravadas, o historico denuncia)
+  assert.equal(ehDoRecrutamento({ textos: ['quanto ganha?', TEXTO_DO_FORMULARIO], boasVindasEm: null }), true)
+  // ja recebeu as boas-vindas
+  assert.equal(ehDoRecrutamento({ textos: ['oi'], boasVindasEm: new Date('2026-09-21T10:00:00Z') }), true)
+  // cliente da Isa: segue o atendimento de venda
+  assert.equal(ehDoRecrutamento({ textos: ['quero cotar meu Onix', 'Quero meu desconto!'], boasVindasEm: null }), false)
+  assert.equal(ehDoRecrutamento({ textos: [null, ''], boasVindasEm: null }), false)
 })

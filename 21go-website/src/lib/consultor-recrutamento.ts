@@ -4,6 +4,7 @@ import { sendText, formatPhone } from '@/lib/whatsapp'
 import { cumprimento } from '@/lib/isa/hora.regras'
 import {
   decidir,
+  ehDoRecrutamento,
   mensagemBoasVindas,
   mensagemAtendimentoVirtual,
   podeResponder,
@@ -13,7 +14,9 @@ import {
 /**
  * O atendimento de quem chega pelo "Quero Ser Consultor" (sites .site).
  *
- * Chamado pelo webhook da Evolution a cada mensagem RECEBIDA no 4824. Toda a decisao mora em
+ * Desde 21/09/2026 o formulario abre o numero da Isa (98004-0964) e quem responde e o worker
+ * dela, por `recrutamentoNaIsa`. O caminho antigo (webhook da Evolution, 4824) continua para quem
+ * ainda escrever no 4824. Toda a decisao mora em
  * `consultor-recrutamento.regras.ts`; aqui so ficam o estado (uma linha por telefone) e o
  * envio pela mesma instancia que recebeu a mensagem.
  *
@@ -54,7 +57,52 @@ export async function atenderRecrutamento(p: {
 }): Promise<AcaoRecrutamento> {
   const telefone = formatPhone(p.telefone)
   const estado = await estadoDe(telefone)
+  return responder({
+    telefone,
+    nome: p.nome ?? null,
+    texto: p.texto,
+    estado,
+    enviar: async (texto) => {
+      await sendText(telefone, texto)
+      return true
+    },
+  })
+}
 
+/**
+ * O mesmo atendimento no numero da Isa (98004-0964), chamado pelo worker dela antes de qualquer
+ * fluxo de venda. `null` = nao e do recrutamento, a Isa segue. Qualquer outro retorno = e do
+ * recrutamento e a Isa NAO fala nada de venda, mesmo quando a resposta aqui e 'nada' (trava
+ * fechada ou o robo ja calou).
+ */
+export async function recrutamentoNaIsa(p: {
+  telefone: string
+  nome: string | null
+  novas: readonly (string | null)[]
+  historico: readonly (string | null)[]
+  enviar: (texto: string) => Promise<boolean>
+}): Promise<AcaoRecrutamento | null> {
+  const estado = await estadoDe(p.telefone)
+  if (!ehDoRecrutamento({ textos: [...p.novas, ...p.historico], boasVindasEm: estado?.boas_vindas_em ?? null })) {
+    return null
+  }
+  return responder({
+    telefone: p.telefone,
+    nome: p.nome,
+    texto: p.novas.filter(Boolean).join('\n'),
+    estado,
+    enviar: p.enviar,
+  })
+}
+
+async function responder(p: {
+  telefone: string
+  nome: string | null
+  texto: string | null
+  estado: Estado | null
+  enviar: (texto: string) => Promise<boolean>
+}): Promise<AcaoRecrutamento> {
+  const { telefone, estado } = p
   const acao = decidir({
     texto: p.texto,
     boasVindasEm: estado?.boas_vindas_em ?? null,
@@ -76,10 +124,10 @@ export async function atenderRecrutamento(p: {
   const texto =
     acao === 'boas_vindas' ? mensagemBoasVindas(cumprimento(new Date())) : mensagemAtendimentoVirtual()
 
-  await sendText(telefone, texto)
+  if (!(await p.enviar(texto))) return 'nada'
   await marcar({
     telefone,
-    nome: p.nome ?? null,
+    nome: p.nome,
     coluna: acao === 'boas_vindas' ? 'boas_vindas_em' : 'aviso_virtual_em',
   })
   console.log(`[consultor] ${acao} -> ${telefone.slice(0, 6)}***`)

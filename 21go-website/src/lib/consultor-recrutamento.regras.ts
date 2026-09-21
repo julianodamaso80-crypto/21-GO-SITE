@@ -34,6 +34,21 @@ export function ehCadastroDeConsultor(texto: string | null | undefined): boolean
   return ASSINATURA.test(texto || '')
 }
 
+/**
+ * No numero da Isa (98004-0964) o formulario divide a porta com os clientes de venda. Quem veio
+ * pelo "Quero Ser Consultor" nunca pode cair no atendimento de venda (dono, 21/09/2026: "cuidado
+ * para vc nao embolar"): nem na mensagem do formulario, nem em nada que escrever depois.
+ *
+ * `textos` = o que chegou agora + o historico da conversa. O historico cobre quem mandou o
+ * formulario com a trava fechada (sem boas-vindas gravadas) e agora pergunta outra coisa.
+ */
+export function ehDoRecrutamento(p: {
+  textos: readonly (string | null | undefined)[]
+  boasVindasEm: Date | null
+}): boolean {
+  return !!p.boasVindasEm || p.textos.some((t) => ehCadastroDeConsultor(t))
+}
+
 export function mensagemBoasVindas(saudacao: Cumprimento): string {
   const abertura = saudacao.charAt(0).toUpperCase() + saudacao.slice(1)
   return (

@@ -62,3 +62,13 @@ test('dominio da requisicao vira dominio limpo do lead (dono, 13/09/2026: a Isa 
   assert.equal(dominioDoHost('<script>'), null)
   assert.ok(DOMINIOS_DA_CASA.includes('21go.site') && !DOMINIOS_DA_CASA.includes('21go.com.br'))
 })
+
+test('formulario do Quero Ser Consultor: vai pra Isa so nos dois .site da casa', async () => {
+  const { formularioVaiPraIsa } = await import('../../src/lib/isa/popup.regras.ts')
+  assert.equal(formularioVaiPraIsa('isa', '21go.site'), true)
+  assert.equal(formularioVaiPraIsa('isa', 'www.21goconsultoraleticya.site'), true)
+  // a Isa nunca atende o .com.br
+  assert.equal(formularioVaiPraIsa('isa', '21go.com.br'), false)
+  assert.equal(formularioVaiPraIsa(null, '21go.site'), false)
+  assert.equal(formularioVaiPraIsa('isa', null), false)
+})

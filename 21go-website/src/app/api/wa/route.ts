@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pickWhatsAppTarget } from '@/lib/whatsapp-rotation'
 import { estaNoAr, resolverConsultor } from '@/lib/consultor'
+import { formularioVaiPraIsa, NUMERO_ISA } from '@/lib/isa/popup.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -19,7 +20,7 @@ export const dynamic = 'force-dynamic'
  * direto com o consultor, no numero que ele cadastrou. E de graca e nao tem
  * risco de ban — e um link, nao um disparo.
  *
- * GET /api/wa?text=<mensagem opcional ja decodificada>&c=<slug do consultor>
+ * GET /api/wa?text=<mensagem opcional ja decodificada>&c=<slug do consultor>&para=isa
  */
 export async function GET(req: NextRequest) {
   const text = req.nextUrl.searchParams.get('text')
@@ -62,6 +63,11 @@ export async function GET(req: NextRequest) {
   if (consultor && estaNoAr(consultor)) {
     numero = consultor.whatsapp
     rotulo = `consultor ${consultor.slug}`
+  } else if (formularioVaiPraIsa(req.nextUrl.searchParams.get('para'), req.headers.get('x-forwarded-host') || req.headers.get('host'))) {
+    // "Quero Ser Consultor" nos .site da casa: o numero oficial da Isa, que responde com o recado
+    // do recrutamento (worker.ts, recrutamentoNaIsa).
+    numero = NUMERO_ISA
+    rotulo = 'isa (seja consultor)'
   } else {
     if (slug) console.warn(`[wa] slug "${slug}" sem site ativo — caindo no rodízio`)
     const target = await pickWhatsAppTarget()
