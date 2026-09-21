@@ -223,6 +223,10 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
         AND c.ligada
         AND c.retomada_sem_resposta_em IS NULL
         AND c.abordagem5min_em < now() - interval '10 minutes'
+        -- So ate 24 h depois da 1a mensagem. Sem este teto, depois de 4 dias suspensa (17-21/09/2026)
+        -- a retomada varreu todo mundo que nunca respondeu desde o dia 13 — gente que simulou ha
+        -- dias recebendo "ficou alguma duvida?" do nada.
+        AND c.abordagem5min_em > now() - interval '24 hours'
         -- Quem nunca respondeu, e tambem quem respondeu e deixou a janela fechar (dono,
         -- 14/09/2026: "pode disparar para todos que a Isa atendeu desde ontem"). Dentro da
         -- janela nao entra: ali ela fala por texto livre, sem template e sem custo.
