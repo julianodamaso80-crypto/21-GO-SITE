@@ -9,7 +9,7 @@ import { sql, type ContatoIsa } from '@/lib/isa/banco'
  * ficam nas rotas /api/atendimento/*.
  */
 
-export type Aba = 'todos' | 'precisa' | 'isa' | 'off' | 'transferidos'
+export type Aba = 'todos' | 'precisa' | 'isa' | 'off' | 'transferidos' | 'consultores'
 
 export interface ItemLista {
   telefone: string
@@ -29,17 +29,21 @@ export interface ItemLista {
   sem_resposta: number
 }
 
+// Quem veio pelo "Quero Ser Consultor" (dono, 21/09/2026): so na aba Consultores, em nenhuma outra.
+const EH_CONSULTOR = `'consultor' = ANY(COALESCE(c.etiquetas, '{}'::text[]))`
+
 const FILTRO: Record<Aba, string> = {
-  todos: 'true',
+  todos: `NOT ${EH_CONSULTOR}`,
   // Pausou sozinha num gatilho (e nao foi transferido) ou esta esperando o dono decidir desconto.
   // ...ou ficou devendo uma resposta ("vou confirmar e ja te retorno" — auditoria 12/09/2026).
   // Etiqueta FRIO tira da fila (dono, 16/09/2026: "se eu selecionar tag frio ele sai de precisa
   // de mim"). Os parenteses em volta dos OR sao obrigatorios: sem eles o AND so valeria pro ultimo.
   precisa: `((NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR (c.aguardando_dono IS NOT NULL AND c.aguardando_dono <> 'fecha_quando') OR c.pergunta_pendente IS NOT NULL)
     AND NOT (COALESCE(c.etiquetas, '{}'::text[]) && ARRAY[${ETIQUETAS_FORA_DA_FILA.map((e) => `'${e}'`).join(',')}]::text[])`,
-  isa: 'c.ligada',
-  off: 'NOT c.ligada',
-  transferidos: 'c.transferido_em IS NOT NULL',
+  isa: `c.ligada AND NOT ${EH_CONSULTOR}`,
+  off: `NOT c.ligada AND NOT ${EH_CONSULTOR}`,
+  transferidos: `c.transferido_em IS NOT NULL AND NOT ${EH_CONSULTOR}`,
+  consultores: EH_CONSULTOR,
 }
 
 export async function listarContatos(aba: Aba, busca: string, etiqueta = '', usuario = ''): Promise<ItemLista[]> {

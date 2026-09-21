@@ -6,7 +6,7 @@ import { etiquetaValida } from '@/lib/isa/etiquetas.regras'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const ABAS = new Set(['todos', 'precisa', 'isa', 'off', 'transferidos'])
+const ABAS = new Set(['todos', 'precisa', 'isa', 'off', 'transferidos', 'consultores'])
 
 export async function GET(req: NextRequest) {
   const sessao = sessaoDoRequest(req)

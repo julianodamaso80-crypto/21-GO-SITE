@@ -25,6 +25,9 @@ export const ETIQUETAS: Etiqueta[] = [
   // Dono, 16/09/2026: "faz uma tag vistoria e coloca no funil tbm"
   { id: 'vistoria', nome: 'Vistoria', cor: '#C4B5FD', claro: true },
   { id: 'fechou', nome: 'Fechou', cor: '#22C55E', claro: false },
+  // Dono, 21/09/2026: quem veio pelo "Quero Ser Consultor" vai so pra esta coluna/aba. O worker
+  // da Isa marca sozinho (recrutamentoNaIsa); nao aparece em Todos nem em Precisa de voce.
+  { id: 'consultor', nome: 'Consultores', cor: '#2DD4BF', claro: true },
   { id: 'frio', nome: 'Frio', cor: '#64748B', claro: false },
 ]
 
@@ -49,7 +52,7 @@ export function normalizarEtiquetas(lista: unknown): string[] {
  * vale mais a pena correr atras (Frio). Dono, 16/09/2026: "se eu coloquei tag falando com leticya
  * vc tira do precisa de vc" (o Frio ja saia desde a manha). E "se fechou sai de preciso de vc".
  */
-export const ETIQUETAS_FORA_DA_FILA: readonly string[] = ['frio', 'leticya', 'fechou']
+export const ETIQUETAS_FORA_DA_FILA: readonly string[] = ['frio', 'leticya', 'fechou', 'consultor']
 
 export function etiquetaValida(id: string | null | undefined): boolean {
   return !!id && IDS.has(id)

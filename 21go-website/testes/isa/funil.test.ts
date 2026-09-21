@@ -6,7 +6,7 @@ import { ETIQUETAS } from '../../src/lib/isa/etiquetas.regras.ts'
 test('o funil comeca no Simulou e termina no Frio (dono, 15/09/2026)', () => {
   assert.deepEqual(
     ETAPAS.map((e) => e.id),
-    ['simulou', 'quente', 'leticya', 'documento', 'vistoria', 'fechou', 'frio'],
+    ['simulou', 'quente', 'leticya', 'documento', 'vistoria', 'fechou', 'consultor', 'frio'],
   )
   // a coluna "Novo" saiu: quem nao simulou tambem entra no Simulou
   assert.equal(ehEtapa('novo'), false)
@@ -84,4 +84,9 @@ test('mover o card acerta as etiquetas pra coluna nova', () => {
     const tags = etiquetasAoMover(['quente', 'leticya', 'documento', 'vistoria', 'fechou', 'frio'], destino)
     assert.equal(etapaDoCard({ etapa: destino, escolheuPlano: true, mandouDocumento: true, etiquetas: tags }), destino, destino)
   }
+})
+
+test('quem veio pelo Quero Ser Consultor vai pra coluna Consultores, depois do Fechou (dono, 21/09/2026)', () => {
+  assert.equal(ETAPAS.find((e) => e.id === 'consultor')?.rotulo, 'Consultores')
+  assert.equal(etapaDoCard({ etapa: null, escolheuPlano: false, mandouDocumento: false, etiquetas: ['consultor'] }), 'consultor')
 })

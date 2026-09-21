@@ -255,11 +255,24 @@ export async function reiniciarContato(telefone: string): Promise<void> {
      WHERE telefone = $1`,
     [telefone],
   )
+  // Numero de teste que testou o "Quero Ser Consultor" volta a ser cliente comum: sai da aba
+  // Consultores e o recrutamento esquece que ele ja recebeu o recado.
+  await sql(`UPDATE public.isa_contatos SET etiquetas = array_remove(etiquetas, 'consultor') WHERE telefone = $1`, [telefone])
+  await sql(`DELETE FROM public.consultor_recrutamento WHERE telefone = $1`, [telefone])
   // Pedido de desconto deste contato que ficou esperando o supervisor (4240): sem isto, o 4240
   // continua em "modo supervisor" e para de conversar como cliente (teste de 11/09/2026).
   await sql(
     `UPDATE public.isa_contatos SET aguardando_dono = NULL, updated_at = now()
      WHERE aguardando_dono IN ('desconto:' || $1, 'valor:' || $1)`,
+    [telefone],
+  )
+}
+
+/** Quem veio pelo "Quero Ser Consultor": etiqueta que manda o contato pra coluna/aba Consultores. */
+export async function marcarConsultor(telefone: string): Promise<void> {
+  await sql(
+    `UPDATE public.isa_contatos SET etiquetas = array_append(COALESCE(etiquetas, '{}'::text[]), 'consultor'), updated_at = now()
+     WHERE telefone = $1 AND NOT ('consultor' = ANY(COALESCE(etiquetas, '{}'::text[])))`,
     [telefone],
   )
 }

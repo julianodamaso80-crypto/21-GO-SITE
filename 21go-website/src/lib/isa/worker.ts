@@ -18,6 +18,7 @@ import {
   adiarRetomada,
   jaPediuDocumentos,
   ultimaConsultaFoiRecusa,
+  marcarConsultor,
   sql,
   type ContatoIsa,
   type MensagemHistorico,
@@ -242,6 +243,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     enviar: (texto) => enviarComoGente(c, [texto], ultimaInbound, visto),
   })
   if (recrutamento) {
+    await marcarConsultor(c.telefone)
     const enviou = recrutamento !== 'nada'
     await registrarEvento(c.telefone, 'recrutamento_consultor', { acao: recrutamento })
     await liberar(c.telefone, visto, enviou)

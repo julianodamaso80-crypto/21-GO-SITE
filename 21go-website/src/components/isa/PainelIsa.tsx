@@ -11,7 +11,7 @@ import { ETIQUETAS } from '@/lib/isa/etiquetas.regras'
  * Dados: /api/atendimento/* (tudo exige a sessao do painel).
  */
 
-type Aba = 'todos' | 'precisa' | 'isa' | 'off' | 'transferidos'
+type Aba = 'todos' | 'precisa' | 'isa' | 'off' | 'transferidos' | 'consultores'
 
 interface ItemLista {
   telefone: string
@@ -87,6 +87,8 @@ const ABAS: { id: Aba; rotulo: string; cor: string }[] = [
   { id: 'isa', rotulo: 'Isa', cor: '#7B9BE8' },
   { id: 'off', rotulo: 'Off', cor: '#F2911D' },
   { id: 'transferidos', rotulo: 'Transferidos', cor: '#9AA6C8' },
+  // Dono, 21/09/2026: quem veio pelo "Quero Ser Consultor" so aparece aqui
+  { id: 'consultores', rotulo: 'Consultores', cor: '#2DD4BF' },
 ]
 
 const MOTIVO: Record<string, string> = {

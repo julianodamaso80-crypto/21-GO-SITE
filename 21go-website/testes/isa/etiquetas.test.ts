@@ -10,11 +10,11 @@ import {
 test('as 4 etiquetas que o dono pediu, e so essas (15/09/2026)', () => {
   assert.deepEqual(
     ETIQUETAS.map((e) => e.id),
-    ['quente', 'leticya', 'documento', 'vistoria', 'fechou', 'frio'],
+    ['quente', 'leticya', 'documento', 'vistoria', 'fechou', 'consultor', 'frio'],
   )
   assert.deepEqual(
     ETIQUETAS.map((e) => e.nome),
-    ['Quente', 'Falando com Leticya', 'Enviou documento', 'Vistoria', 'Fechou', 'Frio'],
+    ['Quente', 'Falando com Leticya', 'Enviou documento', 'Vistoria', 'Fechou', 'Consultores', 'Frio'],
   )
   for (const e of ETIQUETAS) assert.ok(e.cor, e.id)
 })
@@ -52,5 +52,10 @@ test('"avaria" e estado do worker, nao rotulo: o painel nao pode apaga-la', () =
 
 test('etiquetas que tiram o contato do "precisa de voce": Frio, Falando com Leticya e Fechou (dono, 16/09/2026)', async () => {
   const { ETIQUETAS_FORA_DA_FILA } = await import('../../src/lib/isa/etiquetas.regras.ts')
-  assert.deepEqual([...ETIQUETAS_FORA_DA_FILA].sort(), ['fechou', 'frio', 'leticya'])
+  assert.deepEqual([...ETIQUETAS_FORA_DA_FILA].sort(), ['consultor', 'fechou', 'frio', 'leticya'])
+})
+
+test('consultor nao cai no Precisa de voce (dono, 21/09/2026)', async () => {
+  const { ETIQUETAS_FORA_DA_FILA } = await import('../../src/lib/isa/etiquetas.regras.ts')
+  assert.ok(ETIQUETAS_FORA_DA_FILA.includes('consultor'))
 })
