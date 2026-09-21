@@ -154,7 +154,7 @@ export function comparacaoComHoje(fatos: Fatos, pagaHoje: number): ComparacaoHoj
 
 // Uma ou mais dessas, e nada alem delas ("ok obrigado", "ta bom, valeu").
 const PALAVRA_DE_DESPEDIDA =
-  '(ok|okay|beleza|blz|ta bom|ta|certo|entendi|show|top|valeu|vlw|obrigad[oa]+|brigad[oa]+|obg|grat[oa]|perfeito|fechou|combinado|ate mais|ate logo|falou|tchau|boa noite|boa tarde|bom dia|vou pensar|vou ver|vou analisar|depois (eu )?(te )?(falo|chamo|vejo|respondo)|qualquer coisa (te )?(chamo|falo)|te aviso|aviso (voce|vc)|(vou )?ver com (minha|meu) (esposa|marido|mulher|pai|mae|familia|socio))'
+  '(ok|okay|beleza|blz|tudo bem|tudo bom|td bem|tudo certo|ta bem|tranquilo|sem problemas?|ta bom|ta|certo|entendi|show|top|valeu|vlw|obrigad[oa]+|brigad[oa]+|obg|grat[oa]|perfeito|fechou|combinado|ate mais|ate logo|falou|tchau|boa noite|boa tarde|bom dia|vou pensar|vou ver|vou analisar|depois (eu )?(te )?(falo|chamo|vejo|respondo)|qualquer coisa (te )?(chamo|falo)|te aviso|aviso (voce|vc)|(vou )?ver com (minha|meu) (esposa|marido|mulher|pai|mae|familia|socio))'
 const DESPEDIDA = new RegExp(`^(?:${PALAVRA_DE_DESPEDIDA}[\\s,!.?]*)+$`)
 
 /** "ok obrigado", "vou pensar", "depois te falo": o cliente encerrou por hoje. */
@@ -214,8 +214,20 @@ const SO_CUMPRIMENTO =
 /** A mensagem e SO um cumprimento ("oi", "bom dia, tudo bem?"): nada de pergunta junto. */
 export function ehSoCumprimento(texto: string | null | undefined): boolean {
   const t = norm(texto).replace(/[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u200d\ufe0f]/gu, '').trim()
-  return !!t && SO_CUMPRIMENTO.test(t)
+  return !!t && SO_CUMPRIMENTO.test(t) && !concordaSemSaudar(t)
 }
+
+/**
+ * "Tudo bem", "beleza", "tudo certo" SOZINHOS e sem "?" sao ele concordando, nao cumprimentando
+ * (Renato, 21/09/2026: a Isa disse "essa eu vou confirmar e ja te retorno", ele respondeu "Tudo
+ * bem" e ela devolveu "boa tarde, Renato! tudo otimo por aqui, e voce? me diz, como posso te
+ * ajudar?"). Com "?" ou com "oi/bom dia" junto continua sendo cumprimento.
+ */
+const CONCORDA_SEM_SAUDAR = /^(?:(?:tudo bem|tudo bom|td bem|td bom|tudo certo|beleza|blz)[\s,!.]*)+$/
+function concordaSemSaudar(t: string): boolean {
+  return !t.includes('?') && CONCORDA_SEM_SAUDAR.test(t)
+}
+
 
 /**
  * Resposta ao "oi", pelo codigo (dono, 13/09/2026: "o certo e 'boa noite, Juliano, tudo bem? como

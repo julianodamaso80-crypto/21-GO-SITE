@@ -14,6 +14,7 @@ import {
   jaPerguntouProtecao,
   PERGUNTA_TEM_PROTECAO,
   ehSoCumprimento,
+  ehSoConcordancia,
   ehSoAgradecimento,
   mensagemCumprimento,
   perguntouTudoBem,
@@ -142,4 +143,18 @@ test('"Certo" sozinho e concordancia, nao pergunta: a Isa nao responde nada (don
   for (const t of ['Certo', 'ok', 'Entendi', 'perfeito!', 'ta bom', 'show 👍']) assert.ok(ehSoConcordancia(t), t)
   // cumprimento continua recebendo resposta; pergunta e pedido tambem
   for (const t of ['oi', 'bom dia', 'Oq não cobre ?', 'Plano Vip', 'certo, e o vidro?']) assert.ok(!ehSoConcordancia(t), t)
+})
+
+
+test('"tudo bem" sem pergunta e CONCORDANCIA, nao cumprimento (Renato, 21/09/2026)', () => {
+  // a Isa disse "essa eu vou confirmar e ja te retorno", ele respondeu "Tudo bem" e ela devolveu
+  // "boa tarde, Renato! tudo otimo por aqui, e voce? me diz, como posso te ajudar?"
+  for (const t of ['Tudo bem', 'tudo bem!', 'beleza', 'Blz', 'tudo certo', 'ok', 'Ok 👍', 'certo', 'combinado', 'ta bom', 'tá bom', 'entendi', 'perfeito', 'show'])
+    assert.ok(ehSoConcordancia(t), t)
+  for (const t of ['tudo bem?', 'oi, tudo bem', 'boa tarde', 'ok, e a franquia?', 'beleza, quanto fica?', 'sim', 'nao'])
+    assert.ok(!ehSoConcordancia(t), t)
+  // e deixa de ser tratado como "oi"
+  for (const t of ['Tudo bem', 'beleza', 'tudo certo']) assert.ok(!ehSoCumprimento(t), t)
+  // com pergunta ou com saudacao continua sendo cumprimento
+  for (const t of ['tudo bem?', 'oi tudo bem', 'bom dia, tudo certo?', 'opa, beleza?']) assert.ok(ehSoCumprimento(t), t)
 })

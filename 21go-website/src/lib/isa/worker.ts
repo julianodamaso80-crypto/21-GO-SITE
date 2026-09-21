@@ -946,6 +946,15 @@ export async function enviarComoGente(
       await registrarEvento(c.telefone, 'interrompida', { enviadas, total: partes.length, por: 'humano' })
       break
     }
+    // Desligaram a Isa enquanto ela preparava a resposta: nada sai (Renato, 21/09/2026 — a Leticya
+    // desligou as 20:08:03 e a Isa ainda mandou as 20:08:05).
+    if (sender === 'isa') {
+      const [agoraLigada] = await sql<{ ligada: boolean }>(`SELECT ligada FROM public.isa_contatos WHERE telefone = $1`, [c.telefone])
+      if (agoraLigada && !agoraLigada.ligada) {
+        await registrarEvento(c.telefone, 'interrompida', { enviadas, total: partes.length, por: 'desligada' })
+        break
+      }
+    }
     try {
       // Falha passageira da Meta ou da rede: tenta de novo antes de desistir (Rafael, 15/09/2026).
       const wamid = await comRetentativa(() => enviarTexto(c.telefone, partes[i].texto, partes[i].citar))
