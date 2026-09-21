@@ -49,8 +49,18 @@ export function ehDoRecrutamento(p: {
   return !!p.boasVindasEm || p.textos.some((t) => ehCadastroDeConsultor(t))
 }
 
-export function mensagemBoasVindas(saudacao: Cumprimento): string {
-  const abertura = saudacao.charAt(0).toUpperCase() + saudacao.slice(1)
+/**
+ * O primeiro nome da linha "Nome: ..." do formulario (dono, 21/09/2026: "chama a pessoa pelo
+ * nome"). Do formulario e nao do perfil do WhatsApp, que vem com apelido e emoji.
+ */
+export function primeiroNomeDoFormulario(texto: string | null | undefined): string | null {
+  const primeiro = /^\s*nome:[ \t]*(\S+)/im.exec(texto || '')?.[1]
+  if (!primeiro) return null
+  return primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase()
+}
+
+export function mensagemBoasVindas(saudacao: Cumprimento, nome: string | null = null): string {
+  const abertura = saudacao.charAt(0).toUpperCase() + saudacao.slice(1) + (nome ? `, ${nome}` : '')
   return (
     `${abertura}! 👋\n\n` +
     'Que bom que você quer ser consultor 21Go!\n\n' +

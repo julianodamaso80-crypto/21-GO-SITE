@@ -6,6 +6,7 @@ import {
   decidir,
   ehDoRecrutamento,
   mensagemBoasVindas,
+  primeiroNomeDoFormulario,
   mensagemAtendimentoVirtual,
   podeResponder,
   type AcaoRecrutamento,
@@ -122,7 +123,7 @@ async function responder(p: {
   }
 
   const texto =
-    acao === 'boas_vindas' ? mensagemBoasVindas(cumprimento(new Date())) : mensagemAtendimentoVirtual()
+    acao === 'boas_vindas' ? mensagemBoasVindas(cumprimento(new Date()), primeiroNomeDoFormulario(p.texto)) : mensagemAtendimentoVirtual()
 
   if (!(await p.enviar(texto))) return 'nada'
   await marcar({

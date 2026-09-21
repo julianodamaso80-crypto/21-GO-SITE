@@ -8,6 +8,7 @@ import {
   precisaBoasVindas,
   decidir,
   ehDoRecrutamento,
+  primeiroNomeDoFormulario,
   LINK_GRUPO,
 } from '../../src/lib/consultor-recrutamento.regras.ts'
 
@@ -101,4 +102,15 @@ test('no numero da Isa, quem veio pelo formulario fica no recrutamento e nunca c
   // cliente da Isa: segue o atendimento de venda
   assert.equal(ehDoRecrutamento({ textos: ['quero cotar meu Onix', 'Quero meu desconto!'], boasVindasEm: null }), false)
   assert.equal(ehDoRecrutamento({ textos: [null, ''], boasVindasEm: null }), false)
+})
+
+test('chama pelo primeiro nome que a pessoa escreveu no formulario (dono, 21/09/2026)', () => {
+  assert.equal(primeiroNomeDoFormulario(TEXTO_DO_FORMULARIO), 'Ana')
+  assert.equal(primeiroNomeDoFormulario('Acabei de me cadastrar como consultor 21Go.\nNome: RENATO DA SILVA\nE-mail: x'), 'Renato')
+  assert.equal(primeiroNomeDoFormulario('Acabei de me cadastrar como consultor 21Go.\nNome:   gláucia hilario'), 'Gláucia')
+  assert.equal(primeiroNomeDoFormulario('Acabei de me cadastrar como consultor 21Go.\nNome: \nE-mail: x'), null)
+  assert.equal(primeiroNomeDoFormulario('oi'), null)
+  assert.equal(primeiroNomeDoFormulario(null), null)
+  assert.match(mensagemBoasVindas('boa noite', 'Ana'), /^Boa noite, Ana! 👋/)
+  assert.match(mensagemBoasVindas('boa noite', null), /^Boa noite! 👋/)
 })
