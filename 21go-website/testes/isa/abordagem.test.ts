@@ -11,6 +11,7 @@ import {
   mensagemCobertura,
   mensagemDuvida,
   qualidadeRuim,
+  paradosPelaQualidade,
   templatePodeSair,
 } from '../../src/lib/isa/abordagem.regras.ts'
 import { mensagemDesconto50 } from '../../src/lib/isa/dono.regras.ts'
@@ -97,4 +98,13 @@ test('a retomada dos 10 min fala do mesmo documento — e o que passa como utili
   assert.match(t, /Ficou com alguma dúvida sobre os valores ou as coberturas, que eu possa te ajudar\?$/)
   // O que derrubou o texto anterior pra MARKETING: falar do plano e da empresa.
   assert.doesNotMatch(t, /o que você achou|já conhecia a 21Go|desconto|R\$/i)
+})
+
+
+test('qualidade: amarelo para so a 2a mensagem, vermelho as duas, verde religa (dono, 21/09/2026)', () => {
+  assert.deepEqual(paradosPelaQualidade('YELLOW'), { cincoMin: false, retomada: true })
+  assert.deepEqual(paradosPelaQualidade('RED'), { cincoMin: true, retomada: true })
+  assert.deepEqual(paradosPelaQualidade('GREEN'), { cincoMin: false, retomada: false })
+  assert.deepEqual(paradosPelaQualidade('UNKNOWN'), { cincoMin: false, retomada: false })
+  assert.deepEqual(paradosPelaQualidade(null), { cincoMin: false, retomada: false })
 })

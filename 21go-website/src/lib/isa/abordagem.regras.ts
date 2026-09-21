@@ -107,3 +107,19 @@ export function qualidadeRuim(rating: string | null | undefined): boolean {
   const r = (rating || '').toUpperCase()
   return r === 'YELLOW' || r === 'RED'
 }
+
+/**
+ * O que fica parado por causa da qualidade do numero (dono, 21/09/2026: "nao pode acontecer isso
+ * mais"). De 17 a 21/09 o numero ficou amarelo, as DUAS mensagens pararam e ninguem religou: 362
+ * leads ficaram sem atendimento, e o numero ja tinha voltado a verde.
+ *   - amarelo: para so a 2a mensagem (retomada dos 10 min, a que vai pra quem ja ignorou a 1a e
+ *     responde metade); a 1a continua, pra lead nenhum ficar sem ninguem;
+ *   - vermelho: para as duas;
+ *   - verde (ou sem nota): nada parado — quem voltou a verde religa sozinho.
+ */
+export function paradosPelaQualidade(rating: string | null | undefined): { cincoMin: boolean; retomada: boolean } {
+  const r = (rating || '').toUpperCase()
+  if (r === 'RED') return { cincoMin: true, retomada: true }
+  if (r === 'YELLOW') return { cincoMin: false, retomada: true }
+  return { cincoMin: false, retomada: false }
+}

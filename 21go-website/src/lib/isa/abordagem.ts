@@ -13,7 +13,7 @@ import {
   variaveisDoTemplate,
   textoDoTemplate,
   textoDaRetomada,
-  qualidadeRuim,
+  paradosPelaQualidade,
   templatePodeSair,
 } from '@/lib/isa/abordagem.regras'
 
@@ -321,27 +321,39 @@ async function templateLiberado(
 }
 
 /**
- * De hora em hora: qualidade do numero na Meta. YELLOW/RED = a mensagem dos 5 min para (fica
- * suspensa ate alguem tirar `suspenso_em` de isa_config.5min) e o dono e avisado uma vez.
+ * De hora em hora: qualidade do numero na Meta. Amarelo para a 2a mensagem, vermelho para as duas
+ * (`paradosPelaQualidade`), e quando volta a verde RELIGA SOZINHO. So mexe no que ela mesma parou
+ * (motivo "qualidade ..."): suspensao manual continua valendo. O dono e avisado a cada mudanca.
  */
 async function vigiarQualidade(): Promise<void> {
   const q = await lerConfig<{ verificado_em?: string }>('qualidade')
   if (q?.verificado_em && Date.now() - Date.parse(q.verificado_em) < 60 * 60_000) return
   const { rating, limite } = await qualidadeDoNumero()
   await gravarConfig('qualidade', { rating, limite, verificado_em: new Date().toISOString() })
-  if (!qualidadeRuim(rating)) return
-  const cfg = await lerConfig<Config5min>('5min')
-  if (cfg?.suspenso_em) return
-  // As DUAS param: a retomada dos 10 min manda mais que o 5 min, e deixar so ela de pe com o
-  // numero amarelo e o caminho mais curto pra restricao na Meta.
-  const suspensao = { suspenso_em: new Date().toISOString(), motivo: `qualidade ${rating}` }
-  await gravarConfig('5min', suspensao)
-  await gravarConfig('retomada', suspensao)
-  await registrarEvento('sistema', 'qualidade_suspendeu', { rating, limite }, 'sistema')
+  // Meta fora do ar ou sem resposta: nao decide nada as cegas.
+  if (!rating) return
+  const parar = paradosPelaQualidade(rating)
+  const mudancas: string[] = []
+  for (const [chave, deveParar, rotulo] of [
+    ['5min', parar.cincoMin, 'a mensagem dos 5 min'],
+    ['retomada', parar.retomada, 'a retomada dos 10 min'],
+  ] as const) {
+    const cfg = (await lerConfig<Config5min>(chave)) ?? {}
+    const paradaPelaQualidade = !!cfg.suspenso_em && (cfg.motivo || '').startsWith('qualidade')
+    if (deveParar && !cfg.suspenso_em) {
+      await gravarConfig(chave, { suspenso_em: new Date().toISOString(), motivo: `qualidade ${rating}` })
+      mudancas.push(`${rotulo} parou`)
+    } else if (!deveParar && paradaPelaQualidade) {
+      await gravarConfig(chave, { suspenso_em: null, motivo: null, religado_em: new Date().toISOString(), religado_por: 'qualidade voltou' })
+      mudancas.push(`${rotulo} voltou`)
+    }
+  }
+  if (!mudancas.length) return
+  await registrarEvento('sistema', 'qualidade_mudou', { rating, limite, mudancas }, 'sistema')
   await alertarDono({
     telefone: numeroDeAlerta() ?? 'sistema',
     nome: 'Isa',
     motivo: 'qualidade',
-    detalhe: `a qualidade do 98004-0964 na Meta ficou ${rating} — a mensagem dos 5 min e a retomada dos 10 min foram suspensas`,
+    detalhe: `a qualidade do 98004-0964 na Meta esta ${rating}: ${mudancas.join(', ')}`,
   })
 }
