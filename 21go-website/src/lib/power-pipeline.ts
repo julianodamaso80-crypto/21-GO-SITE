@@ -119,6 +119,28 @@ async function etapa(): Promise<{ stageId: string; stageIndex: number }> {
 }
 
 /**
+ * Procura no funil do painel (a lupa do topo). Seletores do HTML deles: 11 placa, 24 nome,
+ * 25 e-mail, 26 telefone. O telefone casa pelo texto gravado — cru nos cards antigos,
+ * com mascara nos regravados —, entao quem chama manda os dois formatos.
+ * Devolve o codigo da primeira negociacao achada, em qualquer coluna.
+ */
+export async function acharNoFunil(buscas: { texto: string; seletor: 11 | 24 | 25 | 26 }[]): Promise<string | null> {
+  for (const b of buscas) {
+    if (!b.texto.trim()) continue
+    for (let coluna = 1; coluna <= 5; coluna++) {
+      const r = (await painel('/internal/pipeline/fetchNegotiations', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status: coluna, blocks: 1, text: b.texto, textSelector: b.seletor }),
+      })) as { itens?: { code?: string }[] } | null
+      const code = r?.itens?.find((i) => i.code)?.code
+      if (code) return code
+    }
+  }
+  return null
+}
+
+/**
  * Cria pela pipeline. Nao lanca: devolve `ok: false` com o motivo, e quem chama cai no
  * PowerLink — a pipeline e a preferencia, nunca a condicao para o cliente existir no Power.
  */
