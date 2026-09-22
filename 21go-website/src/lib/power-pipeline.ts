@@ -81,7 +81,7 @@ async function token(forcar = false): Promise<string> {
 }
 
 /** Chamada ao painel com um novo login se a sessao caiu (401 ou corpo vazio). */
-async function painel(caminho: string, init: RequestInit = {}): Promise<unknown> {
+export async function painel(caminho: string, init: RequestInit = {}): Promise<unknown> {
   for (let tentativa = 0; tentativa < 2; tentativa++) {
     const t = await token(tentativa > 0)
     const r = await fetch(APP + caminho, {
