@@ -33,9 +33,10 @@ import {
 import { getRequestContext } from '@/lib/request-context'
 import { estaNoAr, resolverConsultor } from '@/lib/consultor'
 import { acharIndicador, marcarUso } from '@/lib/indicacao'
-import { avisar, avisarComPdf, textoCotacaoNova, textoLeadIndicado } from '@/lib/whatsapp-avisos'
+import { avisar, avisarComPdf, avisarDono, textoCotacaoNova, textoLeadIndicado } from '@/lib/whatsapp-avisos'
 import { criarPelaPipeline } from '@/lib/power-pipeline'
 import { anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
+import { anoModeloParaPower, divergenciasDoVeiculo } from '@/lib/power-veiculo.regras'
 
 /** Pra onde vai o aviso de lead indicado quando nao ha consultor dono do site. */
 const DONO_WHATSAPP = '5521992208062'
@@ -692,6 +693,25 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
   const cidadeFinal = cityId ?? cidadeDoDdd(body.whatsapp)?.cidadeId
   const powerlink = await powerlinkDoLead(body.consultorSlug)
 
+  // Placa, modelo e ano modelo sao obrigatorios (dono, 22/09/2026). Sem o ano modelo o Power
+  // escolhe um sozinho (a Ana, Duster 2015, nasceu "Zero KM"): sem ele, vai o de fabricacao.
+  const fabricacao = Number(yearStr.match(/(\d{4})/)?.[1]) || null
+  const anoModelo = anoModeloParaPower({ anoModelo: Number(body.ano) || null, anoFabricacao: fabricacao })
+  if (mdl && !mdlYr && anoModelo) {
+    try {
+      const r = await fetch(`${POWERCRM_BASE_URL}/api/quotation/cmy?cm=${mdl}`, { headers: apiHeaders })
+      const anos = (await r.json().catch(() => null)) as { id: number; text: string }[] | null
+      const ano = anos?.find((y) => (y.text || '').startsWith(String(anoModelo)))
+        ?? (fabricacao ? anos?.find((y) => (y.text || '').startsWith(String(fabricacao))) : undefined)
+      if (ano) mdlYr = ano.id
+    } catch {
+      // segue: a conferencia depois do add avisa se o ano ficou errado
+    }
+  }
+
+  // Ano modelo do DENATRAN/site; sem ele, o de fabricacao (dono) — nunca vazio pro Power escolher.
+  const anoPipeline = anoDoModelo(pcVehicle?.year as string | undefined, body.ano) ?? anoModelo
+
   let quotationCode: string | undefined
   let negotiationCode: string | undefined
   let pelaPipeline = false
@@ -707,7 +727,7 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
       placa,
       tipoVeiculo: tipoFinal,
       modeloId: mdl,
-      anoModelo: anoDoModelo(pcVehicle?.year as string | undefined, body.ano),
+      anoModelo: anoPipeline ?? undefined,
       cidadeId: cidadeFinal,
       origem: Number(POWERCRM_DEFAULT_LEAD_SOURCE),
       chassi: pcVehicle?.chassi as string | undefined,
@@ -795,12 +815,72 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
     }
   }
 
+  if (quotationCode) {
+    await conferirVeiculoNoPower(quotationCode, {
+      placa,
+      mdl,
+      modelo: body.modelo,
+      anoModelo: anoPipeline === 32000 ? null : anoPipeline,
+      nome: body.nome,
+      leadId,
+    }).catch((err) => console.error('[lead] conferencia do veiculo no Power falhou:', err))
+  }
+
   return {
     ok: addOk,
     quotationCode,
     negotiationCode,
     leadId,
   }
+}
+
+/**
+ * Le a cotacao de volta e confere placa, modelo e ano modelo. O /quotation/update responde 200
+ * mesmo quando ignora o campo, entao "deu 200" nao prova nada. Placa (`plts`) e modelo (`mdl`)
+ * o update corrige; o ano modelo ele nao corrige (medido em 22/09/2026 na cotacao qL6Oj8Rr) —
+ * sobrando divergencia, o dono e avisado pra acertar a mao antes de outro consultor pegar a placa.
+ */
+async function conferirVeiculoNoPower(
+  code: string,
+  e: { placa?: string; mdl?: number; modelo?: string | null; anoModelo: number | null; nome?: string; leadId: string },
+): Promise<void> {
+  const headers = { accept: 'application/json', Authorization: `Bearer ${POWERAPI_TOKEN}` }
+  const esperado = { placa: e.placa, modelo: e.modelo, anoModelo: e.anoModelo }
+  const ler = async () => {
+    const r = await fetch(`${POWERCRM_BASE_URL}/api/quotation/${encodeURIComponent(code)}`, {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    })
+    return (await r.json()) as { plate?: string; carModel?: string; carModelYear?: string }
+  }
+  const atualizar = (patch: Record<string, unknown>) =>
+    fetch(`${POWERCRM_BASE_URL}/api/quotation/update`, {
+      method: 'POST',
+      headers: { ...headers, 'content-type': 'application/json' },
+      body: JSON.stringify({ code, ...patch }),
+      signal: AbortSignal.timeout(15_000),
+    }).catch(() => null)
+
+  let d = divergenciasDoVeiculo(await ler(), esperado)
+  if (d.length === 0) return
+
+  if (d.some((x) => x.campo === 'modelo') && e.mdl) await atualizar({ mdl: e.mdl })
+  if (d.some((x) => x.campo === 'placa') && e.placa) await atualizar({ plts: e.placa })
+  const lido = await ler()
+  d = divergenciasDoVeiculo(lido, esperado)
+  if (d.length === 0) {
+    console.warn(`[lead] ${e.leadId} veiculo corrigido no Power (${code})`)
+    return
+  }
+
+  const linhas = d.map((x) => `• ${x.campo}: está "${x.lido}", o certo é "${x.esperado}"`).join('\n')
+  console.error(`[lead] ${e.leadId} veiculo ERRADO no Power (${code}):`, d)
+  await avisarDono(
+    '5521992208062',
+    `⚠️ Cotação do site gravada errada no Power\n\n` +
+      `Cliente: ${e.nome || '(sem nome)'}\nCotação: ${code}\n\n${linhas}\n\n` +
+      `Acerte na cotação do Power (placa, modelo e ano modelo) antes que outro consultor pegue a placa.`,
+  ).catch(() => {})
 }
 
 /* ───────────────── PDF + WhatsApp ───────────────── */
