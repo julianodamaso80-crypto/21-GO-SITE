@@ -37,6 +37,39 @@ export function anoModeloParaPower(p: { anoModelo?: number | null; anoFabricacao
   return valido(p.anoModelo) ?? valido(p.anoFabricacao)
 }
 
+/**
+ * Corpo do botao Salvar da cotacao no painel (`/company/updateQuotationVehicleData`), com os
+ * campos obrigatorios do dono: placa, modelo, ano modelo e ano fabricacao. Sabendo um ano so,
+ * ele vale para os dois. O que o site nao sabe fica de fora — o corpo sobrescreve o que manda.
+ */
+export function corpoDoVeiculo(p: {
+  quotationId: number
+  placa?: string | null
+  chassi?: string | null
+  modeloId?: number | null
+  anoModelo?: number | null
+  anoFabricacao?: number | null
+  cidadeId?: number | null
+  veiculoDeTrabalho?: boolean
+  valorProtegido?: number | null
+}): Record<string, unknown> {
+  const corpo: Record<string, unknown> = {
+    quotationId: p.quotationId,
+    plates: normalizarPlaca(p.placa),
+    workVehicle: Boolean(p.veiculoDeTrabalho),
+  }
+  if (p.chassi?.trim()) corpo.chassi = p.chassi.trim()
+  if (p.modeloId) corpo.carModel = p.modeloId
+  const ano = p.anoModelo ?? p.anoFabricacao
+  if (ano) {
+    corpo.carModelYear = ano
+    corpo.fabricationYear = p.anoFabricacao ?? ano
+  }
+  if (p.cidadeId) corpo.city = p.cidadeId
+  if (p.valorProtegido) corpo.protectedValue = p.valorProtegido
+  return corpo
+}
+
 /** O que o Power gravou diferente do que o site sabe. Campo que o site nao sabe nao e cobrado. */
 export function divergenciasDoVeiculo(lido: VeiculoLidoDoPower, esperado: VeiculoEsperado): Divergencia[] {
   const out: Divergencia[] = []

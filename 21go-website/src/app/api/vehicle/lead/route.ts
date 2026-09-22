@@ -34,7 +34,7 @@ import { getRequestContext } from '@/lib/request-context'
 import { estaNoAr, resolverConsultor } from '@/lib/consultor'
 import { acharIndicador, marcarUso } from '@/lib/indicacao'
 import { avisar, avisarComPdf, avisarDono, textoCotacaoNova, textoLeadIndicado } from '@/lib/whatsapp-avisos'
-import { criarPelaPipeline } from '@/lib/power-pipeline'
+import { criarPelaPipeline, salvarVeiculoDaCotacao } from '@/lib/power-pipeline'
 import { anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
 import { anoModeloParaPower, divergenciasDoVeiculo } from '@/lib/power-veiculo.regras'
 
@@ -815,7 +815,21 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
     }
   }
 
-  if (quotationCode) {
+  // Preenche o veiculo na cotacao e SALVA, como a Leticya faz na tela (ordem do dono,
+  // 22/09/2026). So o painel grava o ano modelo — pela PowerAPI ele vira "0l".
+  if (quotationCode && negotiationCode) {
+    const salvou = await salvarVeiculoDaCotacao(negotiationCode, {
+      placa,
+      chassi: pcVehicle?.chassi as string | undefined,
+      modeloId: mdl,
+      anoModelo: anoPipeline,
+      anoFabricacao: fabricationYear ?? null,
+      cidadeId: cidadeFinal,
+      veiculoDeTrabalho: Boolean(body.carroApp),
+      valorProtegido: body.valorFipe ?? null,
+    })
+    if (!salvou.ok) console.warn(`[lead] nao salvei o veiculo na cotacao ${quotationCode}:`, salvou.motivo)
+
     await conferirVeiculoNoPower(quotationCode, {
       placa,
       mdl,

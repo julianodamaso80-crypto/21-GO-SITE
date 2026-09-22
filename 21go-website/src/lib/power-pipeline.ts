@@ -6,6 +6,7 @@ import {
   type Criacao,
   type NovaNegociacao,
 } from './power-pipeline.regras'
+import { corpoDoVeiculo } from './power-veiculo.regras'
 
 /**
  * Cria o card no Power PELA PIPELINE, com a sessao da Leticya no painel — o mesmo botao
@@ -138,6 +139,40 @@ export async function acharNoFunil(buscas: { texto: string; seletor: 11 | 24 | 2
     }
   }
   return null
+}
+
+/**
+ * Preenche o veiculo da cotacao e SALVA, como a Leticya faz na tela: placa, modelo, ano modelo
+ * e ano fabricacao (ordem do dono, 22/09/2026). E o mesmo handler do botao Salvar do painel.
+ *
+ * Existe porque a PowerAPI nao grava o ano modelo: o `mdlYr` do /cmy vira "0l" na cotacao, e o
+ * `/api/quotation/update` responde 200 e ignora o campo. So o painel grava.
+ *
+ * Nao lanca. `id: 0` do painel e recusa — quase sempre a placa ja estar em outro card.
+ */
+export async function salvarVeiculoDaCotacao(
+  negotiationCode: string,
+  dados: Omit<Parameters<typeof corpoDoVeiculo>[0], 'quotationId'>,
+): Promise<{ ok: boolean; motivo?: string }> {
+  try {
+    const neg = (await painel(`/company/fetchNegotiationCard?code=${encodeURIComponent(negotiationCode)}`)) as {
+      quotations?: { quotationId?: number; active?: boolean; shelved?: boolean }[]
+    } | null
+    const ativas = (neg?.quotations ?? []).filter((q) => q.active !== false && q.shelved !== true && q.quotationId)
+    // Frota (mais de um veiculo no mesmo card) fica pra mao de quem atende: nao da pra saber
+    // qual cotacao e a deste lead sem chutar.
+    if (ativas.length !== 1) return { ok: false, motivo: `negociacao com ${ativas.length} cotacoes ativas` }
+
+    const r = (await painel('/company/updateQuotationVehicleData', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(corpoDoVeiculo({ ...dados, quotationId: ativas[0].quotationId! })),
+    })) as { id?: number; plates?: string | null } | null
+    if (Number(r?.id) === 1) return { ok: true }
+    return { ok: false, motivo: `painel recusou o salvar${r?.plates ? ` (placa ${r.plates} em outro card)` : ''}` }
+  } catch (err) {
+    return { ok: false, motivo: err instanceof Error ? err.message : String(err) }
+  }
 }
 
 /**
