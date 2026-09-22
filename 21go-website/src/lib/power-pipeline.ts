@@ -155,10 +155,17 @@ export async function salvarVeiculoDaCotacao(
   dados: Omit<Parameters<typeof corpoDoVeiculo>[0], 'quotationId'>,
 ): Promise<{ ok: boolean; motivo?: string }> {
   try {
-    const neg = (await painel(`/company/fetchNegotiationCard?code=${encodeURIComponent(negotiationCode)}`)) as {
-      quotations?: { quotationId?: number; active?: boolean; shelved?: boolean }[]
-    } | null
-    const ativas = (neg?.quotations ?? []).filter((q) => q.active !== false && q.shelved !== true && q.quotationId)
+    // O card recem-criado demora a aparecer na listagem: sem espera, 6 dos 26 leads de
+    // 22/09/2026 acharam "0 cotacoes" e ficaram sem ano modelo.
+    let ativas: { quotationId?: number }[] = []
+    for (const espera of [0, 1500, 3000, 5000]) {
+      if (espera) await new Promise((r) => setTimeout(r, espera))
+      const neg = (await painel(`/company/fetchNegotiationCard?code=${encodeURIComponent(negotiationCode)}`)) as {
+        quotations?: { quotationId?: number; active?: boolean; shelved?: boolean }[]
+      } | null
+      ativas = (neg?.quotations ?? []).filter((q) => q.active !== false && q.shelved !== true && q.quotationId)
+      if (ativas.length >= 1) break
+    }
     // Frota (mais de um veiculo no mesmo card) fica pra mao de quem atende: nao da pra saber
     // qual cotacao e a deste lead sem chutar.
     if (ativas.length !== 1) return { ok: false, motivo: `negociacao com ${ativas.length} cotacoes ativas` }
