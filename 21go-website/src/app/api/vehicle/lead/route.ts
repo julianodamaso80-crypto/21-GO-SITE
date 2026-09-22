@@ -34,6 +34,8 @@ import { getRequestContext } from '@/lib/request-context'
 import { estaNoAr, resolverConsultor } from '@/lib/consultor'
 import { acharIndicador, marcarUso } from '@/lib/indicacao'
 import { avisar, avisarComPdf, textoCotacaoNova, textoLeadIndicado } from '@/lib/whatsapp-avisos'
+import { criarPelaPipeline } from '@/lib/power-pipeline'
+import { anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
 
 /** Pra onde vai o aviso de lead indicado quando nao ha consultor dono do site. */
 const DONO_WHATSAPP = '5521992208062'
@@ -685,28 +687,70 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
     }
   }
 
-  const addPayload: Record<string, unknown> = {
-    name: body.nome,
-    phone: body.whatsapp?.replace(/\D/g, ''),
-    email: body.email || undefined,
-    plts: placa || undefined,
-    leadSource: Number(POWERCRM_DEFAULT_LEAD_SOURCE),
-    slsmnNwId: await powerlinkDoLead(body.consultorSlug),
-  }
-  if (pcVehicle?.chassi) addPayload.chassi = pcVehicle.chassi
-  if (mdl) addPayload.mdl = mdl
-  if (mdlYr) addPayload.mdlYr = mdlYr
-  if (cityId) addPayload.city = cityId
-  if (body.valorFipe) addPayload.protectedValue = body.valorFipe
-  if (body.carroApp) addPayload.workVehicle = true
+  // Sem cidade de circulacao o card nasce SEM PLANOS, e o site nao pergunta a cidade:
+  // vale a do DENATRAN; sem ela, a capital do estado do DDD (decisao do dono, 21/09/2026).
+  const cidadeFinal = cityId ?? cidadeDoDdd(body.whatsapp)?.cidadeId
+  const powerlink = await powerlinkDoLead(body.consultorSlug)
 
-  const addRes = await fetch(`${POWERCRM_BASE_URL}/api/quotation/add`, {
-    method: 'POST',
-    headers: { ...apiHeaders, 'content-type': 'application/json' },
-    body: JSON.stringify(addPayload),
-  })
-  const addJson = (await addRes.json().catch(() => null)) as Record<string, unknown> | null
-  const quotationCode = addJson?.quotationCode as string | undefined
+  let quotationCode: string | undefined
+  let negotiationCode: string | undefined
+  let pelaPipeline = false
+
+  // Card da Leticya nasce PELA PIPELINE, com a sessao dela ("Leticya criou a negociacao
+  // pela pipeline") — regra do dono, 21/09/2026. Qualquer falha cai no PowerLink abaixo:
+  // o cliente nunca fica sem cadastro no Power.
+  if (criaPelaPipeline(powerlink)) {
+    const c = await criarPelaPipeline({
+      nome: body.nome || '',
+      telefone: body.whatsapp,
+      email: body.email,
+      placa,
+      tipoVeiculo: tipoFinal,
+      modeloId: mdl,
+      anoModelo: anoDoModelo(pcVehicle?.year as string | undefined, body.ano),
+      cidadeId: cidadeFinal,
+      origem: Number(POWERCRM_DEFAULT_LEAD_SOURCE),
+      chassi: pcVehicle?.chassi as string | undefined,
+      motor: pcVehicle?.engineNumber as string | undefined,
+      veiculoDeTrabalho: Boolean(body.carroApp),
+    })
+    if (c.ok) {
+      quotationCode = c.quotationCode
+      negotiationCode = c.negotiationCode
+      pelaPipeline = true
+      console.log('[lead] criado pela pipeline da Leticya', c.quotationCode)
+    } else {
+      console.warn('[lead] pipeline recusou, vai pelo PowerLink:', c.motivo)
+    }
+  }
+
+  let addOk = pelaPipeline
+  if (!quotationCode) {
+    const addPayload: Record<string, unknown> = {
+      name: body.nome,
+      phone: body.whatsapp?.replace(/\D/g, ''),
+      email: body.email || undefined,
+      plts: placa || undefined,
+      leadSource: Number(POWERCRM_DEFAULT_LEAD_SOURCE),
+      slsmnNwId: powerlink,
+    }
+    if (pcVehicle?.chassi) addPayload.chassi = pcVehicle.chassi
+    if (mdl) addPayload.mdl = mdl
+    if (mdlYr) addPayload.mdlYr = mdlYr
+    if (cidadeFinal) addPayload.city = cidadeFinal
+    if (body.valorFipe) addPayload.protectedValue = body.valorFipe
+    if (body.carroApp) addPayload.workVehicle = true
+
+    const addRes = await fetch(`${POWERCRM_BASE_URL}/api/quotation/add`, {
+      method: 'POST',
+      headers: { ...apiHeaders, 'content-type': 'application/json' },
+      body: JSON.stringify(addPayload),
+    })
+    const addJson = (await addRes.json().catch(() => null)) as Record<string, unknown> | null
+    quotationCode = addJson?.quotationCode as string | undefined
+    negotiationCode = addJson?.negotiationCode as string | undefined
+    addOk = addRes.ok
+  }
 
   const internalNotes: string[] = []
   // Quem trouxe o cliente, na negociacao que o consultor abre no Power. Sem
@@ -728,8 +772,10 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
     : undefined
 
   const updates: Record<string, unknown>[] = []
-  if (mdl) updates.push({ carModel: mdl })
-  if (mdlYr) updates.push({ carModelYear: mdlYr })
+  // Pela pipeline, modelo e ano ja nasceram certos; o `mdlYr` daqui e o id do /cmy e
+  // regravaria o ano do modelo com um valor que o Power nao entende.
+  if (!pelaPipeline && mdl) updates.push({ carModel: mdl })
+  if (!pelaPipeline && mdlYr) updates.push({ carModelYear: mdlYr })
   if (fabricationYear) updates.push({ fabricationYear })
   if (body.carroApp) updates.push({ workVehicle: true })
   if (internalNotes.length > 0)
@@ -750,9 +796,9 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
   }
 
   return {
-    ok: addRes.ok,
+    ok: addOk,
     quotationCode,
-    negotiationCode: addJson?.negotiationCode as string | undefined,
+    negotiationCode,
     leadId,
   }
 }

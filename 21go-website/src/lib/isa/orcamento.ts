@@ -11,6 +11,8 @@ import { upsertLead } from '@/lib/supabase-store'
 import { sql } from '@/lib/isa/banco'
 import type { LeadIsa } from '@/lib/isa/fatos'
 import { recusaMotoDeLeilao } from '@/lib/isa/entrega.regras'
+import { criarPelaPipeline } from '@/lib/power-pipeline'
+import { anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
 
 /**
  * Orcamento pela placa, feito pela Isa. Placa e primordial (dono, 10/09/2026).
@@ -80,7 +82,10 @@ export async function orcarPorPlaca(p: {
   })
 
   // Cotacao no Power da Leticya. Falhar aqui nao impede a Isa de responder o cliente.
-  criarCotacaoPower({ nome, telefone: p.telefone, placa, fipe: v.fipeValue, carroApp: p.carroApp, leilao: p.leilao, interno: r._internal })
+  criarCotacaoPower({
+    nome, telefone: p.telefone, placa, fipe: v.fipeValue, carroApp: p.carroApp, leilao: p.leilao, interno: r._internal,
+    ano: v.ano, moto: /moto/i.test(String(v.categoria ?? '')),
+  })
     .then(async (c) => {
       if (c?.quotationCode) {
         await sql(`UPDATE public.leads SET quotation_code = $2, negotiation_code = $3 WHERE id = $1`, [
@@ -188,7 +193,10 @@ export async function orcarPorModelo(p: {
     origem: 'isa_whatsapp',
   })
 
-  criarCotacaoPower({ nome, telefone: p.telefone, placa: '', fipe, carroApp: p.carroApp, leilao: p.leilao, interno: { mdl: p.modelId, mdlYr } })
+  criarCotacaoPower({
+    nome, telefone: p.telefone, placa: '', fipe, carroApp: p.carroApp, leilao: p.leilao, interno: { mdl: p.modelId, mdlYr },
+    ano: p.ano, moto: p.tipo === 'moto',
+  })
     .then(async (c) => {
       if (c?.quotationCode) {
         await sql(`UPDATE public.leads SET quotation_code = $2, negotiation_code = $3 WHERE id = $1`, [
@@ -228,11 +236,38 @@ async function criarCotacaoPower(p: {
   carroApp: boolean
   leilao: boolean
   interno?: { mdl?: number; mdlYr?: number; cityId?: number; pcVehicle?: unknown }
+  /** Ano do modelo que o cliente tem/escolheu. */
+  ano?: number | string | null
+  moto?: boolean
 }): Promise<{ quotationCode?: string; negotiationCode?: string } | null> {
   const token = process.env.POWERAPI_TOKEN
-  if (!token) return null
   const headers = { accept: 'application/json', Authorization: `Bearer ${token}`, 'content-type': 'application/json' }
-  const chassi = (p.interno?.pcVehicle as { chassi?: string } | undefined)?.chassi
+  const pc = p.interno?.pcVehicle as { chassi?: string; engineNumber?: string; year?: string } | undefined
+  const chassi = pc?.chassi
+  // Sem cidade de circulacao o card nasce sem planos: a do DENATRAN, senao a capital do DDD.
+  const cidade = p.interno?.cityId ?? cidadeDoDdd(p.telefone)?.cidadeId
+
+  // A Isa atende a Leticya: o card nasce PELA PIPELINE, como ela (regra do dono, 21/09/2026).
+  // Falhou, cai no PowerLink abaixo — o cliente nunca fica sem cadastro no Power.
+  let j: { quotationCode?: string; negotiationCode?: string } | null = null
+  if (criaPelaPipeline(POWERCRM_DEFAULT_SLSMN_NW_ID)) {
+    const c = await criarPelaPipeline({
+      nome: p.nome,
+      telefone: p.telefone,
+      placa: p.placa,
+      tipoVeiculo: p.moto ? 2 : 1,
+      modeloId: p.interno?.mdl,
+      anoModelo: anoDoModelo(pc?.year, p.ano),
+      cidadeId: cidade,
+      origem: Number(POWERCRM_DEFAULT_LEAD_SOURCE),
+      chassi,
+      motor: pc?.engineNumber,
+      veiculoDeTrabalho: p.carroApp,
+    })
+    if (c.ok) j = { quotationCode: c.quotationCode, negotiationCode: c.negotiationCode }
+    else console.warn('[isa] pipeline recusou, vai pelo PowerLink:', c.motivo)
+  }
+  if (!j && !token) return null
 
   const payload: Record<string, unknown> = {
     name: p.nome,
@@ -245,20 +280,23 @@ async function criarCotacaoPower(p: {
   if (chassi) payload.chassi = chassi
   if (p.interno?.mdl) payload.mdl = p.interno.mdl
   if (p.interno?.mdlYr) payload.mdlYr = p.interno.mdlYr
-  if (p.interno?.cityId) payload.city = p.interno.cityId
+  if (cidade) payload.city = cidade
   if (p.carroApp) payload.workVehicle = true
 
-  const res = await fetch(`${POWERCRM_BASE_URL}/api/quotation/add`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(20_000),
-  })
-  const j = (await res.json().catch(() => null)) as { quotationCode?: string; negotiationCode?: string } | null
-  if (!res.ok || !j?.quotationCode) {
-    console.warn('[isa] Power /quotation/add sem codigo', res.status)
-    return null
+  if (!j) {
+    const res = await fetch(`${POWERCRM_BASE_URL}/api/quotation/add`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(20_000),
+    })
+    j = (await res.json().catch(() => null)) as { quotationCode?: string; negotiationCode?: string } | null
+    if (!res.ok || !j?.quotationCode) {
+      console.warn('[isa] Power /quotation/add sem codigo', res.status)
+      return null
+    }
   }
+  if (!j?.quotationCode) return null
 
   // Mesmas anotacoes que o site deixa pro consultor ver na negociacao.
   const notas = ['Origem: Isa (WhatsApp 98004-0964)']
