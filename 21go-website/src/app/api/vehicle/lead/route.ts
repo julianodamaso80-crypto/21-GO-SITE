@@ -36,7 +36,7 @@ import { acharIndicador, marcarUso } from '@/lib/indicacao'
 import { avisar, avisarComPdf, avisarDono, textoCotacaoNova, textoLeadIndicado } from '@/lib/whatsapp-avisos'
 import { criarPelaPipeline, salvarVeiculoDaCotacao } from '@/lib/power-pipeline'
 import { anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
-import { anoModeloParaPower, divergenciasDoVeiculo } from '@/lib/power-veiculo.regras'
+import { anoDoVeiculoPelaApi, anoModeloParaPower, divergenciasDoVeiculo } from '@/lib/power-veiculo.regras'
 
 /** Pra onde vai o aviso de lead indicado quando nao ha consultor dono do site. */
 const DONO_WHATSAPP = '5521992208062'
@@ -792,10 +792,11 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
     : undefined
 
   const updates: Record<string, unknown>[] = []
-  // Pela pipeline, modelo e ano ja nasceram certos; o `mdlYr` daqui e o id do /cmy e
-  // regravaria o ano do modelo com um valor que o Power nao entende.
-  if (!pelaPipeline && mdl) updates.push({ carModel: mdl })
-  if (!pelaPipeline && mdlYr) updates.push({ carModelYear: mdlYr })
+  // Pela pipeline, modelo e ano ja nasceram certos. Pelo PowerLink o ano so grava com modelo
+  // e ano (o numero, nao o id do /cmy) na mesma chamada.
+  const anoPelaApi = anoDoVeiculoPelaApi({ modeloId: mdl, anoModelo: anoPipeline })
+  if (!pelaPipeline && anoPelaApi) updates.push(anoPelaApi)
+  else if (!pelaPipeline && mdl) updates.push({ carModel: mdl })
   if (fabricationYear) updates.push({ fabricationYear })
   if (body.carroApp) updates.push({ workVehicle: true })
   if (internalNotes.length > 0)
@@ -850,8 +851,8 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
 
 /**
  * Le a cotacao de volta e confere placa, modelo e ano modelo. O /quotation/update responde 200
- * mesmo quando ignora o campo, entao "deu 200" nao prova nada. Placa (`plts`) e modelo (`mdl`)
- * o update corrige; o ano modelo ele nao corrige (medido em 22/09/2026 na cotacao qL6Oj8Rr) —
+ * mesmo quando ignora o campo, entao "deu 200" nao prova nada. Placa (`plts`), modelo (`mdl`) e
+ * ano modelo (`carModel` + `carModelYear` juntos, medido em 23/09/2026) o update corrige —
  * sobrando divergencia, o dono e avisado pra acertar a mao antes de outro consultor pegar a placa.
  */
 async function conferirVeiculoNoPower(
@@ -880,6 +881,8 @@ async function conferirVeiculoNoPower(
 
   if (d.some((x) => x.campo === 'modelo') && e.mdl) await atualizar({ mdl: e.mdl })
   if (d.some((x) => x.campo === 'placa') && e.placa) await atualizar({ plts: e.placa })
+  const ano = anoDoVeiculoPelaApi({ modeloId: e.mdl, anoModelo: e.anoModelo })
+  if (d.some((x) => x.campo === 'ano') && ano) await atualizar(ano)
   const lido = await ler()
   d = divergenciasDoVeiculo(lido, esperado)
   if (d.length === 0) {

@@ -13,6 +13,7 @@ import type { LeadIsa } from '@/lib/isa/fatos'
 import { recusaMotoDeLeilao } from '@/lib/isa/entrega.regras'
 import { criarPelaPipeline } from '@/lib/power-pipeline'
 import { anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
+import { anoDoVeiculoPelaApi } from '@/lib/power-veiculo.regras'
 
 /**
  * Orcamento pela placa, feito pela Isa. Placa e primordial (dono, 10/09/2026).
@@ -268,6 +269,7 @@ async function criarCotacaoPower(p: {
     else console.warn('[isa] pipeline recusou, vai pelo PowerLink:', c.motivo)
   }
   if (!j && !token) return null
+  const pelaPipeline = Boolean(j)
 
   const payload: Record<string, unknown> = {
     name: p.nome,
@@ -302,10 +304,12 @@ async function criarCotacaoPower(p: {
   const notas = ['Origem: Isa (WhatsApp 98004-0964)']
   if (p.leilao) notas.push('Veículo de leilão')
   if (p.carroApp) notas.push('Carro de aplicativo (Uber/99)')
+  // Pelo PowerLink o `mdlYr` do /add nao grava o ano: so modelo + ano juntos no update.
+  const ano = pelaPipeline ? null : anoDoVeiculoPelaApi({ modeloId: p.interno?.mdl, anoModelo: anoDoModelo(pc?.year, p.ano) })
   await fetch(`${POWERCRM_BASE_URL}/api/quotation/update`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ code: j.quotationCode, noteContractInternal: notas.join(' | ') }),
+    body: JSON.stringify({ code: j.quotationCode, noteContractInternal: notas.join(' | '), ...ano }),
     signal: AbortSignal.timeout(15_000),
   }).catch(() => {})
 

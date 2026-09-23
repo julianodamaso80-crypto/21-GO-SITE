@@ -38,6 +38,20 @@ export function anoModeloParaPower(p: { anoModelo?: number | null; anoFabricacao
 }
 
 /**
+ * Patch do /api/quotation/update que grava o ano modelo. Medido em 23/09/2026: so grava com
+ * `carModel` (id do modelo) e `carModelYear` (o ANO, ex.: 2013) na MESMA chamada. `mdlYr`, o id
+ * do /cmy ou o ano sem o modelo respondem 200 e sao ignorados.
+ */
+export function anoDoVeiculoPelaApi(p: { modeloId?: number | null; anoModelo?: number | null }): {
+  carModel: number
+  carModelYear: number
+} | null {
+  const ano = anoModeloParaPower({ anoModelo: p.anoModelo })
+  if (!p.modeloId || !ano) return null
+  return { carModel: p.modeloId, carModelYear: ano }
+}
+
+/**
  * Corpo do botao Salvar da cotacao no painel (`/company/updateQuotationVehicleData`), com os
  * campos obrigatorios do dono: placa, modelo, ano modelo e ano fabricacao. Sabendo um ano so,
  * ele vale para os dois. O que o site nao sabe fica de fora — o corpo sobrescreve o que manda.
