@@ -9,6 +9,7 @@ import {
   etapaPadrao,
   lerCriacao,
   montarNovaNegociacao,
+  decidirDuplicata,
 } from '../../src/lib/power-pipeline.regras.ts'
 
 test('so o powerlink da Leticya nasce pela pipeline', () => {
@@ -73,6 +74,7 @@ test('resposta do newQuotationAttempt: id > 0 e criou; senao diz o porque', () =
   assert.deepEqual(lerCriacao({ id: 0, text: null, plates: 'FRY6I58', cardId: 'YDVvAvAyDa' }), {
     ok: false,
     motivo: 'placa/chassi FRY6I58 ja esta no card YDVvAvAyDa',
+    duplicada: { placa: 'FRY6I58', cardId: 'YDVvAvAyDa' },
   })
   assert.deepEqual(lerCriacao(null), { ok: false, motivo: 'resposta vazia do Power' })
 })
@@ -111,4 +113,18 @@ test('corpo da Nova Negociacao igual ao do painel', () => {
     stageIndex: 2,
     chassi: '9BD000000000000A1',
   })
+})
+
+test('recusa por placa em outro card vem identificada, para decidir o que fazer', () => {
+  const r = lerCriacao({ id: 0, text: null, plates: 'KOY6D00', cardId: 'Go1X1NPLEJ' })
+  assert.equal(r.ok, false)
+  assert.deepEqual(r.ok === false ? r.duplicada : null, { placa: 'KOY6D00', cardId: 'Go1X1NPLEJ' })
+  // recusa de outro tipo nao vira duplicidade
+  assert.equal(lerCriacao({ id: 0, text: 'Versão incorreta.' }).ok === false && lerCriacao({ id: 0, text: 'x' }).duplicada, undefined)
+})
+
+test('placa presa: card DELA reaproveita; card de outro consultor nasce pelo PowerLink (dono, 23/09/2026)', () => {
+  // a busca do funil so enxerga os cards dela: achou = e dela
+  assert.equal(decidirDuplicata('B2N3XweeEq'), 'usar_o_que_existe')
+  assert.equal(decidirDuplicata(null), 'powerlink')
 })

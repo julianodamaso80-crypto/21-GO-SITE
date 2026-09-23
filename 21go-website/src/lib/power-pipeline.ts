@@ -1,6 +1,7 @@
 import 'server-only'
 import {
   etapaPadrao,
+  telefoneDoPainel,
   lerCriacao,
   montarNovaNegociacao,
   type Criacao,
@@ -81,8 +82,8 @@ async function token(forcar = false): Promise<string> {
   return loginEmAndamento
 }
 
-/** Chamada ao painel com um novo login se a sessao caiu (401 ou corpo vazio). */
-export async function painel(caminho: string, init: RequestInit = {}): Promise<unknown> {
+/** Chamada ao painel com um novo login se a sessao caiu (401 ou corpo vazio). Devolve o texto cru. */
+export async function painelTexto(caminho: string, init: RequestInit = {}): Promise<string> {
   for (let tentativa = 0; tentativa < 2; tentativa++) {
     const t = await token(tentativa > 0)
     const r = await fetch(APP + caminho, {
@@ -101,13 +102,25 @@ export async function painel(caminho: string, init: RequestInit = {}): Promise<u
       sessao = null
       continue
     }
-    try {
-      return JSON.parse(texto)
-    } catch {
-      throw new Error(`painel respondeu fora de JSON (HTTP ${r.status})`)
-    }
+    return texto
   }
   throw new Error('sessao da Leticya no painel nao se sustentou')
+}
+
+/**
+ * O mesmo, para as rotas que respondem JSON.
+ *
+ * ⚠️ Nem todas respondem: `updateQuotationClientData` e `moveQuotation` devolvem o TEXTO PURO
+ * `ok` (CLAUDE.md 15.7). Nessas, `painelTexto` — medido em 23/09/2026, quando este JSON.parse
+ * derrubou o ajuste do card inteiro.
+ */
+export async function painel(caminho: string, init: RequestInit = {}): Promise<unknown> {
+  const texto = await painelTexto(caminho, init)
+  try {
+    return JSON.parse(texto)
+  } catch {
+    throw new Error('painel respondeu fora de JSON')
+  }
 }
 
 async function etapa(): Promise<{ stageId: string; stageIndex: number }> {
@@ -199,5 +212,106 @@ export async function criarPelaPipeline(
     return lerCriacao(r as Record<string, unknown>)
   } catch (err) {
     return { ok: false, motivo: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+/** O card DELA que ja tem essa placa (a busca do funil so enxerga os dela). */
+export async function cardDaPlaca(placa: string | null | undefined): Promise<string | null> {
+  const p = (placa ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (p.length !== 7) return null
+  try {
+    return await acharNoFunil([{ texto: p, seletor: 11 }])
+  } catch {
+    return null
+  }
+}
+
+interface CardAjustado {
+  quotationCode: string
+  negotiationCode: string
+}
+
+/**
+ * Deixa o card como ela o deixaria: telefone com a mascara do painel e, se ainda estiver em
+ * "Cotacoes recebidas", movido para "Em negociacao". Serve para os dois caminhos do dono
+ * (23/09/2026) — o card dela que ja existia e o que nasceu pelo PowerLink.
+ *
+ * Nao sobrescreve dado do card: so preenche telefone e e-mail que estiverem vazios. Reescrever
+ * o que ja esta igual dispara webhook do Power a toa (a camada 1 do laco, CLAUDE.md 15.5).
+ */
+export async function ajustarCardComoEla(
+  negotiationCode: string,
+  contato?: { telefone?: string | null; email?: string | null },
+): Promise<CardAjustado | null> {
+  try {
+    const n = (await painel(`/company/fetchNegotiationCard?code=${encodeURIComponent(negotiationCode)}`)) as {
+      code?: string
+      pipelineColumn?: number
+      client?: Record<string, unknown>
+      quotations?: { quotationId?: number; active?: boolean; shelved?: boolean }[]
+    }
+    const ativas = (n?.quotations ?? []).filter((q) => q.active !== false && q.shelved !== true && q.quotationId)
+    // Frota (mais de uma cotacao) fica para a mao de quem atende.
+    if (ativas.length !== 1) return null
+    const quotationId = ativas[0].quotationId!
+    const cot = (await painel(`/company/fetchQuotationCard?cardId=${quotationId}`)) as { code?: string }
+    const c = (n.client ?? {}) as Record<string, unknown>
+    const v = (x: unknown) => (x == null ? '' : x)
+
+    const corpo: Record<string, unknown> = {
+      fullName: v(c.fullName),
+      birthdate: v(c.birthdate),
+      gender: v(c.gender),
+      registration: v(c.registration),
+      rg: v(c.rg),
+      rgExpeditor: v(c.expeditor),
+      expeditionDate: v(c.expeditionDate),
+      cnh: v(c.cnh),
+      firstQualification: v(c.firstQualification),
+      cnhExpiration: v(c.cnhExpiration),
+      phoneHome: telefoneDoPainel(c.phoneHome as string),
+      phoneWork: telefoneDoPainel(c.phoneCommercial as string),
+      phoneMobile1: telefoneDoPainel((c.phoneMobile1 as string) || contato?.telefone),
+      phoneMobile2: telefoneDoPainel(c.phoneMobile2 as string),
+      email: v(c.email) || (contato?.email ?? ''),
+      addressZipcode: v(c.addressZipcode),
+      addressAddress: v(c.addressStreet),
+      addressNumber: v(c.addressNumber),
+      addressComplement: v(c.addressComplement),
+      addressNeighborhood: v(c.addressNeighborhood),
+      city: v(c.cityId),
+      category: (c.categories as unknown[]) ?? [],
+      quotationId,
+      negotiationCode: n.code ?? negotiationCode,
+    }
+    // Com mais de uma negociacao no contato o painel exige a decisao; `true` criaria um contato
+    // novo e quebraria a identidade CPF<->cliente (CLAUDE.md 15.5).
+    if (((c.haveNegotiations as unknown[]) ?? []).length > 1) corpo.createNewClient = false
+    const okContato = await painelTexto('/company/updateQuotationClientData', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(corpo),
+    })
+    if (okContato.trim() !== 'ok') console.warn('[power] contato do card', negotiationCode, 'recusado:', okContato.slice(0, 120))
+
+    if (n.pipelineColumn === 1) {
+      const e = await etapa()
+      const okMove = await painelTexto('/company/moveQuotation', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        // O painel manda a ordem da etapa + 1 neste endpoint.
+        body: new URLSearchParams({
+          id: String(quotationId),
+          stageId: e.stageId,
+          stageOrder: String(e.stageIndex + 1),
+        }).toString(),
+      })
+      if (okMove.trim() !== 'ok') console.warn('[power] card', negotiationCode, 'nao moveu:', okMove.slice(0, 120))
+    }
+
+    return cot?.code ? { quotationCode: cot.code, negotiationCode: n.code ?? negotiationCode } : null
+  } catch (err) {
+    console.warn('[power] nao consegui ajustar o card', negotiationCode, err instanceof Error ? err.message : err)
+    return null
   }
 }

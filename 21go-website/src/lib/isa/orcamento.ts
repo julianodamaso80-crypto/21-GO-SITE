@@ -11,8 +11,8 @@ import { upsertLead } from '@/lib/supabase-store'
 import { sql } from '@/lib/isa/banco'
 import type { LeadIsa } from '@/lib/isa/fatos'
 import { recusaMotoDeLeilao } from '@/lib/isa/entrega.regras'
-import { criarPelaPipeline } from '@/lib/power-pipeline'
-import { anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
+import { ajustarCardComoEla, cardDaPlaca, criarPelaPipeline } from '@/lib/power-pipeline'
+import { anoDoModelo, cidadeDoDdd, criaPelaPipeline, decidirDuplicata } from '@/lib/power-pipeline.regras'
 import { anoDoVeiculoPelaApi } from '@/lib/power-veiculo.regras'
 
 /**
@@ -266,7 +266,19 @@ async function criarCotacaoPower(p: {
       veiculoDeTrabalho: p.carroApp,
     })
     if (c.ok) j = { quotationCode: c.quotationCode, negotiationCode: c.negotiationCode }
-    else console.warn('[isa] pipeline recusou, vai pelo PowerLink:', c.motivo)
+    else if (c.duplicada) {
+      // Mesma regra do formulario (dono, 23/09/2026): card DELA e o mesmo cliente de novo — usa
+      // o que existe; card de outro consultor — nasce pelo PowerLink, sem avisar ninguem.
+      // Acontece entre os dois caminhos: em 23/09 o Danilo cotou no site 21:27 e na Isa 22:01.
+      const cardDela = await cardDaPlaca(c.duplicada.placa)
+      if (decidirDuplicata(cardDela) === 'usar_o_que_existe') {
+        const ajustado = await ajustarCardComoEla(cardDela!, { telefone: p.telefone })
+        if (ajustado) {
+          j = ajustado
+          console.log('[isa] cliente repetiu a placa — usando o card que ja existe', cardDela)
+        }
+      } else console.warn('[isa] placa presa no card de outro consultor, vai pelo PowerLink:', c.motivo)
+    } else console.warn('[isa] pipeline recusou, vai pelo PowerLink:', c.motivo)
   }
   if (!j && !token) return null
   const pelaPipeline = Boolean(j)
@@ -312,6 +324,12 @@ async function criarCotacaoPower(p: {
     body: JSON.stringify({ code: j.quotationCode, noteContractInternal: notas.join(' | '), ...ano }),
     signal: AbortSignal.timeout(15_000),
   }).catch(() => {})
+
+  // Card nascido pelo PowerLink fica igual aos outros dela: telefone com mascara e em
+  // "Em negociacao" (dono, 23/09/2026).
+  if (!pelaPipeline && j.negotiationCode && criaPelaPipeline(POWERCRM_DEFAULT_SLSMN_NW_ID)) {
+    await ajustarCardComoEla(j.negotiationCode, { telefone: p.telefone })
+  }
 
   return j
 }

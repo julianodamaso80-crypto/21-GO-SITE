@@ -34,8 +34,8 @@ import { getRequestContext } from '@/lib/request-context'
 import { estaNoAr, resolverConsultor } from '@/lib/consultor'
 import { acharIndicador, marcarUso } from '@/lib/indicacao'
 import { avisar, avisarComPdf, avisarDono, textoCotacaoNova, textoLeadIndicado } from '@/lib/whatsapp-avisos'
-import { criarPelaPipeline, salvarVeiculoDaCotacao } from '@/lib/power-pipeline'
-import { anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
+import { ajustarCardComoEla, cardDaPlaca, criarPelaPipeline, salvarVeiculoDaCotacao } from '@/lib/power-pipeline'
+import { anoDoModelo, cidadeDoDdd, criaPelaPipeline, decidirDuplicata } from '@/lib/power-pipeline.regras'
 import { anoDoVeiculoPelaApi, anoModeloParaPower, divergenciasDoVeiculo } from '@/lib/power-veiculo.regras'
 
 /** Pra onde vai o aviso de lead indicado quando nao ha consultor dono do site. */
@@ -739,6 +739,24 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
       negotiationCode = c.negotiationCode
       pelaPipeline = true
       console.log('[lead] criado pela pipeline da Leticya', c.quotationCode)
+    } else if (c.duplicada) {
+      // Placa presa pela trava de 7 dias. Decisao do dono (23/09/2026): se o card e DELA, e o
+      // mesmo cliente preenchendo de novo e se usa o que existe (em 23/09 o mesmo Romario abriu
+      // 3 cards em 1h35); se e de outro consultor, nasce pelo PowerLink e nao se avisa ninguem.
+      const cardDela = await cardDaPlaca(c.duplicada.placa)
+      if (decidirDuplicata(cardDela) === 'usar_o_que_existe') {
+        const ajustado = await ajustarCardComoEla(cardDela!, { telefone: body.whatsapp, email: body.email })
+        if (ajustado) {
+          quotationCode = ajustado.quotationCode
+          negotiationCode = ajustado.negotiationCode
+          pelaPipeline = true
+          console.log('[lead] cliente repetiu a placa — usando o card que ja existe', cardDela)
+        } else {
+          console.warn('[lead] card repetido nao pode ser reaproveitado, vai pelo PowerLink:', cardDela)
+        }
+      } else {
+        console.warn('[lead] placa presa no card de outro consultor, vai pelo PowerLink:', c.motivo)
+      }
     } else {
       console.warn('[lead] pipeline recusou, vai pelo PowerLink:', c.motivo)
     }
@@ -839,6 +857,12 @@ async function createLeadPowerCRM(body: LeadInput, leadId: string) {
       nome: body.nome,
       leadId,
     }).catch((err) => console.error('[lead] conferencia do veiculo no Power falhou:', err))
+  }
+
+  // Card que nasceu pelo PowerLink (placa presa com outro consultor, ou o Power fora do ar):
+  // deixa ele como os outros dela — telefone com mascara e em "Em negociacao" (dono, 23/09/2026).
+  if (!pelaPipeline && negotiationCode && criaPelaPipeline(powerlink)) {
+    await ajustarCardComoEla(negotiationCode, { telefone: body.whatsapp, email: body.email })
   }
 
   return {

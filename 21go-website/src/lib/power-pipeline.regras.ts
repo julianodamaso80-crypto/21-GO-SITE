@@ -116,7 +116,7 @@ export function etapaPadrao(funis: FunilDetalhado[]): { stageId: string; stageIn
 
 export type Criacao =
   | { ok: true; quotationId: number; quotationCode: string; negotiationCode: string }
-  | { ok: false; motivo: string }
+  | { ok: false; motivo: string; duplicada?: { placa: string; cardId: string } }
 
 export function lerCriacao(r: Record<string, unknown> | null | undefined): Criacao {
   if (!r) return { ok: false, motivo: 'resposta vazia do Power' }
@@ -124,8 +124,33 @@ export function lerCriacao(r: Record<string, unknown> | null | undefined): Criac
   if (id > 0 && r.text && r.back) {
     return { ok: true, quotationId: id, quotationCode: String(r.text), negotiationCode: String(r.back) }
   }
-  if (r.text === null) return { ok: false, motivo: `placa/chassi ${r.plates ?? ''} ja esta no card ${r.cardId ?? ''}` }
+  // `text: null` e a trava de 7 dias do Power: a placa (ou o chassi) ja esta em outro card.
+  // Vale para a EMPRESA inteira, nao so para ela — medido em 23/09/2026 com a placa KOY6D00,
+  // que estava no card de outro consultor desde 21/09.
+  if (r.text === null) {
+    return {
+      ok: false,
+      motivo: `placa/chassi ${r.plates ?? ''} ja esta no card ${r.cardId ?? ''}`,
+      duplicada: { placa: String(r.plates ?? ''), cardId: String(r.cardId ?? '') },
+    }
+  }
   return { ok: false, motivo: String(r.text ?? 'recusa sem motivo') }
+}
+
+/**
+ * O que fazer quando o Power recusa por placa repetida — decisao do dono, 23/09/2026.
+ *
+ * A busca do funil roda com a sessao DELA e so enxerga os cards DELA (provado no mesmo dia: o
+ * card do outro consultor nem responde ao `fetchNegotiationCard` dela). Entao:
+ *
+ * - achou  -> e o MESMO cliente preenchendo de novo. Nao se cria um segundo card: usa-se o que
+ *   existe. Em 23/09 foram 3 cards do mesmo Romario em 1h35, e o cliente ja estava cadastrado.
+ * - nao achou -> a placa esta presa no card de outro consultor. O cliente entrou pelo site DELA,
+ *   entao nasce o card dela pelo PowerLink — o unico caminho que o Power aceita nesse caso — e
+ *   ninguem e avisado ("cria pelo power link e nao me avisa no tel").
+ */
+export function decidirDuplicata(cardDaPlaca: string | null | undefined): 'usar_o_que_existe' | 'powerlink' {
+  return cardDaPlaca ? 'usar_o_que_existe' : 'powerlink'
 }
 
 export interface NovaNegociacao {
