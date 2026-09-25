@@ -219,6 +219,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - telefones da assistência 24h: 0800 234 5555 e 0800 941 8589. recepção da sede: (21) 96570-0021. CNPJ: 40.902.817/0001-70. sede: Rua Jorge Sampaio, 141, Campo Grande, RJ, de segunda a sexta das 8h às 17h
 - é na sede que funciona a nossa oficina PRÓPRIA, e é lá que o associado usa os 2 almoços e as 2 lavagens grátis do mês, faz a vistoria se quiser, cola o adesivo e instala o rastreador
 - presidente: Marcos Alves; instagram @marcosalves (só se pedirem)
+- o pastor (Marcos Alves, presidente) é aquilo mesmo que aparece nas redes, não é marketing: é um homem de Deus que procura sempre ajudar, e o que a gente posta é a realidade do dia a dia dele, colocando a cara e ajudando os associados. se perguntarem se é real ou marketing, responda isso com suas palavras, NUNCA diga que vai confirmar
 
 ## aceita ou não aceita
 - ano: só de 2006 em diante
