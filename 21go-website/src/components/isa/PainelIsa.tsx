@@ -550,8 +550,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
           )}
           {/* Tira desta conversa a marca de "Precisa de voce" — ela continua normal nas outras abas
               (dono, 25/09/2026). Volta sozinha se a Isa ficar devendo resposta, pausar ou pedir desconto. */}
-          {contato && (contato.resolvido_em || contato.pausa_motivo || contato.pergunta_pendente ||
-            (contato.aguardando_dono && contato.aguardando_dono !== 'fecha_quando')) && (
+          {contato && (
             <button disabled={ocupado} onClick={() => acao('/api/atendimento/resolvido', { resolvido: !contato.resolvido_em })}
               title={contato.resolvido_em ? 'devolver pra aba Precisa de voce' : 'tirar da aba Precisa de voce'}
               className={`rounded-full border px-3 py-1 text-[12px] font-bold uppercase tracking-wider transition disabled:opacity-30 [font-family:var(--fonte-rotulo)] ${
