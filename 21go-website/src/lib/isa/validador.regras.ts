@@ -53,6 +53,7 @@ export const NUMEROS_OFICIAIS: readonly string[] = [
   '08002345555', // assistência 24h
   '08009418589', // assistência 24h
   '21965700021', // recepcao da sede
+  '21969454824', // Leticya, supervisora — o dono liberou em 25/09/2026 pra quem pede pra ligar
   '40902817000170', // CNPJ
 ]
 

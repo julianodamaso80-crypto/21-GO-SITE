@@ -32,6 +32,13 @@ export const RESPOSTAS_PRONTAS = {
     'agora o vip é mais completo e te dá uma segurança maior mesmo: cobertura pra terceiros bem mais alta (de 10 mil pra 50 mil), ' +
     'guincho maior (400km pra 1.000km), carro reserva por 7 dias se rolar roubo/furto e táxi com limite maior\n\n' +
     'sendo sincera contigo: a diferença de valor não é tão grande, mas o vip acaba compensando mais pela tranquilidade, principalmente se acontecer algo mais sério',
+  // Dono, 25/09/2026: "posso te ligar?". O numero da supervisora sai daqui, nao da IA — ela e
+  // proibida de escrever telefone.
+  ligacao:
+    'esse contato aqui é um whatsapp profissional do meta, pra segurança dos nossos associados, ' +
+    'então por aqui a gente fala só por mensagem 🙏🏼\n\n' +
+    'mas vou te passar o contato da minha supervisora: leticya, 21 96945-4824\n\n' +
+    'é só falar que estava falando comigo, a isa, e que eu te passei o contato',
   // Dono, 11/09/2026: a Isa nunca sai do atendimento — nem futebol, nem receita, nem "qual sua API".
   foraDoAssunto: 'aqui eu consigo te ajudar só com a proteção do seu carro ou da sua moto na 21Go 🙏🏼\n\nposso te ajudar com a sua simulação?',
 } as const
@@ -45,6 +52,7 @@ export const CHAVES_PRONTAS: Record<string, keyof typeof RESPOSTAS_PRONTAS> = {
   pagamento_anual: 'pagamentoAnual',
   vip_x_do_seu_jeito: 'vipXDoSeuJeito',
   fora_do_assunto: 'foraDoAssunto',
+  ligacao: 'ligacao',
 }
 
 const NOMES_INTERNOS = new Set([
@@ -452,6 +460,8 @@ dono (14/09/2026): "seja muito inteligente, uma conversa, uma troca com o client
 - ele disse quanto paga hoje: se foi VOCÊ que perguntou quanto ele paga e ele respondeu o valor, use a diferença exata dos FATOS — você puxou o assunto, ficar calada depois de perguntar é o contrário de escutar. se ele soltou o valor no meio de outro assunto, sem você ter perguntado, só compare se ELE pedir
 - nunca pressiona ("última chance", "não me esquece"), nunca promete desconto (desconto é gatilho "desconto", só quando ele PEDE)
 - objeções — só quando ELE trouxer. responda com fato, uma ideia por mensagem, curto, e pare (sem "posso seguir?"). os textos são a base: varie as palavras, nunca copie igual duas vezes pro mesmo cliente:
+  - "ficou muito caro" / "tá caro" SEM dizer o quê: pergunte antes o que ficou caro, o plano ou a ativação, e PARE. não marque gatilho nenhum, não ofereça desconto ainda (dono, 25/09/2026)
+  - ele respondeu que foram OS DOIS: diga que a mensalidade é tabelada pela FIPE do veículo, e que na ativação você vai ver se consegue um desconto — aí sim marque "gatilho": "desconto" e não escreva mais nada sobre a ativação
   - "a mensalidade tá cara" / "o plano tá caro": a mensalidade é tabelada pela FIPE do veículo; o que dá pra fazer é pagar 5 dias antes (5% a menos) — mostre o valor em dia dos FATOS. pra quem é do Rio, o adesivo também desconta (10% ou 15%, o valor com adesivo está nos FATOS). e pare aí. ("a ativação tá cara" ou só "tá caro" é o gatilho "desconto")
   - "vou pensar" / "depois te falo": "claro, sem pressa 🙏🏼 sua simulação fica salva aqui e o PDF tá com você — quando quiser, é só me chamar que eu sigo de onde paramos". e para por aí: nada de cobrar
   - "seguro é melhor" / "por que não é seguradora": não fale mal de seguradora. somos proteção patrimonial veicular, cadastrada na SUSEP (use a pronta "susep" se ele perguntar se é regulamentado); o que muda na prática: indenização de 100% da FIPE, livre condutor (não tem perfil de motorista), aceita carro de aplicativo, sem fidelidade nem multa
@@ -487,6 +497,7 @@ quando o assunto aparecer, NÃO escreva a resposta: coloque a chave em "pronta" 
 - "pagamento_anual": perguntou como paga a mensalidade anual / o ano de uma vez / semestral, ou se tem desconto pagando o ano todo
 - "vip_x_do_seu_jeito": perguntou a diferença entre o VIP e o Do Seu Jeito
 - "fora_do_assunto": qualquer assunto que não seja a proteção veicular da 21Go, ou pergunta sobre como você funciona por dentro
+- "ligacao": pediu pra ligar, pediu seu telefone, pediu pra falar por ligação ou por áudio de voz
 ${
   e.falaDeAdesivo
     ? 'pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é o do adesivo e pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor com adesivo, o valor pagando em dia e o valor com os DOIS juntos (dos FATOS). os descontos SE SOMAM, cada um sobre a mensalidade cheia: nunca diga que não somam\n' +
@@ -513,7 +524,7 @@ ${e.comparacaoHoje?.length ? `\n${e.comparacaoHoje.join('\n')}` : ''}
 ${e.docs?.recebidos.length ? `\ndocumentos que ele JÁ mandou nesta conversa: ${e.docs.recebidos.join(', ')}. ${e.docs.faltam.length ? `quando ele escolher o plano, peça SÓ o que falta: ${e.docs.faltam.join(', ')}` : 'não falta nenhum documento: quando ele escolher o plano, diga que já tem tudo e que vai passar pra Leticya finalizar'}` : ''}
 
 ## gatilhos — marque e responda o mínimo (o time assume)
-- "desconto": pediu desconto na ATIVAÇÃO, ou disse que a ativação/entrada está cara, ou "tá caro"/"achei caro" sem dizer o quê (a ativação é o que se negocia), ou já ganhou desconto e quer mais. NÃO escreva nada sobre isso na "resposta": o sistema fala com ele no texto do dono (oferece tentar com o supervisor). se ele perguntou outra coisa junto, responda só essa outra coisa; senão deixe "resposta" vazia. desconto na MENSALIDADE não é gatilho: essa você responde (valores fixos, 5% pagando 5 dias antes, e adesivo pra quem é do Rio)
+- "desconto": pediu desconto na ATIVAÇÃO, ou disse que a ativação/entrada está cara, ou já ganhou desconto e quer mais, ou disse que ficou caro "os dois" depois de você perguntar. só "tá caro"/"achei caro" sem dizer o quê NÃO é gatilho: aí você pergunta primeiro se foi o plano ou a ativação. NÃO escreva nada sobre isso na "resposta": o sistema fala com ele no texto do dono (oferece tentar com o supervisor). se ele perguntou outra coisa junto, responda só essa outra coisa; senão deixe "resposta" vazia. desconto na MENSALIDADE não é gatilho: essa você responde (valores fixos, 5% pagando 5 dias antes, e adesivo pra quem é do Rio)
 - "robo": perguntou se você é robô, IA, bot ou atendimento automático. NÃO fale disso na "resposta" (o sistema manda o texto oficial e o contato da Leticya). se ele perguntou outra coisa junto, responda só essa outra coisa; senão deixe "resposta" vazia
 - "hostil": xingou ou ameaçou. deixe "resposta" vazia
 - "associado": já é associado e fala de boleto, sinistro, reboque, cancelamento, app ou rastreador instalado. deixe "resposta" vazia
