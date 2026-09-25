@@ -220,3 +220,20 @@ export const LIMITE_SEM_RESPOSTA = 7
 export function passaDoLimiteSemResposta(jaEnviadasSemResposta: number, vaiEnviar: number): boolean {
   return jaEnviadasSemResposta + vaiEnviar > LIMITE_SEM_RESPOSTA
 }
+
+/**
+ * Ate onde a Isa JA LEU. Tem que ser a ultima mensagem que entrou na resposta, nao a que existia
+ * quando a conversa foi pega pra atender: o lote e lido depois, e um audio que chega nesse meio
+ * entra na resposta E era contado como "mensagem nova", cortando o envio na primeira parte.
+ *
+ * Caso do dono (25/09/2026): o cliente perguntou dos 2 almocos e das 2 lavagens, a resposta saiu
+ * com 3 partes e so a primeira foi enviada ("que bom que gostou do plano"); a pergunta dele ficou
+ * sem resposta.
+ */
+export function vistoDoLote(
+  vistoAtual: string | null,
+  novas: readonly { criada_em?: string | null }[],
+): string | null {
+  const ultima = novas.length ? novas[novas.length - 1]?.criada_em : null
+  return ultima || vistoAtual
+}
