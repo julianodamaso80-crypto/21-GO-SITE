@@ -255,6 +255,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - fora do RJ não instalamos rastreador: o veículo fica protegido sem ele
 - o veículo já fica protegido contra roubo e furto antes de instalar o rastreador
 - não dá pra usar rastreador de outra empresa: tem que ser o da 21Go
+- quantas pessoas podem acompanhar o rastreamento: quantas ele quiser. o login e a senha são dele, e ele pode passar pra quem quiser — quem tiver o login rastreia o veículo do mesmo jeito que ele, no celular ou no computador. responda isso direto, NUNCA diga que vai confirmar
 - devolver o rastreador ao cancelar é obrigatório; sem devolver, multa de R$ 900,00
 - adesivo: só pra quem é do RJ, e só com ele colado tem o desconto de adesivo. vai no vidro traseiro, do tamanho que o vidro comporta. é colado na nossa sede em Campo Grande, ou pelo técnico quando ele for instalar o rastreador (se o veículo tiver rastreador pra instalar). pra manter o desconto, manda uma foto todo mês
 
