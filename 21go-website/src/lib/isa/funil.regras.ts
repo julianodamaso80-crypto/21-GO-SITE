@@ -99,3 +99,15 @@ export function etapaDoCard(c: {
   // Sem "Novo": quem ainda nao simulou tambem aparece na primeira coluna (dono, 15/09/2026).
   return 'simulou'
 }
+
+/**
+ * A conversa sai de "Precisa de voce" quando alguem do time clica em "ja cuidei" (dono, 25/09/2026:
+ * "quero tirar ele ali e deixar ele normal em todos") — e VOLTA sozinha quando aparece sinal novo:
+ * a Isa ficou devendo uma resposta, pediu decisao de desconto, ou pausou. Sem isto, tirar da aba
+ * esconderia tambem o proximo pedido do mesmo cliente.
+ */
+export function voltaPraPrecisaDeVoce(campos: Record<string, unknown>): boolean {
+  if (campos.pergunta_pendente) return true
+  if (campos.aguardando_dono) return true
+  return campos.ligada === false
+}

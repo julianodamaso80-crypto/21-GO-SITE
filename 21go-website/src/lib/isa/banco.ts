@@ -1,4 +1,5 @@
 import 'server-only'
+import { voltaPraPrecisaDeVoce } from '@/lib/isa/funil.regras'
 import { Pool } from 'pg'
 
 /**
@@ -86,6 +87,8 @@ export interface ContatoIsa {
   retomar_apos: string | null
   /** "Vou confirmar e ja te retorno": a pergunta que espera a resposta do dono (auditoria 12/09/2026). */
   pergunta_pendente: { texto: string; em: string } | null
+  /** Alguem do time clicou em "ja cuidei": sai da aba "Precisa de voce" ate aparecer sinal novo. */
+  resolvido_em: string | null
   /** Aviso de fora do horario ja enviado nesta noite. */
   aviso_fora_horario_em: string | null
 }
@@ -324,7 +327,9 @@ const CAMPOS_EDITAVEIS = new Set([
 export async function atualizarContato(telefone: string, campos: Record<string, unknown>): Promise<void> {
   const nomes = Object.keys(campos).filter((c) => CAMPOS_EDITAVEIS.has(c))
   if (nomes.length === 0) return
-  const sets = nomes.map((c, i) => `${c} = $${i + 2}`).join(', ')
+  // sinal novo desfaz o "ja cuidei" do painel: o cliente volta pra "Precisa de voce"
+  const volta = voltaPraPrecisaDeVoce(campos) ? ', resolvido_em = NULL' : ''
+  const sets = nomes.map((c, i) => `${c} = $${i + 2}`).join(', ') + volta
   // jsonb vai como texto: o pg transformaria objeto/array JS em array do Postgres.
   const valores = nomes.map((c) => {
     const v = campos[c]

@@ -62,6 +62,8 @@ interface Contato {
   genero: string | null
   etiquetas: string[]
   pergunta_pendente: { texto: string; em: string } | null
+  /** "ja cuidei": fora da aba Precisa de voce ate aparecer sinal novo. */
+  resolvido_em: string | null
 }
 
 interface Simulacao {
@@ -544,6 +546,20 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
               onClick={() => confirm(`Transferir ${nome} pro 4824? Ele recebe o link com o resumo e a Isa desliga.`) && acao('/api/atendimento/transferir', {})}
               className="rounded-full border border-[#F2911D]/60 px-3 py-1 text-[12px] font-bold uppercase tracking-wider text-[#F2911D] transition hover:bg-[#F2911D] hover:text-[#141d45] disabled:opacity-30 [font-family:var(--fonte-rotulo)]">
               ↪ 4824
+            </button>
+          )}
+          {/* Tira desta conversa a marca de "Precisa de voce" — ela continua normal nas outras abas
+              (dono, 25/09/2026). Volta sozinha se a Isa ficar devendo resposta, pausar ou pedir desconto. */}
+          {contato && (contato.resolvido_em || contato.pausa_motivo || contato.pergunta_pendente ||
+            (contato.aguardando_dono && contato.aguardando_dono !== 'fecha_quando')) && (
+            <button disabled={ocupado} onClick={() => acao('/api/atendimento/resolvido', { resolvido: !contato.resolvido_em })}
+              title={contato.resolvido_em ? 'devolver pra aba Precisa de voce' : 'tirar da aba Precisa de voce'}
+              className={`rounded-full border px-3 py-1 text-[12px] font-bold uppercase tracking-wider transition disabled:opacity-30 [font-family:var(--fonte-rotulo)] ${
+                contato.resolvido_em
+                  ? 'border-white/25 text-white/60 hover:bg-white/10'
+                  : 'border-[#C7D301]/60 text-[#C7D301] hover:bg-[#C7D301] hover:text-[#141d45]'
+              }`}>
+              {contato.resolvido_em ? '↩ precisa de mim' : '✓ já cuidei'}
             </button>
           )}
           {(sim || contato?.pausa_motivo || (contato?.aguardando_dono && contato.aguardando_dono !== 'fecha_quando') || contato?.pergunta_pendente) && (

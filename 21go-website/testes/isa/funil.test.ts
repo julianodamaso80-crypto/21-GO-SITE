@@ -90,3 +90,15 @@ test('quem veio pelo Quero Ser Consultor vai pra coluna Consultores, depois do F
   assert.equal(ETAPAS.find((e) => e.id === 'consultor')?.rotulo, 'Consultores')
   assert.equal(etapaDoCard({ etapa: null, escolheuPlano: false, mandouDocumento: false, etiquetas: ['consultor'] }), 'consultor')
 })
+
+test('"ja cuidei" some da aba, mas sinal novo traz de volta (dono, 25/09/2026)', async () => {
+  const { voltaPraPrecisaDeVoce } = await import('../../src/lib/isa/funil.regras.ts')
+  assert.equal(voltaPraPrecisaDeVoce({ pergunta_pendente: { texto: 'quanto fica?', em: 'x' } }), true)
+  assert.equal(voltaPraPrecisaDeVoce({ aguardando_dono: 'desconto' }), true)
+  assert.equal(voltaPraPrecisaDeVoce({ ligada: false }), true)
+  // o que nao e sinal novo nao traz de volta
+  assert.equal(voltaPraPrecisaDeVoce({ pergunta_pendente: null }), false)
+  assert.equal(voltaPraPrecisaDeVoce({ aguardando_dono: null }), false)
+  assert.equal(voltaPraPrecisaDeVoce({ ligada: true }), false)
+  assert.equal(voltaPraPrecisaDeVoce({ nota: 'cliente pediu pra ligar amanha' }), false)
+})

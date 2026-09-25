@@ -39,6 +39,8 @@ const FILTRO: Record<Aba, string> = {
   // Etiqueta FRIO tira da fila (dono, 16/09/2026: "se eu selecionar tag frio ele sai de precisa
   // de mim"). Os parenteses em volta dos OR sao obrigatorios: sem eles o AND so valeria pro ultimo.
   precisa: `((NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR (c.aguardando_dono IS NOT NULL AND c.aguardando_dono <> 'fecha_quando') OR c.pergunta_pendente IS NOT NULL)
+    -- "ja cuidei" do painel tira da aba e deixa a conversa normal nas outras (dono, 25/09/2026)
+    AND c.resolvido_em IS NULL
     AND NOT (COALESCE(c.etiquetas, '{}'::text[]) && ARRAY[${ETIQUETAS_FORA_DA_FILA.map((e) => `'${e}'`).join(',')}]::text[])`,
   isa: `c.ligada AND NOT ${EH_CONSULTOR}`,
   off: `NOT c.ligada AND NOT ${EH_CONSULTOR}`,
