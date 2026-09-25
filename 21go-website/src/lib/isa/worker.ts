@@ -19,6 +19,7 @@ import {
   jaPediuDocumentos,
   ultimaConsultaFoiRecusa,
   marcarConsultor,
+  religarComJanelaFechada,
   sql,
   type ContatoIsa,
   type MensagemHistorico,
@@ -78,6 +79,10 @@ export async function processarFila(): Promise<ResultadoFila> {
   const teste = numerosDeTeste({ allowlist: process.env.ISA_ALLOWLIST, alerta: numeroDeAlerta() })
   if (!noHorario && teste.length === 0) return { processados: 0, respondidos: 0, foraDoHorario: true }
   if (noHorario) await retomarSumidos().catch((err) => console.error('[isa] retomada:', err))
+  // Janela de 24 h fechada volta a conversa pro automatico (dono, 25/09/2026)
+  await religarComJanelaFechada()
+    .then(async (n) => { if (n > 0) await registrarEvento('sistema', 'religou_janela_fechada', { contatos: n }, 'sistema') })
+    .catch((err) => console.error('[isa] religar janela fechada:', err))
 
   const contatos = await reivindicarPendentes({
     silencioSeg: SILENCIO_SEG,

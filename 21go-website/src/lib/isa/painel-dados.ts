@@ -41,6 +41,9 @@ const FILTRO: Record<Aba, string> = {
   precisa: `((NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR (c.aguardando_dono IS NOT NULL AND c.aguardando_dono <> 'fecha_quando') OR c.pergunta_pendente IS NOT NULL)
     -- "ja cuidei" do painel tira da aba e deixa a conversa normal nas outras (dono, 25/09/2026)
     AND c.resolvido_em IS NULL
+    -- Passou de 24 h da ultima mensagem dele: nao da pra escrever, so o template de retomada.
+    -- Nao fica cobrando atencao de quem ninguem consegue responder (dono, 25/09/2026).
+    AND (c.janela_ate IS NULL OR c.janela_ate > now())
     AND NOT (COALESCE(c.etiquetas, '{}'::text[]) && ARRAY[${ETIQUETAS_FORA_DA_FILA.map((e) => `'${e}'`).join(',')}]::text[])`,
   isa: `c.ligada AND NOT ${EH_CONSULTOR}`,
   off: `NOT c.ligada AND NOT ${EH_CONSULTOR}`,

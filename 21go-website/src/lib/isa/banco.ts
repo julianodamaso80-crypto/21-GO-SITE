@@ -307,6 +307,29 @@ export async function marcarVisto(telefone: string, usuario: string): Promise<vo
   )
 }
 
+/**
+ * Janela de 24 h fechada: a conversa volta pro automatico (dono, 25/09/2026 — "qd tiver mais de
+ * 24h... vc volta ele no automatico para todos e tira do precisa de vc"). Enquanto a janela esta
+ * fechada ninguem do time consegue escrever, e quando o cliente voltar a Isa ja atende sozinha.
+ *
+ * Quem foi pro 4824 fica de fora: ali quem atende e a Leticya, por outro numero.
+ * O `processado_ate` anda pra agora pela mesma razao da chave do painel: ela nao responde o
+ * atrasado, so o que chegar depois.
+ */
+export async function religarComJanelaFechada(): Promise<number> {
+  const r = await sql<{ telefone: string }>(
+    `UPDATE public.isa_contatos
+        SET ligada = true, pausa_motivo = NULL, pausa_por = NULL, pausada_em = NULL,
+            aguardando_dono = NULL, processado_ate = now(), updated_at = now()
+      WHERE NOT ligada
+        AND transferido_em IS NULL
+        AND janela_ate IS NOT NULL
+        AND janela_ate < now()
+      RETURNING telefone`,
+  )
+  return r.length
+}
+
 export async function registrarEvento(telefone: string, tipo: string, detalhe: unknown, por = 'isa'): Promise<void> {
   await sql(`INSERT INTO public.isa_eventos (telefone, tipo, detalhe, por) VALUES ($1, $2, $3, $4)`, [
     telefone,
