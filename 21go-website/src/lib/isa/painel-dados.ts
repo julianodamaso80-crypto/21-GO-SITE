@@ -38,7 +38,12 @@ const FILTRO: Record<Aba, string> = {
   // ...ou ficou devendo uma resposta ("vou confirmar e ja te retorno" — auditoria 12/09/2026).
   // Etiqueta FRIO tira da fila (dono, 16/09/2026: "se eu selecionar tag frio ele sai de precisa
   // de mim"). Os parenteses em volta dos OR sao obrigatorios: sem eles o AND so valeria pro ultimo.
-  precisa: `((NOT c.ligada AND c.pausa_por = 'isa' AND c.transferido_em IS NULL) OR (c.aguardando_dono IS NOT NULL AND c.aguardando_dono <> 'fecha_quando') OR c.pergunta_pendente IS NOT NULL)
+  // Entrou quando a Isa pausou num gatilho, pediu decisao de desconto ou ficou devendo resposta —
+  // e FICA ate alguem clicar em "ja cuidei" ou a janela de 24 h fechar. Ligar/desligar a Isa nao
+  // mexe nisto (dono, 25/09/2026); por isso a aba le o carimbo `precisa_desde`, nao o estado de agora.
+  precisa: `c.precisa_desde IS NOT NULL
+    -- quem foi pro 4824 e da Leticya, por outro numero
+    AND c.transferido_em IS NULL
     -- "ja cuidei" do painel tira da aba e deixa a conversa normal nas outras (dono, 25/09/2026)
     AND c.resolvido_em IS NULL
     -- Passou de 24 h da ultima mensagem dele: nao da pra escrever, so o template de retomada.

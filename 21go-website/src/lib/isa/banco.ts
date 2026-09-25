@@ -89,6 +89,8 @@ export interface ContatoIsa {
   pergunta_pendente: { texto: string; em: string } | null
   /** Alguem do time clicou em "ja cuidei": sai da aba "Precisa de voce" ate aparecer sinal novo. */
   resolvido_em: string | null
+  /** Quando caiu em "Precisa de voce". So sai pelo botao "ja cuidei" ou quando a janela de 24 h fecha. */
+  precisa_desde: string | null
   /** Aviso de fora do horario ja enviado nesta noite. */
   aviso_fora_horario_em: string | null
 }
@@ -320,7 +322,7 @@ export async function religarComJanelaFechada(): Promise<number> {
   const r = await sql<{ telefone: string }>(
     `UPDATE public.isa_contatos
         SET ligada = true, pausa_motivo = NULL, pausa_por = NULL, pausada_em = NULL,
-            aguardando_dono = NULL, processado_ate = now(), updated_at = now()
+            aguardando_dono = NULL, precisa_desde = NULL, processado_ate = now(), updated_at = now()
       WHERE NOT ligada
         AND transferido_em IS NULL
         AND janela_ate IS NOT NULL
@@ -351,7 +353,8 @@ export async function atualizarContato(telefone: string, campos: Record<string, 
   const nomes = Object.keys(campos).filter((c) => CAMPOS_EDITAVEIS.has(c))
   if (nomes.length === 0) return
   // sinal novo desfaz o "ja cuidei" do painel: o cliente volta pra "Precisa de voce"
-  const volta = voltaPraPrecisaDeVoce(campos) ? ', resolvido_em = NULL' : ''
+  // entrou na aba: guarda QUANDO entrou e desfaz o "ja cuidei". So sai pelo botao ou pelas 24 h.
+  const volta = voltaPraPrecisaDeVoce(campos) ? ', resolvido_em = NULL, precisa_desde = COALESCE(precisa_desde, now())' : ''
   const sets = nomes.map((c, i) => `${c} = $${i + 2}`).join(', ') + volta
   // jsonb vai como texto: o pg transformaria objeto/array JS em array do Postgres.
   const valores = nomes.map((c) => {

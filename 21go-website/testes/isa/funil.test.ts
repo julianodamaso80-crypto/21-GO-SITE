@@ -95,7 +95,10 @@ test('"ja cuidei" some da aba, mas sinal novo traz de volta (dono, 25/09/2026)',
   const { voltaPraPrecisaDeVoce } = await import('../../src/lib/isa/funil.regras.ts')
   assert.equal(voltaPraPrecisaDeVoce({ pergunta_pendente: { texto: 'quanto fica?', em: 'x' } }), true)
   assert.equal(voltaPraPrecisaDeVoce({ aguardando_dono: 'desconto' }), true)
-  assert.equal(voltaPraPrecisaDeVoce({ ligada: false }), true)
+  // a pausa da propria Isa (gatilho) chama o time; a chave do painel, nao (dono, 25/09/2026)
+  assert.equal(voltaPraPrecisaDeVoce({ ligada: false, pausa_por: 'isa' }), true)
+  assert.equal(voltaPraPrecisaDeVoce({ ligada: false, pausa_por: 'leticya' }), false)
+  assert.equal(voltaPraPrecisaDeVoce({ ligada: false }), false)
   // o que nao e sinal novo nao traz de volta
   assert.equal(voltaPraPrecisaDeVoce({ pergunta_pendente: null }), false)
   assert.equal(voltaPraPrecisaDeVoce({ aguardando_dono: null }), false)

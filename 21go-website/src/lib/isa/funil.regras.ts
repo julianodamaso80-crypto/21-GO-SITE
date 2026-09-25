@@ -109,5 +109,8 @@ export function etapaDoCard(c: {
 export function voltaPraPrecisaDeVoce(campos: Record<string, unknown>): boolean {
   if (campos.pergunta_pendente) return true
   if (campos.aguardando_dono) return true
-  return campos.ligada === false
+  // So a pausa da PROPRIA Isa (gatilho) chama o time. Desligar a chave no painel nao poe na aba,
+  // e religar nao tira (dono, 25/09/2026: "o fato de eu ligar ou desligar a isa nao tira ele do
+  // precisa de vc").
+  return campos.ligada === false && campos.pausa_por === 'isa'
 }
