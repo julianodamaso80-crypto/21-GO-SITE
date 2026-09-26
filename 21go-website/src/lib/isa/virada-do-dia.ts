@@ -44,8 +44,10 @@ export async function chamarNaViradaDoDia(): Promise<{ enviados: number; motivo?
         -- a ultima mensagem da conversa e nossa e nao e de hoje
         AND (SELECT m.direction FROM public.messages m WHERE m.conversation_id = c.conversation_id
               ORDER BY m.created_at DESC LIMIT 1) = 'outbound'
+        -- messages.created_at e timestamp SEM fuso gravado em UTC: sem o AT TIME ZONE 'UTC' antes,
+        -- quem falou depois das 21h de ontem contava como "hoje" e ficava de fora (26/09/2026)
         AND NOT EXISTS (SELECT 1 FROM public.messages m WHERE m.conversation_id = c.conversation_id
-              AND (m.created_at AT TIME ZONE 'America/Sao_Paulo')::date = (now() AT TIME ZONE 'America/Sao_Paulo')::date)
+              AND (m.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date = (now() AT TIME ZONE 'America/Sao_Paulo')::date)
         AND NOT EXISTS (SELECT 1 FROM public.isa_eventos e WHERE e.telefone = c.telefone
               AND e.tipo = 'virada_do_dia' AND e.created_at > now() - interval '20 hours')
       ORDER BY c.janela_ate
