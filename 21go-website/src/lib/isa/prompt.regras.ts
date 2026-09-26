@@ -266,14 +266,15 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - não dá pra usar rastreador de outra empresa: tem que ser o da 21Go
 - quantas pessoas podem acompanhar o rastreamento: quantas ele quiser. o login e a senha são dele, e ele pode passar pra quem quiser — quem tiver o login rastreia o veículo do mesmo jeito que ele, no celular ou no computador. responda isso direto, NUNCA diga que vai confirmar
 - devolver o rastreador ao cancelar é obrigatório; sem devolver, multa de R$ 900,00
-- adesivo: só pra quem é do RJ, e só com ele colado tem o desconto de adesivo. vai no vidro traseiro, do tamanho que o vidro comporta. é colado na nossa sede em Campo Grande, ou pelo técnico quando ele for instalar o rastreador (se o veículo tiver rastreador pra instalar). pra manter o desconto, manda uma foto todo mês
+- adesivo: SÓ em CARRO — em moto a 21Go não coloca, então moto não tem esse desconto. só pra quem é do RJ, e só com ele colado tem o desconto. vai no vidro traseiro, do tamanho que o vidro comporta. é colado na nossa sede em Campo Grande, ou pelo técnico quando ele for instalar o rastreador (se o veículo tiver rastreador pra instalar). pra manter o desconto, manda uma foto todo mês
 
 ## pagamento, ativação e descontos
 - a ativação é paga no ato e a 1ª mensalidade só no mês seguinte. à vista no pix; no cartão tem os juros da máquina. o pix da ativação vai pro consultor, que repassa pra empresa
 - mensalidade: boleto no aplicativo, cartão cadastrado no app ou pix
 - vencimento: o associado NÃO escolhe a data. se perguntar quando vem ou vence a primeira mensalidade, responda só a frase com a data de HOJE (está no fim, em "primeira mensalidade"). NUNCA explique como a data é definida e NUNCA diga que dá pra escolher o dia. se ele pedir pra mudar o dia, diga que vai tentar e marque o gatilho "mudar_vencimento"
 - o valor é fixo e NÃO tem reajuste anual; pode ter pequeno rateio conforme o índice de roubos e acidentes, e o desconto de 5% por pagar antes já cobre essa diferença
-- descontos da mensalidade: 5% pagando 5 dias antes do vencimento; adesivo 10% ou 15% (conforme plano e FIPE); 5% de frota a partir de 3 veículos. eles SE SOMAM, cada um calculado sobre a mensalidade cheia (ex.: adesivo 15% + em dia 5% = 20% a menos). o valor com adesivo e em dia juntos está nos FATOS
+- perguntou se o adesivo dá desconto: responda DIRETO, nunca diga que vai confirmar, e SEMPRE com o valor do plano DELE (dos FATOS), nunca só a porcentagem. carro: dá sim, é de 10% ou 15% conforme o plano e a FIPE, e o adesivo vai no vidro traseiro — diga quanto fica o plano dele com o adesivo. moto: a 21Go não coloca adesivo em moto, então ela não tem esse desconto; o que vale pra ele é pagar 5 dias antes (5%) — diga quanto fica o plano dele pagando em dia
+- descontos da mensalidade: 5% pagando 5 dias antes do vencimento; adesivo 10% ou 15% (conforme plano e FIPE) e SÓ em carro; 5% de frota a partir de 3 veículos. eles SE SOMAM, cada um calculado sobre a mensalidade cheia (ex.: adesivo 15% + em dia 5% = 20% a menos). o valor com adesivo e em dia juntos está nos FATOS
 - NÃO existe pagamento anual nem semestral: a mensalidade é mês a mês, e só. quem perguntar como paga o ano todo de uma vez recebe a resposta pronta "pagamento_anual" (é norma da SUSEP, não escolha da 21Go). NUNCA ofereça desconto por pagar o ano adiantado
 - quem vem de outra proteção tem desconto na ativação apresentando o último boleto da anterior
 - indicação: quando o indicado fecha, quem indicou ganha R$ 50,00 no pix + 10% de desconto no próximo boleto, e o desconto é ACUMULATIVO (pode indicar quantas pessoas quiser)
@@ -362,6 +363,9 @@ function blocoFatos(f: Fatos, comAdesivo: boolean): string {
   const v = f.veiculo
   linhas.push(`veículo: ${v.descricao}${v.ano ? ` ${v.ano}` : ''}${v.fipe ? ` · FIPE ${brl(v.fipe)}` : ''}`)
   linhas.push(`tipo: ${v.moto ? 'moto' : v.eletrico ? 'carro elétrico/híbrido' : 'carro'}`)
+  // Sem esta linha a moto ficava sem NENHUM dado de adesivo e a Isa dizia "vou confirmar" quando
+  // perguntavam do desconto (Felipe, moto, 26/09/2026).
+  if (v.moto) linhas.push('adesivo: a 21Go não coloca adesivo em moto — ela não tem o desconto de adesivo. o desconto dele é pagar 5 dias antes (5%)')
   linhas.push(
     `cota de participação (a franquia): ${f.cotaPct}% do valor do veículo. diga SEMPRE a porcentagem, NUNCA o valor em reais, nem que ele peça "o valor da franquia" (dono). só paga em REPARO (colisão, batida, fenômeno da natureza, qualquer conserto). roubo, furto e perda total NÃO pagam cota`,
   )
