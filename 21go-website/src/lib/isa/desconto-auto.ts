@@ -19,8 +19,13 @@ import { enviarComoGente } from '@/lib/isa/worker'
 export async function entregarDescontosAutomaticos(): Promise<{ enviados: number; motivo?: string }> {
   if (!dentroDoHorario(new Date())) return { enviados: 0, motivo: 'fora_do_horario' }
 
-  const candidatos = await sql<ContatoIsa>(
-    `SELECT c.*
+  const candidatos = await sql<ContatoIsa & { pediu_gratis: boolean }>(
+    `SELECT c.*,
+            -- pediu a ativacao DE GRACA em algum momento do pedido: muda a frase (dono, 26/09/2026)
+            EXISTS (SELECT 1 FROM public.isa_eventos g
+                     WHERE g.telefone = c.telefone AND g.tipo = 'desconto'
+                       AND g.created_at > now() - interval '12 hours'
+                       AND g.detalhe->>'gratis' = 'true') AS pediu_gratis
        FROM public.isa_contatos c
        JOIN LATERAL (
          SELECT e.detalhe->>'tipo' AS tipo, e.created_at
@@ -58,7 +63,7 @@ export async function entregarDescontosAutomaticos(): Promise<{ enviados: number
     }
     const d = { de, para: Math.round((de - valor) * 100) / 100 }
 
-    const enviou = await enviarComoGente(c, mensagemDescontoAutomatico(d), undefined, c.ultimo_inbound_em)
+    const enviou = await enviarComoGente(c, mensagemDescontoAutomatico(d, c.pediu_gratis), undefined, c.ultimo_inbound_em)
     if (!enviou) {
       await registrarEvento(c.telefone, 'desconto', { tipo: 'automatico_falhou', de: d.de, para: d.para })
       continue

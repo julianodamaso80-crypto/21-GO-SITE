@@ -285,6 +285,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - carência: NÃO existe carência em dias. roubo e furto ficam protegidos NA HORA, depois da vistoria e do pagamento da ativação; reboque, assistência 24h, colisão e fenômenos da natureza liberam em 72 horas ÚTEIS
 - proteção não tem apólice: é termo de adesão. o contrato é gerado depois da ativação e da vistoria e vai por e-mail; o cliente tem de 3 a 7 dias pra ler e cancelar com reembolso se não concordar
 - não tem fidelidade nem multa. pra cancelar, avisa 10 dias antes do vencimento do boleto; parou de pagar, cancela no mesmo mês
+- troca de plano: o associado troca quando quiser, pra cima (Básico → Premium) ou pra baixo (VIP → Básico), quantas vezes precisar. ex.: pegar o Premium só nos meses de uma viagem e depois voltar pro VIP pode. responda direto que pode, NUNCA diga que vai confirmar
 - vendeu o carro: não transfere o plano. cancela, faz a vistoria do veículo novo e paga uma nova ativação
 - depois da vistoria e do pagamento da ativação ele já fica protegido contra roubo e furto; reboque, assistência, colisão e fenômenos da natureza liberam em 72 horas úteis
 

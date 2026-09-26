@@ -28,7 +28,7 @@ import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente, descontoAutomaticoPendente } from '@/lib/isa/acoes'
 import { alertarDono, alertarPergunta } from '@/lib/isa/alertas'
 import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao, ehSoCumprimento, mensagemCumprimento, perguntouTudoBem, ehSoAgradecimento, mensagemAgradecimento } from '@/lib/isa/venda.regras'
-import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor, AGUARDANDO_FECHA_QUANDO, mensagemTentarDesconto, mensagemVouFalarComSupervisor, mensagemTentarDeNovo } from '@/lib/isa/dono.regras'
+import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor, AGUARDANDO_FECHA_QUANDO, mensagemTentarDesconto, mensagemVouFalarComSupervisor, mensagemTentarDeNovo, pediuAtivacaoGratis } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import {
@@ -460,7 +460,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   if (c.aguardando_dono === AGUARDANDO_FECHA_QUANDO && !ehPergunta(textoNovas)) {
     const enviou = await enviarComoGente(c, [mensagemVouFalarComSupervisor()], ultimaInbound, visto)
     await atualizarContato(c.telefone, { aguardando_dono: null })
-    await registrarEvento(c.telefone, 'desconto', { tipo: 'vou_falar', quando: textoNovas.trim().slice(0, 120) })
+    await registrarEvento(c.telefone, 'desconto', { tipo: 'vou_falar', quando: textoNovas.trim().slice(0, 120), gratis: pediuAtivacaoGratis(textoNovas) })
     await liberar(c.telefone, visto, enviou)
     return enviou
   }
@@ -611,7 +611,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     }
     const enviou = await enviarComoGente(c, [...partes, mensagemTentarDesconto()], ultimaInbound, visto)
     await atualizarContato(c.telefone, { aguardando_dono: AGUARDANDO_FECHA_QUANDO })
-    await registrarEvento(c.telefone, 'desconto', { tipo: 'perguntou_quando' })
+    await registrarEvento(c.telefone, 'desconto', { tipo: 'perguntou_quando', gratis: pediuAtivacaoGratis(textoNovas) })
     await liberar(c.telefone, visto, enviou)
     return enviou
   }

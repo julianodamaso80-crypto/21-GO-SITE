@@ -136,14 +136,28 @@ test('desconto automatico na ativacao: R$ 70, ou R$ 100 acima de R$ 300 (dono, 1
   // nunca deixa a ativacao zerada ou negativa
   assert.equal(valorDoDescontoAutomatico(60), 0)
 
-  const m = mensagemDescontoAutomatico({ de: 277.41, para: 207.41 })
+  // pediu a ativacao de graca: "nao pagar a ativacao eu nao consigo"
+  const m = mensagemDescontoAutomatico({ de: 277.41, para: 207.41 }, true)
   assert.match(m, /não pagar a ativação eu não consigo/)
   assert.match(m, /o que eu consegui foi R\$ 70,00 de desconto/)
   assert.match(m, /de R\$ 277,41 por R\$ 207,41/)
+  // so pediu desconto: nada de "nao pagar a ativacao" (dono, 26/09/2026)
+  const s = mensagemDescontoAutomatico({ de: 277.41, para: 207.41 })
+  assert.doesNotMatch(s, /não pagar/)
+  assert.match(s, /conversei com meu supervisor aqui e consegui um super desconto de R\$ 70,00 na ativação/)
+  assert.match(s, /de R\$ 277,41 por R\$ 207,41/)
 
   // volta 6 minutos depois de dizer que ia falar com o supervisor
   assert.equal(ESPERA_DESCONTO_MIN, 6)
   const pediu = new Date('2026-09-16T20:17:00Z')
   assert.equal(descontoAutomaticoNaHora(pediu, new Date('2026-09-16T20:22:59Z')), false)
   assert.equal(descontoAutomaticoNaHora(pediu, new Date('2026-09-16T20:23:00Z')), true)
+})
+
+test('pediu a ativacao de graca x so pediu desconto (dono, 26/09/2026)', async () => {
+  const { pediuAtivacaoGratis } = await import('../../src/lib/isa/dono.regras.ts')
+  for (const t of ['dá pra fazer sem ativação?', 'isenta a ativação pra mim', 'não quero pagar a ativação', 'a ativação não pode ser grátis?', 'tira a ativação que eu fecho', 'consegue zerar a ativação?', 'ativação de graça rola?'])
+    assert.ok(pediuAtivacaoGratis(t), t)
+  for (const t of ['tem desconto na ativação?', 'a ativação tá cara', 'consegue um desconto?', 'faz um precinho melhor', 'quanto é a ativação?'])
+    assert.ok(!pediuAtivacaoGratis(t), t)
 })

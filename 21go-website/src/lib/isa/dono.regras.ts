@@ -180,11 +180,24 @@ export function descontoAutomaticoNaHora(pediuEm: Date, agora: Date): boolean {
   return agora.getTime() - pediuEm.getTime() >= ESPERA_DESCONTO_MIN * 60_000
 }
 
-export function mensagemDescontoAutomatico(d: { de: number; para: number }): string {
-  const valor = Math.round((d.de - d.para) * 100) / 100
+/**
+ * Ele pediu a ativacao DE GRACA (e nao so um desconto)? So entao a Isa diz "nao pagar a ativacao eu
+ * nao consigo" — pra quem so pediu desconto essa frase responde algo que ele nao pediu (dono, 26/09/2026).
+ */
+export function pediuAtivacaoGratis(texto: string | null): boolean {
+  const t = (texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   return (
-    'falei com meu supervisor aqui 🙏🏼\n\n' +
-    `não pagar a ativação eu não consigo, mas o que eu consegui foi ${brl(valor)} de desconto\n\n` +
-    `de ${brl(d.de)} por ${brl(d.para)}, o que acha?`
+    /\b(sem|isent\w*|isencao|zer\w*|tirar|tira|retirar|nao (quero |queria |vou |posso |consigo )?pagar)\b.{0,25}\bativa/.test(t) ||
+    /\bativa\w*.{0,25}\b(gratis|gratuit\w*|de graca|free|zerad\w*|isent\w*)/.test(t) ||
+    /\b(gratis|de graca)\b.{0,25}\bativa/.test(t)
   )
+}
+
+export function mensagemDescontoAutomatico(d: { de: number; para: number }, pediuGratis = false): string {
+  const valor = Math.round((d.de - d.para) * 100) / 100
+  const oferta = pediuGratis
+    ? 'falei com meu supervisor aqui 🙏🏼\n\n' +
+      `não pagar a ativação eu não consigo, mas o que eu consegui foi ${brl(valor)} de desconto\n\n`
+    : `olha, conversei com meu supervisor aqui e consegui um super desconto de ${brl(valor)} na ativação 🙏🏼\n\n`
+  return oferta + `de ${brl(d.de)} por ${brl(d.para)}, o que acha?`
 }
