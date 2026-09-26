@@ -237,3 +237,31 @@ export function vistoDoLote(
   const ultima = novas.length ? novas[novas.length - 1]?.criada_em : null
   return ultima || vistoAtual
 }
+
+/**
+ * A mesma mensagem nunca sai duas vezes na conversa (dono, 26/09/2026: "mandou mesma mensagem 2x,
+ * isso nao pode acontecer nunca"). O Francisco mandou "Vou analisar" e "Entro contato" em sequencia
+ * e ouviu duas vezes "claro, sem pressa..." — as duas saidas da IA diferiam so por uma virgula.
+ * Compara sem acento, pontuacao, emoji e caixa; quase igual (>= 90% dos pares de letras) conta.
+ */
+export function repeteMensagemRecente(texto: string, anteriores: string[]): boolean {
+  const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '')
+  const t = norm(texto)
+  // "ok", "sim", so emoji: curto demais pra dizer que e repeticao
+  if (t.length < 6) return false
+  const pares = (s: string) => {
+    const m = new Map<string, number>()
+    for (let i = 0; i < s.length - 1; i++) m.set(s.slice(i, i + 2), (m.get(s.slice(i, i + 2)) ?? 0) + 1)
+    return m
+  }
+  const pt = pares(t)
+  return anteriores.some((a) => {
+    const n = norm(a)
+    if (n === t) return true
+    if (n.length < 6 || Math.min(n.length, t.length) / Math.max(n.length, t.length) < 0.8) return false
+    const pa = pares(n)
+    let comum = 0
+    for (const [k, v] of pt) comum += Math.min(v, pa.get(k) ?? 0)
+    return (2 * comum) / (t.length - 1 + n.length - 1) >= 0.9
+  })
+}

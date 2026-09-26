@@ -201,3 +201,13 @@ export function mensagemDescontoAutomatico(d: { de: number; para: number }, pedi
     : `olha, conversei com meu supervisor aqui e consegui um super desconto de ${brl(valor)} na ativação 🙏🏼\n\n`
   return oferta + `de ${brl(d.de)} por ${brl(d.para)}, o que acha?`
 }
+
+/**
+ * Virou o dia e a janela de 24 h da Meta ainda esta aberta (dono, 26/09/2026): uma mensagem pra
+ * quem parou de responder ontem, no texto dele — "Bom dia Elton, vai querer dar sequencia na
+ * ativacao da sua protecao?". Com o nome quando tem; o cumprimento segue a hora do Rio.
+ */
+export function mensagemViradaDoDia(p: { primeiroNome: string | null; cumprimento: string }): string {
+  const saudacao = p.cumprimento.charAt(0).toUpperCase() + p.cumprimento.slice(1)
+  return `${saudacao}${p.primeiroNome ? ` ${p.primeiroNome}` : ''}, vai querer dar sequência na ativação da sua proteção?`
+}

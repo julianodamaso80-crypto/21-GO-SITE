@@ -3,6 +3,7 @@ import { processarFila } from '@/lib/isa/worker'
 import { abordarLeadsNovos, retomarSemResposta } from '@/lib/isa/abordagem'
 import { relatorioDiario } from '@/lib/isa/relatorio'
 import { entregarDescontosAutomaticos } from '@/lib/isa/desconto-auto'
+import { chamarNaViradaDoDia } from '@/lib/isa/virada-do-dia'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -34,11 +35,16 @@ export async function GET(req: NextRequest) {
       console.error('[isa] desconto automatico falhou:', err)
       return { enviados: 0, erro: err instanceof Error ? err.message : String(err) }
     })
+    // Virou o dia com a janela de 24 h aberta: "Bom dia Fulano, vai querer dar sequencia...?"
+    const viradaDoDia = await chamarNaViradaDoDia().catch((err) => {
+      console.error('[isa] virada do dia falhou:', err)
+      return { enviados: 0, erro: err instanceof Error ? err.message : String(err) }
+    })
     const relatorio = await relatorioDiario().catch((err) => {
       console.error('[isa] relatorio falhou:', err)
       return { enviado: false, erro: err instanceof Error ? err.message : String(err) }
     })
-    return NextResponse.json({ ok: true, ...fila, cincoMin, retomada, desconto, relatorio })
+    return NextResponse.json({ ok: true, ...fila, cincoMin, retomada, desconto, viradaDoDia, relatorio })
   } catch (err) {
     console.error('[isa] cron falhou:', err)
     return NextResponse.json({ ok: false, erro: err instanceof Error ? err.message : String(err) }, { status: 500 })

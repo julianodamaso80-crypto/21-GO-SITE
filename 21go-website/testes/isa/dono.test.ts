@@ -161,3 +161,9 @@ test('pediu a ativacao de graca x so pediu desconto (dono, 26/09/2026)', async (
   for (const t of ['tem desconto na ativação?', 'a ativação tá cara', 'consegue um desconto?', 'faz um precinho melhor', 'quanto é a ativação?'])
     assert.ok(!pediuAtivacaoGratis(t), t)
 })
+
+test('virada do dia: texto do dono, com o nome (26/09/2026)', async () => {
+  const { mensagemViradaDoDia } = await import('../../src/lib/isa/dono.regras.ts')
+  assert.equal(mensagemViradaDoDia({ primeiroNome: 'Elton', cumprimento: 'bom dia' }), 'Bom dia Elton, vai querer dar sequência na ativação da sua proteção?')
+  assert.equal(mensagemViradaDoDia({ primeiroNome: null, cumprimento: 'boa tarde' }), 'Boa tarde, vai querer dar sequência na ativação da sua proteção?')
+})

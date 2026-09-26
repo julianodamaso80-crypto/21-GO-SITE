@@ -42,7 +42,7 @@ import {
 import { transcrever } from '@/lib/isa/transcrever'
 import { lerMidia } from '@/lib/isa/ler-midia'
 import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, nomeDoDoc, formatoLegivel, textoDaLeitura, TAMANHO_MAXIMO, type Leitura, type TipoMidia } from '@/lib/isa/ler-midia.regras'
-import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, vistoDoLote, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, type ParteEnvio } from '@/lib/isa/envio.regras'
+import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, vistoDoLote, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, repeteMensagemRecente, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, ehByd } from '@/lib/isa/entrega.regras'
@@ -873,7 +873,7 @@ function payloadsDe(novas: MensagemHistorico[]): string[] {
     .filter(Boolean)
 }
 
-function primeiroNomeDe(nome: string | null): string | null {
+export function primeiroNomeDe(nome: string | null): string | null {
   const n = (nome || '').trim().split(/\s+/)[0]
   if (!n || n.length < 2) return null
   return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase()
@@ -928,7 +928,7 @@ export async function enviarComoGente(
   sender = 'isa',
 ): Promise<boolean> {
   // Lista = partes ja montadas (a simulacao vai inteira numa mensagem); texto = divide na linha em branco.
-  const partes: ParteEnvio[] = (Array.isArray(texto) ? texto : dividirEmPartes(texto))
+  const montadas: ParteEnvio[] = (Array.isArray(texto) ? texto : dividirEmPartes(texto))
     .map((p) => (typeof p === 'string' ? { texto: p, citar: null } : p))
     // a marcacao [1], [2] e interna: nunca chega no cliente, venha de que caminho vier
     // Nem [n] nem travessao/aspas chegam no cliente, venha de onde vier: texto da IA, resposta
@@ -936,6 +936,25 @@ export async function enviarComoGente(
     // o filtro antigo (so no texto da IA) deixava passar. Dono: "errando de novo".
     .map((p) => ({ ...p, texto: semCaraDeIa(semMarcaDeParte(p.texto)) }))
     .filter((p) => p.texto)
+  if (montadas.length === 0) return false
+
+  // Mesma mensagem nunca sai 2x (dono, 26/09/2026): o que ja saiu nas ultimas 24 h, de quem for, fica.
+  const recentes = c.conversation_id
+    ? (await sql<{ content: string | null }>(
+        `SELECT content FROM public.messages
+          WHERE conversation_id = $1 AND direction = 'outbound' AND created_at > now() - interval '24 hours'
+          ORDER BY created_at DESC LIMIT 40`,
+        [c.conversation_id],
+      )).map((m) => m.content || '')
+    : []
+  const partes: ParteEnvio[] = []
+  for (const p of montadas) {
+    if (repeteMensagemRecente(p.texto, [...recentes, ...partes.map((x) => x.texto)])) continue
+    partes.push(p)
+  }
+  if (partes.length < montadas.length) {
+    await registrarEvento(c.telefone, 'repetida_segurada', { seguradas: montadas.length - partes.length, texto: montadas[0].texto.slice(0, 120) })
+  }
   if (partes.length === 0) return false
 
   // Trava geral contra loop (ver passaDoLimiteSemResposta): conta o que a conversa ja recebeu desde

@@ -195,3 +195,16 @@ test('trava geral: a Isa nunca manda mensagem demais sem o cliente responder (do
   assert.equal(passaDoLimiteSemResposta(6, 2), true)
   assert.equal(passaDoLimiteSemResposta(7, 1), true)
 })
+
+test('mesma mensagem nunca sai 2x (dono, 26/09/2026)', async () => {
+  const { repeteMensagemRecente } = await import('../../src/lib/isa/envio.regras.ts')
+  const antes = 'claro, sem pressa 🙏🏼 sua simulação fica salva aqui e o PDF tá com você, quando quiser é só me chamar que eu sigo de onde paramos'
+  // o caso do Francisco: so uma virgula de diferenca
+  assert.ok(repeteMensagemRecente('claro, sem pressa 🙏🏼 sua simulação fica salva aqui e o PDF tá com você, quando quiser, é só me chamar que eu sigo de onde paramos', [antes]))
+  assert.ok(repeteMensagemRecente('Claro sem pressa! sua simulacao fica salva aqui e o pdf ta com voce quando quiser e so me chamar que eu sigo de onde paramos', [antes]))
+  // mensagens diferentes passam
+  assert.ok(!repeteMensagemRecente('o VIP cobre colisão, roubo, furto e terceiros até R$ 100 mil', [antes]))
+  assert.ok(!repeteMensagemRecente('de R$ 291,45 por R$ 221,45, o que acha?', ['de R$ 249,00 por R$ 179,00, o que acha?']))
+  // curtinhas nao contam
+  assert.ok(!repeteMensagemRecente('ok 👍', ['ok 👍']))
+})
