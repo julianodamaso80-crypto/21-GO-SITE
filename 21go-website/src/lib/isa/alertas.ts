@@ -126,8 +126,11 @@ Telefone: ${p.telefone}
     `Pra deixar pra lá: NAO.
 ${PAINEL}?c=${p.telefone}`
   try {
-    await enviarTexto(para, corpo)
-    await registrarEvento(p.telefone, 'alerta', { motivo: 'sem_informacao', via: 'texto' }, 'sistema')
+    const wamid = await enviarTexto(para, corpo)
+    // O wamid do alerta identifica o cliente quando o dono RESPONDE CITANDO a mensagem. Sem isto
+    // valia so a ultima pergunta pendente: duas perguntas ao mesmo tempo e a primeira ficava sem
+    // resposta pra sempre (dono, 28/09/2026 — cliente da filial de Sao Goncalo).
+    await registrarEvento(p.telefone, 'alerta', { motivo: 'sem_informacao', via: 'texto', wamid }, 'sistema')
   } catch (err) {
     const erroTexto = err instanceof Error ? err.message : String(err)
     try {

@@ -145,11 +145,33 @@ export async function concederDesconto50(
  * Resposta do dono (4240) a um alerta de desconto. Botao traz o telefone do cliente; texto solto
  * vale pro ultimo pedido aberto (guardado no contato do dono).
  */
+/** De quem era o alerta que o dono acabou de responder citando (null quando nao citou). */
+async function clienteDoAlertaCitado(raw: unknown): Promise<string | null> {
+  const p = raw as { entry?: { changes?: { value?: { messages?: { context?: { id?: string } }[] } }[] }[]; context?: { message_id?: string } }
+  const citou =
+    p?.context?.message_id ?? p?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.context?.id ?? null
+  if (!citou) return null
+  const r = await sql<{ telefone: string }>(
+    `SELECT telefone FROM public.isa_eventos
+      WHERE tipo = 'alerta' AND detalhe->>'wamid' = $1
+      ORDER BY created_at DESC LIMIT 1`,
+    [citou],
+  )
+  return r[0]?.telefone ?? null
+}
+
 export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]): Promise<void> {
   const phoneId = process.env.WA_PHONE_ID ?? ''
   for (const m of novas) {
     const bruto = mensagensDoNumero(m.raw_payload, phoneId).find((x) => x.id === m.whatsapp_message_id)
     const pendente = (dono.aguardando_dono || '').match(/^(desconto|valor|pergunta):(\d+)$/)
+    // Ele respondeu CITANDO um alerta: a resposta e daquele cliente, nao do ultimo que perguntou.
+    const citado = m.raw_payload ? await clienteDoAlertaCitado(m.raw_payload) : null
+    if (citado && !bruto?.payload && (m.content || '').trim()) {
+      await responderPerguntaPendente(dono, citado, m.content)
+      if (pendente?.[2] === citado) dono.aguardando_dono = null
+      continue
+    }
     // Pergunta que a Isa nao soube: o texto do dono E a resposta (auditoria de 12/09/2026).
     if (pendente?.[1] === 'pergunta' && !bruto?.payload && (m.content || '').trim()) {
       await responderPerguntaPendente(dono, pendente[2], m.content)
