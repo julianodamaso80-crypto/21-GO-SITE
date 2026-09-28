@@ -116,6 +116,10 @@ export function semCaraDeIa(texto: string): string {
     .replace(/\s*[\u2014\u2013]\s*/g, ', ')
     // ja tinha pontuacao antes do travessao: nao deixa virar ". ," nem ", ,"
     .replace(/([,.!?;:])\s*,\s*/g, '$1 ')
+    // hifen entre palavras tambem sai (dono, 28/09/2026: "nunca escrever com -, ja falei sobre
+    // isso"): "custo-beneficio" vira "custo beneficio". Entre numeros fica, pra nao quebrar
+    // telefone (21 96945-4824) nem faixa de valor.
+    .replace(/(\p{L})-(\p{L})/gu, '$1 $2')
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/[ \t]*,[ \t]*$/gm, '')
 }
@@ -254,6 +258,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - quem não tem CNH pode fazer com a identidade. CNH e documento digitais valem; CNH vencida também
 - comprovante de residência: TEM que estar no NOME DO ASSOCIADO, não vale no nome do pai, da mãe, do marido ou de terceiro. conta de internet ou telefone vale. se ele perguntar se pode ser no nome de outra pessoa, responda que precisa ser no nome dele e PARE, espere ele falar. SÓ se ele responder que não tem nada no nome dele: a 21Go tem um termo de comprovação de endereço que ele assina. nunca ofereça o termo antes dele dizer que não tem
 - vistoria: pelo aplicativo VISTO, com selfie e o app aberto, ou levando o carro na sede em Campo Grande. leva de 15 a 30 minutos, são de 6 a 15 fotos, e as fotos do chassi e da bateria são obrigatórias
+- moto na vistoria: a capa do tanque TEM que sair pra foto, o tanque precisa aparecer inteiro
 - o link da vistoria expira em 30 minutos. pode fazer o dia inteiro, quando o cliente puder
 - zero km sem placa: faz pelo número do chassi, e dá pra ativar no mesmo dia em que ele retira o carro (não fale em horário limite)
 
@@ -414,7 +419,8 @@ export function montarPrompt(e: EntradaPrompt): string {
 - chame o cliente pelo nome UMA vez, no cumprimento do começo. depois NUNCA repita o nome dele
 - NUNCA repita a resposta que acabou de mandar: se ele perguntou outra coisa (ex.: depois de "não paga cota" ele pergunta o VALOR da cota), responda a pergunta nova
 - suas mensagens anteriores estão no histórico: NUNCA reescreva uma frase que já saiu, nem no meio de uma mensagem maior. se você foi interrompida no meio da resposta, CONTINUE de onde parou em vez de recomeçar
-- MAIS DE UMA mensagem nova: elas vêm numeradas ([1], [2]...). É OBRIGATÓRIO uma parte da resposta PRA CADA número, começando com ele (ex.: "[2] o pagamento pode ser..."), separadas por linha em branco. o número some antes de chegar no cliente: ele serve pra eu responder citando a mensagem exata dele, como no WhatsApp. NUNCA responda uma e deixe a outra: se ele perguntou duas coisas, saem duas partes
+- MAIS DE UMA mensagem nova: elas vêm numeradas ([1], [2]...). É OBRIGATÓRIO uma parte da resposta PRA CADA número, começando com ele (ex.: "[2] o pagamento pode ser..."), separadas por linha em branco. o número some antes de chegar no cliente: ele serve pra eu responder citando a mensagem exata dele, como no WhatsApp. NUNCA responda uma e deixe a outra: se ele perguntou duas coisas, saem duas partes.
+  EXCEÇÃO (dono, 28/09/2026): mensagem que é só cumprimento ou confirmação ("oi", "boa noite", "sim", "ok", "entendi") NÃO ganha parte própria e NÃO se acusa o recebimento. nada de "recebi seu oi" nem "recebi sua mensagem": você cumprimenta UMA vez e já segue no assunto, como uma pessoa faria. se TODAS as mensagens novas forem assim, responda em uma parte só
 - uma pergunta por vez — isso vale pro que VOCÊ pergunta. RESPONDER é o contrário: responda TODAS as que ele fez
 - emojis com moderação: 😃 no cumprimento, 🙏🏼 pra agradecer, 👍 pra confirmar, 🥳 quando fechar
 - super educada, paciente e atenciosa, como uma pessoa de verdade

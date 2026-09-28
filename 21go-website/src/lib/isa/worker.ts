@@ -27,7 +27,7 @@ import {
 import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente, descontoAutomaticoPendente } from '@/lib/isa/acoes'
 import { alertarDono, alertarPergunta } from '@/lib/isa/alertas'
-import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao, ehSoCumprimento, mensagemCumprimento, perguntouTudoBem, ehSoAgradecimento, mensagemAgradecimento } from '@/lib/isa/venda.regras'
+import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQualPlano, valorQuePagaHoje, ehDespedida, mensagemRetomada, jaPerguntouProtecao, ehSoCumprimento, ehSoConcordancia, mensagemCumprimento, perguntouTudoBem, ehSoAgradecimento, mensagemAgradecimento } from '@/lib/isa/venda.regras'
 import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor, AGUARDANDO_FECHA_QUANDO, mensagemTentarDesconto, mensagemVouFalarComSupervisor, mensagemTentarDeNovo, pediuAtivacaoGratis } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
@@ -45,7 +45,7 @@ import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, no
 import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, vistoDoLote, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, repeteMensagemRecente, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, ehByd } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, ehByd } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -178,13 +178,23 @@ async function comRetentativa<T>(fn: () => Promise<T>): Promise<T> {
 
 /** Devolve true se respondeu o cliente. */
 async function atender(c: ContatoIsa): Promise<boolean> {
-  const visto = c.ultimo_inbound_em
+  let visto = c.ultimo_inbound_em
   if (!c.conversation_id) {
     await liberar(c.telefone, visto, false)
     return false
   }
 
   const novas = await inboundsNovas(c.conversation_id, c.processado_ate)
+  // O que entrou NESTA resposta ja foi lido. Sem isto a propria mensagem do lote contava como
+  // "chegou mensagem nova" e cortava o envio na 1a parte (dono, 25/09/2026).
+  visto = vistoDoLote(visto, novas)
+  // Sem mensagem nova nao ha o que responder. Sem esta guarda a IA era chamada com a conversa
+  // inteira e inventava: "nao chegou outra pergunta aqui pra mim, pode mandar de novo?" (Pedro,
+  // 23/09/2026) — e a pergunta dele estava na tela.
+  if (novas.length === 0) {
+    await liberar(c.telefone, visto, false)
+    return false
+  }
   await transcreverAudios(novas)
 
   // Numeros de teste do dono: "/reiniciar" zera a conversa — a Isa esquece o que veio antes (as
@@ -386,6 +396,9 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // PLACA E ACHADA PELO CODIGO, nunca pela IA (bug de 11/09/2026: "Pyv8i13" virou um HB20 inventado,
   // sem consulta, sem lead no Power e sem PDF). Placa nova na mensagem = consulta direto.
   const placaDita = placaNoTexto(novas.map((m) => m.content).join('\n'))
+  // Placa que so aparece na leitura de um documento (CRLV) nao e pedido de cotacao: o texto e nosso,
+  // nao dele. Se for a mesma do veiculo que ele ja simulou, segue a conversa sem recotar.
+  const soVeioDeDocumento = !!placaDita && !placaNoTexto(novas.filter((m) => m.message_type === 'text').map((m) => m.content).join(' '))
   const textoNovas = novas.map((m) => m.content).join('\n')
   const cumprimentarAgora = precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora)
   // Placa que o CLIENTE digitou e SEMPRE pedido de cotacao, mesmo sendo a mesma de antes. Aqui
@@ -403,7 +416,13 @@ async function atender(c: ContatoIsa): Promise<boolean> {
         [c.telefone],
       ))[0] ?? null
     : null
-  if (placaDita && !jaCotouEssaPlaca(placaDita, ultimoOrcamento, visto)) {
+  const recotar = recotarEssaPlaca({
+    placa: placaDita,
+    soVeioDeDocumento,
+    placaDoLead: lead?.placa_interesse,
+    leadJaTemCotacao: !!lead?.cotacao_planos?.length,
+  })
+  if (placaDita && recotar && !jaCotouEssaPlaca(placaDita, ultimoOrcamento, visto)) {
     await registrarEvento(c.telefone, 'placa', { placa: placaDita, por: 'codigo' })
     // Dono (11/09/2026): chegou a placa, pergunta leilao e aplicativo juntos ANTES dos valores —
     // a nao ser que ele ja tenha dito na mesma mensagem.
@@ -435,6 +454,16 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     const enviou = await enviarComoGente(c, [texto], ultimaInbound, visto)
     await liberar(c.telefone, visto, enviou)
     return enviou
+  }
+
+  // "entendi" / "certo" / "ok" sozinho: ele so confirmou o que voce disse, entao a Isa NAO responde
+  // (dono, 26/09/2026: "cara manda entendi, vc tem q ficar quieto" — ela respondia "me diz, como
+  // posso te ajudar?"). Pergunta junto na mesma leva nao cai aqui: ehSoConcordancia exige que a
+  // mensagem inteira seja a confirmacao.
+  if (ehSoConcordancia(textoNovas) && c.aguardando_dono !== AGUARDANDO_FECHA_QUANDO) {
+    await registrarEvento(c.telefone, 'concordou', { por: 'codigo', texto: textoNovas.slice(0, 40) })
+    await liberar(c.telefone, visto, false)
+    return false
   }
 
   // "obrigado" / "valeu, tchau" sozinho: uma linha e PARA. Dono (14/09/2026): "cliente ja

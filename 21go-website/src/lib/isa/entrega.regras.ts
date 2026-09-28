@@ -202,3 +202,23 @@ export function jaCotouEssaPlaca(
 export function ehByd(marca: string | null | undefined): boolean {
   return (marca || '').trim().toUpperCase().startsWith('BYD')
 }
+
+/**
+ * A placa veio do CRLV que ele mandou, e e a MESMA do veiculo que ele ja simulou no site: nao se
+ * cota de novo nem se pergunta leilao/aplicativo outra vez (dono, 26/09/2026 — o Pedro tinha
+ * preenchido tudo no site, mandou o documento e a Isa recomecou a cotacao do zero).
+ *
+ * Placa DIGITADA por ele continua valendo como pedido de cotacao, mesmo sendo a mesma: e a regra
+ * de 14/09/2026 (Guilherme reenviou a placa pedindo a cotacao certa e a Isa so prometeu).
+ */
+export function recotarEssaPlaca(p: {
+  placa: string | null
+  soVeioDeDocumento: boolean
+  placaDoLead: string | null | undefined
+  leadJaTemCotacao: boolean
+}): boolean {
+  if (!p.placa) return false
+  if (!p.soVeioDeDocumento) return true
+  const mesma = (p.placaDoLead || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === p.placa.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  return !(mesma && p.leadJaTemCotacao)
+}

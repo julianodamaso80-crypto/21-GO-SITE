@@ -336,8 +336,8 @@ test('nada de travessao nem aspas: o dono viu "cara de ia" no print da Deiselane
   assert.equal(semCaraDeIa('o plano “vip” e o "básico"'), 'o plano vip e o básico')
   // pontuacao antes do travessao nao vira ". ,"
   assert.equal(semCaraDeIa('pode deixar. — qualquer dúvida me chama'), 'pode deixar. qualquer dúvida me chama')
-  // numero com virgula decimal e hifen de palavra ficam intactos
-  assert.equal(semCaraDeIa('a ativação fica R$ 264,42 no pós-venda'), 'a ativação fica R$ 264,42 no pós-venda')
+  // numero com virgula decimal fica intacto; o hifen entre palavras sai (dono, 28/09/2026)
+  assert.equal(semCaraDeIa('a ativação fica R$ 264,42 no pós-venda'), 'a ativação fica R$ 264,42 no pós venda')
   // e vale pro texto que a IA escreve, passando por comporResposta
   assert.doesNotMatch(comporResposta(null, 'te mando o PDF — dá uma olhada'), /[—–"]/)
 })
@@ -388,4 +388,12 @@ test('vencimento: fala so a data da primeira mensalidade, nunca a regra nem "esc
   assert.doesNotMatch(p, /vencimento dia 10 ou dia 20/)
   assert.match(p, /NUNCA diga que dá pra escolher/)
   assert.match(p, /"mudar_vencimento"/)
+})
+
+test('hifen entre palavras nao sai pro cliente; entre numeros fica (dono, 28/09/2026)', async () => {
+  const { semCaraDeIa } = await import('../../src/lib/isa/prompt.regras.ts')
+  assert.equal(semCaraDeIa('é sempre bom comparar pra ver o melhor custo-benefício'), 'é sempre bom comparar pra ver o melhor custo benefício')
+  assert.equal(semCaraDeIa('o plano cobre 70% do para-brisa'), 'o plano cobre 70% do para brisa')
+  // telefone da supervisora e faixas de numero continuam iguais
+  assert.match(semCaraDeIa('leticya, 21 96945-4824'), /96945-4824/)
 })
