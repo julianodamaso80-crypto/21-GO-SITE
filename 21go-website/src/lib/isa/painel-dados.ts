@@ -106,11 +106,13 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = '', usu
        -- Dono (13/09/2026): TODO lead dos .site que nao clicou em "Quero contratar" entra aqui — quem
        -- clicou no desconto e quem recebeu a mensagem dos 5 min, respondendo ou nao.
        AND (${FILTRO[aba]})
-       AND ($1 = '' OR c.telefone LIKE '%' || $1 || '%' OR COALESCE(c.nome, cv.pushname, '') ILIKE '%' || $1 || '%')
+       -- Busca por telefone ignora formatacao: o numero fica so em digitos no banco e "21 97696-5463"
+       -- nao achava nada (dono, 28/09/2026). $4 = o que ele digitou, so os digitos.
+       AND ($1 = '' OR ($4 <> '' AND c.telefone LIKE '%' || $4 || '%') OR COALESCE(c.nome, cv.pushname, '') ILIKE '%' || $1 || '%')
        AND ($2 = '' OR $2 = ANY(c.etiquetas))
      ORDER BY mov.em DESC NULLS LAST
      LIMIT 500`,
-    [termo, etiqueta, usuario],
+    [termo, etiqueta, usuario, termo.replace(/\D/g, '')],
   )
 }
 
