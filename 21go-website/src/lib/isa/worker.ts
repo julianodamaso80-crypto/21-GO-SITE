@@ -1017,11 +1017,18 @@ export async function enviarComoGente(
     .filter((p) => p.texto)
   if (montadas.length === 0) return false
 
-  // Mesma mensagem nunca sai 2x (dono, 26/09/2026): o que ja saiu nas ultimas 24 h, de quem for, fica.
+  // Mesma mensagem nunca sai 2x SEGUIDAS (dono, 26/09/2026). Conta so o que saiu DEPOIS da ultima
+  // mensagem dele: assim a Isa nunca repete sozinha (o loop que ele barrou), mas cliente que
+  // escreveu de novo nunca fica sem resposta — em 28/09/2026 ele perguntou da filial de Sao
+  // Goncalo, o "vou confirmar" era igual ao de antes, a trava segurou e ele ficou sem nada.
   const recentes = c.conversation_id
     ? (await sql<{ content: string | null }>(
         `SELECT content FROM public.messages
-          WHERE conversation_id = $1 AND direction = 'outbound' AND created_at > now() - interval '24 hours'
+          WHERE conversation_id = $1 AND direction = 'outbound'
+            AND created_at > now() - interval '24 hours'
+            AND created_at > COALESCE((SELECT max(i.created_at) FROM public.messages i
+                                       WHERE i.conversation_id = $1 AND i.direction = 'inbound'),
+                                      '-infinity'::timestamptz)
           ORDER BY created_at DESC LIMIT 40`,
         [c.conversation_id],
       )).map((m) => m.content || '')
