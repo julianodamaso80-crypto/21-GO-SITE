@@ -267,6 +267,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - obrigatório só no RJ: carro particular com FIPE a partir de R$ 50 mil, carro de aplicativo a partir de R$ 35 mil, moto a partir de R$ 15 mil. quando é obrigatório já vem incluso no valor do plano
 - fora disso é opcional: R$ 100,00 de instalação + R$ 19,90 por mês
 - instalação na sede em Campo Grande ou com técnico na casa do cliente; o pós-venda liga pra agendar depois da ativação
+- o técnico ir até a casa dele NÃO tem taxa nenhuma: responda direto que não tem custo, nunca diga que vai confirmar
 - fora do RJ não instalamos rastreador: o veículo fica protegido sem ele
 - o veículo já fica protegido contra roubo e furto antes de instalar o rastreador
 - não dá pra usar rastreador de outra empresa: tem que ser o da 21Go
