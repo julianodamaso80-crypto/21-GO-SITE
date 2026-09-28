@@ -233,8 +233,20 @@ function concordaSemSaudar(t: string): boolean {
  * Resposta ao "oi", pelo codigo (dono, 13/09/2026: "o certo e 'boa noite, Juliano, tudo bem? como
  * posso ajudar?', algo assim, mais simpatica"). Uma mensagem so, e para: nada de placa.
  */
-export function mensagemCumprimento(p: { cumprimento: string; primeiroNome: string | null; eleJaPerguntouTudoBem: boolean }): string {
+export function mensagemCumprimento(p: {
+  cumprimento: string
+  primeiroNome: string | null
+  eleJaPerguntouTudoBem: boolean
+  /** false quando a Isa JA cumprimentou ha pouco: ninguem da boa noite duas vezes seguidas. */
+  cumprimentar?: boolean
+}): string {
   const nome = p.primeiroNome ? `, ${p.primeiroNome}` : ''
+  // Dono, 28/09/2026 (Yuri): ela deu "boa noite" as 19:19, ele respondeu "Boa noite" e ela deu
+  // outro "boa noite, Yuri, tudo bem?". "ja deu um boa noite, nao de outro... ali seria vc
+  // responder so como posso ajudar".
+  if (p.cumprimentar === false) {
+    return p.eleJaPerguntouTudoBem ? 'tudo ótimo por aqui, e você? 😃 me diz, como posso te ajudar?' : 'me diz, como posso te ajudar?'
+  }
   if (p.eleJaPerguntouTudoBem) return `${p.cumprimento}${nome}! tudo ótimo por aqui, e você? 😃 me diz, como posso te ajudar?`
   return `${p.cumprimento}${nome}, tudo bem? 😃 como posso te ajudar?`
 }

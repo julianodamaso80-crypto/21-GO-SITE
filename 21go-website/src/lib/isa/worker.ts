@@ -397,9 +397,15 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // PLACA E ACHADA PELO CODIGO, nunca pela IA (bug de 11/09/2026: "Pyv8i13" virou um HB20 inventado,
   // sem consulta, sem lead no Power e sem PDF). Placa nova na mensagem = consulta direto.
   const placaDita = placaNoTexto(novas.map((m) => m.content).join('\n'))
-  // Placa que so aparece na leitura de um documento (CRLV) nao e pedido de cotacao: o texto e nosso,
-  // nao dele. Se for a mesma do veiculo que ele ja simulou, segue a conversa sem recotar.
+  // Placa que so aparece na leitura de um documento nao e pedido de cotacao: o texto e nosso, nao
+  // dele. Se for a mesma do veiculo que ele ja simulou, segue a conversa sem recotar.
   const soVeioDeDocumento = !!placaDita && !placaNoTexto(novas.filter((m) => m.message_type === 'text').map((m) => m.content).join(' '))
+  // Boleto, comprovante de residencia e fatura da protecao antiga TEM placa no texto e nao sao
+  // pedido de cotacao (dono, 28/09/2026 — o Yuri mandou o boleto da APVS e a Isa cotou de novo, a
+  // 3a vez no mesmo veiculo). So o CRLV, ou a placa DIGITADA por ele, mandam cotar.
+  const placaDeDocQueNaoCota =
+    soVeioDeDocumento &&
+    !novas.some((m) => m.message_type !== 'text' && tipoDoTextoLido(m.content) === 'crlv' && placaNoTexto(m.content || ''))
   const textoNovas = novas.map((m) => m.content).join('\n')
   const cumprimentarAgora = precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora)
   // Placa que o CLIENTE digitou e SEMPRE pedido de cotacao, mesmo sendo a mesma de antes. Aqui
@@ -423,7 +429,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     placaDoLead: lead?.placa_interesse,
     leadJaTemCotacao: !!lead?.cotacao_planos?.length,
   })
-  if (placaDita && recotar && !jaCotouEssaPlaca(placaDita, ultimoOrcamento, visto)) {
+  if (placaDita && recotar && !placaDeDocQueNaoCota && !jaCotouEssaPlaca(placaDita, ultimoOrcamento, visto)) {
     await registrarEvento(c.telefone, 'placa', { placa: placaDita, por: 'codigo' })
     // Dono (11/09/2026): chegou a placa, pergunta leilao e aplicativo juntos ANTES dos valores —
     // a nao ser que ele ja tenha dito na mesma mensagem.
@@ -450,7 +456,12 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // "oi" / "bom dia, tudo bem?" sozinho: resposta simpatica pelo codigo e PARA — sem placa, sem
   // cotacao (dono, 13/09/2026: "boa noite, Juliano, tudo bem? como posso ajudar? nao atropela").
   if (novas.length === 1 && ehSoCumprimento(textoNovas) && c.aguardando_dono !== AGUARDANDO_FECHA_QUANDO) {
-    const texto = mensagemCumprimento({ cumprimento: cumprimento(agora), primeiroNome: primeiroNomeDe(c.nome ?? lead?.nome ?? null), eleJaPerguntouTudoBem: perguntouTudoBem(textoNovas) })
+    const texto = mensagemCumprimento({
+      cumprimento: cumprimento(agora),
+      primeiroNome: primeiroNomeDe(c.nome ?? lead?.nome ?? null),
+      eleJaPerguntouTudoBem: perguntouTudoBem(textoNovas),
+      cumprimentar: cumprimentarAgora,
+    })
     await registrarEvento(c.telefone, 'cumprimento', { por: 'codigo' })
     const enviou = await enviarComoGente(c, [texto], ultimaInbound, visto)
     await liberar(c.telefone, visto, enviou)

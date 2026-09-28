@@ -387,6 +387,19 @@ export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
          AND (humano_em IS NULL OR humano_em < ultima_resposta_em)
          AND (retomar_apos IS NULL OR retomar_apos < now())
          AND processando_desde IS NULL
+         -- Nao se cobra "conseguiu dar uma olhada na simulacao?" de quem ja esta fechando
+         -- (dono, 28/09/2026, caso Yuri): quem foi pro 4824, quem esta esperando decisao nossa,
+         -- quem tem pergunta sem resposta, e quem ja mandou documento pra contratar.
+         AND transferido_em IS NULL
+         AND aguardando_dono IS NULL
+         AND pergunta_pendente IS NULL
+         AND NOT EXISTS (
+           SELECT 1 FROM public.messages m
+            WHERE m.conversation_id = isa_contatos.conversation_id
+              AND m.direction = 'inbound'
+              AND m.message_type IN ('document', 'image')
+              AND m.created_at > now() - interval '3 days'
+         )
        LIMIT $1
        FOR UPDATE SKIP LOCKED
      )

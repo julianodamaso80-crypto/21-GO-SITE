@@ -158,3 +158,16 @@ test('"tudo bem" sem pergunta e CONCORDANCIA, nao cumprimento (Renato, 21/09/202
   // com pergunta ou com saudacao continua sendo cumprimento
   for (const t of ['tudo bem?', 'oi tudo bem', 'bom dia, tudo certo?', 'opa, beleza?']) assert.ok(ehSoCumprimento(t), t)
 })
+
+test('nao da boa noite duas vezes seguidas (dono, 28/09/2026 — caso Yuri)', async () => {
+  const { mensagemCumprimento } = await import('../../src/lib/isa/venda.regras.ts')
+  const base = { cumprimento: 'boa noite', primeiroNome: 'Yuri', eleJaPerguntouTudoBem: false }
+  // primeira vez do dia: cumprimenta
+  assert.equal(mensagemCumprimento({ ...base, cumprimentar: true }), 'boa noite, Yuri, tudo bem? 😃 como posso te ajudar?')
+  // ela acabou de dar boa noite: nao repete
+  assert.equal(mensagemCumprimento({ ...base, cumprimentar: false }), 'me diz, como posso te ajudar?')
+  assert.equal(
+    mensagemCumprimento({ ...base, eleJaPerguntouTudoBem: true, cumprimentar: false }),
+    'tudo ótimo por aqui, e você? 😃 me diz, como posso te ajudar?',
+  )
+})
