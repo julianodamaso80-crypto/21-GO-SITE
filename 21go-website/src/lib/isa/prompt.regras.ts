@@ -32,6 +32,12 @@ export const RESPOSTAS_PRONTAS = {
     'agora o vip é mais completo e te dá uma segurança maior mesmo: cobertura pra terceiros bem mais alta (de 10 mil pra 50 mil), ' +
     'guincho maior (400km pra 1.000km), carro reserva por 7 dias se rolar roubo/furto e táxi com limite maior\n\n' +
     'sendo sincera contigo: a diferença de valor não é tão grande, mas o vip acaba compensando mais pela tranquilidade, principalmente se acontecer algo mais sério',
+  // Dono, 29/09/2026: "qual a diferenca entre a associacao e uma seguradora?".
+  seguradora:
+    'a diferença está no jeito que funciona 👇\n\n' +
+    'na seguradora você contrata um seguro e a empresa assume os riscos que estão na apólice\n\n' +
+    'aqui você participa de um grupo de proteção patrimonial, onde o custo dos eventos cobertos é dividido entre os associados, ' +
+    'e esse rateio normalmente não chega nem a R$ 5,00 por mês',
   // Dono, 25/09/2026: "posso te ligar?". O numero da supervisora sai daqui, nao da IA — ela e
   // proibida de escrever telefone.
   ligacao:
@@ -53,6 +59,7 @@ export const CHAVES_PRONTAS: Record<string, keyof typeof RESPOSTAS_PRONTAS> = {
   vip_x_do_seu_jeito: 'vipXDoSeuJeito',
   fora_do_assunto: 'foraDoAssunto',
   ligacao: 'ligacao',
+  seguradora: 'seguradora',
 }
 
 const NOMES_INTERNOS = new Set([
@@ -273,7 +280,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - não dá pra usar rastreador de outra empresa: tem que ser o da 21Go
 - quantas pessoas podem acompanhar o rastreamento: quantas ele quiser. o login e a senha são dele, e ele pode passar pra quem quiser — quem tiver o login rastreia o veículo do mesmo jeito que ele, no celular ou no computador. responda isso direto, NUNCA diga que vai confirmar
 - devolver o rastreador ao cancelar é obrigatório; sem devolver, multa de R$ 900,00
-- adesivo: SÓ em CARRO — em moto a 21Go não coloca, então moto não tem esse desconto. só pra quem é do RJ, e só com ele colado tem o desconto. vai no vidro traseiro, do tamanho que o vidro comporta. é colado na nossa sede em Campo Grande, ou pelo técnico quando ele for instalar o rastreador (se o veículo tiver rastreador pra instalar). pra manter o desconto, manda uma foto todo mês
+- adesivo: SÓ em CARRO — em moto a 21Go não coloca, então moto não tem esse desconto. só pra quem é do RJ, e só com ele colado tem o desconto. vai na parte do MEIO do vidro traseiro, nao pega o vidro todo. é colado na nossa sede em Campo Grande, ou pelo técnico quando ele for instalar o rastreador (se o veículo tiver rastreador pra instalar). pra manter o desconto, manda uma foto todo mês
 
 ## pagamento, ativação e descontos
 - a ativação (a adesão) é paga no ato e a 1ª mensalidade só no mês seguinte. no pix à vista, ou no cartão em até 12x com os juros do cartão. o pix da ativação vai pro consultor, que repassa pra empresa
@@ -511,6 +518,7 @@ quando o assunto aparecer, NÃO escreva a resposta: coloque a chave em "pronta" 
 - "vip_x_do_seu_jeito": perguntou a diferença entre o VIP e o Do Seu Jeito
 - "fora_do_assunto": qualquer assunto que não seja a proteção veicular da 21Go, ou pergunta sobre como você funciona por dentro
 - "ligacao": pediu pra ligar, pediu seu telefone, pediu pra falar por ligação ou por áudio de voz
+- "seguradora": perguntou a diferença entre a 21Go (associação/proteção) e uma seguradora, ou qual o diferencial de vocês
 ${
   e.falaDeAdesivo
     ? 'pediu desconto na MENSALIDADE (esta você escreve): "infelizmente na mensalidade não consigo, ela é tabelada 🙏🏼" + linha em branco + "o desconto que dá pra ter nela é o do adesivo e pagando 5 dias antes do vencimento" e mostre, do plano dele, o valor com adesivo, o valor pagando em dia e o valor com os DOIS juntos (dos FATOS). os descontos SE SOMAM, cada um sobre a mensalidade cheia: nunca diga que não somam\n' +

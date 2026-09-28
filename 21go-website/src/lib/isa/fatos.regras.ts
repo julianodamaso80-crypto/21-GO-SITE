@@ -96,6 +96,8 @@ export const NUMEROS_FIXOS: { dinheiro: number[]; pct: number[] } = {
     ADICIONAIS.vidros, ADICIONAIS.terceirosMoto, ADICIONAIS.terceiros50k,
     TERCEIROS_ADICIONAL.moto, TERCEIROS_ADICIONAL.carro,
     ...Object.values(RASTREADOR_OBRIGATORIO),
+    // rateio entre os associados quando alguem usa a protecao (dono, 29/09/2026): nao chega a R$ 5
+    5,
   ],
   pct: [6, 10, 15, 5, 20, 80, 100, PARABRISA_PCT, INDICACAO.pct],
 }
