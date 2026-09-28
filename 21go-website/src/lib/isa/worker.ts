@@ -33,6 +33,7 @@ import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensa
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import {
   enviarTexto,
+  enviarArquivo,
   marcarLidaEDigitando,
   baixarMidia,
   destinoPermitido,
@@ -45,7 +46,7 @@ import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, no
 import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, vistoDoLote, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, repeteMensagemRecente, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, ehByd } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, pediuPdfDeNovo, ehByd } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -477,6 +478,17 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return enviou
   }
 
+  // "Não tô conseguindo abrir o PDF, manda de novo": ela REENVIA o arquivo (dono, 26/09/2026 — a
+  // Isa respondeu "eu te passo tudo por aqui mesmo" e digitou o plano inteiro). Só se o reenvio
+  // falhar é que a conversa segue pra IA, que aí sim escreve os valores.
+  if (lead?.id && pediuPdfDeNovo(textoNovas)) {
+    const reenviou = await reenviarPdf(c, lead.id, ultimaInbound)
+    if (reenviou) {
+      await liberar(c.telefone, visto, true)
+      return true
+    }
+  }
+
   // Protocolo do desconto (dono, 12/09/2026), etapa 2: a Isa perguntou "se eu conseguir, você
   // pretende fechar quando?" e ele respondeu — a resposta vai no aviso pro supervisor e ela pausa.
   //
@@ -711,6 +723,44 @@ const SITE = 'https://21go.site'
 async function soltarComPerguntaPendente(telefone: string, texto: string, visto: string | null, enviou: boolean): Promise<void> {
   const soAPlacaEaResposta = !ehPergunta(texto.replace(/\b[A-Z]{3}\d[A-Z0-9]\d{2}\b/gi, ' '))
   await liberar(telefone, soAPlacaEaResposta ? visto : null, enviou)
+}
+
+/**
+ * Reenvia o PDF da simulacao como ARQUIVO (dono, 26/09/2026: "qd falar que nao ta conseguindo ver
+ * o PDF, vc enviar novamente o PDF"). O arquivo vem da nossa propria rota, que regenera do banco.
+ * `false` quando nao deu: aí quem chama deixa a conversa seguir e a Isa escreve os valores.
+ */
+async function reenviarPdf(c: ContatoIsa, leadId: string, ultimaInbound: string | undefined): Promise<boolean> {
+  try {
+    const r = await fetch(`${SITE}/api/pdfs/${leadId}`, { signal: AbortSignal.timeout(60_000) })
+    if (!r.ok) throw new Error(`pdf ${r.status}`)
+    const bytes = Buffer.from(await r.arrayBuffer())
+    if (bytes.length < 1000) throw new Error('pdf vazio')
+    if (ultimaInbound) await marcarLidaEDigitando(ultimaInbound)
+    const wamid = await enviarArquivo(c.telefone, bytes, {
+      tipo: 'document',
+      mime: 'application/pdf',
+      nome: 'simulacao-21go.pdf',
+      legenda: 'te mandei aqui de novo 🙏🏼',
+    })
+    await upsertMessage({
+      conversation_id: c.conversation_id,
+      whatsapp_message_id: wamid,
+      evolution_instance: 'cloud_isa',
+      jid: phoneToJid(c.telefone) ?? `${c.telefone}@s.whatsapp.net`,
+      direction: 'outbound',
+      status: 'SENT',
+      sender: 'isa',
+      message_type: 'document',
+      content: 'simulacao-21go.pdf',
+      sent_at: new Date().toISOString(),
+    }).catch(() => {})
+    await registrarEvento(c.telefone, 'pdf_reenviado', { lead: leadId })
+    return true
+  } catch (err) {
+    await registrarEvento(c.telefone, 'pdf_reenvio_falhou', { erro: err instanceof Error ? err.message : String(err) })
+    return false
+  }
 }
 
 /** Guarda a placa e pergunta leilao e aplicativo juntos, antes de passar valores. */

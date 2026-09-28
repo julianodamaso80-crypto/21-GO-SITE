@@ -222,3 +222,20 @@ export function recotarEssaPlaca(p: {
   const mesma = (p.placaDoLead || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === p.placa.toUpperCase().replace(/[^A-Z0-9]/g, '')
   return !(mesma && p.leadJaTemCotacao)
 }
+
+/**
+ * "Nao to conseguindo abrir o PDF", "manda de novo": a Isa REENVIA o arquivo (dono, 26/09/2026 —
+ * ela respondeu "eu te passo tudo por aqui mesmo" e escreveu o plano inteiro no texto). So se o
+ * reenvio falhar e que ela escreve os valores.
+ */
+export function pediuPdfDeNovo(texto: string | null | undefined): boolean {
+  const t = (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  if (!t) return false
+  const falaDoPdf = /\b(pdf|simulacao|cotacao|orcamento|arquivo|documento da simulacao)\b/.test(t)
+  const naoAbre = /(nao (to|tou|estou|consigo|consegui|da pra|abre|abriu|carrega)|nao abre|nao abriu|nao consigo (abrir|ver|baixar)|nao consegui (abrir|ver|baixar)|erro ao abrir|nao ta abrindo|nao to conseguindo)/.test(t)
+  const pedeDeNovo =
+    /\b(reenvia|reenviar|reenvie|manda de novo|mandar de novo|envia de novo|enviar de novo)\b/.test(t) ||
+    /(manda|mandar|envia|enviar|passa|passar|poderia (me )?(mandar|enviar))[^.?!]{0,30}(de novo|novamente|outra vez|de volta)/.test(t) ||
+    /(de novo|novamente)[^.?!]{0,20}(pdf|simulacao|cotacao)/.test(t)
+  return falaDoPdf && (naoAbre || pedeDeNovo)
+}

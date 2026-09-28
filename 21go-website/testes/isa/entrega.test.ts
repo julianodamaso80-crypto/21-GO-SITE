@@ -202,3 +202,16 @@ test('todo BYD vai pro contato da Leticya, sem excecao (dono, 16/09/2026)', asyn
   for (const m of ['BYD', 'byd', ' BYD ', 'BYD King GS 1.5']) assert.equal(ehByd(m), true, m)
   for (const m of ['Fiat', 'VW - VolksWagen', '', null]) assert.equal(ehByd(m), false, String(m))
 })
+
+
+test('"nao to conseguindo abrir o PDF" pede REENVIO do arquivo (dono, 26/09/2026)', async () => {
+  const { pediuPdfDeNovo } = await import('../../src/lib/isa/entrega.regras.ts')
+  for (const s of [
+    'Nao to conseguindo mais abrir o PDF da cotacao',
+    'não tô conseguindo mais abrir o PDF da cotação\nPoderia me enviar novamente?',
+    'o pdf nao abre aqui',
+    'manda a simulação de novo por favor',
+    'pode reenviar o pdf?',
+  ]) assert.ok(pediuPdfDeNovo(s), s)
+  for (const s of ['qual o valor do pdf?', 'recebi o pdf, obrigado', 'quero contratar', '']) assert.ok(!pediuPdfDeNovo(s), s)
+})
