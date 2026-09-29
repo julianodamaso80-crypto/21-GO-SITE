@@ -46,7 +46,7 @@ import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, no
 import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, vistoDoLote, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, repeteMensagemRecente, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, pediuPdfDeNovo, ehByd } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, fechouComOutra, mensagemFechouComOutra, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, pediuPdfDeNovo, ehByd } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -531,6 +531,15 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     await registrarEvento(c.telefone, 'concordou', { por: 'codigo', texto: textoNovas.slice(0, 40) })
     await liberar(c.telefone, visto, false)
     return false
+  }
+
+  // Fechou com OUTRA empresa: agradece e fica a disposicao, mais nada (dono, 29/09/2026 — ela
+  // pediu CNH e documentos de quem tinha acabado de dizer que fechou com a concorrente).
+  if (fechouComOutra(textoNovas) && c.aguardando_dono !== AGUARDANDO_FECHA_QUANDO) {
+    await registrarEvento(c.telefone, 'fechou_com_outra', { texto: textoNovas.slice(0, 120) })
+    const enviou = await enviarComoGente(c, [mensagemFechouComOutra()], ultimaInbound, visto)
+    await liberar(c.telefone, visto, enviou)
+    return enviou
   }
 
   // "obrigado" / "valeu, tchau" sozinho: uma linha e PARA. Dono (14/09/2026): "cliente ja

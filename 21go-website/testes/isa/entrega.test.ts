@@ -215,3 +215,17 @@ test('"nao to conseguindo abrir o PDF" pede REENVIO do arquivo (dono, 26/09/2026
   ]) assert.ok(pediuPdfDeNovo(s), s)
   for (const s of ['qual o valor do pdf?', 'recebi o pdf, obrigado', 'quero contratar', '']) assert.ok(!pediuPdfDeNovo(s), s)
 })
+
+test('"optei por fechar com a Alamo" NAO e querer fechar com a gente (dono, 29/09/2026)', async () => {
+  const { fechouComOutra, querFechar } = await import('../../src/lib/isa/entrega.regras.ts')
+  const caso = 'Oi Isa, eu optei por fechar com a Alamo pq me trouxe condições melhores. Te agradeço por toda a atenção.'
+  assert.ok(fechouComOutra(caso), caso)
+  assert.equal(querFechar(caso), false)
+  for (const s of ['fechei com a Porto', 'decidi ficar com a proteção que eu tinha', 'assinei com outra empresa ontem'])
+    assert.ok(fechouComOutra(s), s)
+  // fechar com a 21Go continua sendo fechar
+  for (const s of ['vou fechar com vocês', 'quero fechar com a 21go', 'pode fechar o meu plano']) {
+    assert.equal(fechouComOutra(s), false, s)
+    assert.ok(querFechar(s), s)
+  }
+})

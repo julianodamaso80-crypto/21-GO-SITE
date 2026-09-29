@@ -160,6 +160,8 @@ const ELE_QUE_VAI_CHAMAR =
 export function querFechar(texto: string | null | undefined): boolean {
   const t = texto || ''
   if (FECHAR_CONDICIONAL.test(t) || ELE_QUE_VAI_CHAMAR.test(t)) return false
+  // "optei por fechar com a Alamo" tem "fechar com" e NAO e fechar com a gente (dono, 29/09/2026)
+  if (fechouComOutra(t)) return false
   return QUER_FECHAR.test(t)
 }
 
@@ -238,4 +240,24 @@ export function pediuPdfDeNovo(texto: string | null | undefined): boolean {
     /(manda|mandar|envia|enviar|passa|passar|poderia (me )?(mandar|enviar))[^.?!]{0,30}(de novo|novamente|outra vez|de volta)/.test(t) ||
     /(de novo|novamente)[^.?!]{0,20}(pdf|simulacao|cotacao)/.test(t)
   return falaDoPdf && (naoAbre || pedeDeNovo)
+}
+
+/**
+ * Ele fechou com OUTRA empresa (ou desistiu). Dono, 29/09/2026: o cliente escreveu "optei por
+ * fechar com a Alamo pq me trouxe condições melhores" e a Isa pediu CNH, documento e comprovante
+ * — o "fechar com" bateu na regra de quem quer contratar. *"vc só deveria agradecer e falar
+ * qualquer coisa se precisa me chame"*.
+ */
+const FECHOU_COM_OUTRA =
+  /\b(fechei|optei|decidi|acabei|resolvi|vou ficar|fiquei|assinei|contratei)\b[^.?!\n]{0,40}\b(com|pela|pelo|na|no)\s+(?:a\s+|o\s+)?(?!voc|vcs|21|vocês)[a-zà-ú]/i
+
+export function fechouComOutra(texto: string | null | undefined): boolean {
+  const t = (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  if (/\b(com|pela|pelo)\s+(voces|vcs|21\s*go|21go|a\s+21)/i.test(t)) return false
+  return FECHOU_COM_OUTRA.test(t) || /\b(nao vou|desisti|ja fechei)\b[^.?!\n]{0,30}\b(seguir|contratar|fechar|fazer)\b/i.test(t)
+}
+
+/** Ele avisou que fechou com outra: agradece e fica à disposição. Nada de documento nem venda. */
+export function mensagemFechouComOutra(): string {
+  return 'imagina, obrigada por avisar 🙏🏼\n\nqualquer coisa que precisar, é só me chamar por aqui'
 }
