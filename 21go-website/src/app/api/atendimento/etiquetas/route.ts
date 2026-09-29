@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
 import { sql, registrarEvento } from '@/lib/isa/banco'
-import { ETIQUETAS, etiquetasParaGravar } from '@/lib/isa/etiquetas.regras'
+import { ETIQUETAS_FORA_DA_FILA, ETIQUETAS, etiquetasParaGravar } from '@/lib/isa/etiquetas.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -28,8 +28,13 @@ export async function POST(req: NextRequest) {
   const etiquetas = etiquetasParaGravar(b.etiquetas, atual[0].etiquetas)
   const r = await sql(
     // A tag manda na coluna do funil: a posicao arrastada antes sai, senao tirar a tag nao tirava o card.
-    `UPDATE public.isa_contatos SET etiquetas = $2::text[], etapa = NULL, etapa_em = NULL, updated_at = now() WHERE telefone = $1 RETURNING telefone`,
-    [telefone, etiquetas],
+    // Frio, Pensando, Leticya, Fechou, Consultores: da baixa em URGENTE na hora, como o "ja cuidei"
+    // (dono, 29/09/2026: "nunca quem ta com essa etiqueta ta urgente").
+    `UPDATE public.isa_contatos SET etiquetas = $2::text[], etapa = NULL, etapa_em = NULL,
+            resolvido_em = CASE WHEN $2::text[] && $3::text[] AND precisa_desde IS NOT NULL THEN COALESCE(resolvido_em, now()) ELSE resolvido_em END,
+            updated_at = now()
+      WHERE telefone = $1 RETURNING telefone`,
+    [telefone, etiquetas, [...ETIQUETAS_FORA_DA_FILA]],
   )
   if (r.length === 0) return NextResponse.json({ erro: 'contato nao encontrado' }, { status: 404 })
   await registrarEvento(telefone, 'etiquetas', { etiquetas }, s.u)
