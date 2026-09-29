@@ -76,7 +76,7 @@ test('Quero seguir: veiculo, ativacao, link dos planos e qual plano (dono, 29/09
   const t = mensagemQueroSeguir('Luã', luan, 'https://21go.site/api/pdfs/lead_x')
   assert.match(t, /^que bom, Luã, que você resolveu seguir e aproveitar a nossa promoção/)
   assert.match(t, /seu veículo: GM - Chevrolet, ONIX/)
-  assert.match(t, /ativação: R\$ 239,99/)
+  assert.match(t, /sua ativação é R\$ 239,99/)
   assert.match(t, /https:\/\/21go\.site\/api\/pdfs\/lead_x/)
   assert.match(t, /qual plano você deseja contratar\?$/)
   assert.doesNotMatch(mensagemQueroSeguir('Luã', luan, null), /link/)
@@ -86,4 +86,12 @@ test('Quero seguir: veiculo, ativacao, link dos planos e qual plano (dono, 29/09
   assert.equal(perguntaDeMensalidade('é golpe?'), false)
   assert.match(mensagemLinkDosPlanos(luan, 'L'), /link com os planos do seu GM - Chevrolet/)
   assert.match(blocoPromocao(luan), /nunca troque de veículo/)
+})
+
+test('link dos planos diz a ativacao no ato e a 1a mensalidade dia 10/11 (dono, 29/09/2026)', async () => {
+  const { mensagemQueroSeguir, mensagemLinkDosPlanos } = await import('../../src/lib/isa/promocao.regras.ts')
+  const linha = 'sua ativação é R$ 239,99, paga no ato da contratação, e a primeira mensalidade fica para o dia 10/11'
+  assert.ok(mensagemQueroSeguir('Luã', luan, 'L').includes(linha))
+  assert.ok(mensagemLinkDosPlanos(luan, 'L').includes(linha))
+  assert.match(blocoPromocao(luan), /PRIMEIRA MENSALIDADE vence dia 10\/11/)
 })

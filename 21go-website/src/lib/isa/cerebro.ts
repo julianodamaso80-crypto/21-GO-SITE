@@ -7,7 +7,7 @@ import { lerJsonTolerante } from '@/lib/isa/json.regras'
 import { cumprimento, primeiroVencimento } from '@/lib/isa/hora.regras'
 import { NUMEROS_FIXOS, type Fatos } from '@/lib/isa/fatos.regras'
 import type { MensagemHistorico } from '@/lib/isa/banco'
-import { blocoPromocao, type Promocao } from '@/lib/isa/promocao.regras'
+import { blocoPromocao, PRIMEIRA_MENSALIDADE_PROMO, type Promocao } from '@/lib/isa/promocao.regras'
 
 /**
  * Pensa a resposta da Isa: prompt (persona + gabarito + fatos) → Gemini 3.1 Pro (OpenRouter, raciocinio
@@ -162,7 +162,8 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
     falaDeAdesivo: e.falaDeAdesivo,
     comparacaoHoje: comparacao?.linhas,
     docs: e.docs,
-    primeiroVencimento: primeiroVencimento(e.agora),
+    // Promocao: a primeira mensalidade e dia 10/11, nao a regra do dia (dono, 29/09/2026).
+    primeiroVencimento: e.promocao ? PRIMEIRA_MENSALIDADE_PROMO : primeiroVencimento(e.agora),
     promocao: e.promocao ? blocoPromocao(e.promocao) : null,
   })
   const base = e.fatos?.numerosPermitidos ?? PERMITIDOS_SEM_FATOS

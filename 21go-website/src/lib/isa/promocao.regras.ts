@@ -18,6 +18,8 @@ export const PAYLOAD_PROMO_AGORA_NAO = 'promo40:agora_nao'
 export const PAYLOADS_PROMO = [PAYLOAD_PROMO_SEGUIR, PAYLOAD_PROMO_AGORA_NAO]
 /** So na ativacao. A mensalidade nao tem desconto (dono, 29/09/2026). */
 export const DESCONTO_PROMO = 0.4
+/** Primeira mensalidade de quem fecha pela promocao (dono, 29/09/2026). */
+export const PRIMEIRA_MENSALIDADE_PROMO = '10/11'
 
 export interface Promocao {
   veiculo: string
@@ -105,10 +107,16 @@ export function ehRespostaAutomatica(textos: string[]): boolean {
 export function mensagemQueroSeguir(primeiroNome: string | null, p: Promocao, link: string | null): string {
   return (
     `que bom${primeiroNome ? `, ${primeiroNome},` : ''} que você resolveu seguir e aproveitar a nossa promoção! 😊\n\n` +
-    `seu veículo: ${p.veiculo}\nativação: R$ ${valorBr(p.valorNovo)}\n\n` +
+    `seu veículo: ${p.veiculo}\n\n` +
+    `${linhaPagamento(p)}\n\n` +
     (link ? `aqui está o link com os planos e o valor de cada um: ${link}\n\n` : '') +
     'qual plano você deseja contratar?'
   )
+}
+
+/** "sua ativacao e R$ X pagando no ato da contratacao e a primeira mensalidade fica para 10/11" (dono). */
+export function linhaPagamento(p: Promocao): string {
+  return `sua ativação é R$ ${valorBr(p.valorNovo)}, paga no ato da contratação, e a primeira mensalidade fica para o dia ${PRIMEIRA_MENSALIDADE_PROMO}`
 }
 
 /** Perguntou da mensalidade ou dos planos: quem responde e o link do PDF (dono, 29/09/2026). */
@@ -121,6 +129,7 @@ export function mensagemLinkDosPlanos(p: Promocao, link: string): string {
   return (
     'a mensalidade depende do plano que você escolher 😊\n\n' +
     `te mandei aqui o link com os planos do seu ${p.veiculo} e o valor de cada um: ${link}\n\n` +
+    `${linhaPagamento(p)}\n\n` +
     'dá uma olhada e me diz qual você prefere'
   )
 }
@@ -145,6 +154,7 @@ export function blocoPromocao(p: Promocao): string {
     '- perguntou da mensalidade ou dos planos: o sistema já mandou o link com os planos; peça pra ele olhar o link e dizer qual plano prefere',
     '- a mensalidade e as coberturas NÃO mudaram com a promoção; o desconto é só na ativação',
     `- esse já é o desconto máximo: se ele pedir mais desconto na ativação, diga que ${para} já é o valor promocional, válido até ${ate}. NÃO marque o gatilho "desconto"`,
+    `- a ativação é paga no ato da contratação e a PRIMEIRA MENSALIDADE vence dia ${PRIMEIRA_MENSALIDADE_PROMO}. perguntou quando vence a primeira mensalidade: dia ${PRIMEIRA_MENSALIDADE_PROMO}`,
     '- pra seguir com a ativação: CNH, documento do veículo e comprovante de residência',
   ].join('\n')
 }
