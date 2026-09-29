@@ -21,6 +21,8 @@ export const ETIQUETAS: Etiqueta[] = [
   // Dono, 16/09/2026: "faz uma tag quente tbm e funil tbm"
   { id: 'quente', nome: 'Quente', cor: '#EF4444', claro: false },
   { id: 'leticya', nome: 'Falando com Leticya', cor: '#F2911D', claro: false },
+  // Dono, 29/09/2026: "crie uma etiqueta com nome falando com Guilherme"
+  { id: 'guilherme', nome: 'Falando com Guilherme', cor: '#F472B6', claro: false },
   { id: 'documento', nome: 'Enviou documento', cor: '#93C5FD', claro: true },
   // Dono, 16/09/2026: "faz uma tag vistoria e coloca no funil tbm"
   { id: 'vistoria', nome: 'Vistoria', cor: '#C4B5FD', claro: true },

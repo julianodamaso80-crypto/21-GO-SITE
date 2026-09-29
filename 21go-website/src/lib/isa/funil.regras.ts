@@ -21,6 +21,7 @@ export const ETAPAS: readonly Etapa[] = [
   { id: 'simulou', rotulo: 'Simulou', cor: '#293C82' },
   { id: 'quente', rotulo: 'Quente', cor: '#EF4444' },
   { id: 'leticya', rotulo: 'Falando com Leticya', cor: '#F2911D' },
+  { id: 'guilherme', rotulo: 'Falando com Guilherme', cor: '#F472B6' },
   { id: 'documento', rotulo: 'Enviou documento', cor: '#93C5FD' },
   { id: 'vistoria', rotulo: 'Vistoria', cor: '#C4B5FD' },
   { id: 'fechou', rotulo: 'Fechou', cor: '#22C55E' },

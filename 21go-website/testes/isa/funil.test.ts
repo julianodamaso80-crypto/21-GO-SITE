@@ -6,7 +6,7 @@ import { ETIQUETAS } from '../../src/lib/isa/etiquetas.regras.ts'
 test('o funil comeca no Simulou e termina no Frio (dono, 15/09/2026)', () => {
   assert.deepEqual(
     ETAPAS.map((e) => e.id),
-    ['simulou', 'quente', 'leticya', 'documento', 'vistoria', 'fechou', 'consultor', 'frio'],
+    ['simulou', 'quente', 'leticya', 'guilherme', 'documento', 'vistoria', 'fechou', 'consultor', 'frio'],
   )
   // a coluna "Novo" saiu: quem nao simulou tambem entra no Simulou
   assert.equal(ehEtapa('novo'), false)
