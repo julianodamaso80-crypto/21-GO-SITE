@@ -69,8 +69,10 @@ export function precisaCumprimentar(ultimaRespostaEm: Date | null, agora: Date):
   if (!ultimaRespostaEm) return true
   const a = horaMinutoRio(ultimaRespostaEm)
   const b = horaMinutoRio(agora)
-  if (a.ano !== b.ano || a.mes !== b.mes || a.dia !== b.dia) return true
-  return agora.getTime() - ultimaRespostaEm.getTime() > 4 * 60 * 60 * 1000
+  // UMA saudacao por dia (dono, 29/09/2026: "ja falei mil vezes somente uma saudacao por dia, se
+  // deu bom dia, nao precisa boa tarde, boa noite"). Antes tambem cumprimentava de novo depois de
+  // 4 h paradas, e a mesma pessoa levava "bom dia" e "boa tarde" no mesmo dia.
+  return a.ano !== b.ano || a.mes !== b.mes || a.dia !== b.dia
 }
 
 /** Quando a Isa pode falar de novo: agora, se esta no horario; senao, as 8h (hoje ou amanha). */

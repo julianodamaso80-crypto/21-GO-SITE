@@ -455,7 +455,9 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   }
   // "oi" / "bom dia, tudo bem?" sozinho: resposta simpatica pelo codigo e PARA — sem placa, sem
   // cotacao (dono, 13/09/2026: "boa noite, Juliano, tudo bem? como posso ajudar? nao atropela").
-  if (novas.length === 1 && ehSoCumprimento(textoNovas) && c.aguardando_dono !== AGUARDANDO_FECHA_QUANDO) {
+  // Vale pro lote inteiro: "Oi" + "Boa noite" recebem UMA resposta, nunca uma por mensagem
+  // (dono, 29/09/2026 — a Samarah levou tres mensagens seguidas as 7h).
+  if (ehSoCumprimento(textoNovas) && c.aguardando_dono !== AGUARDANDO_FECHA_QUANDO) {
     const texto = mensagemCumprimento({
       cumprimento: cumprimento(agora),
       primeiroNome: primeiroNomeDe(c.nome ?? lead?.nome ?? null),

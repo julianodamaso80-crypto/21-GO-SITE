@@ -195,9 +195,19 @@ export async function humanoFalouDepois(telefone: string, desde: string | null):
 
 /** Chegou mensagem nova depois de `desde`? A Isa para no meio da resposta e rele tudo. */
 export async function chegouMensagemNova(telefone: string, desde: string | null): Promise<boolean> {
+  // Compara com as MENSAGENS, nao com `ultimo_inbound_em`: as duas horas sao de relogios
+  // diferentes (o contato e carimbado alguns milesimos depois da mensagem), e a diferenca fazia a
+  // Isa achar que tinha chegado mensagem nova e cortar a propria resposta na 1a parte — 96 cortes
+  // em 25 clientes no dia 28/09/2026, quando o `visto` passou a ser a hora da mensagem.
   const r = await sql<{ novo: boolean }>(
-    `SELECT ${ms('ultimo_inbound_em')} > COALESCE($2::timestamptz, '-infinity'::timestamptz) AS novo
-     FROM public.isa_contatos WHERE telefone = $1`,
+    `SELECT EXISTS (
+       SELECT 1 FROM public.messages m
+        WHERE m.conversation_id = c.conversation_id
+          AND m.evolution_instance = 'cloud_isa'
+          AND m.direction = 'inbound'
+          AND ${ms("m.created_at AT TIME ZONE 'UTC'")} > COALESCE($2::timestamptz, '-infinity'::timestamptz)
+     ) AS novo
+     FROM public.isa_contatos c WHERE c.telefone = $1`,
     [telefone, desde],
   )
   return !!r[0]?.novo

@@ -36,10 +36,12 @@ test('proxima abertura: de madrugada e hoje as 7h; depois das 22h e amanha as 7h
   assert.equal(proximaAbertura(rio('22:30', '2026-09-30')).toISOString(), rio('07:00', '2026-10-01').toISOString())
 })
 
-test('cumprimenta no comeco, no primeiro contato do dia e depois de 4 h — nao a cada mensagem', () => {
+test('UMA saudacao por dia: nao volta a cumprimentar nem depois de horas (dono, 29/09/2026)', () => {
   assert.equal(precisaCumprimentar(null, rio('10:00')), true)
   assert.equal(precisaCumprimentar(rio('10:00'), rio('10:20')), false)
-  assert.equal(precisaCumprimentar(rio('10:00'), rio('14:30')), true)
+  // deu bom dia as 10h: as 14h30 do MESMO dia nao da "boa tarde"
+  assert.equal(precisaCumprimentar(rio('10:00'), rio('14:30')), false)
+  assert.equal(precisaCumprimentar(rio('07:00'), rio('21:30')), false)
   // ontem 21h, hoje 8h: dia novo no Rio (mesmo que em UTC ainda fosse "o mesmo dia" em parte)
   assert.equal(precisaCumprimentar(rio('21:00', '2026-09-10'), rio('08:05', '2026-09-11')), true)
 })
