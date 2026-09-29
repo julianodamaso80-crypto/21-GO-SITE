@@ -55,7 +55,7 @@ import { identifyPlate } from '@/lib/plate-identify'
 import { isLeilaoOrigin } from '@/data/pricing'
 import { recrutamentoNaIsa } from '@/lib/consultor-recrutamento'
 import { promocaoDoContato, registrarRespostaPromo, marcarUrgente } from '@/lib/isa/promocao'
-import { botaoDaPromocao, mensagemPedirDocumentos, primeiroNomePromo } from '@/lib/isa/promocao.regras'
+import { botaoDaPromocao, mensagemPedirDocumentos, primeiroNomePromo, ehRespostaAutomatica } from '@/lib/isa/promocao.regras'
 
 /**
  * A fila da Isa. Roda disparada pelo webhook (10,5 s depois da mensagem) e por um cron de 1 em
@@ -229,6 +229,13 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     await registrarRespostaPromo(c.telefone, 'agora_nao')
     await atualizarContato(c.telefone, { ligada: false, pausa_por: 'promo', pausa_motivo: 'promoção: agora não', pausada_em: new Date().toISOString() })
     await registrarEvento(c.telefone, 'promo40_agora_nao', null)
+    await liberar(c.telefone, visto, false)
+    return false
+  }
+  // Robo do WhatsApp Business de quem recebeu ("Fulano agradece seu contato"): ninguem responde e
+  // continua fora do painel (29/09/2026 — a Isa respondeu um desses na primeira leva).
+  if (promo && !botaoPromo && !promo.resposta && ehRespostaAutomatica(novas.map((m) => m.content ?? ''))) {
+    await registrarEvento(c.telefone, 'promo40_resposta_automatica', { texto: (novas[0]?.content ?? '').slice(0, 80) }, 'sistema')
     await liberar(c.telefone, visto, false)
     return false
   }

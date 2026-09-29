@@ -8,6 +8,7 @@ import {
   mensagemPedirDocumentos,
   blocoPromocao,
   primeiroNomePromo,
+  ehRespostaAutomatica,
   PAYLOADS_PROMO,
   type Promocao,
 } from '../../src/lib/isa/promocao.regras.ts'
@@ -57,4 +58,15 @@ test('bloco do prompt traz antes, depois, validade e trava de desconto extra', (
   assert.match(b, /09\/10\/2026/)
   assert.match(b, /NÃO marque o gatilho "desconto"/)
   assert.match(b, /mensalidade e as coberturas NÃO mudaram/)
+})
+
+test('resposta automatica do WhatsApp Business nao e cliente (29/09/2026)', () => {
+  assert.equal(ehRespostaAutomatica(['Casa Pronta Brasil Art Decor agradece seu contato. Como podemos ajudar?']), true)
+  assert.equal(ehRespostaAutomatica(['Olá! Obrigado por entrar em contato. Retornaremos em breve.']), true)
+  assert.equal(ehRespostaAutomatica(['Esta é uma mensagem automática.']), true)
+  assert.equal(ehRespostaAutomatica(['No momento não podemos atender, nosso horário de atendimento é das 9h às 18h']), true)
+  assert.equal(ehRespostaAutomatica(['quanto fica a mensalidade?']), false)
+  assert.equal(ehRespostaAutomatica(['obrigado, vou pensar']), false)
+  assert.equal(ehRespostaAutomatica(['é golpe?']), false)
+  assert.equal(ehRespostaAutomatica(['']), false)
 })

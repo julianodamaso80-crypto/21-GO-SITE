@@ -74,6 +74,29 @@ export function botaoDaPromocao(payloads: string[], textos: string[]): 'seguir' 
   return null
 }
 
+/**
+ * Resposta automatica do WhatsApp Business de quem recebeu ("Fulano agradece seu contato", "no
+ * momento nao podemos atender"). Na primeira leva (29/09/2026) a Isa respondeu um robo desses e o
+ * contato caiu em URGENTE. So vale pra primeira resposta a promocao.
+ */
+const AUTOMATICA = [
+  /agradece (o )?seu contato/,
+  /obrigad[oa] (por|pelo) (entrar em )?contato/,
+  /agradecemos (o seu|seu|o) contato/,
+  /(mensagem|resposta) autom[aá]tica/,
+  /(no momento|agora) n[aã]o (podemos|posso|estamos|estou)/,
+  /hor[aá]rio de (atendimento|funcionamento)/,
+  /(retornaremos|responderemos|retornarei|responderei) (o mais breve|em breve|assim que)/,
+  /como podemos (te |lhe )?ajudar\??$/,
+  /seja bem[- ]vind[oa]/,
+]
+
+export function ehRespostaAutomatica(textos: string[]): boolean {
+  const t = textos.join('\n').trim().toLocaleLowerCase('pt-BR')
+  if (!t) return false
+  return AUTOMATICA.some((r) => r.test(t))
+}
+
 export function mensagemPedirDocumentos(primeiroNome: string | null, p: Promocao): string {
   return (
     `Perfeito${primeiroNome ? `, ${primeiroNome}` : ''}! Para darmos sequência na ativação com o valor de R$ ${valorBr(p.valorNovo)}, ` +
