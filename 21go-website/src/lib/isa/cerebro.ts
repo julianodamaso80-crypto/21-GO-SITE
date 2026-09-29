@@ -1,6 +1,6 @@
 import 'server-only'
 import { montarPrompt, comporResposta, abertura, tirarCumprimento, tirarNomeRepetido, ehRepeticao, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
-import { marcasQueFaltam } from '@/lib/isa/envio.regras'
+import { marcasQueFaltam, perguntasNaResposta } from '@/lib/isa/envio.regras'
 import { validarNumeros, extrairNumeros, type Permitidos } from '@/lib/isa/validador.regras'
 import { tirarFrasesDeRobo, comparacaoComHoje, ehSoConcordancia } from '@/lib/isa/venda.regras'
 import { lerJsonTolerante } from '@/lib/isa/json.regras'
@@ -279,6 +279,20 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
         `(instrução interna, não é o cliente) você deixou sem resposta a(s) mensagem(ns) ${faltam.map((n) => `[${n}]`).join(', ')}. ` +
         'reescreva respondendo TODAS, uma parte por mensagem, cada parte começando com o número dela ' +
         '(ex.: "[2] o pagamento pode ser..."), separadas por linha em branco. mesmo formato JSON.',
+    })
+    saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo, nome)
+  }
+
+  // Duas perguntas na mesma resposta: reescreve UMA vez deixando so a mais importante (dono,
+  // 29/09/2026 — ela pediu a placa do Polo e ja perguntou do link do Jeep na mesma rajada).
+  if (perguntasNaResposta(saida.resposta) > 1) {
+    conversa.push({ role: 'assistant', content: JSON.stringify(saida) })
+    conversa.push({
+      role: 'user',
+      content:
+        '(instrução interna, não é o cliente) sua resposta tem mais de uma pergunta. reescreva ' +
+        'deixando SÓ UMA pergunta, a mais importante pra seguir o atendimento, e sem "?" nas outras ' +
+        'partes. o resto da resposta continua igual. mesmo formato JSON.',
     })
     saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo, nome)
   }

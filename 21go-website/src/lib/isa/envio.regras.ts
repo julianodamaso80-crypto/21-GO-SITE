@@ -265,3 +265,14 @@ export function repeteMensagemRecente(texto: string, anteriores: string[]): bool
     return (2 * comum) / (t.length - 1 + n.length - 1) >= 0.9
   })
 }
+
+/**
+ * Quantas PERGUNTAS a Isa fez na resposta. Dono, 29/09/2026: *"vc vem fazendo 2 perguntas ao mesmo
+ * tempo, sempre vc faz uma pergunta por vez, nunca 2"* — ela pediu a placa do Polo e, na mesma
+ * rajada, perguntou se ele tinha visto o link do Jeep.
+ *
+ * Conta "?" fora das perguntas do CLIENTE que ela cita: o que vale é o que ela pergunta.
+ */
+export function perguntasNaResposta(texto: string): number {
+  return (texto.match(/\?/g) || []).length
+}

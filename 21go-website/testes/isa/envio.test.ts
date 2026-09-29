@@ -208,3 +208,13 @@ test('mesma mensagem nunca sai 2x (dono, 26/09/2026)', async () => {
   // curtinhas nao contam
   assert.ok(!repeteMensagemRecente('ok 👍', ['ok 👍']))
 })
+
+test('conta as perguntas da resposta: uma por vez, nunca duas (dono, 29/09/2026)', async () => {
+  const { perguntasNaResposta } = await import('../../src/lib/isa/envio.regras.ts')
+  assert.equal(perguntasNaResposta('me manda a placa do polo pra eu puxar aqui'), 0)
+  assert.equal(perguntasNaResposta('me manda a placa do polo?'), 1)
+  assert.equal(
+    perguntasNaResposta('me manda a placa do Polo?\n\nsobre o Jeep, você chegou a dar uma olhada no link?'),
+    2,
+  )
+})
