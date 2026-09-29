@@ -918,6 +918,15 @@ async function orcarEEnviar(
   // "quem faz a cotacao e voce"). Pede pra conferir a placa ou fazer pelo modelo; o dono e avisado.
   await registrarEvento(c.telefone, 'sem_preco', { placa: p.placa, motivo: orc.motivo })
   await alertarDono({ telefone: c.telefone, nome: c.nome, motivo: 'sem_preco', detalhe: `placa ${p.placa}: ${orc.motivo}`.slice(0, 200) })
+  // Ele JA mandou o CRLV: o veiculo esta escrito ali, entao cota por modelo e ano em vez de pedir
+  // pra ele conferir a placa (dono, 29/09/2026 — a identificacao devolveu "PASSAT LS 1982" pra uma
+  // Honda CB250F e a Isa devolveu a bola pro cliente).
+  if (c.veiculo_doc?.ano && (c.veiculo_doc.modelo || c.veiculo_doc.marca)) {
+    await registrarEvento(c.telefone, 'cotou_pelo_documento', { ...c.veiculo_doc, placa: p.placa })
+    return listarVersoesEEnviar(c, { marca: c.veiculo_doc.marca, modelo: c.veiculo_doc.modelo || '', ano: c.veiculo_doc.ano }, {
+      cumprimentar: false, nome: p.nome, ultimaInbound: p.ultimaInbound, visto: p.visto,
+    })
+  }
   // O que o DENATRAN mostra dessa placa (mesma identificacao da tela do site), pro cliente conferir.
   const id = await identifyPlate(p.placa).catch(() => null)
   const comoAparece = id && (id.status === 'found' || id.status === 'partial') && id.label ? id.label : null
@@ -1048,6 +1057,11 @@ async function lerMidias(c: ContatoIsa, midias: MensagemHistorico[]): Promise<(L
       const texto = textoDaLeitura(original?.texto ?? null, leitura)
       await gravarLeitura(m.id, texto)
       m.content = texto
+    }
+    // Veiculo escrito no CRLV: fica guardado pra cotar por modelo+ano quando a placa nao resolver
+    if (leitura?.tipo === 'crlv' && leitura.veiculo) {
+      await atualizarContato(c.telefone, { veiculo_doc: leitura.veiculo })
+      c.veiculo_doc = leitura.veiculo
     }
     await registrarEvento(c.telefone, 'leitura', leitura ? { tipo: leitura.tipo, placa: leitura.placa } : { falhou: true, mime: arquivo?.mime ?? null })
     out.push(leitura)

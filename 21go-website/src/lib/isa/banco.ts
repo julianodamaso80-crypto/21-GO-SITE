@@ -91,6 +91,8 @@ export interface ContatoIsa {
   resolvido_em: string | null
   /** Quando caiu em "Precisa de voce". So sai pelo botao "ja cuidei" ou quando a janela de 24 h fecha. */
   precisa_desde: string | null
+  /** Marca/modelo/ano lidos do CRLV que ele mandou — segunda fonte quando a placa nao resolve. */
+  veiculo_doc: { marca: string | null; modelo: string | null; ano: number | null } | null
   /** Aviso de fora do horario ja enviado nesta noite. */
   aviso_fora_horario_em: string | null
 }
@@ -356,7 +358,7 @@ const CAMPOS_EDITAVEIS = new Set([
   'lead_id', 'nome', 'ligada', 'pausa_motivo', 'pausa_por', 'pausada_em', 'transferido_em', 'entrada',
   'desconto50_em', 'desconto50_de', 'desconto50_para', 'aguardando_dono', 'genero', 'preco_da_tabela',
   'retomada_em', 'abordagem5min_em', 'opcoes_versao', 'placa_pendente', 'nota',
-  'retomar_apos', 'pergunta_pendente', 'aviso_fora_horario_em', 'processado_ate',
+  'retomar_apos', 'pergunta_pendente', 'aviso_fora_horario_em', 'processado_ate', 'veiculo_doc',
 ])
 
 export async function atualizarContato(telefone: string, campos: Record<string, unknown>): Promise<void> {

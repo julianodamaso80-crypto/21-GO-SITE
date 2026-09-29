@@ -64,6 +64,12 @@ export interface Leitura {
   tipo: TipoMidia
   resumo: string
   placa: string | null
+  /**
+   * Marca, modelo e ano que estao ESCRITOS no CRLV. Sao a segunda fonte quando a placa nao
+   * resolve: em 29/09/2026 o cliente mandou o CRLV de uma Honda CB250F 2018 e a identificacao da
+   * placa devolveu "PASSAT LS 1982"; a Isa pediu pra ele conferir a placa em vez de cotar.
+   */
+  veiculo?: { marca: string | null; modelo: string | null; ano: number | null } | null
 }
 
 export type FormatoLegivel = 'imagem' | 'pdf'
@@ -82,11 +88,18 @@ export const TAMANHO_MAXIMO = 10 * 1024 * 1024
 export function lerSaidaMidia(bruto: string): Leitura | null {
   try {
     const limpo = bruto.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim()
-    const j = JSON.parse(limpo) as { tipo?: unknown; resumo?: unknown; placa?: unknown }
+    const j = JSON.parse(limpo) as { tipo?: unknown; resumo?: unknown; placa?: unknown; veiculo?: unknown }
     const tipo = typeof j.tipo === 'string' && j.tipo in ROTULO_MIDIA ? (j.tipo as TipoMidia) : 'outro'
     const resumo = typeof j.resumo === 'string' ? j.resumo.replace(/\s+/g, ' ').trim().slice(0, 500) : ''
     const p = typeof j.placa === 'string' ? j.placa.toUpperCase().replace(/[^A-Z0-9]/g, '') : ''
-    return { tipo, resumo, placa: /^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(p) ? p : null }
+    const v = (j.veiculo && typeof j.veiculo === 'object' ? j.veiculo : null) as
+      { marca?: unknown; modelo?: unknown; ano?: unknown } | null
+    const texto = (x: unknown) => (typeof x === 'string' && x.trim() ? x.trim().slice(0, 60) : null)
+    const ano = Number(String((v?.ano ?? '')).match(/(\d{4})/)?.[1] || 0) || null
+    const veiculo = v && (texto(v.marca) || texto(v.modelo)) && ano
+      ? { marca: texto(v.marca), modelo: texto(v.modelo), ano }
+      : null
+    return { tipo, resumo, placa: /^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(p) ? p : null, veiculo }
   } catch {
     return null
   }

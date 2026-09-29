@@ -14,8 +14,15 @@ test('le foto, print e PDF; video, figurinha e docx ficam de fora', () => {
 
 test('saida do modelo: tipo desconhecido vira outro, placa so no formato certo, JSON torto nao derruba', () => {
   assert.deepEqual(lerSaidaMidia('{"tipo":"cotacao","resumo":"Porto Seguro, R$ 250/mês","placa":"rkm-7j62"}'), {
-    tipo: 'cotacao', resumo: 'Porto Seguro, R$ 250/mês', placa: 'RKM7J62',
+    tipo: 'cotacao', resumo: 'Porto Seguro, R$ 250/mês', placa: 'RKM7J62', veiculo: null,
   })
+  // CRLV traz o veiculo escrito no documento: e a segunda fonte quando a placa nao resolve
+  assert.deepEqual(
+    lerSaidaMidia('{"tipo":"crlv","resumo":"CRLV da moto","placa":"TTT5F78","veiculo":{"marca":"Honda","modelo":"CB250F Twister ABS","ano":"2018/2019"}}')?.veiculo,
+    { marca: 'Honda', modelo: 'CB250F Twister ABS', ano: 2018 },
+  )
+  // sem ano nao serve pra cotar
+  assert.equal(lerSaidaMidia('{"tipo":"crlv","resumo":"x","veiculo":{"marca":"Honda"}}')?.veiculo, null)
   assert.equal(lerSaidaMidia('```json\n{"tipo":"inventado","resumo":"x"}\n```')?.tipo, 'outro')
   assert.equal(lerSaidaMidia('{"tipo":"foto_veiculo","resumo":"","placa":"123"}')?.placa, null)
   assert.equal(lerSaidaMidia('nao e json'), null)
