@@ -769,11 +769,15 @@ function renderHTML(input: QuotePdfInput): string {
     planosAplicaveis.find((p) => p.id === planoEscolhidoId)?.monthly || input.mensalidade
   // Consultor com ativacao fixa combinada na venda usa o numero dele; os demais
   // (e a casa) seguem a tabela. BYD nao entra no acordo — ver consultores-ativacao.
-  const taxa = ativacaoDoConsultor(
-    input.consultorSlug,
-    calcActivation(referencePlan?.monthly || input.mensalidade, isBYD, selectedMonthly),
-    isBYD,
-  )
+  // Ativacao ja combinada (promocao de 40%, dono 29/09/2026) vence a tabela.
+  const taxa =
+    input.taxaAtivacao && input.taxaAtivacao > 0
+      ? input.taxaAtivacao
+      : ativacaoDoConsultor(
+          input.consultorSlug,
+          calcActivation(referencePlan?.monthly || input.mensalidade, isBYD, selectedMonthly),
+          isBYD,
+        )
 
   // Determinar tipo (carros / suv / moto / especial) baseado nos planos
   let kind: 'carros' | 'suv' | 'moto' | 'especial' = 'carros'

@@ -60,6 +60,27 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
   const slug = (data.consultor_slug as string | null) || null
   const dono = slug ? await resolverConsultor(slug) : null
 
+  // Recebeu a promocao de 40% na ativacao (isa_promocoes): o PDF mostra a ativacao da promocao,
+  // senao desmente a mensagem que ele recebeu (dono, 29/09/2026). Lead de consultor nunca entra.
+  let taxaAtivacao: number | undefined
+  if (!slug) {
+    const tels = [data.whatsapp, data.telefone]
+      .map((t) => String(t || '').replace(/\D/g, ''))
+      .filter((t) => t.length >= 10)
+      .map((t) => (t.startsWith('55') ? t : `55${t}`))
+    if (tels.length) {
+      const { data: promo } = await supa
+        .from('isa_promocoes')
+        .select('valor_novo, validade')
+        .in('telefone', tels)
+        .eq('status', 'enviada')
+        .limit(1)
+        .maybeSingle()
+      const hoje = new Date().toISOString().slice(0, 10)
+      if (promo && String(promo.validade) >= hoje) taxaAtivacao = Number(promo.valor_novo)
+    }
+  }
+
   try {
     const pdf = await generateQuotePdf({
       consultorSlug: slug,
@@ -84,6 +105,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
       // "SUV / Caminhonete" R$ 18,42 mais caro). Lead antigo nao tem a coluna e segue no
       // caminho antigo.
       planos: (data.cotacao_planos as QuotePdfInput['planos']) ?? null,
+      taxaAtivacao,
     })
 
     return new NextResponse(pdf as unknown as ArrayBuffer, {
