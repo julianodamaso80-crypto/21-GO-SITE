@@ -97,6 +97,34 @@ export function ehRespostaAutomatica(textos: string[]): boolean {
   return AUTOMATICA.some((r) => r.test(t))
 }
 
+/**
+ * Resposta ao "Quero seguir" (dono, 29/09/2026): "que bom fulano que vc resolveu seguir e
+ * aproveitar nossa promocao, seu veiculo tal, segue o link com os planos, qual vc deseja
+ * contratar". Os documentos a Isa pede depois, quando ele escolher o plano.
+ */
+export function mensagemQueroSeguir(primeiroNome: string | null, p: Promocao, link: string | null): string {
+  return (
+    `que bom${primeiroNome ? `, ${primeiroNome},` : ''} que você resolveu seguir e aproveitar a nossa promoção! 😊\n\n` +
+    `seu veículo: ${p.veiculo}\nativação: R$ ${valorBr(p.valorNovo)}\n\n` +
+    (link ? `aqui está o link com os planos e o valor de cada um: ${link}\n\n` : '') +
+    'qual plano você deseja contratar?'
+  )
+}
+
+/** Perguntou da mensalidade ou dos planos: quem responde e o link do PDF (dono, 29/09/2026). */
+export function perguntaDeMensalidade(texto: string): boolean {
+  const t = (texto || '').toLocaleLowerCase('pt-BR')
+  return /mensal|mensalidade|por m[eê]s|ao m[eê]s|valor do plano|valores dos planos|quais (s[aã]o )?(os )?planos|qual (o )?valor do plano|parcela mensal/.test(t)
+}
+
+export function mensagemLinkDosPlanos(p: Promocao, link: string): string {
+  return (
+    'a mensalidade depende do plano que você escolher 😊\n\n' +
+    `te mandei aqui o link com os planos do seu ${p.veiculo} e o valor de cada um: ${link}\n\n` +
+    'dá uma olhada e me diz qual você prefere'
+  )
+}
+
 export function mensagemPedirDocumentos(primeiroNome: string | null, p: Promocao): string {
   return (
     `Perfeito${primeiroNome ? `, ${primeiroNome}` : ''}! Para darmos sequência na ativação com o valor de R$ ${valorBr(p.valorNovo)}, ` +
@@ -113,6 +141,8 @@ export function blocoPromocao(p: Promocao): string {
     '## PROMOÇÃO deste cliente (vale acima de qualquer outro valor de ativação)',
     `ele recebeu da 21Go uma nova proposta: ativação do ${p.veiculo} de ${de} por ${para} (40% de desconto), válida até ${ate}.`,
     `- a ativação dele é ${para}. nunca cite outro valor de ativação`,
+    `- o veículo desta conversa é o que ele cotou na época: ${p.veiculo}. fale SÓ dele e SÓ com os planos e valores dos FATOS; nunca troque de veículo nem invente plano, valor ou cobertura. se não tiver o dado, diga que vai confirmar`,
+    '- perguntou da mensalidade ou dos planos: o sistema já mandou o link com os planos; peça pra ele olhar o link e dizer qual plano prefere',
     '- a mensalidade e as coberturas NÃO mudaram com a promoção; o desconto é só na ativação',
     `- esse já é o desconto máximo: se ele pedir mais desconto na ativação, diga que ${para} já é o valor promocional, válido até ${ate}. NÃO marque o gatilho "desconto"`,
     '- pra seguir com a ativação: CNH, documento do veículo e comprovante de residência',

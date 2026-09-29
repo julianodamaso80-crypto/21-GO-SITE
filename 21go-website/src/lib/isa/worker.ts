@@ -55,7 +55,7 @@ import { identifyPlate } from '@/lib/plate-identify'
 import { isLeilaoOrigin } from '@/data/pricing'
 import { recrutamentoNaIsa } from '@/lib/consultor-recrutamento'
 import { promocaoDoContato, registrarRespostaPromo, marcarUrgente } from '@/lib/isa/promocao'
-import { botaoDaPromocao, mensagemPedirDocumentos, primeiroNomePromo, ehRespostaAutomatica } from '@/lib/isa/promocao.regras'
+import { botaoDaPromocao, mensagemQueroSeguir, mensagemLinkDosPlanos, perguntaDeMensalidade, primeiroNomePromo, ehRespostaAutomatica } from '@/lib/isa/promocao.regras'
 
 /**
  * A fila da Isa. Roda disparada pelo webhook (10,5 s depois da mensagem) e por um cron de 1 em
@@ -277,13 +277,22 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const agora = new Date()
   const ultimaInbound = novas[novas.length - 1]?.whatsapp_message_id
 
-  // "Quero seguir": pede os documentos com o valor da promocao e SEGUE ligada (dono, 29/09/2026).
-  // O evento `pediu_documentos` faz o documento que chegar depois ir pro 4824, como sempre.
-  if (promo && botaoPromo === 'seguir') {
-    const enviou = await enviarComoGente(c, [mensagemPedirDocumentos(primeiroNomePromo(c.nome ?? promo.nome), promo)], ultimaInbound, visto)
-    await registrarEvento(c.telefone, 'pediu_documentos', { por: 'promo40' })
-    await liberar(c.telefone, visto, enviou)
-    return enviou
+  // Promocao (dono, 29/09/2026): "Quero seguir" recebe o veiculo, o link com os planos e "qual plano
+  // voce deseja contratar?" — os documentos a Isa pede quando ele escolher. Pergunta de mensalidade
+  // recebe o link do PDF. A Isa SEGUE ligada.
+  if (promo && (botaoPromo === 'seguir' || (!botaoPromo && perguntaDeMensalidade(novas.map((m) => m.content ?? '').join('\n'))))) {
+    const leadPromo = await leadDoCliente(c.telefone, c.lead_id, null).catch(() => null)
+    const link = leadPromo?.id ? `${SITE}/api/pdfs/${leadPromo.id}` : null
+    if (botaoPromo === 'seguir' || link) {
+      const texto =
+        botaoPromo === 'seguir'
+          ? mensagemQueroSeguir(primeiroNomePromo(c.nome ?? promo.nome), promo, link)
+          : mensagemLinkDosPlanos(promo, link as string)
+      const enviou = await enviarComoGente(c, [texto], ultimaInbound, visto)
+      await registrarEvento(c.telefone, botaoPromo === 'seguir' ? 'promo40_seguir' : 'promo40_link_planos', { lead: leadPromo?.id ?? null })
+      await liberar(c.telefone, visto, enviou)
+      return enviou
+    }
   }
 
   // "Quero Ser Consultor" (dono, 21/09/2026): o formulario abre este numero, mas quem quer ser

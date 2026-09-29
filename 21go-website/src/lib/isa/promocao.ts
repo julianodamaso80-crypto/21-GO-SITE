@@ -142,9 +142,11 @@ export async function dispararPromocao(agora = new Date()): Promise<{ enviados: 
         continue
       }
       const nome = primeiroNomePromo(l.nome) ?? 'tudo bem'
+      // A cotacao da epoca recriada do Power (lead_promo40_<tel>): e dela que a Isa tira os planos e o PDF.
       await sql(
-        `INSERT INTO public.isa_contatos (telefone, nome, entrada) VALUES ($1, $2, 'promo40')
-         ON CONFLICT (telefone) DO NOTHING`,
+        `INSERT INTO public.isa_contatos (telefone, nome, entrada, lead_id)
+         VALUES ($1, $2, 'promo40', (SELECT id FROM public.leads WHERE id = 'lead_promo40_' || $1))
+         ON CONFLICT (telefone) DO UPDATE SET lead_id = COALESCE(EXCLUDED.lead_id, isa_contatos.lead_id), updated_at = now()`,
         [tel, l.nome],
       )
       const jid = phoneToJid(tel) ?? `${tel}@s.whatsapp.net`
