@@ -319,8 +319,10 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   // Todo BYD, sem excecao, e atendido no contato da Leticya (dono, 16/09/2026). A Isa nao cota, nao
   // negocia e nao da desconto: transfere na primeira mensagem.
+  // Menos quem veio da promocao de 40%: a Isa segue o atendimento (dono, 29/09/2026 — o Bruno, BYD,
+  // disse que tem Loovi e ouviu "quem cuida do seu BYD e a Leticya").
   const leadDoByd = await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)
-  if (leadDoByd && ehByd(leadDoByd.marca_interesse)) {
+  if (leadDoByd && ehByd(leadDoByd.marca_interesse) && !promo) {
     await transferir(c, 'byd', enviar)
     await liberar(c.telefone, visto, true)
     return true
