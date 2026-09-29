@@ -52,7 +52,7 @@ test('"avaria" e estado do worker, nao rotulo: o painel nao pode apaga-la', () =
 
 test('etiquetas que tiram o contato do "precisa de voce": Frio, Falando com Leticya e Fechou (dono, 16/09/2026)', async () => {
   const { ETIQUETAS_FORA_DA_FILA } = await import('../../src/lib/isa/etiquetas.regras.ts')
-  assert.deepEqual([...ETIQUETAS_FORA_DA_FILA].sort(), ['consultor', 'fechou', 'frio', 'leticya', 'pensando'])
+  assert.deepEqual([...ETIQUETAS_FORA_DA_FILA].sort(), ['consultor', 'documento', 'fechou', 'frio', 'guilherme', 'leticya', 'pensando', 'vistoria'])
 })
 
 test('consultor nao cai no Precisa de voce (dono, 21/09/2026)', async () => {

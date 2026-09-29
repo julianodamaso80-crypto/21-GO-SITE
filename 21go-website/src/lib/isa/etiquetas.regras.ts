@@ -56,8 +56,8 @@ export function normalizarEtiquetas(lista: unknown): string[] {
  * vale mais a pena correr atras (Frio). Dono, 16/09/2026: "se eu coloquei tag falando com leticya
  * vc tira do precisa de vc" (o Frio ja saia desde a manha). E "se fechou sai de preciso de vc".
  */
-// Dono, 29/09/2026: "pensando" tambem tira de URGENTE.
-export const ETIQUETAS_FORA_DA_FILA: readonly string[] = ['frio', 'leticya', 'fechou', 'consultor', 'pensando']
+// Dono, 29/09/2026: "qd eu colocar qq etiqueta vc tira de urgente, so quente que continua".
+export const ETIQUETAS_FORA_DA_FILA: readonly string[] = ETIQUETAS.map((e) => e.id).filter((id) => id !== 'quente')
 
 export function etiquetaValida(id: string | null | undefined): boolean {
   return !!id && IDS.has(id)
