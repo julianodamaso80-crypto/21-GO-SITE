@@ -23,6 +23,8 @@ export const ETIQUETAS: Etiqueta[] = [
   { id: 'leticya', nome: 'Falando com Leticya', cor: '#F2911D', claro: false },
   // Dono, 29/09/2026: "crie uma etiqueta com nome falando com Guilherme"
   { id: 'guilherme', nome: 'Falando com Guilherme', cor: '#F472B6', claro: false },
+  // Dono, 29/09/2026: "criar uma etiqueta com nome pensando"
+  { id: 'pensando', nome: 'Pensando', cor: '#FACC15', claro: true },
   { id: 'documento', nome: 'Enviou documento', cor: '#93C5FD', claro: true },
   // Dono, 16/09/2026: "faz uma tag vistoria e coloca no funil tbm"
   { id: 'vistoria', nome: 'Vistoria', cor: '#C4B5FD', claro: true },

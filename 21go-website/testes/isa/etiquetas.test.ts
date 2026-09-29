@@ -10,11 +10,11 @@ import {
 test('as 4 etiquetas que o dono pediu, e so essas (15/09/2026)', () => {
   assert.deepEqual(
     ETIQUETAS.map((e) => e.id),
-    ['quente', 'leticya', 'guilherme', 'documento', 'vistoria', 'fechou', 'consultor', 'frio'],
+    ['quente', 'leticya', 'guilherme', 'pensando', 'documento', 'vistoria', 'fechou', 'consultor', 'frio'],
   )
   assert.deepEqual(
     ETIQUETAS.map((e) => e.nome),
-    ['Quente', 'Falando com Leticya', 'Falando com Guilherme', 'Enviou documento', 'Vistoria', 'Fechou', 'Consultores', 'Frio'],
+    ['Quente', 'Falando com Leticya', 'Falando com Guilherme', 'Pensando', 'Enviou documento', 'Vistoria', 'Fechou', 'Consultores', 'Frio'],
   )
   for (const e of ETIQUETAS) assert.ok(e.cor, e.id)
 })
