@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     // Frio, Pensando, Leticya, Fechou, Consultores: da baixa em URGENTE na hora, como o "ja cuidei"
     // (dono, 29/09/2026: "nunca quem ta com essa etiqueta ta urgente").
     `UPDATE public.isa_contatos SET etiquetas = $2::text[], etapa = NULL, etapa_em = NULL,
-            resolvido_em = CASE WHEN $2::text[] && $3::text[] AND precisa_desde IS NOT NULL THEN COALESCE(resolvido_em, now()) ELSE resolvido_em END,
+            resolvido_em = CASE WHEN $2::text[] && $3::text[] AND NOT ('quente' = ANY($2::text[])) AND precisa_desde IS NOT NULL THEN COALESCE(resolvido_em, now()) ELSE resolvido_em END,
             updated_at = now()
       WHERE telefone = $1 RETURNING telefone`,
     [telefone, etiquetas, [...ETIQUETAS_FORA_DA_FILA]],

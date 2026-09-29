@@ -23,6 +23,7 @@ import {
   sql,
   type ContatoIsa,
   type MensagemHistorico,
+  marcarQuente,
 } from '@/lib/isa/banco'
 import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente, descontoAutomaticoPendente } from '@/lib/isa/acoes'
@@ -46,7 +47,7 @@ import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, no
 import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, vistoDoLote, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, repeteMensagemRecente, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, fechouComOutra, mensagemFechouComOutra, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, pediuPdfDeNovo, ehByd } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, fechouComOutra, mensagemFechouComOutra, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, pediuPdfDeNovo, ehByd, sinalDeFechamento } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -247,6 +248,20 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     }
     await registrarRespostaPromo(c.telefone, botaoPromo === 'seguir' ? 'seguir' : 'texto')
     await marcarUrgente(c.telefone)
+  }
+
+  // Quente, querendo fechar (mandou documento, escolheu plano, "quero fechar", "Quero seguir"):
+  // etiqueta Quente e URGENTE — com a Isa ligada ou nao (dono, 29/09/2026).
+  const textoDoLote = novas.map((m) => m.content ?? '').join('\n')
+  if (
+    sinalDeFechamento({
+      texto: textoDoLote,
+      mandouArquivo: novas.some((m) => m.message_type === 'document' || m.message_type === 'image'),
+      tocouQueroSeguir: botaoPromo === 'seguir',
+    })
+  ) {
+    await marcarQuente(c.telefone)
+    await registrarEvento(c.telefone, 'quente', { texto: textoDoLote.slice(0, 80) }, 'sistema')
   }
 
   if (!c.ligada) {

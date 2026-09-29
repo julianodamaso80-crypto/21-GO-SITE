@@ -229,3 +229,15 @@ test('"optei por fechar com a Alamo" NAO e querer fechar com a gente (dono, 29/0
     assert.ok(querFechar(s), s)
   }
 })
+
+test('sinal de fechamento manda pra URGENTE (dono, 29/09/2026)', async () => {
+  const { sinalDeFechamento } = await import('../../src/lib/isa/entrega.regras.ts')
+  const s = (texto: string, o: { arq?: boolean; seguir?: boolean } = {}) => sinalDeFechamento({ texto, mandouArquivo: !!o.arq, tocouQueroSeguir: !!o.seguir })
+  assert.equal(s('quero fechar'), true)
+  assert.equal(s('vou contratar o vip'), true)
+  assert.equal(s('', { arq: true }), true)
+  assert.equal(s('Quero seguir', { seguir: true }), true)
+  assert.equal(s('assim que eu terminar a transferência eu entro em contato'), false)
+  assert.equal(s('quanto fica a mensalidade?'), false)
+  assert.equal(s('optei por fechar com a Alamo'), false)
+})

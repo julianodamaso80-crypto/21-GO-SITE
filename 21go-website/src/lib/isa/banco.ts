@@ -353,6 +353,18 @@ export async function registrarEvento(telefone: string, tipo: string, detalhe: u
   ]).catch((err) => console.error('[isa] evento nao gravado:', tipo, err instanceof Error ? err.message : err))
 }
 
+/** Sinal de fechamento: etiqueta Quente e de volta pra URGENTE (dono, 29/09/2026). */
+export async function marcarQuente(telefone: string): Promise<void> {
+  await sql(
+    `UPDATE public.isa_contatos
+        SET etiquetas = CASE WHEN 'quente' = ANY(COALESCE(etiquetas, '{}'::text[])) THEN etiquetas
+                             ELSE array_append(COALESCE(etiquetas, '{}'::text[]), 'quente') END,
+            precisa_desde = COALESCE(precisa_desde, now()), resolvido_em = NULL, updated_at = now()
+      WHERE telefone = $1`,
+    [telefone],
+  )
+}
+
 /** Atualiza campos do contato. So as colunas conhecidas — nunca nome de coluna vindo de fora. */
 const CAMPOS_EDITAVEIS = new Set([
   'lead_id', 'nome', 'ligada', 'pausa_motivo', 'pausa_por', 'pausada_em', 'transferido_em', 'entrada',

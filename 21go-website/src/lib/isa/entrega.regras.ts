@@ -165,6 +165,15 @@ export function querFechar(texto: string | null | undefined): boolean {
   return QUER_FECHAR.test(t)
 }
 
+/**
+ * Cliente quente, querendo fechar: volta pra URGENTE mesmo que alguem tenha dado baixa ou posto
+ * etiqueta (dono, 29/09/2026: "todos que vc achar que esta quente querendo fechar, enviou doc algo
+ * assim vai pro urgente").
+ */
+export function sinalDeFechamento(p: { texto: string; mandouArquivo: boolean; tocouQueroSeguir: boolean }): boolean {
+  return p.tocouQueroSeguir || p.mandouArquivo || querFechar(p.texto) || escolheuPlano(p.texto)
+}
+
 /** `comemorar` = false quando a IA acabou de responder (ela ja comemorou; duas vezes soa robo). */
 export function mensagemPedidoDocumentos(comemorar = true, faltam: string[] = ['a foto da CNH', 'o documento do veículo', 'um comprovante de residência']): string {
   // Dono (12/09/2026): o que ele ja mandou no comeco nao se pede de novo.

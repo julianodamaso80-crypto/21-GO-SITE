@@ -48,13 +48,15 @@ const FILTRO: Record<Aba, string> = {
   // mexe nisto (dono, 25/09/2026); por isso a aba le o carimbo `precisa_desde`, nao o estado de agora.
   precisa: `c.precisa_desde IS NOT NULL
     -- quem foi pro 4824 e da Leticya, por outro numero
-    AND c.transferido_em IS NULL
+    -- ...a nao ser que esteja QUENTE, querendo fechar (dono, 29/09/2026)
+    AND (c.transferido_em IS NULL OR 'quente' = ANY(COALESCE(c.etiquetas, '{}'::text[])))
     -- "ja cuidei" do painel tira da aba e deixa a conversa normal nas outras (dono, 25/09/2026)
     AND c.resolvido_em IS NULL
     -- Passou de 24 h da ultima mensagem dele: nao da pra escrever, so o template de retomada.
     -- Nao fica cobrando atencao de quem ninguem consegue responder (dono, 25/09/2026).
     AND (c.janela_ate IS NULL OR c.janela_ate > now())
-    AND NOT (COALESCE(c.etiquetas, '{}'::text[]) && ARRAY[${ETIQUETAS_FORA_DA_FILA.map((e) => `'${e}'`).join(',')}]::text[])`,
+    AND ('quente' = ANY(COALESCE(c.etiquetas, '{}'::text[]))
+         OR NOT (COALESCE(c.etiquetas, '{}'::text[]) && ARRAY[${ETIQUETAS_FORA_DA_FILA.map((e) => `'${e}'`).join(',')}]::text[]))`,
   isa: `c.ligada AND NOT ${EH_CONSULTOR}`,
   off: `NOT c.ligada AND NOT ${EH_CONSULTOR}`,
   transferidos: `c.transferido_em IS NOT NULL AND NOT ${EH_CONSULTOR}`,
