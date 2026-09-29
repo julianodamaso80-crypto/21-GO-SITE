@@ -4,6 +4,7 @@ import { abordarLeadsNovos, retomarSemResposta } from '@/lib/isa/abordagem'
 import { relatorioDiario } from '@/lib/isa/relatorio'
 import { entregarDescontosAutomaticos } from '@/lib/isa/desconto-auto'
 import { chamarNaViradaDoDia } from '@/lib/isa/virada-do-dia'
+import { dispararPromocao } from '@/lib/isa/promocao'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -40,11 +41,16 @@ export async function GET(req: NextRequest) {
       console.error('[isa] virada do dia falhou:', err)
       return { enviados: 0, erro: err instanceof Error ? err.message : String(err) }
     })
+    // Promocao de 40% na ativacao (dono, 29/09/2026): liga por isa_config.promo40.
+    const promo40 = await dispararPromocao().catch((err) => {
+      console.error('[isa] promocao falhou:', err)
+      return { enviados: 0, erro: err instanceof Error ? err.message : String(err) }
+    })
     const relatorio = await relatorioDiario().catch((err) => {
       console.error('[isa] relatorio falhou:', err)
       return { enviado: false, erro: err instanceof Error ? err.message : String(err) }
     })
-    return NextResponse.json({ ok: true, ...fila, cincoMin, retomada, desconto, viradaDoDia, relatorio })
+    return NextResponse.json({ ok: true, ...fila, cincoMin, retomada, desconto, viradaDoDia, promo40, relatorio })
   } catch (err) {
     console.error('[isa] cron falhou:', err)
     return NextResponse.json({ ok: false, erro: err instanceof Error ? err.message : String(err) }, { status: 500 })

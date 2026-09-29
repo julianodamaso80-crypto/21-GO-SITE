@@ -302,7 +302,7 @@ interface EstadoTemplate {
  * sozinha — o primeiro texto virou MARKETING ainda na analise — entao confere de 10 em 10 min e,
  * se deixar de poder sair, para e avisa o dono uma vez.
  */
-async function templateLiberado(
+export async function templateLiberado(
   nome: string = TEMPLATE_5MIN,
   chave: string = 'template5min',
   rotulo: string = 'a mensagem dos 5 min',

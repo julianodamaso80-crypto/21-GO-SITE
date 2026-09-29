@@ -361,6 +361,8 @@ export interface EntradaPrompt {
   docs?: { recebidos: string[]; faltam: string[] }
   /** "DD/MM" da primeira mensalidade de quem fecha hoje (hora.regras primeiroVencimento). */
   primeiroVencimento?: string
+  /** Bloco da promocao de 40% na ativacao, ja montado (promocao.regras blocoPromocao). */
+  promocao?: string | null
 }
 
 /**
@@ -542,6 +544,7 @@ ${e.primeiroVencimento ? `
 primeira mensalidade (se ele fechar hoje): sua primeira mensalidade vai vir dia ${e.primeiroVencimento}
 ` : ''}${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativação — não existe outro desconto automático.' : ''}
 ${e.comparacaoHoje?.length ? `\n${e.comparacaoHoje.join('\n')}` : ''}
+${e.promocao ? `\n${e.promocao}\n` : ''}
 ${e.docs?.recebidos.length ? `\ndocumentos que ele JÁ mandou nesta conversa: ${e.docs.recebidos.join(', ')}. ${e.docs.faltam.length ? `quando ele escolher o plano, peça SÓ o que falta: ${e.docs.faltam.join(', ')}` : 'não falta nenhum documento: quando ele escolher o plano, diga que já tem tudo e que vai passar pra Leticya finalizar'}` : ''}
 
 ## gatilhos — marque e responda o mínimo (o time assume)

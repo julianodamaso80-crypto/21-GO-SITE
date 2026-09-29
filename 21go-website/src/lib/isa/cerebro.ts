@@ -7,6 +7,7 @@ import { lerJsonTolerante } from '@/lib/isa/json.regras'
 import { cumprimento, primeiroVencimento } from '@/lib/isa/hora.regras'
 import { NUMEROS_FIXOS, type Fatos } from '@/lib/isa/fatos.regras'
 import type { MensagemHistorico } from '@/lib/isa/banco'
+import { blocoPromocao, type Promocao } from '@/lib/isa/promocao.regras'
 
 /**
  * Pensa a resposta da Isa: prompt (persona + gabarito + fatos) → Gemini 3.1 Pro (OpenRouter, raciocinio
@@ -144,6 +145,8 @@ export interface EntradaCerebro {
   pagaHoje?: number | null
   /** Documentos de contratacao ja recebidos nesta conversa. */
   docs?: { recebidos: string[]; faltam: string[] }
+  /** Recebeu a promocao de 40% na ativacao: a Isa cita o antes e o depois. */
+  promocao?: Promocao | null
 }
 
 export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
@@ -160,10 +163,15 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
     comparacaoHoje: comparacao?.linhas,
     docs: e.docs,
     primeiroVencimento: primeiroVencimento(e.agora),
+    promocao: e.promocao ? blocoPromocao(e.promocao) : null,
   })
   const base = e.fatos?.numerosPermitidos ?? PERMITIDOS_SEM_FATOS
   // O valor que ele paga hoje e as diferencas sao fatos calculados: a IA pode cita-los.
-  const permitidos: Permitidos = { dinheiro: [...base.dinheiro, ...(comparacao?.dinheiro ?? (e.pagaHoje ? [e.pagaHoje] : []))], pct: base.pct }
+  const promo = e.promocao ? [e.promocao.valorAnterior, e.promocao.valorNovo] : []
+  const permitidos: Permitidos = {
+    dinheiro: [...base.dinheiro, ...(comparacao?.dinheiro ?? (e.pagaHoje ? [e.pagaHoje] : [])), ...promo],
+    pct: e.promocao ? [...base.pct, 40] : base.pct,
+  }
   const conversa: MsgIA[] = [{ role: 'system', content: sistema }, ...paraMensagensIA(e.historico)]
 
   // O que o cliente mandou desde a ultima resposta da Isa.

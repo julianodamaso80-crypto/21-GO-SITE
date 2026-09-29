@@ -32,6 +32,11 @@ export interface ItemLista {
 // Quem veio pelo "Quero Ser Consultor" (dono, 21/09/2026): so na aba Consultores, em nenhuma outra.
 const EH_CONSULTOR = `'consultor' = ANY(COALESCE(c.etiquetas, '{}'::text[]))`
 
+// Promocao de 40% na ativacao (dono, 29/09/2026): so entra no painel quem RESPONDEU. Quem so
+// recebeu, ou tocou em "Agora nao", nao aparece em aba nenhuma.
+const FORA_DA_PROMO = `NOT EXISTS (SELECT 1 FROM public.isa_promocoes pr
+  WHERE pr.telefone = c.telefone AND pr.status = 'enviada' AND (pr.resposta IS NULL OR pr.resposta = 'agora_nao'))`
+
 const FILTRO: Record<Aba, string> = {
   todos: `NOT ${EH_CONSULTOR}`,
   // Pausou sozinha num gatilho (e nao foi transferido) ou esta esperando o dono decidir desconto.
@@ -106,6 +111,7 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = '', usu
        -- Dono (13/09/2026): TODO lead dos .site que nao clicou em "Quero contratar" entra aqui — quem
        -- clicou no desconto e quem recebeu a mensagem dos 5 min, respondendo ou nao.
        AND (${FILTRO[aba]})
+       AND ${FORA_DA_PROMO}
        -- Busca por telefone ignora formatacao: o numero fica so em digitos no banco e "21 97696-5463"
        -- nao achava nada (dono, 28/09/2026). $4 = o que ele digitou, so os digitos.
        AND ($1 = '' OR ($4 <> '' AND c.telefone LIKE '%' || $4 || '%') OR COALESCE(c.nome, cv.pushname, '') ILIKE '%' || $1 || '%')
@@ -162,6 +168,7 @@ export async function listarFunil(): Promise<CardFunil[]> {
      WHERE c.conversation_id IS NOT NULL
        -- Dono (13/09/2026): TODO lead dos .site que nao clicou em "Quero contratar" entra aqui — quem
        -- clicou no desconto e quem recebeu a mensagem dos 5 min, respondendo ou nao.
+       AND ${FORA_DA_PROMO}
      ORDER BY u.created_at DESC NULLS LAST
      LIMIT 500`,
   )
@@ -208,7 +215,7 @@ export async function gravarEtapa(telefone: string, etapa: string | null): Promi
 
 export async function contarPrecisa(): Promise<number> {
   const r = await sql<{ n: string }>(
-    `SELECT count(*) AS n FROM public.isa_contatos c WHERE c.conversation_id IS NOT NULL AND (${FILTRO.precisa})`,
+    `SELECT count(*) AS n FROM public.isa_contatos c WHERE c.conversation_id IS NOT NULL AND (${FILTRO.precisa}) AND ${FORA_DA_PROMO}`,
   )
   return Number(r[0]?.n ?? 0)
 }

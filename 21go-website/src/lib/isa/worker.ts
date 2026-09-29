@@ -54,6 +54,8 @@ import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
 import { identifyPlate } from '@/lib/plate-identify'
 import { isLeilaoOrigin } from '@/data/pricing'
 import { recrutamentoNaIsa } from '@/lib/consultor-recrutamento'
+import { promocaoDoContato, registrarRespostaPromo, marcarUrgente } from '@/lib/isa/promocao'
+import { botaoDaPromocao, mensagemPedirDocumentos, primeiroNomePromo } from '@/lib/isa/promocao.regras'
 
 /**
  * A fila da Isa. Roda disparada pelo webhook (10,5 s depois da mensagem) e por um cron de 1 em
@@ -218,6 +220,28 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     return false
   }
 
+  // Promocao de 40% na ativacao (dono, 29/09/2026). "Agora nao": ninguem responde e o contato
+  // some do painel. Qualquer outra resposta vai pra aba URGENTE — antes do horario e da chave da
+  // Isa, pra aparecer pro time na hora.
+  const promo = await promocaoDoContato(c.telefone).catch(() => null)
+  const botaoPromo = promo ? botaoDaPromocao(payloadsDe(novas), novas.map((m) => m.content ?? '')) : null
+  if (promo && botaoPromo === 'agora_nao') {
+    await registrarRespostaPromo(c.telefone, 'agora_nao')
+    await atualizarContato(c.telefone, { ligada: false, pausa_por: 'promo', pausa_motivo: 'promoção: agora não', pausada_em: new Date().toISOString() })
+    await registrarEvento(c.telefone, 'promo40_agora_nao', null)
+    await liberar(c.telefone, visto, false)
+    return false
+  }
+  if (promo) {
+    // Disse "agora nao" e depois escreveu: voltou a conversar, a Isa volta junto.
+    if (promo.resposta === 'agora_nao' && !c.ligada && c.pausa_por === 'promo') {
+      await atualizarContato(c.telefone, { ligada: true, pausa_por: null, pausa_motivo: null, pausada_em: null })
+      c.ligada = true
+    }
+    await registrarRespostaPromo(c.telefone, botaoPromo === 'seguir' ? 'seguir' : 'texto')
+    await marcarUrgente(c.telefone)
+  }
+
   if (!c.ligada) {
     await liberar(c.telefone, visto, false)
     return false
@@ -245,6 +269,15 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   const agora = new Date()
   const ultimaInbound = novas[novas.length - 1]?.whatsapp_message_id
+
+  // "Quero seguir": pede os documentos com o valor da promocao e SEGUE ligada (dono, 29/09/2026).
+  // O evento `pediu_documentos` faz o documento que chegar depois ir pro 4824, como sempre.
+  if (promo && botaoPromo === 'seguir') {
+    const enviou = await enviarComoGente(c, [mensagemPedirDocumentos(primeiroNomePromo(c.nome ?? promo.nome), promo)], ultimaInbound, visto)
+    await registrarEvento(c.telefone, 'pediu_documentos', { por: 'promo40' })
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
 
   // "Quero Ser Consultor" (dono, 21/09/2026): o formulario abre este numero, mas quem quer ser
   // consultor ouve o recado do recrutamento e NUNCA o atendimento de venda. Vai inteiro numa
@@ -382,8 +415,10 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
   const lead = await leadDoCliente(c.telefone, c.lead_id, c.reiniciada_em).catch(() => null)
   if (lead && lead.id !== c.lead_id) await atualizarContato(c.telefone, { lead_id: lead.id })
-  const desconto =
-    c.desconto50_em && c.desconto50_de && c.desconto50_para
+  // Quem recebeu a promocao: a ativacao que vale e a dela, acima de qualquer outro desconto.
+  const desconto = promo
+    ? { de: promo.valorAnterior, para: promo.valorNovo }
+    : c.desconto50_em && c.desconto50_de && c.desconto50_para
       ? { de: Number(c.desconto50_de), para: Number(c.desconto50_para) }
       : null
   const fatos = lead ? fatosDoLead(lead, desconto) : null
@@ -542,7 +577,8 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     nome: c.nome ?? lead?.nome ?? null,
     genero: (c.genero as 'm' | 'f' | null) ?? null,
     fatos,
-    jaGanhouDesconto: !!c.desconto50_em,
+    jaGanhouDesconto: !!c.desconto50_em || !!promo,
+    promocao: promo,
     falaDeAdesivo: falaDeAdesivo(c.telefone),
     historico: hist,
     agora,

@@ -84,7 +84,8 @@ interface Simulacao {
  * A cor vai em `style`: o Tailwind nao gera classe a partir de variavel.
  */
 const ABAS: { id: Aba; rotulo: string; cor: string }[] = [
-  { id: 'precisa', rotulo: 'Precisa de você', cor: '#C7D301' },
+  // Dono, 29/09/2026: "essa aba preciso de vc muda nome dela pra URGENTE"
+  { id: 'precisa', rotulo: 'URGENTE', cor: '#C7D301' },
   { id: 'todos', rotulo: 'Todos', cor: '#E9ECF8' },
   { id: 'isa', rotulo: 'Isa', cor: '#7B9BE8' },
   { id: 'off', rotulo: 'Off', cor: '#F2911D' },
