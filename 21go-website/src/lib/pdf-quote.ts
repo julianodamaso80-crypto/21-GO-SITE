@@ -29,6 +29,11 @@ export interface QuotePdfInput {
    * seria entregar o lead dele pra 21Go depois da cotacao ja feita.
    */
   consultorSlug?: string | null
+  /**
+   * Lead de bot de parceiro (Mariana, do Gabriel): o botao e o rodape sao do consultor dono do bot,
+   * nunca o rodizio da casa (spec da Mariana, secao 3). Sem isto, o PDF de sempre.
+   */
+  atendimento?: { nome: string; whatsappUrl: string } | null
   /** Consultor que prefere tratar a ativacao na conversa (ver ocultarAtivacao). */
   ocultarAtivacao?: boolean
   nome: string
@@ -572,7 +577,7 @@ function renderComparisonPage(
   // levar de volta pra quem fez a venda, nao pro rodizio da casa.
   const linkWhatsApp = input.consultorSlug
     ? `https://21go.site/api/wa?c=${input.consultorSlug}`
-    : 'https://21go.site/api/wa'
+    : (input.atendimento?.whatsappUrl ?? 'https://21go.site/api/wa')
 
   return `
   <div class="page">
@@ -688,7 +693,7 @@ function renderComparisonPage(
           : `<div class="footer-consultor">
         <div class="footer-consultor-info">
           <span class="footer-eyebrow">Atendimento</span>
-          <span class="footer-name">21Go Proteção Patrimonial Veicular</span>
+          <span class="footer-name">${input.atendimento?.nome ?? '21Go Proteção Patrimonial Veicular'}</span>
         </div>
       </div>`
       }

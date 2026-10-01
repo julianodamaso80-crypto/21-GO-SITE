@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { generateQuotePdf, type QuotePdfInput } from '@/lib/pdf-quote'
 import { resolverConsultor } from '@/lib/consultor'
+import { IDENTIDADE } from '@/lib/isa/identidade'
+import { atendimentoDoPdf } from '@/lib/isa/identidade.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -31,7 +33,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
   const { data, error } = await supa
     .from('leads')
     .select(
-      'id, nome, telefone, whatsapp, email, placa_interesse, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado, cotacao_plano, cotacao_valor, cotacao_planos, carro_app, leilao, seguro_atual, consultor_slug',
+      'id, nome, telefone, whatsapp, email, placa_interesse, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado, cotacao_plano, cotacao_valor, cotacao_planos, carro_app, leilao, seguro_atual, consultor_slug, origem, dominio',
     )
     .eq('id', id)
     .maybeSingle()
@@ -59,18 +61,23 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
   // rodape saia com o nome da casa num material que e dele.
   const slug = (data.consultor_slug as string | null) || null
   const dono = slug ? await resolverConsultor(slug) : null
+  // Lead do bot de parceiro (Mariana): botao e rodape do Gabriel, e sem a promocao da casa. Na Isa
+  // e sempre null — o PDF de sempre.
+  const atendimento = slug
+    ? null
+    : atendimentoDoPdf({ origem: data.origem as string | null, dominio: data.dominio as string | null }, IDENTIDADE)
 
   // Recebeu a promocao de 40% na ativacao (isa_promocoes): o PDF mostra a ativacao da promocao,
   // senao desmente a mensagem que ele recebeu (dono, 29/09/2026). Lead de consultor nunca entra.
   let taxaAtivacao: number | undefined
-  if (!slug) {
+  if (!slug && !atendimento) {
     const tels = [data.whatsapp, data.telefone]
       .map((t) => String(t || '').replace(/\D/g, ''))
       .filter((t) => t.length >= 10)
       .map((t) => (t.startsWith('55') ? t : `55${t}`))
     if (tels.length) {
       const { data: promo } = await supa
-        // schema public de proposito: promocao 40% e so da casa (Isa), nao existe em mariana
+        // schema public de proposito: promocao 40% e so da casa (Isa), nao se aplica a mariana (promocao so da casa)
         .from('isa_promocoes')
         .select('valor_novo, validade')
         .in('telefone', tels)
@@ -85,6 +92,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
   try {
     const pdf = await generateQuotePdf({
       consultorSlug: slug,
+      atendimento,
       ocultarAtivacao: dono?.ocultarAtivacao ?? false,
       nome: (data.nome as string) || '',
       whatsapp: (data.whatsapp as string) || (data.telefone as string) || '',
