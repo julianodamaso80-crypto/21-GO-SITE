@@ -10,6 +10,8 @@
  * sabe de qual cliente e, mesmo com varios pedidos abertos.
  */
 
+import type { HumanoDoBot } from './identidade.regras'
+
 const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 const PREFIXO = 'isa-desc'
@@ -17,6 +19,10 @@ const NUMERO_4824 = '5521969454824'
 // Dono (13/09/2026): "manda so o numero, que ele consegue clicar; nao precisa esse link feio gigante".
 // O WhatsApp deixa o numero clicavel sozinho; o resumo pro time vai pelo aviso, nao pelo link.
 const NUMERO_4824_BONITO = '+55 21 96945-4824'
+
+// Quem recebe a transferencia. Padrao = Leticya no 4824 (Isa); a Mariana passa o Gabriel.
+type HumanoDaTransferencia = Pick<HumanoDoBot, 'nome' | 'genero' | 'telefoneBonito'>
+const HUMANO_PADRAO: HumanoDaTransferencia = { nome: 'Leticya', genero: 'f', telefoneBonito: NUMERO_4824_BONITO }
 
 export function payloadDesconto(telefone: string, decisao: 'sim' | 'nao'): string {
   return `${PREFIXO}:${telefone}:${decisao}`
@@ -88,18 +94,23 @@ export function mensagemDonoRecusou(ativacao: number, comAdesivo = true): string
   return `conversei com meu supervisor e infelizmente não consegui um desconto a mais dessa vez 🙏🏼\n\na ativação continua ${brl(ativacao)}, e o desconto que dá pra ter na mensalidade é ${desconto}`
 }
 
-const TEXTO_TRANSFERENCIA: Record<string, string> = {
-  avaria: 'vou passar as fotos pra Leticya avaliar e ela já te responde 🙏🏼',
-  documento: 'vou te passar pra Leticya, que vai finalizar com você 🙏🏼',
-  associado: 'vou te passar pra Leticya, que cuida disso pra você 🙏🏼',
-  sem_preco: 'vou pedir pra Leticya fazer a cotação do seu veículo com cuidado 🙏🏼',
-  byd: 'quem cuida da proteção do seu BYD é a Leticya, ela vai te atender pessoalmente 🙏🏼',
+function textoTransferencia(motivo: string, h: HumanoDaTransferencia): string {
+  // "pra Leticya ... ela" / "pro Gabriel ... ele"
+  const o = h.genero === 'f' ? 'a' : 'o'
+  const ela = h.genero === 'f' ? 'ela' : 'ele'
+  const textos: Record<string, string> = {
+    avaria: `vou passar as fotos pr${o} ${h.nome} avaliar e ${ela} já te responde 🙏🏼`,
+    documento: `vou te passar pr${o} ${h.nome}, que vai finalizar com você 🙏🏼`,
+    associado: `vou te passar pr${o} ${h.nome}, que cuida disso pra você 🙏🏼`,
+    sem_preco: `vou pedir pr${o} ${h.nome} fazer a cotação do seu veículo com cuidado 🙏🏼`,
+    byd: `quem cuida da proteção do seu BYD é ${o} ${h.nome}, ${ela} vai te atender pessoalmente 🙏🏼`,
+  }
+  return textos[motivo] ?? textos.documento
 }
 
 /** O cliente toca no numero e ELE escreve pro 4824 — o 4824 nunca manda a primeira mensagem. */
-export function mensagemTransferencia(p: { motivo: string; resumo?: string }): string {
-  const frase = TEXTO_TRANSFERENCIA[p.motivo] ?? TEXTO_TRANSFERENCIA.documento
-  return `${frase}\n\né só chamar ela nesse número 👇\n${NUMERO_4824_BONITO}`
+export function mensagemTransferencia(p: { motivo: string; resumo?: string }, h: HumanoDaTransferencia = HUMANO_PADRAO): string {
+  return `${textoTransferencia(p.motivo, h)}\n\né só chamar ${h.genero === 'f' ? 'ela' : 'ele'} nesse número 👇\n${h.telefoneBonito}`
 }
 
 /**
@@ -107,11 +118,11 @@ export function mensagemTransferencia(p: { motivo: string; resumo?: string }): s
  * conversa tinha morrido; agora ela diz o que e, oferece a Leticya (o mesmo link do 4824 da
  * transferencia) e segue atendendo.
  */
-export function mensagemRobo(p: { genero: 'm' | 'f' | null; resumo?: string }): string {
+export function mensagemRobo(p: { genero: 'm' | 'f' | null; resumo?: string }, h: HumanoDaTransferencia = HUMANO_PADRAO): string {
   const protegido = p.genero === 'f' ? 'protegida' : 'protegido'
   return (
     `sou uma atendente virtual inteligente 😊 tô aqui pra te ajudar com mais velocidade, pra você ficar ${protegido} o mais rápido possível\n\n` +
-    `mas se você quiser falar direto com a Leticya, é só chamar nesse número 👇\n${NUMERO_4824_BONITO}`
+    `mas se você quiser falar direto com ${h.genero === 'f' ? 'a' : 'o'} ${h.nome}, é só chamar nesse número 👇\n${h.telefoneBonito}`
   )
 }
 

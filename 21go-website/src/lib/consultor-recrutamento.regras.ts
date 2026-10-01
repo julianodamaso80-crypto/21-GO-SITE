@@ -59,7 +59,8 @@ export function primeiroNomeDoFormulario(texto: string | null | undefined): stri
   return primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase()
 }
 
-export function mensagemBoasVindas(saudacao: Cumprimento, nome: string | null = null): string {
+/** `indicacao`: "da consultora Leticya Thayene" na Isa, "do consultor Gabriel Juliano" na Mariana. */
+export function mensagemBoasVindas(saudacao: Cumprimento, nome: string | null = null, indicacao = 'da consultora Leticya Thayene'): string {
   const abertura = saudacao.charAt(0).toUpperCase() + saudacao.slice(1) + (nome ? `, ${nome}` : '')
   return (
     `${abertura}! 👋\n\n` +
@@ -67,7 +68,7 @@ export function mensagemBoasVindas(saudacao: Cumprimento, nome: string | null = 
     'Nosso treinamento é online, todas as terças e quartas às 20h.\n\n' +
     'Já te passo o link do nosso grupo — é por lá que a gente avisa tudo, e no dia do treinamento eu mando o link da sala:\n' +
     `${LINK_GRUPO}\n\n` +
-    'Ao entrar, informe que sua indicação é da consultora Leticya Thayene.'
+    `Ao entrar, informe que sua indicação é ${indicacao}.`
   )
 }
 

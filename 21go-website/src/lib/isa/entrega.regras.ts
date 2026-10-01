@@ -7,6 +7,7 @@
  */
 
 import type { Fatos } from './fatos.regras'
+import type { HumanoDoBot } from './identidade.regras'
 
 const brl = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -175,12 +176,17 @@ export function sinalDeFechamento(p: { texto: string; mandouArquivo: boolean; to
 }
 
 /** `comemorar` = false quando a IA acabou de responder (ela ja comemorou; duas vezes soa robo). */
-export function mensagemPedidoDocumentos(comemorar = true, faltam: string[] = ['a foto da CNH', 'o documento do veículo', 'um comprovante de residência']): string {
+export function mensagemPedidoDocumentos(
+  comemorar = true,
+  faltam: string[] = ['a foto da CNH', 'o documento do veículo', 'um comprovante de residência'],
+  // quem finaliza: Leticya na Isa, Gabriel na Mariana
+  h: Pick<HumanoDoBot, 'nome' | 'genero'> = { nome: 'Leticya', genero: 'f' },
+): string {
   // Dono (12/09/2026): o que ele ja mandou no comeco nao se pede de novo.
   const lista = faltam.length > 1 ? `${faltam.slice(0, -1).join(', ')} e ${faltam[faltam.length - 1]}` : faltam[0]
   const pedido = faltam.length
     ? `pra darmos sequência na sua ativação, me manda por aqui: ${lista}`
-    : 'já tenho seus documentos aqui, então vou te passar pra Leticya finalizar a sua ativação'
+    : `já tenho seus documentos aqui, então vou te passar pr${h.genero === 'f' ? 'a' : 'o'} ${h.nome} finalizar a sua ativação`
   return comemorar ? `que ótimo! 🥳\n\n${pedido}` : pedido
 }
 
