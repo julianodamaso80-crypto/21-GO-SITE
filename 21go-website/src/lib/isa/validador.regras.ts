@@ -57,13 +57,25 @@ export const NUMEROS_OFICIAIS: readonly string[] = [
   '40902817000170', // CNPJ
 ]
 
+const TELEFONE_DA_LETICYA = '21969454824'
+
+/**
+ * Os numeros oficiais de um bot: os da casa (sede, 0800, CNPJ) e o telefone do humano dele no
+ * lugar do da Leticya (Mariana: o Gabriel). Na Isa, a lista de sempre.
+ */
+export function numerosOficiais(telefoneDoHumano: string): readonly string[] {
+  const semPais = telefoneDoHumano.replace(/^55/, '')
+  return NUMEROS_OFICIAIS.map((n) => (n === TELEFONE_DA_LETICYA ? semPais : n))
+}
+
+
 /**
  * Telefone escrito pela IA (11/09/2026: ela inventou "0800 2100 021"). Numero de contato so sai
  * pelo codigo (link da Leticya); na resposta da IA, qualquer telefone barra. Sequencia de 8+
  * digitos separados por espaco, ponto, hifen ou parenteses — sem virgula e sem R$ na frente,
  * pra nao pegar dinheiro ("R$ 116.540,00").
  */
-export function extrairTelefones(texto: string): string[] {
+export function extrairTelefones(texto: string, oficiais: readonly string[] = NUMEROS_OFICIAIS): string[] {
   const out: string[] = []
   // A barra entra por causa do CNPJ (40.902.817/0001-70): sem ela a sequencia parava em "40.902.817"
   // e o CNPJ oficial era barrado como telefone (auditoria de 12/09/2026).
@@ -71,18 +83,22 @@ export function extrairTelefones(texto: string): string[] {
     const antes = texto.slice(Math.max(0, m.index! - 4), m.index!)
     if (/R\$\s*$/.test(antes)) continue
     const digitos = m[0].replace(/\D/g, '')
-    if (digitos.length >= 8 && !NUMEROS_OFICIAIS.includes(digitos)) out.push(m[0].trim())
+    if (digitos.length >= 8 && !oficiais.includes(digitos)) out.push(m[0].trim())
   }
   return out
 }
 
-export function validarNumeros(texto: string, permitidos: Permitidos): { ok: boolean; invalidos: string[] } {
+export function validarNumeros(
+  texto: string,
+  permitidos: Permitidos,
+  oficiais: readonly string[] = NUMEROS_OFICIAIS,
+): { ok: boolean; invalidos: string[] } {
   const { dinheiro, pct } = extrairNumeros(texto)
   const perto = (lista: number[], v: number) => lista.some((p) => Math.abs(p - v) < TOLERANCIA)
   const invalidos = [
     ...dinheiro.filter((v) => !perto(permitidos.dinheiro, v)).map(formataDinheiro),
     ...pct.filter((v) => !perto(permitidos.pct, v)).map((v) => `${v}%`),
-    ...extrairTelefones(texto).map((t) => `telefone ${t}`),
+    ...extrairTelefones(texto, oficiais).map((t) => `telefone ${t}`),
   ]
   return { ok: invalidos.length === 0, invalidos: [...new Set(invalidos)] }
 }

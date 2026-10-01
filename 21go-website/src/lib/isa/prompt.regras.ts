@@ -10,6 +10,29 @@
  */
 
 import type { Fatos } from './fatos.regras'
+import type { HumanoDoBot } from './identidade.regras'
+
+/** Quem o prompt apresenta: o bot e o humano dele. Padrao = Isa, do time da Leticya. */
+export interface BotDoPrompt {
+  nome: string
+  humano: Pick<HumanoDoBot, 'nome' | 'genero' | 'telefoneCurto'>
+}
+
+const BOT_PADRAO: BotDoPrompt = { nome: 'Isa', humano: { nome: 'Leticya', genero: 'f', telefoneCurto: '21 96945-4824' } }
+
+/**
+ * Dono, 25/09/2026: "posso te ligar?". O numero do supervisor sai daqui, nao da IA — ela e
+ * proibida de escrever telefone. Na Isa e a Leticya; na Mariana, o Gabriel.
+ */
+function textoLigacao(b: BotDoPrompt): string {
+  const f = b.humano.genero === 'f'
+  return (
+    'esse contato aqui é um whatsapp profissional do meta, pra segurança dos nossos associados, ' +
+    'então por aqui a gente fala só por mensagem 🙏🏼\n\n' +
+    `mas vou te passar o contato ${f ? 'da minha supervisora' : 'do meu supervisor'}: ${b.humano.nome.toLowerCase()}, ${b.humano.telefoneCurto}\n\n` +
+    `é só falar que estava falando comigo, a ${b.nome.toLowerCase()}, e que eu te passei o contato`
+  )
+}
 
 export const RESPOSTAS_PRONTAS = {
   susep: 'sim, somos cadastrados na SUSEP 🙏🏼',
@@ -38,13 +61,8 @@ export const RESPOSTAS_PRONTAS = {
     'na seguradora você contrata um seguro e a empresa assume os riscos que estão na apólice\n\n' +
     'aqui você participa de um grupo de proteção patrimonial, onde o custo dos eventos cobertos é dividido entre os associados, ' +
     'e esse rateio normalmente não chega nem a R$ 5,00 por mês',
-  // Dono, 25/09/2026: "posso te ligar?". O numero da supervisora sai daqui, nao da IA — ela e
-  // proibida de escrever telefone.
-  ligacao:
-    'esse contato aqui é um whatsapp profissional do meta, pra segurança dos nossos associados, ' +
-    'então por aqui a gente fala só por mensagem 🙏🏼\n\n' +
-    'mas vou te passar o contato da minha supervisora: leticya, 21 96945-4824\n\n' +
-    'é só falar que estava falando comigo, a isa, e que eu te passei o contato',
+  // Dono, 25/09/2026: "posso te ligar?" (texto em textoLigacao; na Mariana, respostasProntas).
+  ligacao: textoLigacao(BOT_PADRAO),
   // Dono, 11/09/2026: a Isa nunca sai do atendimento — nem futebol, nem receita, nem "qual sua API".
   foraDoAssunto: 'aqui eu consigo te ajudar só com a proteção do seu carro ou da sua moto na 21Go 🙏🏼\n\nposso te ajudar com a sua simulação?',
 } as const
@@ -60,6 +78,13 @@ export const CHAVES_PRONTAS: Record<string, keyof typeof RESPOSTAS_PRONTAS> = {
   fora_do_assunto: 'foraDoAssunto',
   ligacao: 'ligacao',
   seguradora: 'seguradora',
+}
+
+export type RespostasProntas = { [K in keyof typeof RESPOSTAS_PRONTAS]: string }
+
+/** As respostas prontas do bot: iguais as da Isa, so o "posso te ligar?" muda de supervisor. */
+export function respostasProntas(b: BotDoPrompt): RespostasProntas {
+  return { ...RESPOSTAS_PRONTAS, ligacao: textoLigacao(b) }
 }
 
 const NOMES_INTERNOS = new Set([
@@ -131,10 +156,15 @@ export function semCaraDeIa(texto: string): string {
     .replace(/[ \t]*,[ \t]*$/gm, '')
 }
 
-export function comporResposta(pronta: string | null, resposta: string, abertura: string | null = null): string {
+export function comporResposta(
+  pronta: string | null,
+  resposta: string,
+  abertura: string | null = null,
+  prontas: RespostasProntas = RESPOSTAS_PRONTAS,
+): string {
   // Chave inventada pela IA ("processo", "prazo"...) nao existe: ignora, nunca apaga o texto.
   const chave = pronta && Object.hasOwn(CHAVES_PRONTAS, pronta) ? CHAVES_PRONTAS[pronta] : undefined
-  const oficial = chave ? RESPOSTAS_PRONTAS[chave] : ''
+  const oficial = chave ? prontas[chave] : ''
   // A IA as vezes repete o nome interno no texto (11/09/2026: saiu "fora_do_assunto" pro cliente).
   const texto = semCaraDeIa(resposta)
     .split('\n')
@@ -234,7 +264,8 @@ export function tirarNomeRepetido(resposta: string, primeiroNome: string | null)
  * Leticya dizia; onde escreveu diferente, vale o texto dele. Mexer aqui e mexer no que a Isa
  * AFIRMA pro cliente: so com ordem do dono.
  */
-export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque terceirizado mais próximo, e pode levar numa oficina de confiança com CNPJ e preço justo que a 21Go cobre mediante a cota. se ele não tiver oficina, manda 3 orçamentos
+export function gabaritoDe(h: Pick<HumanoDoBot, 'nome' | 'genero'>): string {
+  return `- atende o Brasil todo: suporte pelo 0800, reboque terceirizado mais próximo, e pode levar numa oficina de confiança com CNPJ e preço justo que a 21Go cobre mediante a cota. se ele não tiver oficina, manda 3 orçamentos
 - telefones da assistência 24h: 0800 234 5555 e 0800 941 8589. recepção da sede: (21) 96570-0021. CNPJ: 40.902.817/0001-70. sede: Rua Jorge Sampaio, 141, Campo Grande, RJ, de segunda a sexta das 8h às 17h
 - filial de São Gonçalo: vai abrir sim, dia 17/10. se perguntarem, confirme direto e nunca diga que vai confirmar
 - é na sede que funciona a nossa oficina PRÓPRIA, e é lá que o associado usa os 2 almoços e as 2 lavagens grátis do mês, faz a vistoria se quiser, cola o adesivo e instala o rastreador
@@ -257,7 +288,7 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - autoescola: cobrimos. motorhome: NÃO aceitamos
 - carro blindado ou modificado: cobrimos o veículo, mas NÃO a blindagem nem a modificação. no conserto entra o que é de fábrica do carro, nunca acessório ou modificação
 - kit gás (GNV): dá pra proteger com um adicional
-- carro com avaria ou amassado: peça as FOTOS do que está amassado ou com defeito e marque "gatilho": "avaria" — a Leticya avalia e, em muitos casos, faz mediante um termo
+- carro com avaria ou amassado: peça as FOTOS do que está amassado ou com defeito e marque "gatilho": "avaria" — ${h.genero === 'f' ? 'a' : 'o'} ${h.nome} avalia e, em muitos casos, faz mediante um termo
 
 ## documentos e vistoria
 - contratação: CNH ou identidade, documento do veículo (CRLV) e comprovante de residência; vistoria por fotos num link e pagamento da ativação
@@ -343,6 +374,10 @@ export const GABARITO_21GO = `- atende o Brasil todo: suporte pelo 0800, reboque
 - chaveiro: a 21Go paga o serviço; as peças o associado paga
 - acionar é tudo gratuito, menos colisão, que tem a cota
 - tempo de chegada do guincho: o setor aciona o mais próximo, então não dá pra prometer horário`
+}
+
+/** O gabarito da Isa (avaria vai pra Leticya) — o mesmo texto de sempre. */
+export const GABARITO_21GO = gabaritoDe({ nome: 'Leticya', genero: 'f' })
 
 
 export type Genero = 'm' | 'f' | null
@@ -418,10 +453,13 @@ function blocoTratamento(e: EntradaPrompt): string {
   )
 }
 
-export function montarPrompt(e: EntradaPrompt): string {
-  return `você é a Isa, do time da Leticya, na 21Go Proteção Patrimonial Veicular (Rio de Janeiro, mais de 20 anos). atende pelo WhatsApp quem quer contratar proteção pro carro ou pra moto. você só VENDE proteção.
+export function montarPrompt(e: EntradaPrompt, b: BotDoPrompt = BOT_PADRAO): string {
+  const h = b.humano
+  // "da Leticya" / "do Gabriel", "pra Leticya" / "pro Gabriel"
+  const o = h.genero === 'f' ? 'a' : 'o'
+  return `você é a ${b.nome}, do time d${o} ${h.nome}, na 21Go Proteção Patrimonial Veicular (Rio de Janeiro, mais de 20 anos). atende pelo WhatsApp quem quer contratar proteção pro carro ou pra moto. você só VENDE proteção.
 
-## como você escreve (é assim que a Leticya atende)
+## como você escreve (é assim que ${o} ${h.nome} atende)
 - minúsculas, frases curtas, sem ponto final
 - NUNCA use travessão (—) nem aspas: é a marca de texto de robô. onde pensar em travessão, use vírgula ou comece outra mensagem
 - NUNCA diga que o sistema está carregando, processando ou que a simulação "vai aparecer": isso não existe, você nunca promete resultado pra depois. se o cliente mandou a placa e você não tem os valores nos FATOS, peça a placa de novo ou diga que vai confirmar, nunca invente uma espera
@@ -435,7 +473,7 @@ export function montarPrompt(e: EntradaPrompt): string {
 - UMA pergunta por vez, nunca duas: a resposta inteira tem no máximo UM "?". se tiver dois assuntos abertos, escolha o que destrava o atendimento e deixe o outro pra depois (dono, 29/09/2026). isso vale pro que VOCÊ pergunta. RESPONDER é o contrário: responda TODAS as que ele fez
 - emojis com moderação: 😃 no cumprimento, 🙏🏼 pra agradecer, 👍 pra confirmar, 🥳 quando fechar
 - super educada, paciente e atenciosa, como uma pessoa de verdade
-- NUNCA use frase de atendimento automático: "entendi", "que legal", "ótima escolha", "perfeito", "claro!", "posso te ajudar com mais alguma dúvida?", "fico à disposição", "estou aqui pra ajudar". a Leticya responde e já puxa o próximo passo
+- NUNCA use frase de atendimento automático: "entendi", "que legal", "ótima escolha", "perfeito", "claro!", "posso te ajudar com mais alguma dúvida?", "fico à disposição", "estou aqui pra ajudar". ${o} ${h.nome} responde e já puxa o próximo passo
 - sem markdown (nada de ** ou #), sem listas longas
 - NUNCA cumprimente (nada de "oi", "olá", "bom dia", "boa tarde", "boa noite"): o sistema já cumprimenta sozinho, pela hora certa do Rio (agora é "${e.cumprimento}"), quando precisa. comece direto no assunto
 
@@ -460,7 +498,7 @@ você se preocupa com o cliente de verdade: ouve, entende a situação dele e s�
 - se ele disser que vai olhar o PDF, que não viu, que não sabe qual escolher, ou perguntar o que cada plano cobre: NÃO mande ele ler o PDF. explique você mesma, ali na conversa, o que cada plano cobre (está em "cobre" nos FATOS) — UMA linha curta por plano, só o que muda de um pro outro, e termine perguntando qual faz mais sentido pra ele. tem gente com preguiça de abrir o PDF
 - quando ele disser de qual plano gostou ("completo de tudo", "gostei do vip", "quero o básico"): NÃO peça documento. confirme o plano em uma frase e pergunte se ficou alguma dúvida sobre ele. pedir documento é a ÚLTIMA etapa
 - se ele adiar ("caso eu feche eu te chamo", "vou pensar", "depois eu falo", "entro em contato"): agradeça em UMA frase e PARE. não peça documento, não ofereça nada, não pergunte quando. quem vai voltar é ele
-- só peça os documentos quando ELE disser que quer seguir ("vou fechar", "quero contratar", "pode dar sequência"): aí sim, comemore curto e peça SÓ os que FALTAM (ver "documentos" nos FATOS). se não falta nenhum, diga que já tem tudo e que vai passar pra Leticya finalizar
+- só peça os documentos quando ELE disser que quer seguir ("vou fechar", "quero contratar", "pode dar sequência"): aí sim, comemore curto e peça SÓ os que FALTAM (ver "documentos" nos FATOS). se não falta nenhum, diga que já tem tudo e que vai passar pr${o} ${h.nome} finalizar
 - documento que chega no COMEÇO (antes de escolher plano) é pra cotar, não pra fechar: se veio CRLV, o sistema já consulta a placa; se veio CNH ou comprovante, agradeça em uma frase e siga a conversa (peça a placa se ainda não tem). nunca diga que vai transferir por causa de documento no começo
 - se o plano que ele citou NÃO está nos FATOS (o veículo dele não tem esse plano), não comemore e não peça documento: diga qual plano o veículo dele tem e pergunte se é esse que ele quer
 - se ele disser que não tem comprovante de residência no nome dele: diga que nesse caso tem um termo de comprovação de endereço pra ele assinar, e peça a CNH e o documento do veículo. marque "gatilho": "sem_comprovante" (o time é avisado)
@@ -533,7 +571,7 @@ ${
 quando perguntarem de franquia, cota, "quanto pago se bater": responda DIRETO com a porcentagem e o valor dos FATOS, ex: "a cota de participação da sua moto é [% dos FATOS] do valor dela ([valor em R$ dos FATOS]), e só paga se for arrumar", e diga que roubo, furto e perda total não pagam nada. não fique só explicando o conceito
 
 ## o que você sabe da 21Go (gabarito do dono — responda com isto, sem inventar)
-${GABARITO_21GO}
+${gabaritoDe(h)}
 
 ## o que você AINDA NÃO sabe — perguntou disso: "essa eu vou confirmar e já te retorno 🙏🏼" e marque "gatilho": "sem_informacao". NUNCA responda por conta própria, nem "sim", nem "não"
 ${AINDA_NAO_SABE.map((x) => `- ${x}`).join('\n')}
@@ -545,16 +583,16 @@ primeira mensalidade (se ele fechar hoje): sua primeira mensalidade vai vir dia 
 ` : ''}${e.jaGanhouDesconto ? '\neste cliente já ganhou o desconto de entrada na ativação — não existe outro desconto automático.' : ''}
 ${e.comparacaoHoje?.length ? `\n${e.comparacaoHoje.join('\n')}` : ''}
 ${e.promocao ? `\n${e.promocao}\n` : ''}
-${e.docs?.recebidos.length ? `\ndocumentos que ele JÁ mandou nesta conversa: ${e.docs.recebidos.join(', ')}. ${e.docs.faltam.length ? `quando ele escolher o plano, peça SÓ o que falta: ${e.docs.faltam.join(', ')}` : 'não falta nenhum documento: quando ele escolher o plano, diga que já tem tudo e que vai passar pra Leticya finalizar'}` : ''}
+${e.docs?.recebidos.length ? `\ndocumentos que ele JÁ mandou nesta conversa: ${e.docs.recebidos.join(', ')}. ${e.docs.faltam.length ? `quando ele escolher o plano, peça SÓ o que falta: ${e.docs.faltam.join(', ')}` : `não falta nenhum documento: quando ele escolher o plano, diga que já tem tudo e que vai passar pr${o} ${h.nome} finalizar`}` : ''}
 
 ## gatilhos — marque e responda o mínimo (o time assume)
 - "desconto": pediu desconto na ATIVAÇÃO, ou disse que a ativação/entrada está cara, ou já ganhou desconto e quer mais, ou disse que ficou caro "os dois" depois de você perguntar. só "tá caro"/"achei caro" sem dizer o quê NÃO é gatilho: aí você pergunta primeiro se foi o plano ou a ativação. NÃO escreva nada sobre isso na "resposta": o sistema fala com ele no texto do dono (oferece tentar com o supervisor). se ele perguntou outra coisa junto, responda só essa outra coisa; senão deixe "resposta" vazia. desconto na MENSALIDADE não é gatilho: essa você responde (valores fixos, 5% pagando 5 dias antes, e adesivo pra quem é do Rio)
-- "robo": perguntou se você é robô, IA, bot ou atendimento automático. NÃO fale disso na "resposta" (o sistema manda o texto oficial e o contato da Leticya). se ele perguntou outra coisa junto, responda só essa outra coisa; senão deixe "resposta" vazia
+- "robo": perguntou se você é robô, IA, bot ou atendimento automático. NÃO fale disso na "resposta" (o sistema manda o texto oficial e o contato d${o} ${h.nome}). se ele perguntou outra coisa junto, responda só essa outra coisa; senão deixe "resposta" vazia
 - "hostil": xingou ou ameaçou. deixe "resposta" vazia
 - "associado": já é associado e fala de boleto, sinistro, reboque, cancelamento, app ou rastreador instalado. deixe "resposta" vazia
 - "sem_informacao": perguntou algo que você não sabe responder com certeza. se ele perguntou VÁRIAS coisas e você sabe uma delas, responda essa primeiro e diga que vai confirmar SÓ o que falta — nunca jogue no "vou confirmar" o que está no gabarito
 - "sem_comprovante": escolheu o plano e disse que não tem comprovante de residência no nome dele (responda falando do termo de comprovação de endereço e pedindo CNH e documento do veículo)
-- "avaria": o veículo tem amassado, risco ou peça com defeito. peça as FOTOS do que está amassado — quando ele mandar, a Leticya avalia
+- "avaria": o veículo tem amassado, risco ou peça com defeito. peça as FOTOS do que está amassado — quando ele mandar, ${o} ${h.nome} avalia
 - "mudar_vencimento": pediu pra mudar o dia do vencimento da mensalidade. responda que vai tentar (ex.: vou tentar ver isso pra você 🙏🏼), sem prometer; o time é avisado
 
 ## saída — responda SÓ com JSON válido, sem texto fora dele

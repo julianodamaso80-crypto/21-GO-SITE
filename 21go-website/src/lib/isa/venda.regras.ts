@@ -216,13 +216,18 @@ export function jaPerguntouProtecao(historico: { direction: 'inbound' | 'outboun
 
 /* ───────────────────────── "oi" ───────────────────────── */
 
-const SO_CUMPRIMENTO =
-  /^(?:(?:oi+|oie+|ol[aá]|opa|e a[ií]|eai|hey|hello|bom dia|boa tarde|boa noite|boa|tudo bem|tudo bom|td bem|td bom|tudo certo|beleza|blz|como vai|como (vc|voc[eê]) (ta|est[aá])|por favor|pfv|isa|leticya|21go)[\s,!.?]*)+$/
+const CUMPRIMENTOS =
+  'oi+|oie+|ol[aá]|opa|e a[ií]|eai|hey|hello|bom dia|boa tarde|boa noite|boa|tudo bem|tudo bom|td bem|td bom|tudo certo|beleza|blz|como vai|como (vc|voc[eê]) (ta|est[aá])|por favor|pfv'
+
+// Os nomes do bot e do humano tambem sao cumprimento ("oi isa", "leticya?"); na Mariana, os dela.
+const soCumprimento = (nomes: readonly string[]) => new RegExp(`^(?:(?:${CUMPRIMENTOS}|${nomes.join('|')}|21go)[\\s,!.?]*)+$`)
+
+const SO_CUMPRIMENTO = soCumprimento(['isa', 'leticya'])
 
 /** A mensagem e SO um cumprimento ("oi", "bom dia, tudo bem?"): nada de pergunta junto. */
-export function ehSoCumprimento(texto: string | null | undefined): boolean {
-  const t = norm(texto).replace(/[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u200d\ufe0f]/gu, '').trim()
-  return !!t && SO_CUMPRIMENTO.test(t) && !concordaSemSaudar(t)
+export function ehSoCumprimento(texto: string | null | undefined, nomes?: readonly string[]): boolean {
+  const t = norm(texto).replace(/[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}‍️]/gu, '').trim()
+  return !!t && (nomes ? soCumprimento(nomes) : SO_CUMPRIMENTO).test(t) && !concordaSemSaudar(t)
 }
 
 /**
