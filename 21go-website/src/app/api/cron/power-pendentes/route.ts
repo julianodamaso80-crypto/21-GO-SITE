@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { estaNoAr, resolverConsultor } from '@/lib/consultor'
 import { acharNoFunil, criarPelaPipeline } from '@/lib/power-pipeline'
 import { POWERLINK_LETICYA, anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
-import { buscasDoLead, leadPrecisaDoPower } from '@/lib/power-fila.regras'
+import { buscasDoLead, leadPrecisaDoPower, powerlinkDaOrigem, ORIGENS_DA_FILA_LISTA } from '@/lib/power-fila.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -90,8 +90,9 @@ async function cadastrar(l: Lead): Promise<{ quotationCode?: string; negotiation
   const modeloId = marca && fipe && ano ? await modeloDoPower(marca, fipe, ano, tipo) : undefined
   const cidadeId = cidadeDoDdd(telefone)?.cidadeId
 
-  // De quem e o lead: o PowerLink do consultor do site, senao o da casa (Leticya).
-  let powerlink = POWERLINK_LETICYA
+  // De quem e o lead: o do bot de parceiro (Mariana -> Gabriel), o do consultor do site, senao o da
+  // casa (Leticya).
+  let powerlink = powerlinkDaOrigem(l.origem) ?? POWERLINK_LETICYA
   if (l.consultor_slug) {
     const c = await resolverConsultor(l.consultor_slug).catch(() => null)
     if (c && estaNoAr(c) && c.powerlinkId) powerlink = c.powerlinkId
@@ -160,7 +161,7 @@ export async function GET(req: NextRequest) {
     )
     .is('quotation_code', null)
     .is('negotiation_code', null)
-    .in('origem', ['site_organico', 'isa_whatsapp'])
+    .in('origem', [...ORIGENS_DA_FILA_LISTA])
     .neq('status', 'excluido')
     .gte('created_at', desde)
     .order('created_at', { ascending: true })

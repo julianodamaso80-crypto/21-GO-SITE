@@ -7,8 +7,22 @@
  * 20:00 e 20:48 — o Power fora do ar e ninguem tentando de novo.
  */
 
-/** So o que passa pelo formulario do site e pela Isa. O resto nasce no Power por outro caminho. */
-const ORIGENS_DA_FILA = new Set(['site_organico', 'isa_whatsapp'])
+/** So o que passa pelo formulario do site e pela Isa/Mariana. O resto nasce no Power por outro caminho. */
+const ORIGENS_DA_FILA = new Set(['site_organico', 'isa_whatsapp', 'mariana_whatsapp'])
+
+export const ORIGENS_DA_FILA_LISTA: readonly string[] = [...ORIGENS_DA_FILA]
+
+/**
+ * Lead criado por bot de parceiro volta pro Power do consultor dono do bot, nunca pro da Leticya
+ * (dono, 01/10/2026: "tudo da mariana vai cair no power do gabriel"). Mesmo valor do env da
+ * Mariana (testes/power/fila-mariana.test.ts confere). Sem entrada aqui: a regra de sempre.
+ */
+const POWERLINK_POR_ORIGEM: Record<string, string> = { mariana_whatsapp: 'XDmAbx6D' }
+
+export function powerlinkDaOrigem(origem: string | null | undefined): string | null {
+  const o = origem ?? ''
+  return Object.hasOwn(POWERLINK_POR_ORIGEM, o) ? POWERLINK_POR_ORIGEM[o] : null
+}
 const ESPERA_MS = 10 * 60 * 1000
 const DESISTE_MS = 30 * 24 * 60 * 60 * 1000
 
