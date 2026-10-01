@@ -368,6 +368,8 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     // placa do CRLV vira simulacao, CNH/comprovante ficam guardados. So transfere pro 4824 quando
     // ele esta FECHANDO: ja escolheu o plano (pedimos os documentos) ou esta escolhendo agora.
     const docsAgora = leituras.filter((l): l is Leitura => !!l && DOC_DE_FECHAMENTO.has(l.tipo))
+    // Mandou documento de contratacao = chance de fechar: vai pra aba URGENTE na hora (dono, 01/10/2026)
+    if (docsAgora.length) await marcarUrgente(c.telefone, `documento: ${docsAgora.map((d) => d.tipo).join(', ')}`)
     const ilegivel = leituras.some((l) => !l)
     if (docsAgora.length || ilegivel) {
       const textoAgora = novas.map((m) => m.content).join('\n')
@@ -764,6 +766,8 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     }
     await enviarComoGente(c, [mensagemPedidoDocumentos(false, docsDaConversa.faltam)], ultimaInbound, visto)
     await registrarEvento(c.telefone, 'pediu_documentos', { faltam: docsDaConversa.faltam })
+    // Quer fechar: entra na aba URGENTE mesmo que ja tenha sido tratado antes (dono, 01/10/2026)
+    await marcarUrgente(c.telefone, 'quer fechar')
   }
 
   // Aqui os R$ 50 saiam sozinhos pra quem respondeu a mensagem dos 5 min escrevendo qualquer

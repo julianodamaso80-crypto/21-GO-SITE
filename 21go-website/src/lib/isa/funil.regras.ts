@@ -19,6 +19,8 @@ export interface Etapa {
 
 export const ETAPAS: readonly Etapa[] = [
   { id: 'simulou', rotulo: 'Simulou', cor: '#293C82' },
+  // Dono, 01/10/2026: a etiqueta Urgente tambem e coluna, como todas as outras
+  { id: 'urgente', rotulo: 'Urgente', cor: '#DC2626' },
   { id: 'quente', rotulo: 'Quente', cor: '#EF4444' },
   { id: 'leticya', rotulo: 'Falando com Leticya', cor: '#F2911D' },
   { id: 'guilherme', rotulo: 'Falando com Guilherme', cor: '#F472B6' },

@@ -46,12 +46,13 @@ const FILTRO: Record<Aba, string> = {
   // Entrou quando a Isa pausou num gatilho, pediu decisao de desconto ou ficou devendo resposta —
   // e FICA ate alguem clicar em "ja cuidei" ou a janela de 24 h fechar. Ligar/desligar a Isa nao
   // mexe nisto (dono, 25/09/2026); por isso a aba le o carimbo `precisa_desde`, nao o estado de agora.
-  precisa: `c.precisa_desde IS NOT NULL
+  precisa: `(c.precisa_desde IS NOT NULL OR COALESCE(c.etiquetas, '{}'::text[]) && ARRAY['urgente','quente']::text[])
     -- quem foi pro 4824 e da Leticya, por outro numero
     -- ...a nao ser que esteja QUENTE, querendo fechar (dono, 29/09/2026)
     AND (c.transferido_em IS NULL OR 'quente' = ANY(COALESCE(c.etiquetas, '{}'::text[])))
     -- "ja cuidei" do painel tira da aba e deixa a conversa normal nas outras (dono, 25/09/2026)
-    AND c.resolvido_em IS NULL
+    -- "ja cuidei" nao vale contra a etiqueta Urgente: ela e escolha de quem esta atendendo
+    AND (c.resolvido_em IS NULL OR 'urgente' = ANY(COALESCE(c.etiquetas, '{}'::text[])))
     -- Passou de 24 h da ultima mensagem dele: nao da pra escrever, so o template de retomada.
     -- Nao fica cobrando atencao de quem ninguem consegue responder (dono, 25/09/2026).
     AND (c.janela_ate IS NULL OR c.janela_ate > now())

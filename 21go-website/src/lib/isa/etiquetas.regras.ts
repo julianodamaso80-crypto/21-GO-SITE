@@ -18,6 +18,9 @@ export interface Etiqueta {
 }
 
 export const ETIQUETAS: Etiqueta[] = [
+  // Dono, 01/10/2026: "cria uma etiqueta urgente, caso eu seleciono ela ele vai pra urgente" —
+  // marcar esta etiqueta joga a conversa na aba URGENTE, mesmo sem motivo automatico.
+  { id: 'urgente', nome: 'Urgente', cor: '#DC2626', claro: false },
   // Dono, 16/09/2026: "faz uma tag quente tbm e funil tbm"
   { id: 'quente', nome: 'Quente', cor: '#EF4444', claro: false },
   { id: 'leticya', nome: 'Falando com Leticya', cor: '#F2911D', claro: false },
@@ -57,7 +60,7 @@ export function normalizarEtiquetas(lista: unknown): string[] {
  * vc tira do precisa de vc" (o Frio ja saia desde a manha). E "se fechou sai de preciso de vc".
  */
 // Dono, 29/09/2026: "qd eu colocar qq etiqueta vc tira de urgente, so quente que continua".
-export const ETIQUETAS_FORA_DA_FILA: readonly string[] = ETIQUETAS.map((e) => e.id).filter((id) => id !== 'quente')
+export const ETIQUETAS_FORA_DA_FILA: readonly string[] = ETIQUETAS.map((e) => e.id).filter((id) => id !== 'quente' && id !== 'urgente')
 
 export function etiquetaValida(id: string | null | undefined): boolean {
   return !!id && IDS.has(id)

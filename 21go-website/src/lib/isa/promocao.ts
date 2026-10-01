@@ -80,12 +80,15 @@ export async function registrarRespostaPromo(telefone: string, resposta: 'seguir
 }
 
 /** Aba URGENTE (antiga "Precisa de voce"): fica ate o "ja cuidei" ou a janela de 24 h fechar. */
-export async function marcarUrgente(telefone: string): Promise<void> {
+export async function marcarUrgente(telefone: string, motivo = 'promocao'): Promise<void> {
+  // Sinal novo joga pra aba URGENTE e desfaz o "ja cuidei" (dono, 01/10/2026: "se eu coloquei no
+  // ja cuidei ou outra tag e ele volta a conversar e fica quente, vc volta ele pro urgente").
   await sql(
-    `UPDATE public.isa_contatos SET precisa_desde = COALESCE(precisa_desde, now()), resolvido_em = NULL, updated_at = now()
+    `UPDATE public.isa_contatos SET precisa_desde = now(), resolvido_em = NULL, updated_at = now()
       WHERE telefone = $1`,
     [telefone],
   )
+  await registrarEvento(telefone, 'urgente', { motivo }, 'isa')
 }
 
 async function suspender(motivo: string): Promise<void> {
