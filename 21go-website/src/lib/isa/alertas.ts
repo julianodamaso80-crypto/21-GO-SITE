@@ -1,6 +1,7 @@
 import 'server-only'
 import { enviarTemplate, enviarTexto, numeroDeAlerta } from '@/lib/isa/cloud'
 import { registrarEvento, sql } from '@/lib/isa/banco'
+import { TAB } from '@/lib/isa/identidade'
 import { payloadDesconto } from '@/lib/isa/dono.regras'
 
 /**
@@ -72,7 +73,7 @@ export async function alertarDesconto(p: {
   const para = numeroDeAlerta()
   if (!para) return
   await sql(
-    `INSERT INTO public.isa_contatos (telefone, aguardando_dono) VALUES ($1, $2)
+    `INSERT INTO ${TAB.contatos} (telefone, aguardando_dono) VALUES ($1, $2)
      ON CONFLICT (telefone) DO UPDATE SET aguardando_dono = EXCLUDED.aguardando_dono, updated_at = now()`,
     [para, `desconto:${p.telefone}`],
   )
@@ -109,7 +110,7 @@ export async function alertarPergunta(p: { telefone: string; nome: string | null
   const para = numeroDeAlerta()
   if (!para) return
   await sql(
-    `INSERT INTO public.isa_contatos (telefone, aguardando_dono) VALUES ($1, $2)
+    `INSERT INTO ${TAB.contatos} (telefone, aguardando_dono) VALUES ($1, $2)
      ON CONFLICT (telefone) DO UPDATE SET aguardando_dono = EXCLUDED.aguardando_dono, updated_at = now()`,
     [para, `pergunta:${p.telefone}`],
   )

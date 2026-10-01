@@ -1,6 +1,7 @@
 import 'server-only'
 import { upsertConversation, upsertMessage, phoneToJid } from '@/lib/supabase-store'
 import { sql, registrarEvento } from '@/lib/isa/banco'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { enviarTemplate, destinoPermitido, qualidadeDoNumero, statusDoTemplate, numeroDeAlerta, EnvioBloqueado } from '@/lib/isa/cloud'
 import { alertarDono } from '@/lib/isa/alertas'
 import { dentroDoHorario } from '@/lib/isa/hora.regras'
@@ -47,14 +48,14 @@ interface Config5min {
 }
 
 export async function lerConfig<T>(chave: string): Promise<T | null> {
-  const r = await sql<{ valor: T }>(`SELECT valor FROM public.isa_config WHERE chave = $1`, [chave])
+  const r = await sql<{ valor: T }>(`SELECT valor FROM ${TAB.config} WHERE chave = $1`, [chave])
   return r[0]?.valor ?? null
 }
 
 /** Mescla no valor que ja existe — gravar a qualidade nao apaga o "ligado_em". */
 export async function gravarConfig(chave: string, valor: Record<string, unknown>): Promise<void> {
   await sql(
-    `INSERT INTO public.isa_config (chave, valor) VALUES ($1, $2::jsonb)
+    `INSERT INTO ${TAB.config} (chave, valor) VALUES ($1, $2::jsonb)
      ON CONFLICT (chave) DO UPDATE SET valor = isa_config.valor || EXCLUDED.valor, updated_at = now()`,
     [chave, JSON.stringify(valor)],
   )
@@ -109,7 +110,7 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
        AND l.created_at > (now() AT TIME ZONE 'UTC') - interval '24 hours'
        AND l.created_at > ($1::timestamptz AT TIME ZONE 'UTC')
        AND NOT EXISTS (
-         SELECT 1 FROM public.isa_contatos c WHERE c.telefone = l.telefone
+         SELECT 1 FROM ${TAB.contatos} c WHERE c.telefone = l.telefone
            -- numero de teste do dono recebe de novo depois de cada /reiniciar
            AND NOT (c.telefone = ANY($4::text[]) AND c.abordagem5min_em IS NULL)
        )
@@ -142,7 +143,7 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
     // O INSERT e a trava: dois workers nunca mandam pro mesmo telefone, e quem ja tem contato
     // com a Isa (conversou, recebeu antes) fica de fora.
     const reivindicou = await sql(
-      `INSERT INTO public.isa_contatos (telefone, lead_id, nome, entrada, abordagem5min_em)
+      `INSERT INTO ${TAB.contatos} (telefone, lead_id, nome, entrada, abordagem5min_em)
        VALUES ($1, $2, $3, '5min', now())
        ON CONFLICT (telefone) DO UPDATE SET entrada = '5min', abordagem5min_em = now(), lead_id = EXCLUDED.lead_id, updated_at = now()
          WHERE isa_contatos.telefone = ANY($4::text[]) AND isa_contatos.abordagem5min_em IS NULL
@@ -155,17 +156,17 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
       const jid = phoneToJid(tel) ?? `${tel}@s.whatsapp.net`
       const conversa = await upsertConversation({
         jid,
-        evolution_instance: 'cloud_isa',
+        evolution_instance: IDENTIDADE.instancia,
         contact_phone: tel,
         contact_name: l.nome,
         lead_id: l.id,
       })
-      await sql(`UPDATE public.isa_contatos SET conversation_id = $2, updated_at = now() WHERE telefone = $1`, [tel, conversa.id])
+      await sql(`UPDATE ${TAB.contatos} SET conversation_id = $2, updated_at = now() WHERE telefone = $1`, [tel, conversa.id])
       const wamid = await enviarTemplate(tel, TEMPLATE_5MIN, vars)
       await upsertMessage({
         conversation_id: conversa.id,
         whatsapp_message_id: wamid,
-        evolution_instance: 'cloud_isa',
+        evolution_instance: IDENTIDADE.instancia,
         jid,
         direction: 'outbound',
         status: 'SENT',
@@ -217,7 +218,7 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
 
   const candidatos = await sql<LeadAbordagem & { conversation_id: string | null }>(
     `SELECT l.id, l.nome, c.telefone, l.marca_interesse, l.modelo_interesse, l.ano_interesse, c.conversation_id
-       FROM public.isa_contatos c
+       FROM ${TAB.contatos} c
        JOIN public.leads l ON l.id = c.lead_id
       WHERE c.entrada = '5min'
         AND c.ligada
@@ -252,7 +253,7 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
     // Marcar ANTES de enviar: erro no meio nao vira segunda tentativa, e dois workers nunca
     // mandam pro mesmo telefone.
     const reivindicou = await sql(
-      `UPDATE public.isa_contatos SET retomada_sem_resposta_em = now(), updated_at = now()
+      `UPDATE ${TAB.contatos} SET retomada_sem_resposta_em = now(), updated_at = now()
         WHERE telefone = $1 AND retomada_sem_resposta_em IS NULL
           -- se ele escreveu entre a fila e agora, a janela abriu: a Isa fala livre, sem template
           AND (ultimo_inbound_em IS NULL OR janela_ate IS NULL OR janela_ate < now())
@@ -267,7 +268,7 @@ export async function retomarSemResposta(): Promise<{ enviados: number; motivo?:
         await upsertMessage({
           conversation_id: l.conversation_id,
           whatsapp_message_id: wamid,
-          evolution_instance: 'cloud_isa',
+          evolution_instance: IDENTIDADE.instancia,
           jid: phoneToJid(tel) ?? `${tel}@s.whatsapp.net`,
           direction: 'outbound',
           status: 'SENT',

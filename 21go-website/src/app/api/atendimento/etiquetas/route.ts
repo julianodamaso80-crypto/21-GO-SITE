@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
 import { sql, registrarEvento } from '@/lib/isa/banco'
+import { TAB } from '@/lib/isa/identidade'
 import { ETIQUETAS_FORA_DA_FILA, ETIQUETAS, etiquetasParaGravar } from '@/lib/isa/etiquetas.regras'
 
 export const runtime = 'nodejs'
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (!telefone) return NextResponse.json({ erro: 'telefone' }, { status: 400 })
   // Le o que ja estava gravado pra nao zerar as etiquetas de sistema (ver `etiquetasParaGravar`).
   const atual = await sql<{ etiquetas: string[] | null }>(
-    `SELECT etiquetas FROM public.isa_contatos WHERE telefone = $1`,
+    `SELECT etiquetas FROM ${TAB.contatos} WHERE telefone = $1`,
     [telefone],
   )
   if (atual.length === 0) return NextResponse.json({ erro: 'contato nao encontrado' }, { status: 404 })
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     // A tag manda na coluna do funil: a posicao arrastada antes sai, senao tirar a tag nao tirava o card.
     // Frio, Pensando, Leticya, Fechou, Consultores: da baixa em URGENTE na hora, como o "ja cuidei"
     // (dono, 29/09/2026: "nunca quem ta com essa etiqueta ta urgente").
-    `UPDATE public.isa_contatos SET etiquetas = $2::text[], etapa = NULL, etapa_em = NULL,
+    `UPDATE ${TAB.contatos} SET etiquetas = $2::text[], etapa = NULL, etapa_em = NULL,
             resolvido_em = CASE WHEN $2::text[] && $3::text[] AND NOT ('quente' = ANY($2::text[])) AND precisa_desde IS NOT NULL THEN COALESCE(resolvido_em, now()) ELSE resolvido_em END,
             updated_at = now()
       WHERE telefone = $1 RETURNING telefone`,

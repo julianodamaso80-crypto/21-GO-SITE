@@ -1,6 +1,7 @@
 import 'server-only'
 import { voltaPraPrecisaDeVoce } from '@/lib/isa/funil.regras'
 import { Pool } from 'pg'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 
 /**
  * Banco da Isa pela conexao DIRETA (pg), nao pelo REST do Supabase.
@@ -110,7 +111,7 @@ export interface OpcoesVersao {
 /** A mensagem ja estava gravada? A Meta reentrega eventos e a Isa nao pode responder duas vezes. */
 export async function mensagemJaGravada(wamid: string): Promise<boolean> {
   const r = await sql(
-    `SELECT 1 FROM public.messages WHERE whatsapp_message_id = $1 AND evolution_instance = 'cloud_isa' LIMIT 1`,
+    `SELECT 1 FROM public.messages WHERE whatsapp_message_id = $1 AND evolution_instance = '${IDENTIDADE.instancia}' LIMIT 1`,
     [wamid],
   )
   return r.length > 0
@@ -119,7 +120,7 @@ export async function mensagemJaGravada(wamid: string): Promise<boolean> {
 /** Webhook: mensagem NOVA do cliente. Marca o contato como pendente, com o relogio do banco. */
 export async function registrarInbound(p: { telefone: string; conversationId: string; nome: string | null }): Promise<void> {
   await sql(
-    `INSERT INTO public.isa_contatos (telefone, conversation_id, nome, ultimo_inbound_em, janela_ate)
+    `INSERT INTO ${TAB.contatos} (telefone, conversation_id, nome, ultimo_inbound_em, janela_ate)
      VALUES ($1, $2, $3, now(), now() + interval '24 hours')
      ON CONFLICT (telefone) DO UPDATE SET
        conversation_id   = COALESCE(EXCLUDED.conversation_id, isa_contatos.conversation_id),
@@ -144,9 +145,9 @@ export async function reivindicarPendentes(p: {
   somente?: string[] | null
 }): Promise<ContatoIsa[]> {
   return sql<ContatoIsa>(
-    `UPDATE public.isa_contatos c SET processando_desde = now()
+    `UPDATE ${TAB.contatos} c SET processando_desde = now()
      WHERE c.telefone IN (
-       SELECT telefone FROM public.isa_contatos
+       SELECT telefone FROM ${TAB.contatos}
        WHERE ultimo_inbound_em IS NOT NULL
          AND ${ms('ultimo_inbound_em')} > COALESCE(processado_ate, '-infinity'::timestamptz)
          AND ultimo_inbound_em < now() - make_interval(secs => $1)
@@ -167,7 +168,7 @@ export async function reivindicarPendentes(p: {
  */
 export async function liberar(telefone: string, processadoAte: string | null, respondeu: boolean): Promise<void> {
   await sql(
-    `UPDATE public.isa_contatos SET
+    `UPDATE ${TAB.contatos} SET
        processando_desde  = NULL,
        processado_ate     = COALESCE($2::timestamptz, processado_ate),
        ultima_resposta_em = CASE WHEN $3 THEN now() ELSE ultima_resposta_em END,
@@ -179,7 +180,7 @@ export async function liberar(telefone: string, processadoAte: string | null, re
 
 /** Solta sem marcar nada como respondido (fora do horario): fica pendente pra fila das 8h. */
 export async function soltarSemProcessar(telefone: string): Promise<void> {
-  await sql(`UPDATE public.isa_contatos SET processando_desde = NULL WHERE telefone = $1`, [telefone])
+  await sql(`UPDATE ${TAB.contatos} SET processando_desde = NULL WHERE telefone = $1`, [telefone])
 }
 
 /**
@@ -189,7 +190,7 @@ export async function soltarSemProcessar(telefone: string): Promise<void> {
 export async function humanoFalouDepois(telefone: string, desde: string | null): Promise<boolean> {
   const r = await sql<{ falou: boolean }>(
     `SELECT humano_em IS NOT NULL AND ${ms('humano_em')} >= COALESCE($2::timestamptz, '-infinity'::timestamptz) AS falou
-     FROM public.isa_contatos WHERE telefone = $1`,
+     FROM ${TAB.contatos} WHERE telefone = $1`,
     [telefone, desde],
   )
   return !!r[0]?.falou
@@ -205,11 +206,11 @@ export async function chegouMensagemNova(telefone: string, desde: string | null)
     `SELECT EXISTS (
        SELECT 1 FROM public.messages m
         WHERE m.conversation_id = c.conversation_id
-          AND m.evolution_instance = 'cloud_isa'
+          AND m.evolution_instance = '${IDENTIDADE.instancia}'
           AND m.direction = 'inbound'
           AND ${ms("m.created_at AT TIME ZONE 'UTC'")} > COALESCE($2::timestamptz, '-infinity'::timestamptz)
      ) AS novo
-     FROM public.isa_contatos c WHERE c.telefone = $1`,
+     FROM ${TAB.contatos} c WHERE c.telefone = $1`,
     [telefone, desde],
   )
   return !!r[0]?.novo
@@ -232,7 +233,7 @@ export async function inboundsNovas(conversationId: string, processadoAte: strin
     `SELECT id, whatsapp_message_id, direction, sender, message_type, content, raw_payload,
             (created_at AT TIME ZONE 'UTC') AS criada_em
      FROM public.messages
-     WHERE conversation_id = $1 AND evolution_instance = 'cloud_isa' AND direction = 'inbound'
+     WHERE conversation_id = $1 AND evolution_instance = '${IDENTIDADE.instancia}' AND direction = 'inbound'
        AND ${ms("created_at AT TIME ZONE 'UTC'")} > COALESCE($2::timestamptz, '-infinity'::timestamptz)
      ORDER BY created_at`,
     [conversationId, processadoAte],
@@ -248,7 +249,7 @@ export async function historico(conversationId: string, limite = 30, desde: stri
     `SELECT id, whatsapp_message_id, direction, sender, message_type, content, NULL AS raw_payload,
             (created_at AT TIME ZONE 'UTC') AS criada_em
      FROM public.messages
-     WHERE conversation_id = $1 AND evolution_instance = 'cloud_isa'
+     WHERE conversation_id = $1 AND evolution_instance = '${IDENTIDADE.instancia}'
        AND (created_at AT TIME ZONE 'UTC') > COALESCE($3::timestamptz, '-infinity'::timestamptz)
      ORDER BY created_at DESC LIMIT $2`,
     [conversationId, limite, desde],
@@ -263,7 +264,7 @@ export async function historico(conversationId: string, limite = 30, desde: stri
  */
 export async function reiniciarContato(telefone: string): Promise<void> {
   await sql(
-    `UPDATE public.isa_contatos SET
+    `UPDATE ${TAB.contatos} SET
        reiniciada_em = now(), lead_id = NULL, ligada = true, pausa_motivo = NULL, pausa_por = NULL,
        pausada_em = NULL, transferido_em = NULL, entrada = NULL, desconto50_em = NULL,
        desconto50_de = NULL, desconto50_para = NULL, aguardando_dono = NULL, genero = NULL,
@@ -274,12 +275,12 @@ export async function reiniciarContato(telefone: string): Promise<void> {
   )
   // Numero de teste que testou o "Quero Ser Consultor" volta a ser cliente comum: sai da aba
   // Consultores e o recrutamento esquece que ele ja recebeu o recado.
-  await sql(`UPDATE public.isa_contatos SET etiquetas = array_remove(etiquetas, 'consultor') WHERE telefone = $1`, [telefone])
-  await sql(`DELETE FROM public.consultor_recrutamento WHERE telefone = $1`, [telefone])
+  await sql(`UPDATE ${TAB.contatos} SET etiquetas = array_remove(etiquetas, 'consultor') WHERE telefone = $1`, [telefone])
+  await sql(`DELETE FROM ${TAB.recrutamento} WHERE telefone = $1`, [telefone])
   // Pedido de desconto deste contato que ficou esperando o supervisor (4240): sem isto, o 4240
   // continua em "modo supervisor" e para de conversar como cliente (teste de 11/09/2026).
   await sql(
-    `UPDATE public.isa_contatos SET aguardando_dono = NULL, updated_at = now()
+    `UPDATE ${TAB.contatos} SET aguardando_dono = NULL, updated_at = now()
      WHERE aguardando_dono IN ('desconto:' || $1, 'valor:' || $1)`,
     [telefone],
   )
@@ -288,7 +289,7 @@ export async function reiniciarContato(telefone: string): Promise<void> {
 /** Quem veio pelo "Quero Ser Consultor": etiqueta que manda o contato pra coluna/aba Consultores. */
 export async function marcarConsultor(telefone: string): Promise<void> {
   await sql(
-    `UPDATE public.isa_contatos SET etiquetas = array_append(COALESCE(etiquetas, '{}'::text[]), 'consultor'), updated_at = now()
+    `UPDATE ${TAB.contatos} SET etiquetas = array_append(COALESCE(etiquetas, '{}'::text[]), 'consultor'), updated_at = now()
      WHERE telefone = $1 AND NOT ('consultor' = ANY(COALESCE(etiquetas, '{}'::text[])))`,
     [telefone],
   )
@@ -296,12 +297,12 @@ export async function marcarConsultor(telefone: string): Promise<void> {
 
 /** Troca o "[imagem]"/"[documento]" pelo que a Isa leu — o arquivo em si nunca e gravado. */
 export async function gravarLeitura(messageId: string, texto: string): Promise<void> {
-  await sql(`UPDATE public.messages SET content = $2 WHERE id = $1 AND evolution_instance = 'cloud_isa'`, [messageId, texto])
+  await sql(`UPDATE public.messages SET content = $2 WHERE id = $1 AND evolution_instance = '${IDENTIDADE.instancia}'`, [messageId, texto])
 }
 
 /** Troca o "[áudio]" pela transcricao — o audio em si nunca e gravado no banco. */
 export async function gravarTranscricao(messageId: string, texto: string): Promise<void> {
-  await sql(`UPDATE public.messages SET content = $2 WHERE id = $1 AND evolution_instance = 'cloud_isa'`, [
+  await sql(`UPDATE public.messages SET content = $2 WHERE id = $1 AND evolution_instance = '${IDENTIDADE.instancia}'`, [
     messageId,
     `🎤 ${texto}`,
   ])
@@ -314,7 +315,7 @@ export async function gravarTranscricao(messageId: string, texto: string): Promi
  */
 export async function marcarVisto(telefone: string, usuario: string): Promise<void> {
   await sql(
-    `UPDATE public.isa_contatos
+    `UPDATE ${TAB.contatos}
         SET visto_por = COALESCE(visto_por, '{}'::jsonb) || jsonb_build_object($2::text, to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSZ'))
       WHERE telefone = $1`,
     [telefone, usuario],
@@ -332,7 +333,7 @@ export async function marcarVisto(telefone: string, usuario: string): Promise<vo
  */
 export async function religarComJanelaFechada(): Promise<number> {
   const r = await sql<{ telefone: string }>(
-    `UPDATE public.isa_contatos
+    `UPDATE ${TAB.contatos}
         SET ligada = true, pausa_motivo = NULL, pausa_por = NULL, pausada_em = NULL,
             aguardando_dono = NULL, precisa_desde = NULL, processado_ate = now(), updated_at = now()
       WHERE NOT ligada
@@ -345,7 +346,7 @@ export async function religarComJanelaFechada(): Promise<number> {
 }
 
 export async function registrarEvento(telefone: string, tipo: string, detalhe: unknown, por = 'isa'): Promise<void> {
-  await sql(`INSERT INTO public.isa_eventos (telefone, tipo, detalhe, por) VALUES ($1, $2, $3, $4)`, [
+  await sql(`INSERT INTO ${TAB.eventos} (telefone, tipo, detalhe, por) VALUES ($1, $2, $3, $4)`, [
     telefone,
     tipo,
     detalhe == null ? null : JSON.stringify(detalhe),
@@ -356,7 +357,7 @@ export async function registrarEvento(telefone: string, tipo: string, detalhe: u
 /** Sinal de fechamento: etiqueta Quente e de volta pra URGENTE (dono, 29/09/2026). */
 export async function marcarQuente(telefone: string): Promise<void> {
   await sql(
-    `UPDATE public.isa_contatos
+    `UPDATE ${TAB.contatos}
         SET etiquetas = CASE WHEN 'quente' = ANY(COALESCE(etiquetas, '{}'::text[])) THEN etiquetas
                              ELSE array_append(COALESCE(etiquetas, '{}'::text[]), 'quente') END,
             precisa_desde = COALESCE(precisa_desde, now()), resolvido_em = NULL, updated_at = now()
@@ -385,7 +386,7 @@ export async function atualizarContato(telefone: string, campos: Record<string, 
     const v = campos[c]
     return v !== null && typeof v === 'object' && !(v instanceof Date) ? JSON.stringify(v) : v
   })
-  await sql(`UPDATE public.isa_contatos SET ${sets}, updated_at = now() WHERE telefone = $1`, [telefone, ...valores])
+  await sql(`UPDATE ${TAB.contatos} SET ${sets}, updated_at = now() WHERE telefone = $1`, [telefone, ...valores])
 }
 
 /**
@@ -399,9 +400,9 @@ export async function atualizarContato(telefone: string, campos: Record<string, 
  */
 export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
   return sql<ContatoIsa>(
-    `UPDATE public.isa_contatos c SET retomada_em = now()
+    `UPDATE ${TAB.contatos} c SET retomada_em = now()
      WHERE c.telefone IN (
-       SELECT telefone FROM public.isa_contatos
+       SELECT telefone FROM ${TAB.contatos}
        WHERE ligada AND lead_id IS NOT NULL AND conversation_id IS NOT NULL
          AND ultima_resposta_em IS NOT NULL
          AND ultima_resposta_em > COALESCE(ultimo_inbound_em, '-infinity'::timestamptz)
@@ -438,7 +439,7 @@ export async function contatosParaRetomar(limite = 10): Promise<ContatoIsa[]> {
  */
 export async function contatosSemAvisoForaDoHorario(excluir: string[], limite = 20): Promise<ContatoIsa[]> {
   return sql<ContatoIsa>(
-    `SELECT * FROM public.isa_contatos
+    `SELECT * FROM ${TAB.contatos}
      WHERE ligada AND conversation_id IS NOT NULL AND ultimo_inbound_em IS NOT NULL
        AND ${ms('ultimo_inbound_em')} > COALESCE(processado_ate, '-infinity'::timestamptz)
        AND (aviso_fora_horario_em IS NULL OR aviso_fora_horario_em < now() - interval '10 hours')
@@ -451,7 +452,7 @@ export async function contatosSemAvisoForaDoHorario(excluir: string[], limite = 
 
 /** Cliente se despediu ("ok obrigado", "vou pensar"): a retomada espera ate `ate`. */
 export async function adiarRetomada(telefone: string, ate: Date): Promise<void> {
-  await sql(`UPDATE public.isa_contatos SET retomar_apos = $2, retomada_em = NULL, updated_at = now() WHERE telefone = $1`, [
+  await sql(`UPDATE ${TAB.contatos} SET retomar_apos = $2, retomada_em = NULL, updated_at = now() WHERE telefone = $1`, [
     telefone,
     ate.toISOString(),
   ])
@@ -460,7 +461,7 @@ export async function adiarRetomada(telefone: string, ate: Date): Promise<void> 
 /** Ja pediu os documentos nesta conversa (escolheu plano)? Depois de /reiniciar nao conta. */
 export async function jaPediuDocumentos(telefone: string, desde: string | null): Promise<boolean> {
   const r = await sql(
-    `SELECT 1 FROM public.isa_eventos WHERE telefone = $1 AND tipo = 'pediu_documentos'
+    `SELECT 1 FROM ${TAB.eventos} WHERE telefone = $1 AND tipo = 'pediu_documentos'
        AND created_at > COALESCE($2::timestamptz, '-infinity'::timestamptz) LIMIT 1`,
     [telefone, desde],
   )
@@ -474,7 +475,7 @@ export async function jaPediuDocumentos(telefone: string, desde: string | null):
  */
 export async function ultimaConsultaFoiRecusa(telefone: string, desde: string | null): Promise<boolean> {
   const r = await sql<{ resultado: string | null }>(
-    `SELECT detalhe->>'resultado' AS resultado FROM public.isa_eventos
+    `SELECT detalhe->>'resultado' AS resultado FROM ${TAB.eventos}
       WHERE telefone = $1 AND tipo = 'orcamento'
         AND created_at > COALESCE($2::timestamptz, '-infinity'::timestamptz)
       ORDER BY id DESC LIMIT 1`,
@@ -487,7 +488,7 @@ export async function ultimaConsultaFoiRecusa(telefone: string, desde: string | 
 export async function textosLidos(conversationId: string, desde: string | null): Promise<string[]> {
   const r = await sql<{ content: string }>(
     `SELECT content FROM public.messages
-     WHERE conversation_id = $1 AND evolution_instance = 'cloud_isa' AND direction = 'inbound'
+     WHERE conversation_id = $1 AND evolution_instance = '${IDENTIDADE.instancia}' AND direction = 'inbound'
        AND content LIKE '%📎 %'
        AND (created_at AT TIME ZONE 'UTC') > COALESCE($2::timestamptz, '-infinity'::timestamptz)
      ORDER BY created_at`,

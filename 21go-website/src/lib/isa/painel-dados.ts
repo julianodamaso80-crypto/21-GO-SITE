@@ -3,6 +3,7 @@ import { etapaDoCard, etiquetasAoMover } from '@/lib/isa/funil.regras'
 import { planosQueAparecem } from '@/lib/isa/fatos.regras'
 import { ETIQUETAS_FORA_DA_FILA } from '@/lib/isa/etiquetas.regras'
 import { sql, type ContatoIsa } from '@/lib/isa/banco'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 
 /**
  * Consultas do painel da Isa. So leitura aqui; as acoes (responder, ligar/desligar, transferir)
@@ -34,7 +35,7 @@ const EH_CONSULTOR = `'consultor' = ANY(COALESCE(c.etiquetas, '{}'::text[]))`
 
 // Promocao de 40% na ativacao (dono, 29/09/2026): so entra no painel quem RESPONDEU. Quem so
 // recebeu, ou tocou em "Agora nao", nao aparece em aba nenhuma.
-const FORA_DA_PROMO = `NOT EXISTS (SELECT 1 FROM public.isa_promocoes pr
+const FORA_DA_PROMO = `NOT EXISTS (SELECT 1 FROM ${TAB.promocoes} pr
   WHERE pr.telefone = c.telefone AND pr.status = 'enviada' AND (pr.resposta IS NULL OR pr.resposta = 'agora_nao'))`
 
 const FILTRO: Record<Aba, string> = {
@@ -75,18 +76,18 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = '', usu
             -- so conta quando a ultima mensagem e dele: resposta nossa por ultimo ja e zero, sem varrer nada
             CASE WHEN u.direction <> 'inbound' THEN 0 ELSE
             (SELECT count(*)::int FROM public.messages i
-              WHERE i.conversation_id = c.conversation_id AND i.evolution_instance = 'cloud_isa' AND i.direction = 'inbound'
+              WHERE i.conversation_id = c.conversation_id AND i.evolution_instance = '${IDENTIDADE.instancia}' AND i.direction = 'inbound'
                 AND i.created_at > GREATEST(
                       COALESCE((SELECT max(o.created_at) FROM public.messages o
-                                WHERE o.conversation_id = c.conversation_id AND o.evolution_instance = 'cloud_isa'
+                                WHERE o.conversation_id = c.conversation_id AND o.evolution_instance = '${IDENTIDADE.instancia}'
                                   AND o.direction = 'outbound'), '-infinity'::timestamptz),
                       -- abrir a conversa no painel ja conta como lido, por usuario
                       COALESCE((c.visto_por ->> $3)::timestamptz, '-infinity'::timestamptz))) END AS sem_resposta
-     FROM public.isa_contatos c
+     FROM ${TAB.contatos} c
      LEFT JOIN public.conversations cv ON cv.id = c.conversation_id
      LEFT JOIN LATERAL (
        SELECT content, direction, created_at FROM public.messages m
-       WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa'
+       WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = '${IDENTIDADE.instancia}'
        ORDER BY m.created_at DESC LIMIT 1
      ) u ON true
      -- Ordem do WhatsApp de verdade (dono, 16/09/2026: "quem mandar mensagem vai ficando acima"):
@@ -99,14 +100,14 @@ export async function listarContatos(aba: Aba, busca: string, etiqueta = '', usu
      LEFT JOIN LATERAL (
        SELECT GREATEST(
          (SELECT m.created_at FROM public.messages m
-          WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa' AND m.direction = 'inbound'
+          WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = '${IDENTIDADE.instancia}' AND m.direction = 'inbound'
           ORDER BY m.created_at DESC LIMIT 1),
          (SELECT m.created_at FROM public.messages m
-          WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa' AND m.direction = 'outbound'
+          WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = '${IDENTIDADE.instancia}' AND m.direction = 'outbound'
             AND COALESCE(m.sender, 'isa') NOT IN ('isa', 'agent', 'system', 'sistema')
           ORDER BY m.created_at DESC LIMIT 1),
          (SELECT m.created_at FROM public.messages m
-          WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa'
+          WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = '${IDENTIDADE.instancia}'
           ORDER BY m.created_at ASC LIMIT 1)
        ) AS em
      ) mov ON true
@@ -158,14 +159,14 @@ export async function listarFunil(): Promise<CardFunil[]> {
             NULLIF(TRIM(CONCAT_WS(' ', l.marca_interesse, l.modelo_interesse, l.ano_interesse)), '') AS veiculo,
             l.valor_fipe_consultado AS fipe, l.cotacao_planos AS planos,
             u.content AS ultima, (u.created_at AT TIME ZONE 'UTC') AS ultima_em,
-            EXISTS (SELECT 1 FROM public.isa_eventos e WHERE e.telefone = c.telefone AND e.tipo = 'pediu_documentos') AS escolheu,
+            EXISTS (SELECT 1 FROM ${TAB.eventos} e WHERE e.telefone = c.telefone AND e.tipo = 'pediu_documentos') AS escolheu,
             (c.pausa_motivo = 'documento') AS documento
-     FROM public.isa_contatos c
+     FROM ${TAB.contatos} c
      LEFT JOIN public.conversations cv ON cv.id = c.conversation_id
      LEFT JOIN public.leads l ON l.id = c.lead_id
      LEFT JOIN LATERAL (
        SELECT content, created_at FROM public.messages m
-       WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = 'cloud_isa'
+       WHERE m.conversation_id = c.conversation_id AND m.evolution_instance = '${IDENTIDADE.instancia}'
        ORDER BY m.created_at DESC LIMIT 1
      ) u ON true
      WHERE c.conversation_id IS NOT NULL
@@ -199,16 +200,16 @@ export async function gravarEtapa(telefone: string, etapa: string | null): Promi
   await sql(
     // $2::text: sem o tipo explicito o Postgres recusa o parametro dentro do CASE
     // ("could not determine data type of parameter $2") e o card voltava pra coluna anterior.
-    `UPDATE public.isa_contatos SET etapa = $2::text, etapa_em = CASE WHEN $2::text IS NULL THEN NULL ELSE now() END, updated_at = now()
+    `UPDATE ${TAB.contatos} SET etapa = $2::text, etapa_em = CASE WHEN $2::text IS NULL THEN NULL ELSE now() END, updated_at = now()
      WHERE telefone = $1`,
     [telefone, etapa],
   )
   // A etiqueta anda com o funil (dono, 16/09/2026): mover o card grava a tag da coluna, senao a tag
   // antiga puxava o card de volta.
   if (etapa) {
-    const [c] = await sql<{ etiquetas: string[] | null }>(`SELECT etiquetas FROM public.isa_contatos WHERE telefone = $1`, [telefone])
+    const [c] = await sql<{ etiquetas: string[] | null }>(`SELECT etiquetas FROM ${TAB.contatos} WHERE telefone = $1`, [telefone])
     if (c) {
-      await sql(`UPDATE public.isa_contatos SET etiquetas = $2::text[], updated_at = now() WHERE telefone = $1`, [
+      await sql(`UPDATE ${TAB.contatos} SET etiquetas = $2::text[], updated_at = now() WHERE telefone = $1`, [
         telefone,
         etiquetasAoMover(c.etiquetas, etapa),
       ])
@@ -218,7 +219,7 @@ export async function gravarEtapa(telefone: string, etapa: string | null): Promi
 
 export async function contarPrecisa(): Promise<number> {
   const r = await sql<{ n: string }>(
-    `SELECT count(*) AS n FROM public.isa_contatos c WHERE c.conversation_id IS NOT NULL AND (${FILTRO.precisa}) AND ${FORA_DA_PROMO}`,
+    `SELECT count(*) AS n FROM ${TAB.contatos} c WHERE c.conversation_id IS NOT NULL AND (${FILTRO.precisa}) AND ${FORA_DA_PROMO}`,
   )
   return Number(r[0]?.n ?? 0)
 }
@@ -240,7 +241,7 @@ export interface ItemConversa {
 }
 
 export async function abrirConversa(telefone: string): Promise<{ contato: ContatoIsa | null; itens: ItemConversa[] }> {
-  const [contato] = await sql<ContatoIsa>(`SELECT * FROM public.isa_contatos WHERE telefone = $1`, [telefone])
+  const [contato] = await sql<ContatoIsa>(`SELECT * FROM ${TAB.contatos} WHERE telefone = $1`, [telefone])
   if (!contato?.conversation_id) return { contato: contato ?? null, itens: [] }
   const msgs = await sql<{ em: string; direction: string; sender: string | null; content: string; message_type: string; media: string | null; wamid: string | null; citou: string | null }>(
     `SELECT (created_at AT TIME ZONE 'UTC') AS em, direction, sender, content, message_type,
@@ -253,12 +254,12 @@ export async function abrirConversa(telefone: string): Promise<{ contato: Contat
                      -- audio do cliente: sem isto o painel nao tinha o que tocar
                      raw_payload #>> '{entry,0,changes,0,value,messages,0,audio,id}') AS media
      FROM public.messages
-     WHERE conversation_id = $1 AND evolution_instance = 'cloud_isa'
+     WHERE conversation_id = $1 AND evolution_instance = '${IDENTIDADE.instancia}'
      ORDER BY created_at DESC LIMIT 300`,
     [contato.conversation_id],
   )
   const evs = await sql<{ em: string; tipo: string; detalhe: unknown; por: string | null }>(
-    `SELECT created_at AS em, tipo, detalhe, por FROM public.isa_eventos
+    `SELECT created_at AS em, tipo, detalhe, por FROM ${TAB.eventos}
      WHERE telefone = $1 AND tipo NOT IN ('cerebro', 'etiquetas', 'humano_respondeu') ORDER BY id DESC LIMIT 100`,
     [telefone],
   )

@@ -1,5 +1,6 @@
 import 'server-only'
 import { sql } from '@/lib/isa/banco'
+import { TAB } from '@/lib/isa/identidade'
 import { sendText, formatPhone } from '@/lib/whatsapp'
 import { cumprimento } from '@/lib/isa/hora.regras'
 import {
@@ -31,7 +32,7 @@ interface Estado {
 
 async function estadoDe(telefone: string): Promise<Estado | null> {
   const linhas = await sql<Estado>(
-    'select boas_vindas_em, aviso_virtual_em from consultor_recrutamento where telefone = $1',
+    `select boas_vindas_em, aviso_virtual_em from ${TAB.recrutamento} where telefone = $1`,
     [telefone],
   )
   return linhas[0] ?? null
@@ -42,7 +43,7 @@ async function marcar(p: { telefone: string; nome: string | null; coluna: 'boas_
   // ter direito a uma resposta se perguntar algo.
   const extra = p.coluna === 'boas_vindas_em' ? ', aviso_virtual_em = null' : ''
   await sql(
-    `insert into consultor_recrutamento (telefone, nome, ${p.coluna})
+    `insert into ${TAB.recrutamento} (telefone, nome, ${p.coluna})
        values ($1, $2, now())
      on conflict (telefone) do update
        set ${p.coluna} = now(),

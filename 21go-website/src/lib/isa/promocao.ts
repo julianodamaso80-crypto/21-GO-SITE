@@ -1,6 +1,7 @@
 import 'server-only'
 import { upsertConversation, upsertMessage, phoneToJid } from '@/lib/supabase-store'
 import { sql, registrarEvento } from '@/lib/isa/banco'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { enviarTemplate, qualidadeDoNumero, numeroDeAlerta, EnvioBloqueado } from '@/lib/isa/cloud'
 import { alertarDono } from '@/lib/isa/alertas'
 import { horaNoRio } from '@/lib/isa/hora.regras'
@@ -64,7 +65,7 @@ function paraPromocao(l: LinhaPromo): PromocaoDoContato {
 export async function promocaoDoContato(telefone: string): Promise<PromocaoDoContato | null> {
   const r = await sql<LinhaPromo>(
     `SELECT telefone, nome, veiculo, valor_anterior, validade::text AS validade, valor_novo, lote_dia::text AS lote_dia, ordem, resposta
-       FROM public.isa_promocoes WHERE telefone = $1 AND status = 'enviada' LIMIT 1`,
+       FROM ${TAB.promocoes} WHERE telefone = $1 AND status = 'enviada' LIMIT 1`,
     [telefone],
   )
   return r[0] ? paraPromocao(r[0]) : null
@@ -73,7 +74,7 @@ export async function promocaoDoContato(telefone: string): Promise<PromocaoDoCon
 /** "seguir" nunca e rebaixado: quem ja quis seguir e depois escreveu continua "seguir". */
 export async function registrarRespostaPromo(telefone: string, resposta: 'seguir' | 'agora_nao' | 'texto'): Promise<void> {
   await sql(
-    `UPDATE public.isa_promocoes SET resposta = $2, respondido_em = now()
+    `UPDATE ${TAB.promocoes} SET resposta = $2, respondido_em = now()
       WHERE telefone = $1 AND COALESCE(resposta, '') <> 'seguir'`,
     [telefone, resposta],
   )
@@ -84,7 +85,7 @@ export async function marcarUrgente(telefone: string, motivo = 'promocao'): Prom
   // Sinal novo joga pra aba URGENTE e desfaz o "ja cuidei" (dono, 01/10/2026: "se eu coloquei no
   // ja cuidei ou outra tag e ele volta a conversar e fica quente, vc volta ele pro urgente").
   await sql(
-    `UPDATE public.isa_contatos SET precisa_desde = now(), resolvido_em = NULL, updated_at = now()
+    `UPDATE ${TAB.contatos} SET precisa_desde = now(), resolvido_em = NULL, updated_at = now()
       WHERE telefone = $1`,
     [telefone],
   )
@@ -119,9 +120,9 @@ export async function dispararPromocao(agora = new Date()): Promise<{ enviados: 
   // Reivindica a rodada: dois crons nunca mandam pro mesmo telefone.
   const lote = (
     await sql<LinhaPromo>(
-      `UPDATE public.isa_promocoes SET status = 'enviando'
+      `UPDATE ${TAB.promocoes} SET status = 'enviando'
         WHERE telefone IN (
-          SELECT telefone FROM public.isa_promocoes
+          SELECT telefone FROM ${TAB.promocoes}
            WHERE status = 'fila' AND lote_dia <= $1::date
            ORDER BY lote_dia, ordem LIMIT $2 FOR UPDATE SKIP LOCKED)
         RETURNING telefone, nome, veiculo, valor_anterior, valor_novo, validade::text AS validade, lote_dia::text AS lote_dia, ordem, resposta`,
@@ -136,31 +137,31 @@ export async function dispararPromocao(agora = new Date()): Promise<{ enviados: 
     try {
       // Na hora do envio: fechou, foi pro 4824 ou e consultor = nao recebe.
       const [atual] = await sql<{ etiquetas: string[] | null; transferido_em: string | null }>(
-        `SELECT etiquetas, transferido_em FROM public.isa_contatos WHERE telefone = $1`,
+        `SELECT etiquetas, transferido_em FROM ${TAB.contatos} WHERE telefone = $1`,
         [tel],
       )
       const barrado = atual && ((atual.etiquetas ?? []).some((e) => e === 'fechou' || e === 'consultor' || e === 'vistoria') || atual.transferido_em)
       if (barrado) {
-        await sql(`UPDATE public.isa_promocoes SET status = 'pulada', motivo = 'contato da Isa fechou/transferido/consultor' WHERE telefone = $1`, [tel])
+        await sql(`UPDATE ${TAB.promocoes} SET status = 'pulada', motivo = 'contato da Isa fechou/transferido/consultor' WHERE telefone = $1`, [tel])
         continue
       }
       const nome = primeiroNomePromo(l.nome) ?? 'tudo bem'
       // A cotacao da epoca recriada do Power (lead_promo40_<tel>): e dela que a Isa tira os planos e o PDF.
       await sql(
-        `INSERT INTO public.isa_contatos (telefone, nome, entrada, lead_id)
+        `INSERT INTO ${TAB.contatos} (telefone, nome, entrada, lead_id)
          VALUES ($1, $2, 'promo40', (SELECT id FROM public.leads WHERE id = 'lead_promo40_' || $1))
          ON CONFLICT (telefone) DO UPDATE SET lead_id = COALESCE(EXCLUDED.lead_id, isa_contatos.lead_id), updated_at = now()`,
         [tel, l.nome],
       )
       const jid = phoneToJid(tel) ?? `${tel}@s.whatsapp.net`
-      const conversa = await upsertConversation({ jid, evolution_instance: 'cloud_isa', contact_phone: tel, contact_name: l.nome ?? undefined })
-      await sql(`UPDATE public.isa_contatos SET conversation_id = COALESCE(conversation_id, $2), updated_at = now() WHERE telefone = $1`, [tel, conversa.id])
+      const conversa = await upsertConversation({ jid, evolution_instance: IDENTIDADE.instancia, contact_phone: tel, contact_name: l.nome ?? undefined })
+      await sql(`UPDATE ${TAB.contatos} SET conversation_id = COALESCE(conversation_id, $2), updated_at = now() WHERE telefone = $1`, [tel, conversa.id])
       const wamid = await enviarTemplate(tel, TEMPLATE_PROMO, variaveisDaPromocao(nome, p), PAYLOADS_PROMO)
-      await sql(`UPDATE public.isa_promocoes SET status = 'enviada', wamid = $2, enviado_em = now() WHERE telefone = $1`, [tel, wamid])
+      await sql(`UPDATE ${TAB.promocoes} SET status = 'enviada', wamid = $2, enviado_em = now() WHERE telefone = $1`, [tel, wamid])
       await upsertMessage({
         conversation_id: conversa.id,
         whatsapp_message_id: wamid,
-        evolution_instance: 'cloud_isa',
+        evolution_instance: IDENTIDADE.instancia,
         jid,
         direction: 'outbound',
         status: 'SENT',
@@ -174,7 +175,7 @@ export async function dispararPromocao(agora = new Date()): Promise<{ enviados: 
     } catch (err) {
       // Fica marcado de proposito: sem nova tentativa em rajada.
       const msg = err instanceof Error ? err.message : String(err)
-      await sql(`UPDATE public.isa_promocoes SET status = 'falhou', motivo = $2 WHERE telefone = $1`, [tel, msg.slice(0, 300)])
+      await sql(`UPDATE ${TAB.promocoes} SET status = 'falhou', motivo = $2 WHERE telefone = $1`, [tel, msg.slice(0, 300)])
       await registrarEvento(tel, err instanceof EnvioBloqueado ? 'envio_bloqueado' : 'promo40_falhou', { erro: msg }, 'sistema')
     }
   }

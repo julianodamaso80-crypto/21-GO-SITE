@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { upsertConversation, upsertMessage, phoneToJid } from '@/lib/supabase-store'
 import { assinaturaConfere, mensagensDoNumero, podeResponder } from '@/lib/whatsapp-cloud'
 import { mensagemJaGravada, registrarInbound } from '@/lib/isa/banco'
+import { IDENTIDADE } from '@/lib/isa/identidade'
 import { processarFila } from '@/lib/isa/worker'
 import { telefoneCanonico } from '@/lib/isa/telefone.regras'
 
@@ -22,7 +23,8 @@ export const dynamic = 'force-dynamic'
  * descartado em silêncio; o log `[isa] assinatura invalida` é o sinal.
  */
 
-const ORIGEM = 'cloud_isa'
+// cloud_isa na Isa, cloud_mariana na Mariana: as duas dividem conversations/messages.
+const ORIGEM = IDENTIDADE.instancia
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
 import { sql, registrarEvento } from '@/lib/isa/banco'
+import { TAB } from '@/lib/isa/identidade'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   const resolvido = b.resolvido !== false
 
   await sql(
-    `UPDATE public.isa_contatos SET resolvido_em = CASE WHEN $2 THEN now() ELSE NULL END, updated_at = now()
+    `UPDATE ${TAB.contatos} SET resolvido_em = CASE WHEN $2 THEN now() ELSE NULL END, updated_at = now()
       WHERE telefone = $1`,
     [telefone, resolvido],
   )

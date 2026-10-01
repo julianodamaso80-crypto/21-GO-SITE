@@ -1,5 +1,6 @@
 import 'server-only'
 import { registrarEvento, sql, type ContatoIsa } from '@/lib/isa/banco'
+import { TAB } from '@/lib/isa/identidade'
 import { ehByd } from '@/lib/isa/entrega.regras'
 import { cumprimento, dentroDoHorario, horaNoRio } from '@/lib/isa/hora.regras'
 import { mensagemViradaDoDia } from '@/lib/isa/dono.regras'
@@ -26,7 +27,7 @@ export async function chamarNaViradaDoDia(): Promise<{ enviados: number; motivo?
 
   const candidatos = await sql<ContatoIsa & { lead_nome: string | null; marca: string | null }>(
     `SELECT c.*, l.nome AS lead_nome, l.marca_interesse AS marca
-       FROM public.isa_contatos c
+       FROM ${TAB.contatos} c
        JOIN public.leads l ON l.id = c.lead_id
       WHERE c.ligada
         AND c.pausa_motivo IS NULL
@@ -48,7 +49,7 @@ export async function chamarNaViradaDoDia(): Promise<{ enviados: number; motivo?
         -- quem falou depois das 21h de ontem contava como "hoje" e ficava de fora (26/09/2026)
         AND NOT EXISTS (SELECT 1 FROM public.messages m WHERE m.conversation_id = c.conversation_id
               AND (m.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date = (now() AT TIME ZONE 'America/Sao_Paulo')::date)
-        AND NOT EXISTS (SELECT 1 FROM public.isa_eventos e WHERE e.telefone = c.telefone
+        AND NOT EXISTS (SELECT 1 FROM ${TAB.eventos} e WHERE e.telefone = c.telefone
               AND e.tipo = 'virada_do_dia' AND e.created_at > now() - interval '20 hours')
       ORDER BY c.janela_ate
       LIMIT $1`,

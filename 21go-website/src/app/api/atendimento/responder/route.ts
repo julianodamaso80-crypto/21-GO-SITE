@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
 import { sql, registrarEvento, type ContatoIsa } from '@/lib/isa/banco'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { enviarTexto, EnvioBloqueado } from '@/lib/isa/cloud'
 import { upsertMessage, phoneToJid } from '@/lib/supabase-store'
 
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   // Responder CITANDO a mensagem escolhida (dono, 14/09/2026): so o formato de wamid da Meta.
   const citar = typeof b.citar === 'string' && /^[A-Za-z0-9=_.-]{8,128}$/.test(b.citar) ? b.citar : null
 
-  const [c] = await sql<ContatoIsa>(`SELECT * FROM public.isa_contatos WHERE telefone = $1`, [telefone])
+  const [c] = await sql<ContatoIsa>(`SELECT * FROM ${TAB.contatos} WHERE telefone = $1`, [telefone])
   if (!c) return NextResponse.json({ erro: 'contato nao encontrado' }, { status: 404 })
   if (!c.janela_ate || new Date(c.janela_ate).getTime() < Date.now()) {
     return NextResponse.json({ erro: 'a janela de 24h desse cliente fechou — a Meta só deixa mandar template agora' }, { status: 409 })
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     await upsertMessage({
       conversation_id: c.conversation_id,
       whatsapp_message_id: wamid,
-      evolution_instance: 'cloud_isa',
+      evolution_instance: IDENTIDADE.instancia,
       jid: phoneToJid(telefone) ?? `${telefone}@s.whatsapp.net`,
       direction: 'outbound',
       status: 'SENT',
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Quem responde pelo painel cumpre o "vou confirmar e ja te retorno" da Isa, se havia um.
-  await sql(`UPDATE public.isa_contatos SET humano_em = now(), pergunta_pendente = NULL, updated_at = now() WHERE telefone = $1`, [telefone])
+  await sql(`UPDATE ${TAB.contatos} SET humano_em = now(), pergunta_pendente = NULL, updated_at = now() WHERE telefone = $1`, [telefone])
   await registrarEvento(telefone, 'humano_respondeu', { isa: c.ligada ? 'ligada' : 'desligada' }, s.u)
   return NextResponse.json({ ok: true })
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
 import { sql, registrarEvento, type ContatoIsa } from '@/lib/isa/banco'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { enviarTemplate, EnvioBloqueado } from '@/lib/isa/cloud'
 import { leadDoCliente } from '@/lib/isa/fatos'
 import { TEMPLATE_RETOMADA, variaveisDoTemplate, textoDaRetomada } from '@/lib/isa/abordagem.regras'
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   const telefone = (b.telefone || '').replace(/\D/g, '')
   if (!telefone) return NextResponse.json({ erro: 'telefone' }, { status: 400 })
 
-  const [c] = await sql<ContatoIsa>(`SELECT * FROM public.isa_contatos WHERE telefone = $1`, [telefone])
+  const [c] = await sql<ContatoIsa>(`SELECT * FROM ${TAB.contatos} WHERE telefone = $1`, [telefone])
   if (!c) return NextResponse.json({ erro: 'contato nao encontrado' }, { status: 404 })
   if (c.janela_ate && new Date(c.janela_ate).getTime() > Date.now()) {
     return NextResponse.json({ erro: 'a janela ainda está aberta: é só escrever normalmente' }, { status: 409 })
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
       await upsertMessage({
         conversation_id: c.conversation_id,
         whatsapp_message_id: wamid,
-        evolution_instance: 'cloud_isa',
+        evolution_instance: IDENTIDADE.instancia,
         jid: phoneToJid(telefone) ?? `${telefone}@s.whatsapp.net`,
         direction: 'outbound',
         status: 'SENT',

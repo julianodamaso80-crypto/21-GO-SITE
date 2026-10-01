@@ -468,7 +468,9 @@ export async function upsertMessage(input: InsertMessageInput): Promise<{ id: st
        WHERE id = $1`,
       [input.conversation_id, input.sent_at ?? null, inbound ? 1 : 0, inbound],
     ).catch((err) => console.warn('[store] conversa nao atualizada:', err instanceof Error ? err.message : err))
-    if (instance === 'cloud_isa') {
+    // So a mensagem do bot deste container avisa o CRM (Isa: cloud_isa; Mariana: cloud_mariana).
+    const { IDENTIDADE } = await import('@/lib/isa/identidade')
+    if (instance === IDENTIDADE.instancia) {
       const { avisarCrm } = await import('@/lib/isa/crm')
       avisarCrm({ conversationId: input.conversation_id, messageId: id })
     }

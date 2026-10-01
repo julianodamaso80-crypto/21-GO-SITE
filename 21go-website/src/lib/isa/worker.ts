@@ -25,6 +25,7 @@ import {
   type MensagemHistorico,
   marcarQuente,
 } from '@/lib/isa/banco'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { pensar } from '@/lib/isa/cerebro'
 import { transferir, pausarEAvisar, pedirDescontoAoDono, concederDesconto50, atenderDono, resumoDoCliente, descontoAutomaticoPendente } from '@/lib/isa/acoes'
 import { alertarDono, alertarPergunta } from '@/lib/isa/alertas'
@@ -502,7 +503,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // segue pra IA responder a duvida em vez de cotar de novo — ver jaCotouEssaPlaca.
   const ultimoOrcamento = placaDita
     ? (await sql<{ placa: string | null; em: string }>(
-        `SELECT detalhe->>'placa' AS placa, created_at AS em FROM public.isa_eventos
+        `SELECT detalhe->>'placa' AS placa, created_at AS em FROM ${TAB.eventos}
          WHERE telefone = $1 AND tipo = 'orcamento' ORDER BY created_at DESC LIMIT 1`,
         [c.telefone],
       ))[0] ?? null
@@ -811,7 +812,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   }
   // Veiculo com amassado: a Isa pediu as fotos; a etiqueta faz a proxima foto ir pra Leticya.
   if (saida.gatilho === 'avaria' && !c.etiquetas?.includes('avaria')) {
-    await sql(`UPDATE public.isa_contatos SET etiquetas = array_append(etiquetas, 'avaria'), updated_at = now() WHERE telefone = $1`, [c.telefone])
+    await sql(`UPDATE ${TAB.contatos} SET etiquetas = array_append(etiquetas, 'avaria'), updated_at = now() WHERE telefone = $1`, [c.telefone])
     await registrarEvento(c.telefone, 'avaria', { texto: ultimoTexto.slice(0, 120) })
   }
 
@@ -860,7 +861,7 @@ async function reenviarPdf(
     await upsertMessage({
       conversation_id: c.conversation_id,
       whatsapp_message_id: wamid,
-      evolution_instance: 'cloud_isa',
+      evolution_instance: IDENTIDADE.instancia,
       jid: phoneToJid(c.telefone) ?? `${c.telefone}@s.whatsapp.net`,
       direction: 'outbound',
       status: 'SENT',
@@ -1176,11 +1177,11 @@ export async function enviarComoGente(
   if (sender === 'isa') {
     const [r] = await sql<{ n: string }>(
       `SELECT count(*) AS n FROM public.messages m
-       WHERE m.conversation_id = $1 AND m.evolution_instance = 'cloud_isa' AND m.direction = 'outbound'
+       WHERE m.conversation_id = $1 AND m.evolution_instance = '${IDENTIDADE.instancia}' AND m.direction = 'outbound'
          AND m.created_at > GREATEST(
            now() - interval '2 hours',
            COALESCE((SELECT max(i.created_at) FROM public.messages i
-                     WHERE i.conversation_id = $1 AND i.evolution_instance = 'cloud_isa' AND i.direction = 'inbound'),
+                     WHERE i.conversation_id = $1 AND i.evolution_instance = '${IDENTIDADE.instancia}' AND i.direction = 'inbound'),
                     '-infinity'::timestamptz))`,
       [c.conversation_id],
     )
@@ -1209,7 +1210,7 @@ export async function enviarComoGente(
     // Desligaram a Isa enquanto ela preparava a resposta: nada sai (Renato, 21/09/2026 — a Leticya
     // desligou as 20:08:03 e a Isa ainda mandou as 20:08:05).
     if (sender === 'isa') {
-      const [agoraLigada] = await sql<{ ligada: boolean }>(`SELECT ligada FROM public.isa_contatos WHERE telefone = $1`, [c.telefone])
+      const [agoraLigada] = await sql<{ ligada: boolean }>(`SELECT ligada FROM ${TAB.contatos} WHERE telefone = $1`, [c.telefone])
       if (agoraLigada && !agoraLigada.ligada) {
         await registrarEvento(c.telefone, 'interrompida', { enviadas, total: partes.length, por: 'desligada' })
         break
@@ -1222,7 +1223,7 @@ export async function enviarComoGente(
       await upsertMessage({
         conversation_id: c.conversation_id,
         whatsapp_message_id: wamid,
-        evolution_instance: 'cloud_isa',
+        evolution_instance: IDENTIDADE.instancia,
         jid: phoneToJid(c.telefone) ?? `${c.telefone}@s.whatsapp.net`,
         direction: 'outbound',
         status: 'SENT',

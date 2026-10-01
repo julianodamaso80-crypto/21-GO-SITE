@@ -1,5 +1,6 @@
 import 'server-only'
 import { sql } from '@/lib/isa/banco'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { lerConfig, gravarConfig } from '@/lib/isa/abordagem'
 import { alertarDono } from '@/lib/isa/alertas'
 import { enviarTexto, numeroDeAlerta } from '@/lib/isa/cloud'
@@ -39,21 +40,21 @@ export async function relatorioDiario(): Promise<{ enviado: boolean; motivo?: st
      )
      SELECT
        (SELECT count(DISTINCT m.conversation_id) FROM public.messages m, janela
-          WHERE m.evolution_instance = 'cloud_isa' AND m.direction = 'inbound' AND m.created_at >= janela.de AND m.created_at < janela.ate)::int AS conversas,
-       (SELECT count(*) FROM public.isa_contatos c, janela WHERE c.created_at >= janela.de AND c.created_at < janela.ate)::int AS novos,
-       (SELECT count(*) FROM public.isa_eventos e, janela
+          WHERE m.evolution_instance = '${IDENTIDADE.instancia}' AND m.direction = 'inbound' AND m.created_at >= janela.de AND m.created_at < janela.ate)::int AS conversas,
+       (SELECT count(*) FROM ${TAB.contatos} c, janela WHERE c.created_at >= janela.de AND c.created_at < janela.ate)::int AS novos,
+       (SELECT count(*) FROM ${TAB.eventos} e, janela
           WHERE e.tipo = 'orcamento' AND e.detalhe->>'resultado' = 'ok' AND e.created_at >= janela.de AND e.created_at < janela.ate)::int AS simulacoes,
-       (SELECT count(DISTINCT e.telefone) FROM public.isa_eventos e, janela
+       (SELECT count(DISTINCT e.telefone) FROM ${TAB.eventos} e, janela
           WHERE e.tipo = 'pediu_documentos' AND e.created_at >= janela.de AND e.created_at < janela.ate)::int AS escolheram,
-       (SELECT count(DISTINCT e.telefone) FROM public.isa_eventos e, janela
+       (SELECT count(DISTINCT e.telefone) FROM ${TAB.eventos} e, janela
           WHERE e.tipo = 'transferiu' AND e.detalhe->>'motivo' = 'documento' AND e.created_at >= janela.de AND e.created_at < janela.ate)::int AS documentos,
-       (SELECT count(*) FROM public.isa_eventos e, janela
+       (SELECT count(*) FROM ${TAB.eventos} e, janela
           WHERE e.tipo = 'sem_informacao' AND e.created_at >= janela.de AND e.created_at < janela.ate)::int AS nao_soube,
-       (SELECT count(*) FROM public.isa_contatos c WHERE c.pergunta_pendente IS NOT NULL)::int AS pendentes`,
+       (SELECT count(*) FROM ${TAB.contatos} c WHERE c.pergunta_pendente IS NOT NULL)::int AS pendentes`,
     [hoje],
   )
   const perguntas = await sql<{ pergunta: string }>(
-    `SELECT e.detalhe->>'pergunta' AS pergunta FROM public.isa_eventos e
+    `SELECT e.detalhe->>'pergunta' AS pergunta FROM ${TAB.eventos} e
      WHERE e.tipo = 'sem_informacao'
        AND e.created_at >= ($1::date::timestamp + interval '3 hours') - interval '1 day'
        AND e.created_at <  ($1::date::timestamp + interval '3 hours')
@@ -109,7 +110,7 @@ export async function coberturaDaIsa(): Promise<{ total: number; itens: LinhaCob
     `WITH l AS (
        SELECT l.*, (c.telefone IS NOT NULL) AS na_isa
        FROM public.leads l
-       LEFT JOIN public.isa_contatos c
+       LEFT JOIN ${TAB.contatos} c
          ON c.telefone = l.telefone OR c.telefone = substr(l.telefone, 1, 4) || '9' || substr(l.telefone, 5)
        WHERE l.created_at > (now() AT TIME ZONE 'UTC') - interval '24 hours'
          AND l.created_at < (now() AT TIME ZONE 'UTC') - interval '6 minutes'

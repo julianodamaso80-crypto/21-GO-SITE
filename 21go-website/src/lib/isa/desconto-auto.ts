@@ -1,5 +1,6 @@
 import 'server-only'
 import { atualizarContato, registrarEvento, sql, type ContatoIsa } from '@/lib/isa/banco'
+import { TAB } from '@/lib/isa/identidade'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
 import { planoDoCliente } from '@/lib/isa/abordagem.regras'
 import { dentroDoHorario } from '@/lib/isa/hora.regras'
@@ -22,14 +23,14 @@ export async function entregarDescontosAutomaticos(): Promise<{ enviados: number
   const candidatos = await sql<ContatoIsa & { pediu_gratis: boolean }>(
     `SELECT c.*,
             -- pediu a ativacao DE GRACA em algum momento do pedido: muda a frase (dono, 26/09/2026)
-            EXISTS (SELECT 1 FROM public.isa_eventos g
+            EXISTS (SELECT 1 FROM ${TAB.eventos} g
                      WHERE g.telefone = c.telefone AND g.tipo = 'desconto'
                        AND g.created_at > now() - interval '12 hours'
                        AND g.detalhe->>'gratis' = 'true') AS pediu_gratis
-       FROM public.isa_contatos c
+       FROM ${TAB.contatos} c
        JOIN LATERAL (
          SELECT e.detalhe->>'tipo' AS tipo, e.created_at
-           FROM public.isa_eventos e
+           FROM ${TAB.eventos} e
           WHERE e.telefone = c.telefone AND e.tipo = 'desconto'
           ORDER BY e.created_at DESC LIMIT 1
        ) d ON true

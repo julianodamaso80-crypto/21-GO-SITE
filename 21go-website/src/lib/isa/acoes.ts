@@ -1,6 +1,7 @@
 import 'server-only'
 import { upsertMessage, phoneToJid } from '@/lib/supabase-store'
 import { atualizarContato, registrarEvento, sql, type ContatoIsa, type MensagemHistorico } from '@/lib/isa/banco'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { enviarTexto } from '@/lib/isa/cloud'
 import { alertarDono, alertarDesconto } from '@/lib/isa/alertas'
 import { reescreverRespostaDoDono } from '@/lib/isa/cerebro'
@@ -49,7 +50,7 @@ async function gravarSaida(c: ContatoIsa, wamid: string, texto: string, sender =
   await upsertMessage({
     conversation_id: c.conversation_id,
     whatsapp_message_id: wamid,
-    evolution_instance: 'cloud_isa',
+    evolution_instance: IDENTIDADE.instancia,
     jid: phoneToJid(c.telefone) ?? `${c.telefone}@s.whatsapp.net`,
     direction: 'outbound',
     status: 'SENT',
@@ -87,7 +88,7 @@ export async function transferir(
  */
 export async function descontoAutomaticoPendente(telefone: string): Promise<boolean> {
   const [d] = await sql<{ tipo: string | null }>(
-    `SELECT detalhe->>'tipo' AS tipo FROM public.isa_eventos
+    `SELECT detalhe->>'tipo' AS tipo FROM ${TAB.eventos}
       WHERE telefone = $1 AND tipo = 'desconto' AND created_at > now() - interval '12 hours'
       ORDER BY created_at DESC LIMIT 1`,
     [telefone],
@@ -152,7 +153,7 @@ async function clienteDoAlertaCitado(raw: unknown): Promise<string | null> {
     p?.context?.message_id ?? p?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.context?.id ?? null
   if (!citou) return null
   const r = await sql<{ telefone: string }>(
-    `SELECT telefone FROM public.isa_eventos
+    `SELECT telefone FROM ${TAB.eventos}
       WHERE tipo = 'alerta' AND detalhe->>'wamid' = $1
       ORDER BY created_at DESC LIMIT 1`,
     [citou],
@@ -182,13 +183,13 @@ export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]):
     const telCliente = 'telefone' in r && r.telefone ? r.telefone : pendente?.[2]
     if (!telCliente || r.acao === 'nada') continue
 
-    const [cliente] = await sql<ContatoIsa>(`SELECT * FROM public.isa_contatos WHERE telefone = $1`, [telCliente])
+    const [cliente] = await sql<ContatoIsa>(`SELECT * FROM ${TAB.contatos} WHERE telefone = $1`, [telCliente])
     if (!cliente) continue
     const lead = await leadDoCliente(cliente.telefone, cliente.lead_id, cliente.reiniciada_em).catch(() => null)
     const ativacao = cliente.desconto50_para ? Number(cliente.desconto50_para) : lead ? fatosDoLead(lead, null).ativacaoReferencia : null
 
     if (r.acao === 'autorizar') {
-      await sql(`UPDATE public.isa_contatos SET aguardando_dono = $2 WHERE telefone = $1`, [dono.telefone, `valor:${telCliente}`])
+      await sql(`UPDATE ${TAB.contatos} SET aguardando_dono = $2 WHERE telefone = $1`, [dono.telefone, `valor:${telCliente}`])
       const pergunta = `de quanto fica a ativação do ${cliente.nome || telCliente}?${ativacao ? ` (hoje ${brl(ativacao)})` : ''} é só me mandar o valor`
       await enviarTexto(dono.telefone, pergunta).then((w) => gravarSaida(dono, w, pergunta)).catch(() => {})
       continue
@@ -213,7 +214,7 @@ export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]):
         })
         await registrarEvento(cliente.telefone, 'desconto', { tipo: 'dono', de: ativacao, para: r.valor }, 'juliano')
       }
-      await sql(`UPDATE public.isa_contatos SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])
+      await sql(`UPDATE ${TAB.contatos} SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])
       const conf = ok
         ? `pronto, mandei pro ${cliente.nome || telCliente}: de ${brl(ativacao)} por ${brl(r.valor)} ✅`
         : `não consegui mandar pro ${cliente.nome || telCliente}: a janela de 24h dele fechou — só dá pra falar com ele pelo painel`
@@ -225,7 +226,7 @@ export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]):
       const ok = ativacao ? await falarComCliente(cliente, mensagemDonoRecusou(ativacao, falaDeAdesivo(cliente.telefone))) : false
       await atualizarContato(cliente.telefone, { aguardando_dono: null, ligada: true, pausa_motivo: null })
       await registrarEvento(cliente.telefone, 'desconto', { tipo: 'recusado' }, 'juliano')
-      await sql(`UPDATE public.isa_contatos SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])
+      await sql(`UPDATE ${TAB.contatos} SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])
       const conf = ok ? `ok, avisei o ${cliente.nome || telCliente} que não rolou desconto a mais` : 'ok, sem desconto'
       await enviarTexto(dono.telefone, conf).then((w) => gravarSaida(dono, w, conf)).catch(() => {})
     }
@@ -253,8 +254,8 @@ async function falarComCliente(cliente: ContatoIsa, texto: string): Promise<bool
  * "vou confirmar e ja te retorno" morria no alerta — 10 promessas nos testes, 0 cumpridas.
  */
 async function responderPerguntaPendente(dono: ContatoIsa, telCliente: string, texto: string): Promise<void> {
-  const limpar = () => sql(`UPDATE public.isa_contatos SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])
-  const [cliente] = await sql<ContatoIsa>(`SELECT * FROM public.isa_contatos WHERE telefone = $1`, [telCliente])
+  const limpar = () => sql(`UPDATE ${TAB.contatos} SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])
+  const [cliente] = await sql<ContatoIsa>(`SELECT * FROM ${TAB.contatos} WHERE telefone = $1`, [telCliente])
   if (!cliente) {
     await limpar()
     return
