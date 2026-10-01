@@ -69,6 +69,8 @@ const NUMERO_DA_CASA = '5521980040964'
 const TELEFONE_DA_LETICYA = '5521969454824'
 const ORIGEM_DA_ISA = 'isa_whatsapp'
 const TRK_DA_ISA = 'isa'
+const SITE_DA_CASA = 'https://21go.site'
+const mesmaLista = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x, i) => x === b[i])
 // Origens que o formulario do site grava (deriveOrigem). Fica de fora o que o CRM espelha
 // (power_crm, manual, seja_consultor) e o que a propria Isa cria (isa_whatsapp).
 const ORIGENS_DO_SITE = ['site_organico', 'google_ads', 'meta_ads', 'instagram', 'whatsapp', 'outro']
@@ -117,7 +119,7 @@ export function identidadeDoAmbiente(env: Ambiente): IdentidadeBot {
   const numero = v('BOT_NUMERO', NUMERO_DA_CASA)
   const telefone = v('BOT_HUMANO_TELEFONE', TELEFONE_DA_LETICYA)
   const instancia = v('BOT_INSTANCIA', INSTANCIA_DA_CASA)
-  const siteUrl = v('BOT_SITE_URL', 'https://21go.site').replace(/\/+$/, '')
+  const siteUrl = v('BOT_SITE_URL', SITE_DA_CASA).replace(/\/+$/, '')
   const origens5min = v('BOT_LEADS_5MIN_ORIGENS', ORIGENS_DO_SITE.join(','))
   const id: IdentidadeBot = {
     nome: v('BOT_NOME', 'Isa'),
@@ -168,13 +170,24 @@ export function errosDaIdentidade(id: IdentidadeBot): string[] {
     if (id.schema !== 'public') erros.push(`a instancia da casa (${INSTANCIA_DA_CASA}) usa o schema public`)
     return erros
   }
-  if (id.schema === 'public') erros.push('schema public e da Isa')
-  if (id.waba === WABA_DA_CASA) erros.push('WABA da Isa')
-  if (id.powerlink === POWERLINK_DA_CASA) erros.push(`Power da Leticya (${POWERLINK_DA_CASA})`)
-  if (id.humano.telefone === TELEFONE_DA_LETICYA) erros.push('telefone do humano e o da Leticya')
-  if (id.leadOrigem === ORIGEM_DA_ISA) erros.push('origem de lead da Isa')
-  if (id.trkPrefixo === TRK_DA_ISA) erros.push('prefixo de trk da Isa')
-  if (id.numero === NUMERO_DA_CASA) erros.push('numero do bot e o da Isa')
+  if (id.schema === 'public') erros.push('schema public e da Isa (defina BOT_SCHEMA)')
+  if (id.waba === WABA_DA_CASA) erros.push('WABA da Isa (defina WA_WABA_ID)')
+  if (id.powerlink === POWERLINK_DA_CASA) erros.push(`Power da Leticya (${POWERLINK_DA_CASA}): defina POWERCRM_DEFAULT_SLSMN_NW_ID`)
+  if (id.humano.telefone === TELEFONE_DA_LETICYA) erros.push('telefone do humano e o da Leticya (defina BOT_HUMANO_TELEFONE)')
+  if (id.leadOrigem === ORIGEM_DA_ISA) erros.push('origem de lead da Isa (defina BOT_LEAD_ORIGEM)')
+  if (id.trkPrefixo === TRK_DA_ISA) erros.push('prefixo de trk da Isa (defina BOT_TRK_PREFIXO)')
+  if (id.numero === NUMERO_DA_CASA) erros.push('numero do bot e o da Isa (defina BOT_NUMERO)')
+  if (id.siteUrl === SITE_DA_CASA) erros.push('siteUrl da casa (defina BOT_SITE_URL)')
+  if (id.fonte5min.origens !== null && mesmaLista(id.fonte5min.origens, ORIGENS_DO_SITE))
+    erros.push('fonte dos 5 min com as origens do site da casa (defina BOT_LEADS_5MIN_ORIGENS)')
+  if (mesmaLista(id.fonte5min.dominios, DOMINIOS_DA_CASA))
+    erros.push('fonte dos 5 min com os dominios da casa (defina BOT_LEADS_5MIN_DOMINIOS)')
+  if (id.humano.id === 'leticya') erros.push('humano.id da Leticya (defina BOT_HUMANO_ID)')
+  if (id.humano.nome === 'Leticya') erros.push('humano.nome da Leticya (defina BOT_HUMANO_NOME)')
+  if (id.humano.nomeCompleto === 'Leticya Thayene') erros.push('humano.nomeCompleto da Leticya (defina BOT_HUMANO_NOME_COMPLETO)')
+  if (id.humano.apelido === '4824') erros.push('humano.apelido da Leticya (defina BOT_HUMANO_APELIDO)')
+  if (id.nome === 'Isa') erros.push('nome do bot e Isa (defina BOT_NOME)')
+  if (id.donoPor === 'juliano') erros.push('donoPor da casa (defina BOT_DONO_POR)')
   return erros
 }
 
@@ -258,7 +271,7 @@ export function nomesDoCumprimento(id: { nome: string; humano: { nome: string } 
   return [id.nome, id.humano.nome].map((n) =>
     n
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase(),
   )
 }
