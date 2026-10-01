@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql, registrarEvento } from '@/lib/isa/banco'
 import { IDENTIDADE } from '@/lib/isa/identidade'
+import { LEADS_DE_PARCEIRO } from '@/lib/isa/identidade.regras'
 import { avisarDono } from '@/lib/whatsapp-avisos'
 import { getEvolutionInstance } from '@/lib/whatsapp'
 import { textoAvisoByd } from '@/lib/vigia-byd.regras'
@@ -47,6 +48,8 @@ export async function GET(req: NextRequest) {
               l.ano_interesse, l.cotacao_plano, l.cotacao_valor, l.created_at::text, l.whatsapp_clicado
          FROM public.leads l
         WHERE l.marca_interesse ILIKE 'BYD%' AND l.consultor_slug IS NULL AND l.dominio IS NOT NULL
+          -- site de parceiro (21go.app, do Gabriel) nao passa pelo 4824: nao e BYD sem envio da casa
+          AND NOT (l.dominio = ANY($2::text[]))
           AND coalesce(l.status, '') <> 'excluido'
           AND l.created_at BETWEEN now() - interval '6 hours' AND now() - interval '15 minutes'
           AND NOT EXISTS (
@@ -60,7 +63,7 @@ export async function GET(req: NextRequest) {
                  WHERE e.tipo = 'vigia_byd_sem_envio' AND e.detalhe->>'lead_id' = l.id)
         ORDER BY l.created_at
         LIMIT 20`,
-      [instancia],
+      [instancia, [...LEADS_DE_PARCEIRO.dominios]],
     )
     if (leads.length === 0) return NextResponse.json({ ok: true, avisados: 0 })
 
