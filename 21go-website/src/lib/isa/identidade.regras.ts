@@ -46,6 +46,8 @@ export interface IdentidadeBot {
   donoPor: string
   powerlink: string
   waba: string
+  /** WA_PHONE_ID do numero na Cloud API; ausente quando nao veio (a casa le direto em cloud.ts) */
+  phoneId?: string
   /** conversations/messages.evolution_instance */
   instancia: string
   /** schema das tabelas por-bot (isa_contatos, isa_eventos, isa_config, isa_promocoes, consultor_recrutamento) */
@@ -66,6 +68,7 @@ export interface IdentidadeBot {
 
 export const INSTANCIA_DA_CASA = 'cloud_isa'
 export const WABA_DA_CASA = '932143313296745'
+const PHONE_ID_DA_CASA = '1457563414097446'
 export const POWERLINK_DA_CASA = 'WDVMKnkq'
 const NUMERO_DA_CASA = '5521980040964'
 const TELEFONE_DA_LETICYA = '5521969454824'
@@ -140,6 +143,7 @@ export function identidadeDoAmbiente(env: Ambiente): IdentidadeBot {
     donoPor: v('BOT_DONO_POR', 'juliano'),
     powerlink: v('POWERCRM_DEFAULT_SLSMN_NW_ID', POWERLINK_DA_CASA),
     waba: v('WA_WABA_ID', WABA_DA_CASA),
+    ...((env.WA_PHONE_ID || '').trim() ? { phoneId: (env.WA_PHONE_ID || '').trim() } : {}),
     instancia,
     schema: v('BOT_SCHEMA', 'public'),
     siteUrl,
@@ -175,6 +179,7 @@ export function errosDaIdentidade(id: IdentidadeBot): string[] {
   }
   if (id.schema === 'public') erros.push('schema public e da Isa (defina BOT_SCHEMA)')
   if (id.waba === WABA_DA_CASA) erros.push('WABA da Isa (defina WA_WABA_ID)')
+  if (id.phoneId === PHONE_ID_DA_CASA) erros.push('phone id da Isa (defina WA_PHONE_ID)')
   if (id.powerlink === POWERLINK_DA_CASA) erros.push(`Power da Leticya (${POWERLINK_DA_CASA}): defina POWERCRM_DEFAULT_SLSMN_NW_ID`)
   if (id.humano.telefone === TELEFONE_DA_LETICYA) erros.push('telefone do humano e o da Leticya (defina BOT_HUMANO_TELEFONE)')
   if (id.leadOrigem === ORIGEM_DA_ISA) erros.push('origem de lead da Isa (defina BOT_LEAD_ORIGEM)')
