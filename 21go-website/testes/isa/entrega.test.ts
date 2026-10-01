@@ -241,3 +241,20 @@ test('sinal de fechamento manda pra URGENTE (dono, 29/09/2026)', async () => {
   assert.equal(s('quanto fica a mensalidade?'), false)
   assert.equal(s('optei por fechar com a Alamo'), false)
 })
+
+test('"Fiquei na duvida sobre o rastreador" NAO e desistencia (dono, 01/10/2026 — caso Aline)', async () => {
+  const { fechouComOutra } = await import('../../src/lib/isa/entrega.regras.ts')
+  for (const s of [
+    'Fiquei na dúvida sobre o rStreador',
+    'E sobre desastres naturais',
+    'fiquei na duvida se cobre vidro',
+    'decidi ver com a esposa antes',
+  ]) assert.equal(fechouComOutra(s), false, s)
+  // desistencia de verdade continua pegando
+  for (const s of [
+    'eu optei por fechar com a Alamo pq me trouxe condições melhores',
+    'fechei com a Porto ontem',
+    'assinei com outra empresa',
+    'fiquei com a Alamo mesmo',
+  ]) assert.ok(fechouComOutra(s), s)
+})

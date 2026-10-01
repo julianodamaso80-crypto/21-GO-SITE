@@ -257,13 +257,23 @@ export function pediuPdfDeNovo(texto: string | null | undefined): boolean {
  * — o "fechar com" bateu na regra de quem quer contratar. *"vc só deveria agradecer e falar
  * qualquer coisa se precisa me chame"*.
  */
+// Verbo de FECHAMENTO, nunca "fiquei na duvida" — em 01/10/2026 a Aline perguntou "fiquei na
+// duvida sobre o rastreador" e a Isa respondeu "obrigada por avisar", como se ela tivesse
+// desistido. O "fiquei/vou ficar" so vale com empresa logo depois ("fiquei com a Porto").
 const FECHOU_COM_OUTRA =
-  /\b(fechei|optei|decidi|acabei|resolvi|vou ficar|fiquei|assinei|contratei)\b[^.?!\n]{0,40}\b(com|pela|pelo|na|no)\s+(?:a\s+|o\s+)?(?!voc|vcs|21|vocês)[a-zà-ú]/i
+  /\b(fechei|assinei|contratei)\b[^.?!\n]{0,30}\b(com|na|no|pela|pelo)\s+(?:a\s+|o\s+)?(?!voc|vcs|21|d[uú]vida)[a-zà-ú]/i
 
 export function fechouComOutra(texto: string | null | undefined): boolean {
   const t = (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   if (/\b(com|pela|pelo)\s+(voces|vcs|21\s*go|21go|a\s+21)/i.test(t)) return false
-  return FECHOU_COM_OUTRA.test(t) || /\b(nao vou|desisti|ja fechei)\b[^.?!\n]{0,30}\b(seguir|contratar|fechar|fazer)\b/i.test(t)
+  // duvida/pergunta no meio nunca e desistencia
+  if (/\bduvida\b|\?/.test(t)) return false
+  return (
+    FECHOU_COM_OUTRA.test(t) ||
+    /\b(optei|decidi|resolvi|preferi)\b[^.?!\n]{0,30}\b(fechar|ficar|seguir|continuar)\b/i.test(t) ||
+    /\b(vou ficar|fiquei)\s+com\s+(?:a|o)\s+(?!voc|vcs|21)[a-z]/i.test(t) ||
+    /\b(nao vou|desisti|ja fechei)\b[^.?!\n]{0,30}\b(seguir|contratar|fechar|fazer)\b/i.test(t)
+  )
 }
 
 /** Ele avisou que fechou com outra: agradece e fica à disposição. Nada de documento nem venda. */

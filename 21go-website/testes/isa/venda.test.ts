@@ -171,3 +171,16 @@ test('nao da boa noite duas vezes seguidas (dono, 28/09/2026 — caso Yuri)', as
     'tudo ótimo por aqui, e você? 😃 me diz, como posso te ajudar?',
   )
 })
+
+test('nunca perguntar 2x quanto ele paga hoje (dono, 01/10/2026)', async () => {
+  const { jaPerguntouQuantoPaga, valorQuePagaHoje } = await import('../../src/lib/isa/venda.regras.ts')
+  const hist = [
+    { direction: 'inbound' as const, content: 'Alamo cobre 100%' },
+    { direction: 'outbound' as const, content: 'entendi! e por curiosidade, quanto você paga hoje na Alamo?' },
+    { direction: 'inbound' as const, content: '547' },
+  ]
+  assert.equal(jaPerguntouQuantoPaga(hist), true)
+  // o numero solto depois da pergunta e o valor dele: R$ 547,00
+  assert.equal(valorQuePagaHoje(hist), 547)
+  assert.equal(jaPerguntouQuantoPaga([{ direction: 'inbound', content: 'tenho proteção hoje' }]), false)
+})

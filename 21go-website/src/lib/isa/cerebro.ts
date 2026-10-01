@@ -2,7 +2,10 @@ import 'server-only'
 import { montarPrompt, comporResposta, abertura, tirarCumprimento, tirarNomeRepetido, ehRepeticao, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
 import { marcasQueFaltam, perguntasNaResposta } from '@/lib/isa/envio.regras'
 import { validarNumeros, extrairNumeros, type Permitidos } from '@/lib/isa/validador.regras'
-import { tirarFrasesDeRobo, comparacaoComHoje, ehSoConcordancia } from '@/lib/isa/venda.regras'
+import { tirarFrasesDeRobo, comparacaoComHoje, ehSoConcordancia, jaPerguntouQuantoPaga } from '@/lib/isa/venda.regras'
+
+/** A mesma pergunta do `PERGUNTOU_QUANTO_PAGA` de venda.regras, pra conferir a saida da IA. */
+const PERGUNTA_QUANTO_PAGA = /quanto\s+(?:voc[eê]|vc|o senhor|a senhora)?\s*paga/i
 import { lerJsonTolerante } from '@/lib/isa/json.regras'
 import { cumprimento, primeiroVencimento } from '@/lib/isa/hora.regras'
 import { NUMEROS_FIXOS, type Fatos } from '@/lib/isa/fatos.regras'
@@ -279,6 +282,20 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
         `(instrução interna, não é o cliente) você deixou sem resposta a(s) mensagem(ns) ${faltam.map((n) => `[${n}]`).join(', ')}. ` +
         'reescreva respondendo TODAS, uma parte por mensagem, cada parte começando com o número dela ' +
         '(ex.: "[2] o pagamento pode ser..."), separadas por linha em branco. mesmo formato JSON.',
+    })
+    saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo, nome)
+  }
+
+  // Perguntar de novo o que ela JA perguntou (quanto ele paga hoje) e o erro que mais irrita: ele
+  // acabou de responder "547" e ela perguntou outra vez (dono, 01/10/2026).
+  if (jaPerguntouQuantoPaga(e.historico) && PERGUNTA_QUANTO_PAGA.test(saida.resposta) && saida.resposta) {
+    conversa.push({ role: 'assistant', content: JSON.stringify(saida) })
+    conversa.push({
+      role: 'user',
+      content:
+        '(instrução interna, não é o cliente) você JÁ perguntou quanto ele paga hoje nesta conversa. ' +
+        'reescreva sem perguntar de novo: se ele respondeu o valor, siga dali; se não respondeu, trate o assunto ' +
+        'sem repetir a pergunta. mesmo formato JSON.',
     })
     saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo, nome)
   }

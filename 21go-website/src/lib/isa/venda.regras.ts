@@ -101,6 +101,14 @@ const DIZ_QUE_PAGA = /\b(pago|pagando|paga|custa|fica|ta pagando|tô pagando|to 
 const SO_NUMERO = /^(?:r\$\s*)?(\d{2,5}(?:[.,]\d{1,2})?)\s*(?:reais|por m[eê]s|\/m[eê]s|mensal|mensais)?[\s.!]*$/
 
 /**
+ * A Isa JA perguntou quanto ele paga hoje? Dono, 01/10/2026: ela perguntou, ele respondeu "547" e
+ * ela perguntou de novo 5 segundos depois.
+ */
+export function jaPerguntouQuantoPaga(historico: { direction: 'inbound' | 'outbound'; content: string }[]): boolean {
+  return historico.some((m) => m.direction === 'outbound' && PERGUNTOU_QUANTO_PAGA.test(norm(m.content)))
+}
+
+/**
  * O valor que o cliente disse pagar hoje em outra protecao/seguro. Vem de "pago 650", "tá 650
  * por mês", ou de um numero solto respondendo "quanto você paga hoje?". Nunca da IA.
  */
