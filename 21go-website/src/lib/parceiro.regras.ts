@@ -166,11 +166,15 @@ export function leadDoParceiro(d: DadosDoLeadDoParceiro): UpsertLeadInput {
  * Lead de parceiro (21go.app): as contas de anuncio e os eventos de conversao sao da casa, entao
  * o webhook do Power da casa nao dispara Lead/Purchase pra ele.
  */
+/** Origem dos leads que o robo de um parceiro cria (Mariana, do Gabriel). Mesmo valor de BOT_LEAD_ORIGEM no .env-mariana. */
+export const ORIGENS_DE_BOT_DE_PARCEIRO: readonly string[] = ['mariana_whatsapp']
+
 export function leadEhDeParceiro(lead: { dominio?: string | null; origem?: string | null } | null | undefined): boolean {
   if (!lead) return false
   const porDominio = Object.values(PARCEIROS).some((p) => p.dominio === lead.dominio)
   const porOrigem = Object.values(PARCEIROS).some((p) => p.origem === lead.origem)
-  return porDominio || porOrigem
+  // Lead que a propria Mariana cria na conversa tambem e do Gabriel (vai pro Power dele).
+  return porDominio || porOrigem || ORIGENS_DE_BOT_DE_PARCEIRO.includes(lead.origem ?? '')
 }
 
 /**
