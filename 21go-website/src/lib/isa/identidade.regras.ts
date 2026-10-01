@@ -179,6 +179,7 @@ export function errosDaIdentidade(id: IdentidadeBot): string[] {
   }
   if (id.schema === 'public') erros.push('schema public e da Isa (defina BOT_SCHEMA)')
   if (id.waba === WABA_DA_CASA) erros.push('WABA da Isa (defina WA_WABA_ID)')
+  if (!id.phoneId) erros.push('sem phone id (defina WA_PHONE_ID)')
   if (id.phoneId === PHONE_ID_DA_CASA) erros.push('phone id da Isa (defina WA_PHONE_ID)')
   if (id.powerlink === POWERLINK_DA_CASA) erros.push(`Power da Leticya (${POWERLINK_DA_CASA}): defina POWERCRM_DEFAULT_SLSMN_NW_ID`)
   if (id.humano.telefone === TELEFONE_DA_LETICYA) erros.push('telefone do humano e o da Leticya (defina BOT_HUMANO_TELEFONE)')
