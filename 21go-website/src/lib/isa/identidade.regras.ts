@@ -168,6 +168,7 @@ export function errosDaIdentidade(id: IdentidadeBot): string[] {
   if (!/^[a-z_][a-z0-9_]*$/.test(id.schema)) erros.push(`schema invalido: ${id.schema}`)
   if (!/^[a-z0-9_]+$/.test(id.instancia)) erros.push(`instancia invalida: ${id.instancia}`)
   if (!/^[a-z]+$/.test(id.trkPrefixo)) erros.push(`prefixo de trk invalido: ${id.trkPrefixo}`)
+  if (!/^[a-z0-9_]+$/.test(id.humano.id)) erros.push(`humano.id invalido: ${id.humano.id}`)
   if (id.daCasa) {
     if (id.schema !== 'public') erros.push(`a instancia da casa (${INSTANCIA_DA_CASA}) usa o schema public`)
     return erros

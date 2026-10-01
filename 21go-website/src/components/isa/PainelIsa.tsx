@@ -229,6 +229,16 @@ export function PainelIsa() {
     carregarEu()
   }, [carregarEu])
 
+  // Depois do login o usuario ja vem do /entrar; o bot do /eu e so um extra, que nunca desfaz o login.
+  const aoEntrar = useCallback((u: string) => {
+    setUsuario(u)
+    api<{ usuario: string; bot?: PainelBot }>('/api/atendimento/eu')
+      .then((r) => {
+        if (r.bot) setBot(r.bot)
+      })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     document.title = `Atendimento ${bot.nome} · 21Go`
   }, [bot.nome])
@@ -240,7 +250,7 @@ export function PainelIsa() {
         style={FUNDO}
       >
         {usuario === null && <div className="grid h-full place-items-center text-sm text-white/50">carregando…</div>}
-        {usuario === false && <Login aoEntrar={carregarEu} />}
+        {usuario === false && <Login aoEntrar={aoEntrar} />}
         {typeof usuario === 'string' && <Mesa usuario={usuario} aoSair={() => setUsuario(false)} />}
       </div>
     </BotCtx.Provider>
