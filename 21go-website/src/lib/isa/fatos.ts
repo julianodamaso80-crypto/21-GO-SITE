@@ -4,6 +4,8 @@ import { calcActivation, isLeilaoOrigin, PLAN_INFO, type PlanId } from '@/data/p
 import { montarFatos, planosQueAparecem, planoDosBeneficios, type Fatos, type PlanoEntrada } from '@/lib/isa/fatos.regras'
 import { extrairNumeros } from '@/lib/isa/validador.regras'
 import { variantesDoTelefone } from '@/lib/isa/telefone.regras'
+import { IDENTIDADE } from '@/lib/isa/identidade'
+import { leadsDoBot } from '@/lib/isa/identidade.regras'
 
 /**
  * Liga o cliente do WhatsApp a simulacao que ele fez (lead) e monta os fatos com as MESMAS
@@ -35,6 +37,14 @@ export interface LeadIsa {
 const COLUNAS = `id, nome, marca_interesse, modelo_interesse, ano_interesse, valor_fipe_consultado,
   cotacao_planos, carro_app, leilao, estado, placa_interesse, cotacao_plano`
 
+// Fonte do bot (spec da Mariana, secao 2): a Mariana so ve os leads dela (os que criou e os do
+// site do Gabriel); a Isa ve os de sempre, menos os da Mariana. `n` = numero do 1o parametro.
+const FONTE = leadsDoBot(IDENTIDADE)
+const VALORES_DA_FONTE = [FONTE.incluirOrigens, FONTE.incluirDominios, FONTE.excluirOrigens, FONTE.excluirDominios]
+const filtroDaFonte = (n: number) =>
+  `AND ($${n}::text[] IS NULL OR COALESCE(origem, '') = ANY($${n}::text[]) OR COALESCE(dominio, '') = ANY($${n + 1}::text[]))
+       AND NOT (COALESCE(origem, '') = ANY($${n + 2}::text[]) OR COALESCE(dominio, '') = ANY($${n + 3}::text[]))`
+
 /**
  * A simulacao mais recente do telefone (ou a do lead_id que a propria Isa gravou). `desde` =
  * reiniciada_em do contato: depois de um /reiniciar, simulacao antiga nao conta.
@@ -42,18 +52,22 @@ const COLUNAS = `id, nome, marca_interesse, modelo_interesse, ano_interesse, val
 export async function leadDoCliente(telefone: string, leadId: string | null, desde: string | null = null): Promise<LeadIsa | null> {
   if (leadId) {
     // Lead de consultor nunca entra, nem pelo link do popup (REGRA 0.1).
-    const r = await sql<LeadIsa>(`SELECT ${COLUNAS} FROM public.leads WHERE id = $1 AND consultor_slug IS NULL LIMIT 1`, [leadId])
+    const r = await sql<LeadIsa>(`SELECT ${COLUNAS} FROM public.leads WHERE id = $1 AND consultor_slug IS NULL ${filtroDaFonte(2)} LIMIT 1`, [
+      leadId,
+      ...VALORES_DA_FONTE,
+    ])
     if (r[0]?.cotacao_planos?.length) return r[0]
   }
   const r = await sql<LeadIsa>(
     `SELECT ${COLUNAS} FROM public.leads
      WHERE (telefone = ANY($1::text[]) OR whatsapp = ANY($1::text[]))
        AND consultor_slug IS NULL
+       ${filtroDaFonte(3)}
        AND cotacao_planos IS NOT NULL
        AND created_at > (now() AT TIME ZONE 'UTC') - interval '30 days'
        AND created_at > COALESCE($2::timestamptz AT TIME ZONE 'UTC', '-infinity'::timestamp)
      ORDER BY created_at DESC LIMIT 1`,
-    [variantesDoTelefone(telefone), desde],
+    [variantesDoTelefone(telefone), desde, ...VALORES_DA_FONTE],
   )
   return r[0] ?? null
 }

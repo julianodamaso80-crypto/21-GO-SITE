@@ -5,7 +5,6 @@ import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { enviarTemplate, destinoPermitido, qualidadeDoNumero, statusDoTemplate, numeroDeAlerta, EnvioBloqueado } from '@/lib/isa/cloud'
 import { alertarDono } from '@/lib/isa/alertas'
 import { dentroDoHorario } from '@/lib/isa/hora.regras'
-import { DOMINIOS_DA_CASA } from '@/lib/isa/popup.regras'
 import { numerosDeTeste } from '@/lib/isa/dono.regras'
 import {
   TEMPLATE_5MIN,
@@ -34,12 +33,14 @@ import {
  */
 
 const POR_RODADA = 5
-// slsmnNwId da Leticya no Power: negociacao com outro responsavel = placa presa com outro consultor.
-const RESPONSAVEL_DA_CASA = process.env.POWERCRM_DEFAULT_SLSMN_NW_ID || 'WDVMKnkq'
-const SITE = 'https://21go.site'
-// Origens que o formulario do site grava (deriveOrigem). Fica de fora o que o CRM espelha
-// (power_crm, manual, seja_consultor) e o que a propria Isa cria (isa_whatsapp).
-const ORIGENS_DO_SITE = ['site_organico', 'google_ads', 'meta_ads', 'instagram', 'whatsapp', 'outro']
+// slsmnNwId do humano do bot no Power (Leticya na Isa, Gabriel na Mariana): negociacao com outro
+// responsavel = placa presa com outro consultor.
+const RESPONSAVEL_DO_BOT = IDENTIDADE.powerlink
+const SITE = IDENTIDADE.siteUrl
+// Fonte dos 5 min (identidade): na Isa, as origens que o formulario do site grava (deriveOrigem) e
+// os .site da casa — fica de fora o que o CRM espelha e o que a propria Isa cria (isa_whatsapp).
+// Na Mariana, so o site do Gabriel (21go.app), de qualquer origem.
+const FONTE_5MIN = IDENTIDADE.fonte5min
 
 interface Config5min {
   ligado_em?: string
@@ -93,7 +94,7 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
      FROM public.leads l
      WHERE l.consultor_slug IS NULL
        AND l.cotacao_planos IS NOT NULL
-       AND l.origem = ANY($3::text[])
+       AND ($3::text[] IS NULL OR l.origem = ANY($3::text[]))
        -- so os .site da casa (dono, 13/09/2026): lead sem dominio (antes desta coluna) fica de fora
        AND l.dominio = ANY($5::text[])
        -- placa presa com outro consultor (dono, 14/09/2026): a negociacao nasceu no nome dele
@@ -128,7 +129,7 @@ export async function abordarLeadsNovos(): Promise<{ enviados: number; motivo?: 
        )
      ORDER BY l.telefone, l.created_at DESC
      LIMIT $2`,
-    [cfg.ligado_em, POR_RODADA * 4, ORIGENS_DO_SITE, teste, DOMINIOS_DA_CASA, RESPONSAVEL_DA_CASA],
+    [cfg.ligado_em, POR_RODADA * 4, FONTE_5MIN.origens, teste, FONTE_5MIN.dominios, RESPONSAVEL_DO_BOT],
   )
 
   let enviados = 0
@@ -317,7 +318,7 @@ export async function templateLiberado(
     await registrarEvento('sistema', `template_bloqueado`, { template: nome, ...agora }, 'sistema')
     await alertarDono({
       telefone: numeroDeAlerta() ?? 'sistema',
-      nome: 'Isa',
+      nome: IDENTIDADE.nome,
       motivo: 'template',
       detalhe: `o template ${nome} ficou ${agora.status}/${agora.categoria} na Meta — ${rotulo} parou`,
     })
@@ -357,8 +358,8 @@ async function vigiarQualidade(): Promise<void> {
   await registrarEvento('sistema', 'qualidade_mudou', { rating, limite, mudancas }, 'sistema')
   await alertarDono({
     telefone: numeroDeAlerta() ?? 'sistema',
-    nome: 'Isa',
+    nome: IDENTIDADE.nome,
     motivo: 'qualidade',
-    detalhe: `a qualidade do 98004-0964 na Meta esta ${rating}: ${mudancas.join(', ')}`,
+    detalhe: `a qualidade do ${IDENTIDADE.numeroBonito} na Meta esta ${rating}: ${mudancas.join(', ')}`,
   })
 }

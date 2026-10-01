@@ -5,7 +5,6 @@ import { lerConfig, gravarConfig } from '@/lib/isa/abordagem'
 import { alertarDono } from '@/lib/isa/alertas'
 import { enviarTexto, numeroDeAlerta } from '@/lib/isa/cloud'
 import { diaNoRio, horaNoRio } from '@/lib/isa/hora.regras'
-import { DOMINIOS_DA_CASA } from '@/lib/isa/popup.regras'
 
 /**
  * Relatorio diario da Isa pro dono (auditoria de 12/09/2026): o que aconteceu ONTEM e, o mais
@@ -71,7 +70,7 @@ export async function relatorioDiario(): Promise<{ enviado: boolean; motivo?: st
   const ontem = new Date(Date.UTC(ano, mes - 1, dia - 1))
   const rotulo = `${String(ontem.getUTCDate()).padStart(2, '0')}/${String(ontem.getUTCMonth() + 1).padStart(2, '0')}`
   const linhas = [
-    `📊 Isa ontem (${rotulo})`,
+    `📊 ${IDENTIDADE.nome} ontem (${rotulo})`,
     `conversas: ${n.conversas} (${n.novos} novas)`,
     `simulações: ${n.simulacoes}`,
     `escolheram plano: ${n.escolheram}`,
@@ -90,7 +89,7 @@ export async function relatorioDiario(): Promise<{ enviado: boolean; motivo?: st
   try {
     await enviarTexto(para, linhas.join('\n'))
   } catch {
-    await alertarDono({ telefone: para, nome: 'Isa', motivo: 'relatorio', detalhe: linhas.join('\n') })
+    await alertarDono({ telefone: para, nome: IDENTIDADE.nome, motivo: 'relatorio', detalhe: linhas.join('\n') })
   }
   return { enviado: true }
 }
@@ -105,7 +104,7 @@ interface LinhaCobertura {
  * motivo de nao estar. "⚠️ sem motivo" = deveria estar e nao esta (o que o dono viu no Power).
  */
 export async function coberturaDaIsa(): Promise<{ total: number; itens: LinhaCobertura[] }> {
-  const casa = process.env.POWERCRM_DEFAULT_SLSMN_NW_ID || 'WDVMKnkq'
+  const casa = IDENTIDADE.powerlink
   const itens = await sql<LinhaCobertura & { n: string }>(
     `WITH l AS (
        SELECT l.*, (c.telefone IS NOT NULL) AS na_isa
@@ -119,14 +118,14 @@ export async function coberturaDaIsa(): Promise<{ total: number; itens: LinhaCob
          AND COALESCE(l.whatsapp_clicado, false) = false
      )
      SELECT CASE
-         WHEN na_isa THEN 'na Isa'
+         WHEN na_isa THEN $3::text
          WHEN COALESCE(whatsapp_valido, true) = false THEN 'contato errado'
          WHEN status = 'excluido' OR etapa_funil = 'excluido' OR cotacao_planos IS NULL THEN 'veículo que não fazemos'
          WHEN power_responsavel IS NOT NULL AND power_responsavel <> $2 THEN 'placa presa com outro consultor'
-         ELSE '⚠️ sem motivo — deveria estar na Isa'
+         ELSE $4::text
        END AS situacao, count(*)::text AS n
      FROM l GROUP BY 1 ORDER BY 2 DESC`,
-    [DOMINIOS_DA_CASA, casa],
+    [IDENTIDADE.fonte5min.dominios, casa, `na ${IDENTIDADE.nome}`, `⚠️ sem motivo — deveria estar na ${IDENTIDADE.nome}`],
   )
   const lista = itens.map((i) => ({ situacao: i.situacao, n: Number(i.n) }))
   return { total: lista.reduce((a, b) => a + b.n, 0), itens: lista }

@@ -9,6 +9,7 @@ import { planosDoPowerParaTela } from '@/lib/planos-para-tela'
 import { aceitaAno, decidirElegibilidade, ehBydDeLeilao } from '@/lib/elegibilidade.regras'
 import { upsertLead } from '@/lib/supabase-store'
 import { sql } from '@/lib/isa/banco'
+import { IDENTIDADE } from '@/lib/isa/identidade'
 import type { LeadIsa } from '@/lib/isa/fatos'
 import { recusaMotoDeLeilao } from '@/lib/isa/entrega.regras'
 import { ajustarCardComoEla, cardDaPlaca, criarPelaPipeline } from '@/lib/power-pipeline'
@@ -27,7 +28,8 @@ import { anoDoVeiculoPelaApi } from '@/lib/power-veiculo.regras'
  */
 
 const POWERCRM_BASE_URL = process.env.POWERCRM_BASE_URL || 'https://api.powercrm.com.br'
-const POWERCRM_DEFAULT_SLSMN_NW_ID = process.env.POWERCRM_DEFAULT_SLSMN_NW_ID || 'WDVMKnkq'
+// Power do humano do bot (Leticya na Isa, XDmAbx6D do Gabriel na Mariana). Le o mesmo env de antes.
+const POWERCRM_DEFAULT_SLSMN_NW_ID = IDENTIDADE.powerlink
 const POWERCRM_DEFAULT_LEAD_SOURCE = process.env.POWERCRM_DEFAULT_LEAD_SOURCE || '1584'
 
 export type ResultadoOrcamento =
@@ -61,7 +63,8 @@ export async function orcarPorPlaca(p: {
   const ref = ORDEM_REFERENCIA.map((id) => r.plans.find((pl) => pl.id === id)).find(Boolean) || r.plans[0]
   // trk estavel por telefone+placa: se o cliente corrigir leilao/aplicativo, a Isa atualiza a
   // MESMA simulacao (e o PDF acompanha), em vez de criar outra.
-  const trk = `isa${p.telefone}${placa}`.toLowerCase()
+  // Prefixo do bot: o mesmo telefone+placa na Isa e na Mariana nao pode ser a mesma linha de lead.
+  const trk = `${IDENTIDADE.trkPrefixo}${p.telefone}${placa}`.toLowerCase()
   const nome = (p.nome || 'Cliente WhatsApp').trim()
 
   const { id: leadId } = await upsertLead({
@@ -79,7 +82,7 @@ export async function orcarPorPlaca(p: {
     planos: r.plans,
     carro_app: p.carroApp,
     leilao: p.leilao ? 'leilao' : 'nao',
-    origem: 'isa_whatsapp',
+    origem: IDENTIDADE.leadOrigem,
   })
 
   // Cotacao no Power da Leticya. Falhar aqui nao impede a Isa de responder o cliente.
@@ -175,7 +178,7 @@ export async function orcarPorModelo(p: {
   if (plans.length === 0) return { tipo: 'humano', motivo: 'sem_plano_aplicavel' }
 
   const ref = ORDEM_REFERENCIA.map((id) => plans.find((pl) => pl.id === id)).find(Boolean) || plans[0]
-  const trk = `isa${p.telefone}m${p.modelId}a${p.ano}`.toLowerCase()
+  const trk = `${IDENTIDADE.trkPrefixo}${p.telefone}m${p.modelId}a${p.ano}`.toLowerCase()
   const nome = (p.nome || 'Cliente WhatsApp').trim()
   const { id: leadId } = await upsertLead({
     trk,
@@ -191,7 +194,7 @@ export async function orcarPorModelo(p: {
     planos: plans,
     carro_app: p.carroApp,
     leilao: p.leilao ? 'leilao' : 'nao',
-    origem: 'isa_whatsapp',
+    origem: IDENTIDADE.leadOrigem,
   })
 
   criarCotacaoPower({
@@ -313,7 +316,7 @@ async function criarCotacaoPower(p: {
   if (!j?.quotationCode) return null
 
   // Mesmas anotacoes que o site deixa pro consultor ver na negociacao.
-  const notas = ['Origem: Isa (WhatsApp 98004-0964)']
+  const notas = [`Origem: ${IDENTIDADE.nome} (WhatsApp ${IDENTIDADE.numeroBonito})`]
   if (p.leilao) notas.push('Veículo de leilão')
   if (p.carroApp) notas.push('Carro de aplicativo (Uber/99)')
   // Pelo PowerLink o `mdlYr` do /add nao grava o ano: so modelo + ano juntos no update.
