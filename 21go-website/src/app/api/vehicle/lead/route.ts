@@ -1,5 +1,5 @@
 import { dominioDoHost } from '@/lib/isa/popup.regras'
-import { getNegotiation } from '@/lib/powercrm'
+import { responsavelNoPower } from '@/lib/power-responsavel'
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import {
@@ -1393,16 +1393,3 @@ async function registerOutboundMessage(args: {
   }
 }
 
-/** responsibleId da negociacao no Power; null se nao deu pra ler (nunca segura o lead por isso). */
-async function responsavelNoPower(negotiationCode: string | undefined, leadId: string): Promise<string | null> {
-  if (!negotiationCode || !POWERAPI_TOKEN) return null
-  try {
-    const r = await getNegotiation(negotiationCode, leadId)
-    const raw = r.raw as { responsibleId?: unknown } | null | undefined
-    const id = typeof raw?.responsibleId === 'string' ? raw.responsibleId.trim() : ''
-    return id || null
-  } catch (err) {
-    console.warn('[lead] responsavel no Power nao lido:', err instanceof Error ? err.message : err)
-    return null
-  }
-}
