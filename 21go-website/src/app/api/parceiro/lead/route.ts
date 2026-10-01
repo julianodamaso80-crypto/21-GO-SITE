@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getRequestContext } from '@/lib/request-context'
+import { gravarLeadDoParceiro } from '@/lib/parceiro-lead'
+import { parceiroAutorizado } from '@/lib/parceiro.regras'
 
 export const runtime = 'nodejs'
 
@@ -13,30 +16,17 @@ export const runtime = 'nodejs'
  * 21Go, nao do consultor. Mandar o token pra hospedagem de terceiro seria
  * espalhar credencial da empresa por lugares que a gente nao controla e nao
  * consegue revogar. Aqui ele nao sai de casa; o parceiro so precisa saber a
- * chave dele, que revogamos apagando uma linha.
+ * chave dele, que revogamos apagando uma linha (PARCEIROS, em parceiro.regras.ts).
  *
- * NAO envia PDF nem WhatsApp: o site do parceiro ja tem o atendimento dele.
- * Aqui e so a atribuicao no CRM.
+ * NAO envia PDF nem WhatsApp. Desde a Fase 4 da Mariana o lead tambem e gravado no
+ * nosso banco como o site da casa grava (placa, planos e precos do Power), com o
+ * dominio do parceiro: quem procura esse cliente e a Mariana, do container dela. A
+ * cotacao no Power continua UMA so: a daqui.
  */
 
 const POWERCRM_BASE_URL = process.env.POWERCRM_BASE_URL || 'https://api.powercrm.com.br'
 const POWERAPI_TOKEN = process.env.POWERAPI_TOKEN
 const LEAD_SOURCE = Number(process.env.POWERCRM_DEFAULT_LEAD_SOURCE || '1584')
-
-/**
- * Quem pode usar esta porta. A chave fica no codigo (dos dois lados) de
- * proposito: o parceiro nao sabe mexer em variavel de ambiente da hospedagem
- * dele, e exigir isso trocaria uma barreira de verdade por um site que nunca
- * entra no ar. O que a chave protege e pequeno — permite criar cotacao no funil
- * do proprio parceiro, nada alem — e some com um deploy nosso.
- */
-const PARCEIROS: Record<string, { chave: string; nome: string; powerlink: string }> = {
-  '21goapp': {
-    chave: '1f31905505bc033c80c4361c0dda6ae7',
-    nome: 'Gabriel Juliano',
-    powerlink: 'XDmAbx6D',
-  },
-}
 
 interface Corpo {
   parceiro?: string
@@ -54,8 +44,8 @@ export async function POST(req: NextRequest) {
   }
 
   const corpo = (await req.json().catch(() => null)) as Corpo | null
-  const parceiro = corpo?.parceiro ? PARCEIROS[corpo.parceiro] : undefined
-  if (!parceiro || parceiro.chave !== corpo?.chave) {
+  const parceiro = parceiroAutorizado(corpo?.parceiro, corpo?.chave)
+  if (!parceiro || !corpo) {
     return NextResponse.json({ error: 'nao autorizado' }, { status: 401 })
   }
 
@@ -76,6 +66,24 @@ export async function POST(req: NextRequest) {
   if (corpo.placa) payload.plts = corpo.placa.toUpperCase().replace(/[^A-Z0-9]/g, '')
   if (corpo.valorFipe) payload.protectedValue = corpo.valorFipe
 
+  // Fora do await de proposito: a consulta da placa leva segundos e o site do parceiro nao
+  // espera por ela. Falhar aqui nunca muda a resposta — a cotacao no Power ja foi feita.
+  const ctx = getRequestContext(req)
+  const gravar = (quotationCode: string | null, negotiationCode: string | null): void => {
+    void gravarLeadDoParceiro({
+      parceiro,
+      nome: name,
+      telefone: phone,
+      placa: corpo.placa,
+      valorFipe: corpo.valorFipe,
+      quotationCode,
+      negotiationCode,
+      ctx,
+    })
+      .then((r) => console.log(`[parceiro] lead ${r.leadId} gravado (${r.consulta})`))
+      .catch((err) => console.error('[parceiro] lead nao gravado no banco', err))
+  }
+
   try {
     const res = await fetch(`${POWERCRM_BASE_URL}/api/quotation/add`, {
       method: 'POST',
@@ -88,15 +96,18 @@ export async function POST(req: NextRequest) {
     })
     const json = (await res.json().catch(() => null)) as Record<string, unknown> | null
     const quotationCode = (json?.quotationCode as string) || null
+    const negotiationCode = (json?.negotiationCode as string) || null
 
     console.log(
       `[parceiro] ${corpo.parceiro} -> ${parceiro.nome} (${parceiro.powerlink}) ` +
         `status ${res.status} cotacao ${quotationCode ?? 'sem codigo'}`,
     )
 
+    gravar(quotationCode, negotiationCode)
     return NextResponse.json({ ok: res.ok, quotationCode }, { status: res.ok ? 200 : 502 })
   } catch (err) {
     console.error('[parceiro] falha ao criar cotacao no Power', err)
+    gravar(null, null)
     return NextResponse.json({ error: 'falha ao criar cotacao' }, { status: 502 })
   }
 }
