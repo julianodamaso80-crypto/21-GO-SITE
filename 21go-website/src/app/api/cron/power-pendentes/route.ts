@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { estaNoAr, resolverConsultor } from '@/lib/consultor'
 import { acharNoFunil, criarPelaPipeline } from '@/lib/power-pipeline'
 import { POWERLINK_LETICYA, anoDoModelo, cidadeDoDdd, criaPelaPipeline } from '@/lib/power-pipeline.regras'
-import { buscasDoLead, leadPrecisaDoPower, powerlinkDaOrigem, ORIGENS_DA_FILA_LISTA } from '@/lib/power-fila.regras'
+import { buscasDoLead, leadPrecisaDoPower, powerlinkDaOrigem, procuraNoFunilDaCasa, ORIGENS_DA_FILA_LISTA } from '@/lib/power-fila.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -177,7 +177,7 @@ export async function GET(req: NextRequest) {
 
   for (const l of pendentes) {
     try {
-      const existente = await acharNoFunil(buscasDoLead(l))
+      const existente = procuraNoFunilDaCasa(l.origem) ? await acharNoFunil(buscasDoLead(l)) : null
       if (existente) {
         await supa.from('leads').update({ negotiation_code: existente }).eq('id', l.id)
         relatorio.ja_estavam++

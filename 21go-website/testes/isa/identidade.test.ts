@@ -148,7 +148,7 @@ test('leads do bot: a Isa ve todos menos os da Mariana; a Mariana so os dela', (
 })
 
 test('PDF: lead da Mariana sai com o Gabriel; na Isa nada muda', () => {
-  assert.equal(atendimentoDoPdf({ origem: 'mariana_whatsapp' }, IDENTIDADE_ISA), null)
+  assert.deepEqual(atendimentoDoPdf({ origem: 'mariana_whatsapp' }, IDENTIDADE_ISA), atendimentoDoPdf({ origem: 'mariana_whatsapp' }, MARIANA))
   assert.equal(atendimentoDoPdf({ origem: 'site_organico', dominio: '21go.site' }, IDENTIDADE_ISA), null)
   assert.deepEqual(atendimentoDoPdf({ origem: 'mariana_whatsapp' }, MARIANA), {
     nome: 'Gabriel Juliano',

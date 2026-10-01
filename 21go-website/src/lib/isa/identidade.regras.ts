@@ -249,6 +249,9 @@ export function leadEhDoBot(
   return f.incluirOrigens === null || f.incluirOrigens.includes(origem) || f.incluirDominios.includes(dominio)
 }
 
+/** Gabriel Juliano: igual ao que a identidade da Mariana produz (testes/isa/pdf-mariana-casa). */
+const ATENDIMENTO_DO_PARCEIRO = { nome: 'Gabriel Juliano', whatsappUrl: 'https://wa.me/5521990954964' }
+
 /**
  * O PDF de um lead da Mariana sai com o rodape e o botao do Gabriel, nunca os da casa (spec,
  * secao 3). Na Isa: sempre null, o PDF de sempre.
@@ -257,7 +260,13 @@ export function atendimentoDoPdf(
   lead: { origem?: string | null; dominio?: string | null },
   id: IdentidadeBot,
 ): { nome: string; whatsappUrl: string } | null {
-  if (id.daCasa || !leadEhDoBot(lead, id)) return null
+  if (id.daCasa) {
+    // O PDF pode ser aberto pelo host da casa: lead de parceiro leva o Gabriel mesmo assim.
+    const ehParceiro =
+      LEADS_DE_PARCEIRO.origens.includes(lead.origem ?? '') || LEADS_DE_PARCEIRO.dominios.includes(lead.dominio ?? '')
+    return ehParceiro ? { ...ATENDIMENTO_DO_PARCEIRO } : null
+  }
+  if (!leadEhDoBot(lead, id)) return null
   return { nome: id.humano.nomeCompleto, whatsappUrl: `https://wa.me/${id.humano.telefone}` }
 }
 

@@ -23,6 +23,10 @@ export function powerlinkDaOrigem(origem: string | null | undefined): string | n
   const o = origem ?? ''
   return Object.hasOwn(POWERLINK_POR_ORIGEM, o) ? POWERLINK_POR_ORIGEM[o] : null
 }
+/** Lead de parceiro nunca procura no funil da Leticya: vai direto ao Power do parceiro. */
+export function procuraNoFunilDaCasa(origem: string | null | undefined): boolean {
+  return powerlinkDaOrigem(origem) === null
+}
 const ESPERA_MS = 10 * 60 * 1000
 const DESISTE_MS = 30 * 24 * 60 * 60 * 1000
 
