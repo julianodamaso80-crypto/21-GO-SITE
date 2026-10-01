@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { mapWebhookStatus, getNegotiation } from '@/lib/powercrm'
 import { updateLeadStatus } from '@/lib/supabase-store'
+import { leadEhDeParceiro } from '@/lib/parceiro.regras'
 import { fireAllConversionApis, type ConversionLeadData } from '@/lib/conversion-apis'
 
 export const runtime = 'nodejs'
@@ -191,12 +192,18 @@ async function dispatchConversions(
   const { data: lead } = await supa
     .from('leads')
     .select(
-      'id, nome, email, telefone, whatsapp, cpf, cidade, estado, ip_address, user_agent, gclid, gbraid, wbraid, fbclid, fbp, fbc, ga_client_id, external_id, event_id, valor_fipe_consultado, cotacao_valor, conversion_value_cents, meta_capi_sent, google_ads_sent, ga4_mp_sent',
+      'id, dominio, origem, nome, email, telefone, whatsapp, cpf, cidade, estado, ip_address, user_agent, gclid, gbraid, wbraid, fbclid, fbp, fbc, ga_client_id, external_id, event_id, valor_fipe_consultado, cotacao_valor, conversion_value_cents, meta_capi_sent, google_ads_sent, ga4_mp_sent',
     )
     .eq('id', leadId)
     .single()
 
   if (!lead) return
+
+  // Lead de parceiro (21go.app): as contas de anuncio sao da casa, nao dele.
+  if (leadEhDeParceiro(lead as { dominio?: string | null; origem?: string | null })) {
+    console.log(`[powercrm-webhook] lead ${leadId} e de parceiro: conversao da casa nao disparada`)
+    return
+  }
 
   // Idempotência: se todos já foram enviados, não reenvia
   const alreadyAll = lead.meta_capi_sent && lead.google_ads_sent && lead.ga4_mp_sent

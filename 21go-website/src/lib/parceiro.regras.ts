@@ -5,6 +5,7 @@
  *
  * Logica pura, sem process.env: os testes importam este arquivo direto. So `import type` aqui.
  */
+import { createHash } from 'node:crypto'
 import type { UpsertLeadInput } from './supabase-store'
 import type { PlateErrorResponse, PlateResponse } from './plate-lookup'
 
@@ -159,4 +160,26 @@ export function leadDoParceiro(d: DadosDoLeadDoParceiro): UpsertLeadInput {
     etapa_funil: excluido ? 'excluido' : 'cotacao_enviada',
     status: excluido ? 'excluido' : 'lead',
   }
+}
+
+/**
+ * Lead de parceiro (21go.app): as contas de anuncio e os eventos de conversao sao da casa, entao
+ * o webhook do Power da casa nao dispara Lead/Purchase pra ele.
+ */
+export function leadEhDeParceiro(lead: { dominio?: string | null; origem?: string | null } | null | undefined): boolean {
+  if (!lead) return false
+  const porDominio = Object.values(PARCEIROS).some((p) => p.dominio === lead.dominio)
+  const porOrigem = Object.values(PARCEIROS).some((p) => p.origem === lead.origem)
+  return porDominio || porOrigem
+}
+
+/**
+ * trk deterministico (16 hex, como o aleatorio de antes): o mesmo cliente reenviado no mesmo dia
+ * de Sao Paulo cai na mesma linha do upsert em vez de criar outra.
+ */
+export function trkDoLeadDoParceiro(parceiro: Parceiro, telefone: string, placa: string | null, agora: Date = new Date()): string {
+  const dia = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(agora)
+  const fone = telefone.replace(/\D/g, '')
+  const pl = placaDoCorpo(placa) ?? 'semplaca'
+  return createHash('sha256').update(`${parceiro.dominio}|${fone}|${pl}|${dia}`).digest('hex').slice(0, 16)
 }

@@ -1,5 +1,4 @@
 import 'server-only'
-import crypto from 'crypto'
 import { lookupPlate } from '@/lib/plate-lookup'
 import { upsertLead } from '@/lib/supabase-store'
 import { responsavelNoPower } from '@/lib/power-responsavel'
@@ -9,6 +8,7 @@ import {
   fipeInformado,
   leadDoParceiro,
   placaDoCorpo,
+  trkDoLeadDoParceiro,
   type ConsultaDaPlaca,
   type Parceiro,
 } from '@/lib/parceiro.regras'
@@ -31,8 +31,8 @@ export async function gravarLeadDoParceiro(a: {
   negotiationCode: string | null
   ctx: RequestContext
 }): Promise<{ leadId: string; consulta: ConsultaDaPlaca['tipo'] }> {
-  const trk = crypto.randomBytes(8).toString('hex')
   const placa = placaDoCorpo(a.placa)
+  const trk = trkDoLeadDoParceiro(a.parceiro, a.telefone, placa)
   const r = placa ? await lookupPlate(placa).catch(() => null) : null
   const consulta = consultaDaPlaca(r)
   // Placa presa com outro consultor: a negociacao nasce no nome dele e a Mariana nao aborda.

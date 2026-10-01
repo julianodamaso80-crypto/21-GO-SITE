@@ -70,6 +70,8 @@ export async function POST(req: NextRequest) {
   // espera por ela. Falhar aqui nunca muda a resposta — a cotacao no Power ja foi feita.
   const ctx = getRequestContext(req)
   const gravar = (quotationCode: string | null, negotiationCode: string | null): void => {
+    // Tudo da Mariana cai no Power do Gabriel: sem cotacao la, o lead nao entra no nosso banco.
+    if (!quotationCode) return
     void gravarLeadDoParceiro({
       parceiro,
       nome: name,
@@ -107,7 +109,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: res.ok, quotationCode }, { status: res.ok ? 200 : 502 })
   } catch (err) {
     console.error('[parceiro] falha ao criar cotacao no Power', err)
-    gravar(null, null)
     return NextResponse.json({ error: 'falha ao criar cotacao' }, { status: 502 })
   }
 }
