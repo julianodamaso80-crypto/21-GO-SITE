@@ -9,6 +9,8 @@
  * Lista fechada: etiqueta digitada solta vira bagunca no filtro. Logica pura.
  */
 
+import type { IdentidadeBot } from './identidade.regras'
+
 export interface Etiqueta {
   id: string
   nome: string
@@ -38,7 +40,16 @@ export const ETIQUETAS: Etiqueta[] = [
   { id: 'frio', nome: 'Frio', cor: '#64748B', claro: false },
 ]
 
-const IDS = new Set(ETIQUETAS.map((e) => e.id))
+/**
+ * A lista de um bot: a da Isa, com "Falando com <humano>" no lugar de "Falando com Leticya" (mesma
+ * posicao e cor) e sem as etiquetas que ele nao usa. Mariana (dono, 01/10/2026): Gabriel no lugar
+ * da Leticya e sem Guilherme. Na Isa devolve a lista de sempre.
+ */
+export function etiquetasDoBot(bot: { humano: Pick<IdentidadeBot['humano'], 'id' | 'nome'>; semEtiquetas: readonly string[] }): Etiqueta[] {
+  return ETIQUETAS.filter((e) => !bot.semEtiquetas.includes(e.id)).map((e) =>
+    e.id === 'leticya' ? { ...e, id: bot.humano.id, nome: `Falando com ${bot.humano.nome}` } : e,
+  )
+}
 
 /**
  * So ids conhecidos, sem repetir, na ordem da lista oficial.
@@ -48,10 +59,11 @@ const IDS = new Set(ETIQUETAS.map((e) => e.id))
  * `ChipEtiqueta` ignora id desconhecido. Nada e apagado do banco: basta devolver a etiqueta a
  * lista pra marcacao antiga voltar a tela.
  */
-export function normalizarEtiquetas(lista: unknown): string[] {
+export function normalizarEtiquetas(lista: unknown, etiquetas: readonly Etiqueta[] = ETIQUETAS): string[] {
   if (!Array.isArray(lista)) return []
-  const pedidas = new Set(lista.filter((x): x is string => typeof x === 'string' && IDS.has(x)))
-  return ETIQUETAS.map((e) => e.id).filter((id) => pedidas.has(id))
+  const ids = new Set(etiquetas.map((e) => e.id))
+  const pedidas = new Set(lista.filter((x): x is string => typeof x === 'string' && ids.has(x)))
+  return etiquetas.map((e) => e.id).filter((id) => pedidas.has(id))
 }
 
 /**
@@ -60,10 +72,14 @@ export function normalizarEtiquetas(lista: unknown): string[] {
  * vc tira do precisa de vc" (o Frio ja saia desde a manha). E "se fechou sai de preciso de vc".
  */
 // Dono, 29/09/2026: "qd eu colocar qq etiqueta vc tira de urgente, so quente que continua".
-export const ETIQUETAS_FORA_DA_FILA: readonly string[] = ETIQUETAS.map((e) => e.id).filter((id) => id !== 'quente' && id !== 'urgente')
+export function etiquetasForaDaFila(etiquetas: readonly Etiqueta[] = ETIQUETAS): string[] {
+  return etiquetas.map((e) => e.id).filter((id) => id !== 'quente' && id !== 'urgente')
+}
 
-export function etiquetaValida(id: string | null | undefined): boolean {
-  return !!id && IDS.has(id)
+export const ETIQUETAS_FORA_DA_FILA: readonly string[] = etiquetasForaDaFila()
+
+export function etiquetaValida(id: string | null | undefined, etiquetas: readonly Etiqueta[] = ETIQUETAS): boolean {
+  return !!id && etiquetas.some((e) => e.id === id)
 }
 
 /**
@@ -79,8 +95,8 @@ export const ETIQUETAS_DE_SISTEMA: readonly string[] = ['avaria']
  * estado interno que o contato ja tinha. Sem isso, o primeiro clique numa etiqueta zerava o
  * 'avaria' e a foto do amassado deixava de ser transferida.
  */
-export function etiquetasParaGravar(pedidas: unknown, gravadas: unknown): string[] {
-  const escolhidas = normalizarEtiquetas(pedidas)
+export function etiquetasParaGravar(pedidas: unknown, gravadas: unknown, etiquetas: readonly Etiqueta[] = ETIQUETAS): string[] {
+  const escolhidas = normalizarEtiquetas(pedidas, etiquetas)
   const manter = Array.isArray(gravadas)
     ? ETIQUETAS_DE_SISTEMA.filter((id) => gravadas.includes(id) && !escolhidas.includes(id))
     : []

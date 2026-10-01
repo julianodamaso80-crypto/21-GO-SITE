@@ -10,6 +10,8 @@
  * mão pra ver o funil cheio.
  */
 
+import type { IdentidadeBot } from './identidade.regras'
+
 export interface Etapa {
   id: string
   rotulo: string
@@ -32,10 +34,26 @@ export const ETAPAS: readonly Etapa[] = [
   { id: 'frio', rotulo: 'Frio', cor: '#64748B' },
 ]
 
-const IDS = new Set(ETAPAS.map((e) => e.id))
+/** As colunas de um bot e a coluna de quem escolheu plano (a do humano dele). */
+export interface FunilDoBot {
+  etapas: readonly Etapa[]
+  humanoId: string
+}
 
-export function ehEtapa(id: string | null | undefined): boolean {
-  return !!id && IDS.has(id)
+export const FUNIL_PADRAO: FunilDoBot = { etapas: ETAPAS, humanoId: 'leticya' }
+
+/** Mesma troca de etiquetasDoBot: Gabriel no lugar da Leticya, sem as etiquetas que o bot nao usa. */
+export function funilDoBot(bot: { humano: Pick<IdentidadeBot['humano'], 'id' | 'nome'>; semEtiquetas: readonly string[] }): FunilDoBot {
+  return {
+    etapas: ETAPAS.filter((e) => !bot.semEtiquetas.includes(e.id)).map((e) =>
+      e.id === 'leticya' ? { ...e, id: bot.humano.id, rotulo: `Falando com ${bot.humano.nome}` } : e,
+    ),
+    humanoId: bot.humano.id,
+  }
+}
+
+export function ehEtapa(id: string | null | undefined, f: FunilDoBot = FUNIL_PADRAO): boolean {
+  return !!id && f.etapas.some((e) => e.id === id)
 }
 
 /**
@@ -45,25 +63,25 @@ export function ehEtapa(id: string | null | undefined): boolean {
  */
 const EQUIVALENTE: Record<string, string> = {
   novo: 'simulou',
-  escolheu: 'leticya',
+  // escolheu: a coluna do humano do bot (etapaCompativel)
   documentos: 'documento',
   fechado: 'fechou',
   perdido: 'frio',
 }
 
 /** A coluna atual de uma etapa gravada, ou null se for lixo/vazia (cai na automatica). */
-export function etapaCompativel(id: string | null | undefined): string | null {
+export function etapaCompativel(id: string | null | undefined, f: FunilDoBot = FUNIL_PADRAO): string | null {
   if (!id) return null
-  const atual = EQUIVALENTE[id] ?? id
-  return IDS.has(atual) ? atual : null
+  const atual = id === 'escolheu' ? f.humanoId : (EQUIVALENTE[id] ?? id)
+  return ehEtapa(atual, f) ? atual : null
 }
 
 /**
  * A coluna que as etiquetas dizem: a mais adiantada no funil. Dono, 16/09/2026: "botei tag fechou
  * e nao ta indo, a tag tem q andar com funil". Etiqueta que nao e coluna (avaria) nao conta.
  */
-function etapaDasEtiquetas(etiquetas: readonly string[] | null | undefined): string | null {
-  const ordem = ETAPAS.map((e) => e.id)
+function etapaDasEtiquetas(etiquetas: readonly string[] | null | undefined, f: FunilDoBot): string | null {
+  const ordem = f.etapas.map((e) => e.id)
   let melhor = -1
   for (const t of etiquetas || []) {
     const i = ordem.indexOf(t)
@@ -76,8 +94,8 @@ function etapaDasEtiquetas(etiquetas: readonly string[] | null | undefined): str
  * Etiquetas depois de mover o card pra `destino`: ganha a tag da coluna, perde as das colunas que
  * ficaram A FRENTE (senao a tag puxava o card de volta) e guarda o resto (as de antes e as de sistema).
  */
-export function etiquetasAoMover(atuais: readonly string[] | null | undefined, destino: string): string[] {
-  const ordem = ETAPAS.map((e) => e.id)
+export function etiquetasAoMover(atuais: readonly string[] | null | undefined, destino: string, f: FunilDoBot = FUNIL_PADRAO): string[] {
+  const ordem = f.etapas.map((e) => e.id)
   const alvo = ordem.indexOf(destino)
   const fica = (atuais || []).filter((t) => {
     const i = ordem.indexOf(t)
@@ -87,19 +105,22 @@ export function etiquetasAoMover(atuais: readonly string[] | null | undefined, d
   return fica
 }
 
-export function etapaDoCard(c: {
-  etapa: string | null
-  escolheuPlano: boolean
-  mandouDocumento: boolean
-  etiquetas?: readonly string[] | null
-}): string {
+export function etapaDoCard(
+  c: {
+    etapa: string | null
+    escolheuPlano: boolean
+    mandouDocumento: boolean
+    etiquetas?: readonly string[] | null
+  },
+  f: FunilDoBot = FUNIL_PADRAO,
+): string {
   // Etiqueta manda: pos a tag, o card esta naquela coluna (e mover o card acerta as tags).
-  const pelaTag = etapaDasEtiquetas(c.etiquetas)
+  const pelaTag = etapaDasEtiquetas(c.etiquetas, f)
   if (pelaTag) return pelaTag
-  const arrastada = etapaCompativel(c.etapa)
+  const arrastada = etapaCompativel(c.etapa, f)
   if (arrastada) return arrastada
   if (c.mandouDocumento) return 'documento'
-  if (c.escolheuPlano) return 'leticya'
+  if (c.escolheuPlano) return f.humanoId
   // Sem "Novo": quem ainda nao simulou tambem aparece na primeira coluna (dono, 15/09/2026).
   return 'simulou'
 }
