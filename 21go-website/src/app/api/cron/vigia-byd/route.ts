@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql, registrarEvento } from '@/lib/isa/banco'
+import { IDENTIDADE } from '@/lib/isa/identidade'
 import { avisarDono } from '@/lib/whatsapp-avisos'
 import { getEvolutionInstance } from '@/lib/whatsapp'
 import { textoAvisoByd } from '@/lib/vigia-byd.regras'
@@ -36,6 +37,8 @@ export async function GET(req: NextRequest) {
   if (!segredo || req.headers.get('x-cron-secret') !== segredo) {
     return NextResponse.json({ erro: 'nao autorizado' }, { status: 401 })
   }
+  // BYD do 4824 e rotina da casa: no container da Mariana nao roda nem por engano.
+  if (!IDENTIDADE.daCasa) return NextResponse.json({ pulado: 'so_da_casa' })
   try {
     const instancia = getEvolutionInstance()
     // O casamento e pelos 8 ultimos digitos: o 9 do celular diverge entre formulario e WhatsApp.

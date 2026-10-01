@@ -57,6 +57,7 @@ import { listBrandsPowerCrm, listModelsPowerCrm } from '@/lib/powercrm-lookup'
 import { identifyPlate } from '@/lib/plate-identify'
 import { isLeilaoOrigin } from '@/data/pricing'
 import { recrutamentoNaIsa } from '@/lib/consultor-recrutamento'
+import { indicacaoDoBot, nomesDoCumprimento } from '@/lib/isa/identidade.regras'
 import { promocaoDoContato, registrarRespostaPromo, marcarUrgente } from '@/lib/isa/promocao'
 import { botaoDaPromocao, mensagemQueroSeguir, mensagemSimulacaoPromo, perguntaDeMensalidade, semInteresse, primeiroNomePromo, ehRespostaAutomatica } from '@/lib/isa/promocao.regras'
 
@@ -336,6 +337,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       .filter((m) => m.direction === 'inbound')
       .map((m) => m.content),
     enviar: (texto) => enviarComoGente(c, [texto], ultimaInbound, visto),
+    indicacao: indicacaoDoBot(IDENTIDADE),
   })
   if (recrutamento) {
     await marcarConsultor(c.telefone)
@@ -542,7 +544,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // cotacao (dono, 13/09/2026: "boa noite, Juliano, tudo bem? como posso ajudar? nao atropela").
   // Vale pro lote inteiro: "Oi" + "Boa noite" recebem UMA resposta, nunca uma por mensagem
   // (dono, 29/09/2026 — a Samarah levou tres mensagens seguidas as 7h).
-  if (ehSoCumprimento(textoNovas) && c.aguardando_dono !== AGUARDANDO_FECHA_QUANDO) {
+  if (ehSoCumprimento(textoNovas, NOMES_DO_CUMPRIMENTO) && c.aguardando_dono !== AGUARDANDO_FECHA_QUANDO) {
     const texto = mensagemCumprimento({
       cumprimento: cumprimento(agora),
       primeiroNome: primeiroNomeDe(c.nome ?? lead?.nome ?? null),
@@ -668,7 +670,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // essa resposta vai antes.
   if (saida.gatilho === 'robo') {
     const r = await resumoDoCliente(c)
-    const robo = mensagemRobo({ genero: ((c.genero ?? saida.genero) as 'm' | 'f' | null) ?? null, resumo: r.texto })
+    const robo = mensagemRobo({ genero: ((c.genero ?? saida.genero) as 'm' | 'f' | null) ?? null, resumo: r.texto }, IDENTIDADE.humano)
     const ab = saida.resposta ? null : await aberturaSePrecisa(c, agora)
     const partes = saida.resposta ? [...dividirEmPartes(saida.resposta), robo] : [ab ? `${ab}\n\n${robo}` : robo]
     const enviou = await enviarComoGente(c, partes, ultimaInbound, visto)
@@ -779,7 +781,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
       await liberar(c.telefone, visto, true)
       return true
     }
-    await enviarComoGente(c, [mensagemPedidoDocumentos(false, docsDaConversa.faltam)], ultimaInbound, visto)
+    await enviarComoGente(c, [mensagemPedidoDocumentos(false, docsDaConversa.faltam, IDENTIDADE.humano)], ultimaInbound, visto)
     await registrarEvento(c.telefone, 'pediu_documentos', { faltam: docsDaConversa.faltam })
     // Quer fechar: entra na aba URGENTE mesmo que ja tenha sido tratado antes (dono, 01/10/2026)
     await marcarUrgente(c.telefone, 'quer fechar')
@@ -822,7 +824,9 @@ async function atender(c: ContatoIsa): Promise<boolean> {
 
 const GATILHOS_SILENCIOSOS = new Set(['hostil', 'associado', 'validador'])
 
-const SITE = 'https://21go.site'
+// Base dos links de PDF (21go.site na Isa, host da Mariana na dela) e os nomes que viram cumprimento.
+const SITE = IDENTIDADE.siteUrl
+const NOMES_DO_CUMPRIMENTO = nomesDoCumprimento(IDENTIDADE)
 
 /**
  * Depois de cotar: se junto com a placa (ou com a resposta de leilao/aplicativo) ele perguntou
@@ -1188,7 +1192,7 @@ export async function enviarComoGente(
     const jaEnviadas = Number(r?.n ?? 0)
     if (passaDoLimiteSemResposta(jaEnviadas, partes.length)) {
       await registrarEvento(c.telefone, 'trava_loop', { jaEnviadas, ia_mandar: partes.length, texto: partes[0].texto.slice(0, 120) })
-      await pausarEAvisar(c, 'loop', `a Isa ia mandar a ${jaEnviadas + 1}a mensagem sem o cliente responder — segurei, pausei e nada saiu. Confere a conversa.`)
+      await pausarEAvisar(c, 'loop', `a ${IDENTIDADE.nome} ia mandar a ${jaEnviadas + 1}a mensagem sem o cliente responder — segurei, pausei e nada saiu. Confere a conversa.`)
       return false
     }
   }

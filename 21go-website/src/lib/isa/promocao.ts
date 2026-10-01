@@ -99,6 +99,8 @@ async function suspender(motivo: string): Promise<void> {
 }
 
 export async function dispararPromocao(agora = new Date()): Promise<{ enviados: number; motivo?: string }> {
+  // Campanha da casa (spec da Mariana, secao 4): nunca dispara em outro bot.
+  if (!IDENTIDADE.daCasa) return { enviados: 0, motivo: 'so_da_casa' }
   const cfg = (await lerConfig<ConfigPromo>('promo40')) ?? {}
   if (!cfg.ligado || !cfg.ate_dia) return { enviados: 0, motivo: 'desligado' }
   if (cfg.suspenso_em) return { enviados: 0, motivo: `suspenso: ${cfg.motivo ?? ''}` }

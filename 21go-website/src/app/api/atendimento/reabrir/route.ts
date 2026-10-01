@@ -10,7 +10,7 @@ import { upsertMessage, phoneToJid } from '@/lib/supabase-store'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const SITE = 'https://21go.site'
+const SITE = IDENTIDADE.siteUrl
 
 /**
  * Janela de 24 h fechada: a Meta so aceita template, e a caixa de resposta ficava morta. Dono,

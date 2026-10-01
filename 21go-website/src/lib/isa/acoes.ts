@@ -69,7 +69,7 @@ export async function transferir(
   opcoes: { avisarDono?: boolean; por?: string } = {},
 ): Promise<void> {
   const r = await resumoDoCliente(c)
-  await enviar([mensagemTransferencia({ motivo, resumo: `${r.texto} | Motivo: ${motivo}` })])
+  await enviar([mensagemTransferencia({ motivo, resumo: `${r.texto} | Motivo: ${motivo}` }, IDENTIDADE.humano)])
   await atualizarContato(c.telefone, {
     ligada: false,
     pausa_motivo: motivo,
@@ -77,7 +77,7 @@ export async function transferir(
     pausada_em: new Date().toISOString(),
     transferido_em: new Date().toISOString(),
   })
-  await registrarEvento(c.telefone, 'transferiu', { motivo, para: '4824' }, opcoes.por ?? 'isa')
+  await registrarEvento(c.telefone, 'transferiu', { motivo, para: IDENTIDADE.humano.apelido }, opcoes.por ?? 'isa')
   // Transferencia feita pelo proprio dono no painel nao precisa avisar ele mesmo.
   if (opcoes.avisarDono !== false) await alertarDono({ telefone: c.telefone, nome: c.nome, motivo, detalhe: r.texto })
 }
@@ -212,7 +212,7 @@ export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]):
           ligada: true,
           pausa_motivo: null,
         })
-        await registrarEvento(cliente.telefone, 'desconto', { tipo: 'dono', de: ativacao, para: r.valor }, 'juliano')
+        await registrarEvento(cliente.telefone, 'desconto', { tipo: 'dono', de: ativacao, para: r.valor }, IDENTIDADE.donoPor)
       }
       await sql(`UPDATE ${TAB.contatos} SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])
       const conf = ok
@@ -225,7 +225,7 @@ export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]):
     if (r.acao === 'recusar') {
       const ok = ativacao ? await falarComCliente(cliente, mensagemDonoRecusou(ativacao, falaDeAdesivo(cliente.telefone))) : false
       await atualizarContato(cliente.telefone, { aguardando_dono: null, ligada: true, pausa_motivo: null })
-      await registrarEvento(cliente.telefone, 'desconto', { tipo: 'recusado' }, 'juliano')
+      await registrarEvento(cliente.telefone, 'desconto', { tipo: 'recusado' }, IDENTIDADE.donoPor)
       await sql(`UPDATE ${TAB.contatos} SET aguardando_dono = NULL WHERE telefone = $1`, [dono.telefone])
       const conf = ok ? `ok, avisei o ${cliente.nome || telCliente} que não rolou desconto a mais` : 'ok, sem desconto'
       await enviarTexto(dono.telefone, conf).then((w) => gravarSaida(dono, w, conf)).catch(() => {})
@@ -266,7 +266,7 @@ async function responderPerguntaPendente(dono: ContatoIsa, telCliente: string, t
   if (donoPulouPergunta(texto)) {
     await limpar()
     await atualizarContato(cliente.telefone, { pergunta_pendente: null })
-    await registrarEvento(cliente.telefone, 'resposta_dono', { pergunta, pulou: true }, 'juliano')
+    await registrarEvento(cliente.telefone, 'resposta_dono', { pergunta, pulou: true }, IDENTIDADE.donoPor)
     const conf = `ok, deixei pra lá a pergunta do ${quem}`
     await enviarTexto(dono.telefone, conf).then((w) => gravarSaida(dono, w, conf)).catch(() => {})
     return
@@ -282,7 +282,7 @@ async function responderPerguntaPendente(dono: ContatoIsa, telCliente: string, t
   const ok = await falarComCliente(cliente, msg)
   await limpar()
   if (ok) await atualizarContato(cliente.telefone, { pergunta_pendente: null })
-  await registrarEvento(cliente.telefone, 'resposta_dono', { pergunta, resposta: texto, enviada: msg, ok, reescrita: !!reescrita }, 'juliano')
+  await registrarEvento(cliente.telefone, 'resposta_dono', { pergunta, resposta: texto, enviada: msg, ok, reescrita: !!reescrita }, IDENTIDADE.donoPor)
   const conf = ok
     ? `pronto, mandei pro ${quem} ✅\n\n"${msg}"`
     : `não consegui mandar pro ${quem}: a janela de 24h dele fechou — responde pelo painel (a pergunta continua lá)`

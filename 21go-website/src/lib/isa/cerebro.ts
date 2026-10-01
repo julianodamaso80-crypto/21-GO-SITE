@@ -1,7 +1,8 @@
 import 'server-only'
-import { montarPrompt, comporResposta, abertura, tirarCumprimento, tirarNomeRepetido, ehRepeticao, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
+import { montarPrompt, comporResposta, respostasProntas, abertura, tirarCumprimento, tirarNomeRepetido, ehRepeticao, vazaInterno, ehPergunta, semInformacaoValido, type Genero } from '@/lib/isa/prompt.regras'
 import { marcasQueFaltam, perguntasNaResposta } from '@/lib/isa/envio.regras'
-import { validarNumeros, extrairNumeros, type Permitidos } from '@/lib/isa/validador.regras'
+import { validarNumeros, extrairNumeros, numerosOficiais, type Permitidos } from '@/lib/isa/validador.regras'
+import { IDENTIDADE } from '@/lib/isa/identidade'
 import { tirarFrasesDeRobo, comparacaoComHoje, ehSoConcordancia, jaPerguntouQuantoPaga } from '@/lib/isa/venda.regras'
 
 /** A mesma pergunta do `PERGUNTOU_QUANTO_PAGA` de venda.regras, pra conferir a saida da IA. */
@@ -25,6 +26,9 @@ import { blocoPromocao, PRIMEIRA_MENSALIDADE_PROMO, type Promocao } from '@/lib/
 // Trocavel por env pra comparar modelos no eval (scripts/isa-eval) sem mexer no codigo.
 const MODELO = process.env.ISA_MODELO || 'google/gemini-3.1-pro-preview'
 const RESERVA = 'google/gemini-2.5-flash'
+// O que muda da Isa pra Mariana: o "posso te ligar?" e o telefone do supervisor liberado.
+const PRONTAS = respostasProntas(IDENTIDADE)
+const OFICIAIS = numerosOficiais(IDENTIDADE.humano.telefone)
 const raciocina = (modelo: string) => /pro|thinking/i.test(modelo)
 
 export type Gatilho = 'desconto' | 'robo' | 'hostil' | 'associado' | 'sem_informacao' | 'sem_comprovante' | 'avaria' | 'mudar_vencimento' | 'validador' | null
@@ -120,7 +124,7 @@ function lerSaida(bruto: string, aberturaDoCodigo: string | null, primeiroNome: 
     // O cumprimento e do codigo (hora certa do Rio), nunca da IA.
     // O nome so aparece no cumprimento do codigo (dono, 11/09/2026: nada de "Juliano" toda hora).
     // Filler de robo ("entendi", "posso te ajudar com mais alguma duvida?") sai no codigo — auditoria 12/09/2026.
-    resposta: comporResposta(pronta, tirarFrasesDeRobo(tirarNomeRepetido(tirarCumprimento(typeof j.resposta === 'string' ? j.resposta : ''), primeiroNome)), aberturaDoCodigo),
+    resposta: comporResposta(pronta, tirarFrasesDeRobo(tirarNomeRepetido(tirarCumprimento(typeof j.resposta === 'string' ? j.resposta : ''), primeiroNome)), aberturaDoCodigo, PRONTAS),
     gatilho: gat,
     genero: gen,
     placa: placa && /^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(placa) ? placa : null,
@@ -168,7 +172,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
     // Promocao: a primeira mensalidade e dia 10/11, nao a regra do dia (dono, 29/09/2026).
     primeiroVencimento: e.promocao ? PRIMEIRA_MENSALIDADE_PROMO : primeiroVencimento(e.agora),
     promocao: e.promocao ? blocoPromocao(e.promocao) : null,
-  })
+  }, IDENTIDADE)
   const base = e.fatos?.numerosPermitidos ?? PERMITIDOS_SEM_FATOS
   // O valor que ele paga hoje e as diferencas sao fatos calculados: a IA pode cita-los.
   const promo = e.promocao ? [e.promocao.valorAnterior, e.promocao.valorNovo] : []
@@ -267,7 +271,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
   // Trava de assunto no codigo: falou do que existe por tras da Isa → sai a resposta de fora do assunto.
   if (vazaInterno(saida.resposta)) {
     console.warn('[isa] resposta barrada (vazamento/fora do assunto):', saida.resposta.slice(0, 200))
-    saida = { ...saida, resposta: comporResposta('fora_do_assunto', '', aberturaDoCodigo), gatilho: null }
+    saida = { ...saida, resposta: comporResposta('fora_do_assunto', '', aberturaDoCodigo, PRONTAS), gatilho: null }
   }
 
   // Ele mandou 2 ou mais mensagens e a resposta deixou alguma de fora: manda reescrever UMA vez.
@@ -314,7 +318,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
     saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo, nome)
   }
 
-  let v = validarNumeros(saida.resposta, permitidos)
+  let v = validarNumeros(saida.resposta, permitidos, OFICIAIS)
   if (v.ok) return { ...saida, reprovados: [] }
 
   const primeiraReprovacao = v.invalidos
@@ -326,7 +330,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
       'reescreva a resposta usando só números dos FATOS. se não tiver o número, diga que vai confirmar e marque "gatilho": "sem_informacao". mesmo formato JSON.',
   })
   saida = lerSaida(await chamarIA(conversa), aberturaDoCodigo, nome)
-  v = validarNumeros(saida.resposta, permitidos)
+  v = validarNumeros(saida.resposta, permitidos, OFICIAIS)
   if (v.ok) return { ...saida, reprovados: primeiraReprovacao }
 
   return { ...saida, resposta: '', gatilho: 'validador', reprovados: [...primeiraReprovacao, ...v.invalidos] }
@@ -340,7 +344,7 @@ export async function pensar(e: EntradaCerebro): Promise<SaidaCerebro> {
 export async function reescreverRespostaDoDono(p: { pergunta: string; respostaDoDono: string; genero: Genero; nome: string | null }): Promise<string | null> {
   const tratamento = p.genero === 'm' ? 'trate por "o senhor"' : p.genero === 'f' ? 'trate por "a senhora"' : 'escreva sem gênero ("você")'
   const sistema =
-    'você é a Isa, atendente da 21Go Proteção Patrimonial Veicular, no WhatsApp. o cliente perguntou algo que você não sabia, você disse "vou confirmar e já te retorno", e o seu supervisor acabou de te passar a resposta. escreva a mensagem pro cliente.\n' +
+    `você é a ${IDENTIDADE.nome}, atendente da 21Go Proteção Patrimonial Veicular, no WhatsApp. o cliente perguntou algo que você não sabia, você disse "vou confirmar e já te retorno", e o seu supervisor acabou de te passar a resposta. escreva a mensagem pro cliente.\n` +
     'regras: minúsculas, frases curtas, sem ponto final, no máximo 2 partes separadas por uma linha em branco, sem cumprimento, sem chamar pelo nome. comece com "consegui confirmar aqui 🙏🏼". ' +
     'NÃO mude nenhum fato, número, valor, prazo ou condição da resposta do supervisor; NÃO acrescente informação; NÃO explique o que ele não disse. ' +
     tratamento +
@@ -355,6 +359,6 @@ export async function reescreverRespostaDoDono(p: { pergunta: string; respostaDo
   const texto = tirarFrasesDeRobo(tirarNomeRepetido(tirarCumprimento(typeof j.resposta === 'string' ? j.resposta : ''), primeiroNome(p.nome)))
   if (!texto || vazaInterno(texto)) return null
   const doDono = extrairNumeros(p.respostaDoDono)
-  const v = validarNumeros(texto, { dinheiro: [...NUMEROS_FIXOS.dinheiro, ...doDono.dinheiro], pct: [...NUMEROS_FIXOS.pct, ...doDono.pct] })
+  const v = validarNumeros(texto, { dinheiro: [...NUMEROS_FIXOS.dinheiro, ...doDono.dinheiro], pct: [...NUMEROS_FIXOS.pct, ...doDono.pct] }, OFICIAIS)
   return v.ok ? texto : null
 }

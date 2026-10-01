@@ -70,6 +70,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ leadId: str
       .map((t) => (t.startsWith('55') ? t : `55${t}`))
     if (tels.length) {
       const { data: promo } = await supa
+        // schema public de proposito: promocao 40% e so da casa (Isa), nao existe em mariana
         .from('isa_promocoes')
         .select('valor_novo, validade')
         .in('telefone', tels)

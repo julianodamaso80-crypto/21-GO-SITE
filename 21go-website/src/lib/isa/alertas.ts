@@ -1,7 +1,7 @@
 import 'server-only'
 import { enviarTemplate, enviarTexto, numeroDeAlerta } from '@/lib/isa/cloud'
 import { registrarEvento, sql } from '@/lib/isa/banco'
-import { TAB } from '@/lib/isa/identidade'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { payloadDesconto } from '@/lib/isa/dono.regras'
 
 /**
@@ -14,25 +14,29 @@ import { payloadDesconto } from '@/lib/isa/dono.regras'
  * com o canal de entrega dos sites, 21/08/2026).
  */
 
-const PAINEL = 'https://21go.site/painel'
+// Painel do container do bot (21go.site/painel na Isa, o host da Mariana na dela).
+const PAINEL = IDENTIDADE.painelUrl
+const BOT = IDENTIDADE.nome
+// "transferido pro 4824" na Isa, "transferido pro Gabriel" na Mariana.
+const TRANSFERIDO = `transferido pro ${IDENTIDADE.humano.apelido}`
 
 const MOTIVO_LEGIVEL: Record<string, string> = {
-  documento: 'cliente mandou documento (transferido pro 4824)',
-  associado: 'associado pedindo suporte (transferido pro 4824)',
-  sem_preco: 'a Isa nao achou preco pra esse veiculo e pediu pra conferir placa/modelo',
+  documento: `cliente mandou documento (${TRANSFERIDO})`,
+  associado: `associado pedindo suporte (${TRANSFERIDO})`,
+  sem_preco: `a ${BOT} nao achou preco pra esse veiculo e pediu pra conferir placa/modelo`,
   robo: 'cliente perguntou se e robo',
   hostil: 'cliente xingou ou ameacou',
-  validador: 'a Isa ia passar um numero que nao confere — segurei a mensagem',
-  sem_informacao: 'cliente perguntou algo que a Isa nao soube responder',
+  validador: `a ${BOT} ia passar um numero que nao confere — segurei a mensagem`,
+  sem_informacao: `cliente perguntou algo que a ${BOT} nao soube responder`,
   sem_comprovante: 'cliente escolheu o plano e nao tem comprovante de residencia',
-  avaria: 'veiculo com amassado/defeito — fotos pra avaliar (transferido pro 4824)',
+  avaria: `veiculo com amassado/defeito — fotos pra avaliar (${TRANSFERIDO})`,
   desconto: 'pedido de desconto',
   qualidade: 'qualidade do numero caiu na Meta',
   template: 'template da mensagem dos 5 min deixou de ser utilidade aprovada',
-  relatorio: 'relatorio diario da Isa',
-  byd: 'cliente de BYD (transferido pro 4824)',
-  mudar_vencimento: 'cliente pediu pra mudar o dia do vencimento (a Isa disse que vai tentar)',
-  loop: 'TRAVA: a Isa ia mandar mensagem demais sem o cliente responder — pausei e nada saiu',
+  relatorio: `relatorio diario da ${BOT}`,
+  byd: `cliente de BYD (${TRANSFERIDO})`,
+  mudar_vencimento: `cliente pediu pra mudar o dia do vencimento (a ${BOT} disse que vai tentar)`,
+  loop: `TRAVA: a ${BOT} ia mandar mensagem demais sem o cliente responder — pausei e nada saiu`,
 }
 
 export async function alertarDono(p: { telefone: string; nome: string | null; motivo: string; detalhe: string }): Promise<void> {
@@ -115,7 +119,7 @@ export async function alertarPergunta(p: { telefone: string; nome: string | null
     [para, `pergunta:${p.telefone}`],
   )
   const corpo =
-    `❓ A Isa não soube responder - 21Go
+    `❓ A ${BOT} não soube responder - 21Go
 
 Cliente: ${p.nome || 'sem nome'}
 Telefone: ${p.telefone}
@@ -136,7 +140,7 @@ ${PAINEL}?c=${p.telefone}`
     const erroTexto = err instanceof Error ? err.message : String(err)
     try {
       await enviarTemplate(para, 'alerta_atendimento_isa', [
-        'a Isa nao soube responder — responda esta mensagem com a resposta',
+        `a ${BOT} nao soube responder — responda esta mensagem com a resposta`,
         p.nome || 'sem nome',
         p.telefone,
         `Pergunta: ${p.pergunta.slice(0, 300)} — abrir: ${PAINEL}?c=${p.telefone}`,

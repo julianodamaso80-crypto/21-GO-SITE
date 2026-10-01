@@ -83,6 +83,8 @@ export async function recrutamentoNaIsa(p: {
   novas: readonly (string | null)[]
   historico: readonly (string | null)[]
   enviar: (texto: string) => Promise<boolean>
+  /** "da consultora Leticya Thayene" (padrao) / "do consultor Gabriel Juliano" (Mariana) */
+  indicacao?: string
 }): Promise<AcaoRecrutamento | null> {
   const estado = await estadoDe(p.telefone)
   if (!ehDoRecrutamento({ textos: [...p.novas, ...p.historico], boasVindasEm: estado?.boas_vindas_em ?? null })) {
@@ -94,6 +96,7 @@ export async function recrutamentoNaIsa(p: {
     texto: p.novas.filter(Boolean).join('\n'),
     estado,
     enviar: p.enviar,
+    indicacao: p.indicacao,
   })
 }
 
@@ -103,6 +106,7 @@ async function responder(p: {
   texto: string | null
   estado: Estado | null
   enviar: (texto: string) => Promise<boolean>
+  indicacao?: string
 }): Promise<AcaoRecrutamento> {
   const { telefone, estado } = p
   const acao = decidir({
@@ -124,7 +128,7 @@ async function responder(p: {
   }
 
   const texto =
-    acao === 'boas_vindas' ? mensagemBoasVindas(cumprimento(new Date()), primeiroNomeDoFormulario(p.texto)) : mensagemAtendimentoVirtual()
+    acao === 'boas_vindas' ? mensagemBoasVindas(cumprimento(new Date()), primeiroNomeDoFormulario(p.texto), p.indicacao) : mensagemAtendimentoVirtual()
 
   if (!(await p.enviar(texto))) return 'nada'
   await marcar({
