@@ -1,9 +1,9 @@
 import 'server-only'
 import { etapaDoCard, etiquetasAoMover } from '@/lib/isa/funil.regras'
 import { planosQueAparecem } from '@/lib/isa/fatos.regras'
-import { ETIQUETAS_FORA_DA_FILA } from '@/lib/isa/etiquetas.regras'
+import { etiquetasForaDaFila } from '@/lib/isa/etiquetas.regras'
 import { sql, type ContatoIsa } from '@/lib/isa/banco'
-import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
+import { ETIQUETAS_DO_BOT, FUNIL_DO_BOT, IDENTIDADE, TAB } from '@/lib/isa/identidade'
 
 /**
  * Consultas do painel da Isa. So leitura aqui; as acoes (responder, ligar/desligar, transferir)
@@ -58,7 +58,7 @@ const FILTRO: Record<Aba, string> = {
     -- Nao fica cobrando atencao de quem ninguem consegue responder (dono, 25/09/2026).
     AND (c.janela_ate IS NULL OR c.janela_ate > now())
     AND ('quente' = ANY(COALESCE(c.etiquetas, '{}'::text[]))
-         OR NOT (COALESCE(c.etiquetas, '{}'::text[]) && ARRAY[${ETIQUETAS_FORA_DA_FILA.map((e) => `'${e}'`).join(',')}]::text[]))`,
+         OR NOT (COALESCE(c.etiquetas, '{}'::text[]) && ARRAY[${etiquetasForaDaFila(ETIQUETAS_DO_BOT).map((e) => `'${e}'`).join(',')}]::text[]))`,
   isa: `c.ligada AND NOT ${EH_CONSULTOR}`,
   off: `NOT c.ligada AND NOT ${EH_CONSULTOR}`,
   transferidos: `c.transferido_em IS NOT NULL AND NOT ${EH_CONSULTOR}`,
@@ -190,7 +190,7 @@ export async function listarFunil(): Promise<CardFunil[]> {
         escolheuPlano: !!l.escolheu,
         mandouDocumento: !!l.documento,
         etiquetas: l.etiquetas,
-      }),
+      }, FUNIL_DO_BOT),
     }
   })
 }
@@ -211,7 +211,7 @@ export async function gravarEtapa(telefone: string, etapa: string | null): Promi
     if (c) {
       await sql(`UPDATE ${TAB.contatos} SET etiquetas = $2::text[], updated_at = now() WHERE telefone = $1`, [
         telefone,
-        etiquetasAoMover(c.etiquetas, etapa),
+        etiquetasAoMover(c.etiquetas, etapa, FUNIL_DO_BOT),
       ])
     }
   }

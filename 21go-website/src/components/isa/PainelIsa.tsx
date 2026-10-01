@@ -1,7 +1,20 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { ETIQUETAS } from '@/lib/isa/etiquetas.regras'
+import { IDENTIDADE_ISA, type PainelBot } from '@/lib/isa/identidade.regras'
+
+// Nome do bot, numero, humano e etiquetas vem do servidor (/api/atendimento/eu): o navegador nao
+// le o env, e o mesmo painel serve a Isa (21go.site) e a Mariana (container dela). Enquanto nao
+// chega, vale a Isa.
+const BOT_PADRAO: PainelBot = {
+  nome: IDENTIDADE_ISA.nome,
+  numero: IDENTIDADE_ISA.numeroBonito,
+  humano: IDENTIDADE_ISA.humano.apelido,
+  etiquetas: ETIQUETAS,
+}
+const BotCtx = createContext<PainelBot>(BOT_PADRAO)
+const useBot = () => useContext(BotCtx)
 
 /**
  * Painel de atendimento da Isa — mesa de despacho da 21Go.
@@ -135,10 +148,14 @@ const EVENTO: Record<string, string> = {
   trava_loop: 'TRAVA: Isa segurou mensagens repetidas e pausou',
 }
 
-const ETIQUETA_POR_ID = new Map(ETIQUETAS.map((e) => [e.id, e]))
+/** Rotulo do evento com o nome do bot e do humano dele (na Isa, o texto de sempre). */
+function rotuloDoEvento(evento: string, bot: PainelBot): string {
+  const r = EVENTO[evento]
+  return r ? r.replace(/\bIsa\b/g, bot.nome).replace('4824', bot.humano) : evento
+}
 
 function ChipEtiqueta({ id, ativa = true, onClick }: { id: string; ativa?: boolean; onClick?: () => void }) {
-  const e = ETIQUETA_POR_ID.get(id)
+  const e = useBot().etiquetas.find((x) => x.id === id)
   if (!e) return null
   const estilo: React.CSSProperties = ativa
     ? { backgroundColor: e.cor, color: e.claro ? '#141d45' : '#fff', borderColor: e.cor }
@@ -180,7 +197,7 @@ function janela(ate: string | null): { texto: string; tom: 'ok' | 'alerta' | 'fe
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, { ...init, headers: { 'content-type': 'application/json', ...(init?.headers || {}) }, cache: 'no-store' })
   const j = await r.json().catch(() => ({}))
-  if (!r.ok) throw Object.assign(new Error((j as { erro?: string }).erro || `erro ${r.status}`), { status: r.status })
+  if (!r.ok) throw Object.assign(new Error((j as { erro?: string }).erro || `erro ${r.status}`), { status: r.status, corpo: j })
   return j as T
 }
 
@@ -193,28 +210,47 @@ const FUNDO: React.CSSProperties = {
 
 export function PainelIsa() {
   const [usuario, setUsuario] = useState<string | null | false>(null)
+  const [bot, setBot] = useState<PainelBot>(BOT_PADRAO)
 
-  useEffect(() => {
-    api<{ usuario: string }>('/api/atendimento/eu')
-      .then((r) => setUsuario(r.usuario))
-      .catch(() => setUsuario(false))
+  const carregarEu = useCallback(() => {
+    api<{ usuario: string; bot?: PainelBot }>('/api/atendimento/eu')
+      .then((r) => {
+        if (r.bot) setBot(r.bot)
+        setUsuario(r.usuario)
+      })
+      .catch((err) => {
+        const b = (err as { corpo?: { bot?: PainelBot } }).corpo?.bot
+        if (b) setBot(b)
+        setUsuario(false)
+      })
   }, [])
 
+  useEffect(() => {
+    carregarEu()
+  }, [carregarEu])
+
+  useEffect(() => {
+    document.title = `Atendimento ${bot.nome} · 21Go`
+  }, [bot.nome])
+
   return (
-    <div
-      className="fixed inset-0 z-[9999] overflow-hidden text-[#E9ECF8] [font-family:var(--fonte-painel),system-ui,sans-serif]"
-      style={FUNDO}
-    >
-      {usuario === null && <div className="grid h-full place-items-center text-sm text-white/50">carregando…</div>}
-      {usuario === false && <Login aoEntrar={setUsuario} />}
-      {typeof usuario === 'string' && <Mesa usuario={usuario} aoSair={() => setUsuario(false)} />}
-    </div>
+    <BotCtx.Provider value={bot}>
+      <div
+        className="fixed inset-0 z-[9999] overflow-hidden text-[#E9ECF8] [font-family:var(--fonte-painel),system-ui,sans-serif]"
+        style={FUNDO}
+      >
+        {usuario === null && <div className="grid h-full place-items-center text-sm text-white/50">carregando…</div>}
+        {usuario === false && <Login aoEntrar={carregarEu} />}
+        {typeof usuario === 'string' && <Mesa usuario={usuario} aoSair={() => setUsuario(false)} />}
+      </div>
+    </BotCtx.Provider>
   )
 }
 
 /* ───────────────────────────── login ───────────────────────────── */
 
 function Login({ aoEntrar }: { aoEntrar: (u: string) => void }) {
+  const bot = useBot()
   const [usuario, setU] = useState('')
   const [senha, setS] = useState('')
   const [erro, setErro] = useState('')
@@ -240,7 +276,7 @@ function Login({ aoEntrar }: { aoEntrar: (u: string) => void }) {
         <div className="mb-8 flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#F2911D] text-lg font-bold text-[#141d45] [font-family:var(--fonte-rotulo)]">21</span>
           <div>
-            <p className="text-2xl font-bold leading-none tracking-tight [font-family:var(--fonte-rotulo)]">ATENDIMENTO ISA</p>
+            <p className="text-2xl font-bold leading-none tracking-tight [font-family:var(--fonte-rotulo)]">ATENDIMENTO {bot.nome.toUpperCase()}</p>
             <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[#C7D301]">mesa da 21Go</p>
           </div>
         </div>
@@ -262,6 +298,7 @@ function Login({ aoEntrar }: { aoEntrar: (u: string) => void }) {
 /* ───────────────────────────── mesa ───────────────────────────── */
 
 function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
+  const bot = useBot()
   const [modo, setModo] = useState<'conversas' | 'funil'>('conversas')
   const [aba, setAba] = useState<Aba>('todos')
   const [busca, setBusca] = useState('')
@@ -321,7 +358,7 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
           <div>
             <p className="text-[22px] font-bold leading-none tracking-tight [font-family:var(--fonte-rotulo)]">ATENDIMENTO</p>
             <p className="mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-white/45">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#C7D301] shadow-[0_0_10px_#C7D301]" /> isa · {usuario}
+              <span className="h-1.5 w-1.5 rounded-full bg-[#C7D301] shadow-[0_0_10px_#C7D301]" /> {bot.nome.toLowerCase()} · {usuario}
             </p>
           </div>
           <div className="flex items-center gap-1.5">
@@ -347,7 +384,7 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
                   ? { backgroundColor: a.cor, color: '#141d45' }
                   // 26 = ~15% de opacidade em hex: a cor aparece apagada e o texto fica legivel
                   : { backgroundColor: `${a.cor}26`, color: a.cor }}>
-                {a.rotulo}
+                {a.id === 'isa' ? bot.nome : a.rotulo}
                 {urgente && (
                   <span className="ml-1.5 rounded-full px-1.5 text-[11px]"
                     style={ativo ? { backgroundColor: '#141d45', color: a.cor } : { backgroundColor: a.cor, color: '#141d45' }}>
@@ -367,7 +404,7 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
             }`}>
             todas
           </button>
-          {ETIQUETAS.map((e) => (
+          {bot.etiquetas.map((e) => (
             <span key={e.id} className="shrink-0">
               <ChipEtiqueta id={e.id} ativa={etiqueta === e.id} onClick={() => setEtiqueta(etiqueta === e.id ? '' : e.id)} />
             </span>
@@ -405,7 +442,7 @@ function Mesa({ usuario, aoSair }: { usuario: string; aoSair: () => void }) {
                     {(precisaGente || c.transferido_em || c.preco_da_tabela || c.etiquetas?.length > 0) && (
                       <span className="mt-1.5 flex flex-wrap gap-1">
                         {precisaGente && <Etiqueta tom="laranja">{c.pergunta_pendente ? 'devendo resposta' : c.aguardando_dono ? 'esperando você' : MOTIVO[c.pausa_motivo || ''] || c.pausa_motivo}</Etiqueta>}
-                        {c.transferido_em && <Etiqueta tom="azul">no 4824</Etiqueta>}
+                        {c.transferido_em && <Etiqueta tom="azul">no {bot.humano}</Etiqueta>}
                         {c.preco_da_tabela && <Etiqueta tom="cinza">preço da tabela</Etiqueta>}
                         {(c.etiquetas || []).map((id) => <ChipEtiqueta key={id} id={id} />)}
                       </span>
@@ -448,6 +485,7 @@ function Etiqueta({ tom, children }: { tom: 'laranja' | 'azul' | 'cinza' | 'verd
 /* ───────────────────────────── conversa ───────────────────────────── */
 
 function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar: () => void; aoMudar: () => void }) {
+  const bot = useBot()
   const [contato, setContato] = useState<Contato | null>(null)
   const [itens, setItens] = useState<ItemConversa[]>([])
   const [sim, setSim] = useState<Simulacao | null>(null)
@@ -534,19 +572,19 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
           </div>
           {contato && (
             <button disabled={ocupado} onClick={() => acao('/api/atendimento/isa', { ligada: !contato.ligada })}
-              title={contato.ligada ? 'desligar a Isa neste contato' : 'ligar a Isa — ela lê a conversa inteira'}
+              title={contato.ligada ? `desligar a ${bot.nome} neste contato` : `ligar a ${bot.nome} — ela lê a conversa inteira`}
               className={`flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-[12px] font-bold uppercase tracking-wider transition [font-family:var(--fonte-rotulo)] ${
                 contato.ligada ? 'bg-[#C7D301] text-[#141d45] shadow-[0_0_24px_-6px_#C7D301]' : 'bg-white/[0.08] text-white/60'
               }`}>
               <span className={`h-6 w-6 rounded-full transition ${contato.ligada ? 'bg-[#141d45]' : 'bg-white/30'}`} />
-              isa {contato.ligada ? 'ligada' : 'off'}
+              {bot.nome.toLowerCase()} {contato.ligada ? 'ligada' : 'off'}
             </button>
           )}
           {contato && !contato.transferido_em && (
             <button disabled={ocupado || jan.tom === 'fechada'}
-              onClick={() => confirm(`Transferir ${nome} pro 4824? Ele recebe o link com o resumo e a Isa desliga.`) && acao('/api/atendimento/transferir', {})}
+              onClick={() => confirm(`Transferir ${nome} pro ${bot.humano}? Ele recebe o link com o resumo e a ${bot.nome} desliga.`) && acao('/api/atendimento/transferir', {})}
               className="rounded-full border border-[#F2911D]/60 px-3 py-1 text-[12px] font-bold uppercase tracking-wider text-[#F2911D] transition hover:bg-[#F2911D] hover:text-[#141d45] disabled:opacity-30 [font-family:var(--fonte-rotulo)]">
-              ↪ 4824
+              ↪ {bot.humano}
             </button>
           )}
           {/* Tira desta conversa a marca de "Precisa de voce" — ela continua normal nas outras abas
@@ -574,7 +612,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
         {contato && (
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <span className="mr-0.5 text-[11px] uppercase tracking-[0.16em] text-white/35 [font-family:var(--fonte-rotulo)]">etiquetas</span>
-            {ETIQUETAS.map((e) => {
+            {bot.etiquetas.map((e) => {
               const tem = (contato.etiquetas || []).includes(e.id)
               return (
                 <ChipEtiqueta key={e.id} id={e.id} ativa={tem} onClick={() => {
@@ -611,7 +649,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
             {contato?.preco_da_tabela && <Etiqueta tom="cinza">preço da tabela — conferir no Power</Etiqueta>}
             {contato?.aguardando_dono && contato.aguardando_dono !== 'fecha_quando' && <Etiqueta tom="laranja">esperando você decidir o desconto</Etiqueta>}
             {contato?.pergunta_pendente && (
-              <Etiqueta tom="laranja">a Isa prometeu retornar: “{contato.pergunta_pendente.texto.slice(0, 90)}” — responda aqui ou pelo WhatsApp de avisos</Etiqueta>
+              <Etiqueta tom="laranja">a {bot.nome} prometeu retornar: “{contato.pergunta_pendente.texto.slice(0, 90)}” — responda aqui ou pelo WhatsApp de avisos</Etiqueta>
             )}
             {!contato?.ligada && contato?.pausa_motivo && <Etiqueta tom="laranja">pausada: {MOTIVO[contato.pausa_motivo] || contato.pausa_motivo}</Etiqueta>}
           </div>
@@ -648,8 +686,8 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
         {aviso && <p className="mb-2 rounded-md bg-red-500/15 px-3 py-1.5 text-sm text-red-200">{aviso}</p>}
         <p className="mb-2 text-[12px] text-white/40">
           {contato?.ligada
-            ? 'a Isa não manda nada por cima da sua mensagem. se o cliente responder, ela segue — pra atender sozinho, desligue a chave.'
-            : 'Isa desligada: quem atende esta conversa é você.'}
+            ? `a ${bot.nome} não manda nada por cima da sua mensagem. se o cliente responder, ela segue — pra atender sozinho, desligue a chave.`
+            : `${bot.nome} desligada: quem atende esta conversa é você.`}
         </p>
         {/* Janela fechada: a Meta so aceita template. Em vez da caixa morta, o botao que manda a
             mensagem aprovada e reabre a conversa quando o cliente responder (dono, 16/09/2026:
@@ -675,7 +713,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
           <div className="mb-2 flex items-start gap-2 rounded-lg border-l-2 border-[#F2911D] bg-white/[0.05] px-3 py-1.5">
             <div className="min-w-0 flex-1">
               <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#F2911D]/85 [font-family:var(--fonte-rotulo)]">
-                respondendo {citando.direcao === 'inbound' ? 'o cliente' : citando.autor === 'isa' ? 'a Isa' : citando.autor}
+                respondendo {citando.direcao === 'inbound' ? 'o cliente' : citando.autor === 'isa' ? `a ${bot.nome}` : citando.autor}
               </p>
               <p className="truncate text-[13px] text-white/60">{citando.conteudo || 'mensagem'}</p>
             </div>
@@ -714,7 +752,7 @@ function Conversa({ telefone, aoVoltar, aoMudar }: { telefone: string; aoVoltar:
                 ;(e.currentTarget.form as HTMLFormElement | null)?.requestSubmit()
               }
             }}
-            placeholder={jan.tom === 'fechada' ? (contato?.janela_ate ? 'janela de 24h fechada — a Meta só aceita template' : 'ele ainda não respondeu — a Meta só aceita template') : 'responder pelo 98004-0964…'}
+            placeholder={jan.tom === 'fechada' ? (contato?.janela_ate ? 'janela de 24h fechada — a Meta só aceita template' : 'ele ainda não respondeu — a Meta só aceita template') : `responder pelo ${bot.numero}…`}
             className="max-h-40 min-h-[44px] flex-1 resize-y rounded-xl border border-white/[0.08] bg-[#0f1638] px-3 py-2.5 text-[15px] text-[#E9ECF8] caret-[#C7D301] outline-none placeholder:text-white/30 focus:border-[#C7D301]/60 disabled:opacity-40" />
           <button disabled={ocupado || !texto.trim() || jan.tom === 'fechada'}
             className="h-11 rounded-xl bg-[#F2911D] px-5 font-semibold text-[#141d45] transition hover:brightness-110 disabled:opacity-30">
@@ -881,6 +919,7 @@ function BotaoAnexo({
 }
 
 function Balao({ it, aoCitar, citado }: { it: ItemConversa; aoCitar?: () => void; citado?: ItemConversa }) {
+  const bot = useBot()
   const cliente = it.direcao === 'inbound'
   const isa = !cliente && (it.autor === 'isa' || it.autor === 'agent')
   const temMidia = (it.mensagem_tipo === 'image' || it.mensagem_tipo === 'document') && it.media_id
@@ -893,7 +932,7 @@ function Balao({ it, aoCitar, citado }: { it: ItemConversa; aoCitar?: () => void
         <p className={`mb-0.5 px-1 text-[10.5px] font-semibold uppercase tracking-[0.14em] [font-family:var(--fonte-rotulo)] ${
           cliente ? 'text-white/40' : isa ? 'text-[#C7D301]/80' : 'text-[#F2911D]/85'
         }`}>
-          {cliente ? 'cliente' : isa ? 'isa' : it.autor}
+          {cliente ? 'cliente' : isa ? bot.nome.toLowerCase() : it.autor}
         </p>
         <div className={`whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-left text-[15px] leading-snug ${
           cliente
@@ -907,7 +946,7 @@ function Balao({ it, aoCitar, citado }: { it: ItemConversa; aoCitar?: () => void
           {citado && (
             <span className="mb-1.5 block rounded-md border-l-2 border-[#F2911D] bg-black/15 px-2 py-1 text-[12.5px] leading-snug">
               <span className="block font-semibold opacity-80">
-                {citado.direcao === 'inbound' ? 'cliente' : citado.autor === 'isa' ? 'Isa' : citado.autor}
+                {citado.direcao === 'inbound' ? 'cliente' : citado.autor === 'isa' ? bot.nome : citado.autor}
               </span>
               <span className="line-clamp-2 block opacity-75">{citado.conteudo || 'mensagem'}</span>
             </span>
@@ -955,6 +994,7 @@ function linkar(texto: string): React.ReactNode {
 }
 
 function Evento({ it }: { it: ItemConversa }) {
+  const bot = useBot()
   const d = it.detalhe || {}
   const extra =
     it.evento === 'pausou' || it.evento === 'transferiu'
@@ -970,7 +1010,7 @@ function Evento({ it }: { it: ItemConversa }) {
   return (
     <p className="my-2 text-center">
       <span className={`inline-block rounded-full px-3 py-1 text-[11px] [font-family:var(--fonte-mono)] ${grave ? 'bg-red-500/15 text-red-300' : 'bg-white/[0.05] text-white/45'}`}>
-        {hora(it.em)} · {EVENTO[it.evento || ''] || it.evento}
+        {hora(it.em)} · {rotuloDoEvento(it.evento || '', bot)}
         {extra ? ` · ${extra}` : ''}
         {it.autor && it.autor !== 'isa' && it.autor !== 'sistema' ? ` · ${it.autor}` : ''}
       </span>
@@ -1011,6 +1051,7 @@ function Funil({
   aoVoltar: () => void
   aoAbrir: (telefone: string) => void
 }) {
+  const bot = useBot()
   const [etapas, setEtapas] = useState<{ id: string; rotulo: string; cor: string }[]>([])
   const [cards, setCards] = useState<CardFunil[]>([])
   const [arrastando, setArrastando] = useState<string | null>(null)
@@ -1058,7 +1099,7 @@ function Funil({
         <div>
           <p className="text-[22px] font-bold leading-none tracking-tight [font-family:var(--fonte-rotulo)]">FUNIL</p>
           <p className="mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-white/45">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#C7D301] shadow-[0_0_10px_#C7D301]" /> isa · {usuario} · {cards.length} conversas
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C7D301] shadow-[0_0_10px_#C7D301]" /> {bot.nome.toLowerCase()} · {usuario} · {cards.length} conversas
           </p>
         </div>
         <button onClick={aoVoltar} className="rounded-md border border-white/10 px-2.5 py-1 text-xs text-white/70 hover:text-white">
@@ -1115,6 +1156,7 @@ function Card({
   aoMover: (t: string, etapa: string) => void
   aoAnotar: (t: string, nota: string) => void
 }) {
+  const bot = useBot()
   const [editando, setEditando] = useState(false)
   const [texto, setTexto] = useState(c.nota ?? '')
 
@@ -1140,7 +1182,7 @@ function Card({
         {c.ultima && <p className="mt-1 truncate text-[11.5px] text-white/40">{c.ultima}</p>}
         <p className="mt-1 text-[10.5px] uppercase tracking-wide text-white/30">
           {hora(c.ultima_em)}
-          {c.ligada ? '' : ' · isa off'}
+          {c.ligada ? '' : ` · ${bot.nome.toLowerCase()} off`}
         </p>
       </div>
 

@@ -8,6 +8,8 @@
  * Regra-mae (dono, 01/10/2026): sem env nenhum, cada valor e o de hoje da Isa, byte a byte.
  */
 
+import type { Etiqueta } from './etiquetas.regras'
+
 export type GeneroHumano = 'm' | 'f'
 
 /** Quem assume a conversa quando o bot transfere (Leticya na Isa, Gabriel na Mariana). */
@@ -283,4 +285,21 @@ export function nomesDoCumprimento(id: { nome: string; humano: { nome: string } 
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase(),
   )
+}
+
+/**
+ * O que o painel (navegador) precisa saber do bot. Vem de /api/atendimento/eu: o navegador nao le
+ * o env, e o mesmo componente serve a Isa e a Mariana.
+ */
+export interface PainelBot {
+  nome: string
+  /** "98004-0964" — "responder pelo ..." */
+  numero: string
+  /** "4824" na Isa, "Gabriel" na Mariana — o botao e a marca de transferencia */
+  humano: string
+  etiquetas: readonly Etiqueta[]
+}
+
+export function painelDoBot(id: IdentidadeBot, etiquetas: readonly Etiqueta[]): PainelBot {
+  return { nome: id.nome, numero: id.numeroBonito, humano: id.humano.apelido, etiquetas }
 }
