@@ -32,6 +32,7 @@ import { perguntaDeBeneficios, planoParaListar, mensagemBeneficios, mensagemQual
 import { entradaPopup, mensagemDesconto50, mensagemRobo, ehReiniciar, numeroDeTeste, numerosDeTeste, respostaDeSupervisor, AGUARDANDO_FECHA_QUANDO, mensagemTentarDesconto, mensagemVouFalarComSupervisor, mensagemTentarDeNovo, pediuAtivacaoGratis } from '@/lib/isa/dono.regras'
 import { PAYLOAD_COBRE, PAYLOAD_DUVIDA, planoDoCliente, mensagemCobertura, mensagemDuvida } from '@/lib/isa/abordagem.regras'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
+import { planosQueAparecem } from '@/lib/isa/fatos.regras'
 import {
   enviarTexto,
   enviarArquivo,
@@ -56,7 +57,7 @@ import { identifyPlate } from '@/lib/plate-identify'
 import { isLeilaoOrigin } from '@/data/pricing'
 import { recrutamentoNaIsa } from '@/lib/consultor-recrutamento'
 import { promocaoDoContato, registrarRespostaPromo, marcarUrgente } from '@/lib/isa/promocao'
-import { botaoDaPromocao, mensagemQueroSeguir, mensagemLinkDosPlanos, perguntaDeMensalidade, primeiroNomePromo, ehRespostaAutomatica } from '@/lib/isa/promocao.regras'
+import { botaoDaPromocao, mensagemQueroSeguir, mensagemSimulacaoPromo, perguntaDeMensalidade, semInteresse, primeiroNomePromo, ehRespostaAutomatica } from '@/lib/isa/promocao.regras'
 
 /**
  * A fila da Isa. Roda disparada pelo webhook (10,5 s depois da mensagem) e por um cron de 1 em
@@ -292,19 +293,32 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   const agora = new Date()
   const ultimaInbound = novas[novas.length - 1]?.whatsapp_message_id
 
-  // Promocao (dono, 29/09/2026): "Quero seguir" recebe o veiculo, o link com os planos e "qual plano
-  // voce deseja contratar?" — os documentos a Isa pede quando ele escolher. Pergunta de mensalidade
-  // recebe o link do PDF. A Isa SEGUE ligada.
-  if (promo && (botaoPromo === 'seguir' || (!botaoPromo && perguntaDeMensalidade(novas.map((m) => m.content ?? '').join('\n'))))) {
+  // Promocao: simulacao completa (veiculo, valor de cada plano, ativacao, 1a mensalidade e PDF anexado) na
+  // PRIMEIRA resposta, no "Quero seguir" e em toda pergunta de valor (dono, 01/10/2026). Pergunta de
+  // outra coisa: depois da simulacao a IA responde o que ele perguntou.
+  if (promo) {
+    const perguntouValor = !botaoPromo && perguntaDeMensalidade(novas.map((m) => m.content ?? '').join('\n'))
+    const jaMandou = (
+      await sql(`SELECT 1 FROM public.isa_eventos WHERE telefone = $1 AND tipo = 'promo40_simulacao' LIMIT 1`, [c.telefone])
+    ).length > 0
+    // Primeira resposta "nao quero", "foi engano": nao recebe simulacao (dono, 01/10/2026). No meio da
+    // conversa um "nao" costuma ser resposta a pergunta ("e de leilao?"), entao so vale na primeira.
+    const naoQuer = !botaoPromo && !jaMandou && semInteresse(novas.map((m) => m.content ?? '').join('\n'))
     const leadPromo = await leadDoCliente(c.telefone, c.lead_id, null).catch(() => null)
-    const link = leadPromo?.id ? `${SITE}/api/pdfs/${leadPromo.id}` : null
-    if (botaoPromo === 'seguir' || link) {
-      const texto =
-        botaoPromo === 'seguir'
-          ? mensagemQueroSeguir(primeiroNomePromo(c.nome ?? promo.nome), promo, link)
-          : mensagemLinkDosPlanos(promo, link as string)
+    const planosPromo = leadPromo?.cotacao_planos?.length ? planosQueAparecem(leadPromo.cotacao_planos) : []
+    if (leadPromo?.id && planosPromo.length && !naoQuer && c.ligada && (botaoPromo === 'seguir' || perguntouValor || !jaMandou)) {
+      const link = `${SITE}/api/pdfs/${leadPromo.id}`
+      const texto = mensagemSimulacaoPromo(primeiroNomePromo(c.nome ?? promo.nome), promo, planosPromo, link, botaoPromo === 'seguir')
       const enviou = await enviarComoGente(c, [texto], ultimaInbound, visto)
-      await registrarEvento(c.telefone, botaoPromo === 'seguir' ? 'promo40_seguir' : 'promo40_link_planos', { lead: leadPromo?.id ?? null })
+      if (enviou) await reenviarPdf(c, leadPromo.id, undefined, null)
+      await registrarEvento(c.telefone, 'promo40_simulacao', { lead: leadPromo.id, seguir: botaoPromo === 'seguir' })
+      if (botaoPromo === 'seguir' || perguntouValor) {
+        await liberar(c.telefone, visto, enviou)
+        return enviou
+      }
+    } else if (botaoPromo === 'seguir') {
+      const enviou = await enviarComoGente(c, [mensagemQueroSeguir(primeiroNomePromo(c.nome ?? promo.nome), promo, null)], ultimaInbound, visto)
+      await registrarEvento(c.telefone, 'promo40_seguir', { lead: null })
       await liberar(c.telefone, visto, enviou)
       return enviou
     }
@@ -825,7 +839,12 @@ async function soltarComPerguntaPendente(telefone: string, texto: string, visto:
  * o PDF, vc enviar novamente o PDF"). O arquivo vem da nossa propria rota, que regenera do banco.
  * `false` quando nao deu: aí quem chama deixa a conversa seguir e a Isa escreve os valores.
  */
-async function reenviarPdf(c: ContatoIsa, leadId: string, ultimaInbound: string | undefined): Promise<boolean> {
+async function reenviarPdf(
+  c: ContatoIsa,
+  leadId: string,
+  ultimaInbound: string | undefined,
+  legenda: string | null = 'te mandei aqui de novo 🙏🏼',
+): Promise<boolean> {
   try {
     const r = await fetch(`${SITE}/api/pdfs/${leadId}`, { signal: AbortSignal.timeout(60_000) })
     if (!r.ok) throw new Error(`pdf ${r.status}`)
@@ -836,7 +855,7 @@ async function reenviarPdf(c: ContatoIsa, leadId: string, ultimaInbound: string 
       tipo: 'document',
       mime: 'application/pdf',
       nome: 'simulacao-21go.pdf',
-      legenda: 'te mandei aqui de novo 🙏🏼',
+      ...(legenda ? { legenda } : {}),
     })
     await upsertMessage({
       conversation_id: c.conversation_id,

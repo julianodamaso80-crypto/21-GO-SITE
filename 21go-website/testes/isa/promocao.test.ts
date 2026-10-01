@@ -95,3 +95,24 @@ test('link dos planos diz a ativacao no ato e a 1a mensalidade dia 10/11 (dono, 
   assert.ok(mensagemLinkDosPlanos(luan, 'L').includes(linha))
   assert.match(blocoPromocao(luan), /PRIMEIRA MENSALIDADE vence dia 10\/11/)
 })
+
+test('simulacao da promocao: veiculo, planos com valor, ativacao, 10/11 e PDF (dono, 01/10/2026)', async () => {
+  const { mensagemSimulacaoPromo, perguntaDeMensalidade } = await import('../../src/lib/isa/promocao.regras.ts')
+  const planos = [{ name: 'Básico', monthly: 116.31 }, { name: 'VIP', monthly: 149.49 }]
+  const t = mensagemSimulacaoPromo('Thiago', luan, planos, 'L')
+  assert.match(t, /^Thiago, segue a simulação do seu GM - Chevrolet/)
+  assert.match(t, /• Básico: R\$ 116,31\/mês\n• VIP: R\$ 149,49\/mês/)
+  assert.match(t, /primeira mensalidade fica para o dia 10\/11/)
+  assert.match(t, /qual plano faz mais sentido pra você\?$/)
+  assert.match(mensagemSimulacaoPromo('Thiago', luan, planos, 'L', true), /^que bom, Thiago, que você resolveu seguir[\s\S]*qual plano você deseja contratar\?$/)
+  assert.equal(perguntaDeMensalidade('Boa tarde, qual seria o valor da prestação?'), true)
+  assert.equal(perguntaDeMensalidade('Ou esse valor seria a prestação?'), true)
+  assert.equal(perguntaDeMensalidade('quanto vou pagar por mês?'), true)
+  assert.equal(perguntaDeMensalidade('vocês cobrem roubo?'), false)
+})
+
+test('quem nao quer nao recebe a simulacao (dono, 01/10/2026)', async () => {
+  const { semInteresse } = await import('../../src/lib/isa/promocao.regras.ts')
+  for (const t of ['Não', 'não quero', 'Não tenho mais interesse', 'foi engano', 'Não fiz nenhuma cotação', 'para de mandar', 'não, obrigado']) assert.equal(semInteresse(t), true, t)
+  for (const t of ['qual o valor da prestação?', 'Hoje tenho da loovi', 'não entendi', 'não sei qual plano', 'Quero seguir']) assert.equal(semInteresse(t), false, t)
+})
