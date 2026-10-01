@@ -301,7 +301,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   if (promo) {
     const perguntouValor = !botaoPromo && perguntaDeMensalidade(novas.map((m) => m.content ?? '').join('\n'))
     const jaMandou = (
-      await sql(`SELECT 1 FROM public.isa_eventos WHERE telefone = $1 AND tipo = 'promo40_simulacao' LIMIT 1`, [c.telefone])
+      await sql(`SELECT 1 FROM ${TAB.eventos} WHERE telefone = $1 AND tipo = 'promo40_simulacao' LIMIT 1`, [c.telefone])
     ).length > 0
     // Primeira resposta "nao quero", "foi engano": nao recebe simulacao (dono, 01/10/2026). No meio da
     // conversa um "nao" costuma ser resposta a pergunta ("e de leilao?"), entao so vale na primeira.
