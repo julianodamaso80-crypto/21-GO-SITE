@@ -49,6 +49,7 @@ import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, no
 import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, vistoDoLote, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, repeteMensagemRecente, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
+import { aplicarEstilo } from '@/lib/isa/estilo.regras'
 import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, fechouComOutra, mensagemFechouComOutra, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, pediuPdfDeNovo, ehByd, ehEletricoLeve, mensagemEletricoLeve, sinalDeFechamento } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
@@ -867,7 +868,7 @@ async function reenviarPdf(
       tipo: 'document',
       mime: 'application/pdf',
       nome: 'simulacao-21go.pdf',
-      ...(legenda ? { legenda } : {}),
+      ...(legenda ? { legenda: aplicarEstilo(legenda, IDENTIDADE.estilo) } : {}),
     })
     await upsertMessage({
       conversation_id: c.conversation_id,
@@ -1153,7 +1154,8 @@ export async function enviarComoGente(
     // Nem [n] nem travessao/aspas chegam no cliente, venha de onde vier: texto da IA, resposta
     // pronta ou mensagem do codigo. Em 16/09/2026 o travessao saiu de uma resposta PRONTA, que
     // o filtro antigo (so no texto da IA) deixava passar. Dono: "errando de novo".
-    .map((p) => ({ ...p, texto: semCaraDeIa(semMarcaDeParte(p.texto)) }))
+    // Estilo do bot (Mariana: maiuscula e sem emoji) por ultimo: o que sai e o que se grava e compara.
+    .map((p) => ({ ...p, texto: aplicarEstilo(semCaraDeIa(semMarcaDeParte(p.texto)), IDENTIDADE.estilo) }))
     .filter((p) => p.texto)
   if (montadas.length === 0) return false
 

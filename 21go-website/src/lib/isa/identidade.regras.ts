@@ -9,6 +9,7 @@
  */
 
 import type { Etiqueta } from './etiquetas.regras'
+import type { EstiloDoBot } from './estilo.regras'
 
 export type GeneroHumano = 'm' | 'f'
 
@@ -64,6 +65,8 @@ export interface IdentidadeBot {
   semEtiquetas: readonly string[]
   /** so a Isa, na instancia da casa: promocao 40%, vigia-BYD */
   daCasa: boolean
+  /** Mariana: frase com maiuscula e sem emoji (BOT_MAIUSCULA, BOT_SEM_EMOJI). Ausente = a Isa, minuscula e com emoji */
+  estilo?: EstiloDoBot
 }
 
 export const INSTANCIA_DA_CASA = 'cloud_isa'
@@ -126,6 +129,8 @@ export function identidadeDoAmbiente(env: Ambiente): IdentidadeBot {
   const instancia = v('BOT_INSTANCIA', INSTANCIA_DA_CASA)
   const siteUrl = v('BOT_SITE_URL', SITE_DA_CASA).replace(/\/+$/, '')
   const origens5min = v('BOT_LEADS_5MIN_ORIGENS', ORIGENS_DO_SITE.join(','))
+  const ligado = (chave: string) => ['1', 'true'].includes((env[chave] || '').trim().toLowerCase())
+  const estilo: EstiloDoBot = { maiuscula: ligado('BOT_MAIUSCULA'), semEmoji: ligado('BOT_SEM_EMOJI') }
   const id: IdentidadeBot = {
     nome: v('BOT_NOME', 'Isa'),
     numero,
@@ -156,6 +161,8 @@ export function identidadeDoAmbiente(env: Ambiente): IdentidadeBot {
     },
     semEtiquetas: separar(env.BOT_SEM_ETIQUETAS || ''),
     daCasa: instancia === INSTANCIA_DA_CASA,
+    // so entra quando ligado: a identidade da Isa fica valor por valor a de antes
+    ...(estilo.maiuscula || estilo.semEmoji ? { estilo } : {}),
   }
   const erros = errosDaIdentidade(id)
   if (erros.length) throw new Error(`identidade do bot invalida: ${erros.join('; ')}`)

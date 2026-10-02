@@ -27,6 +27,8 @@ export const ENV_MARIANA: Record<string, string> = {
   BOT_LEADS_5MIN_ORIGENS: '*',
   BOT_LEADS_5MIN_DOMINIOS: '21go.app',
   BOT_SEM_ETIQUETAS: 'guilherme',
+  BOT_MAIUSCULA: '1',
+  BOT_SEM_EMOJI: '1',
 }
 
 export const MARIANA = identidadeDoAmbiente(ENV_MARIANA)

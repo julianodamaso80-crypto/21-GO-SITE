@@ -3,6 +3,7 @@ import { upsertMessage, phoneToJid } from '@/lib/supabase-store'
 import { atualizarContato, registrarEvento, sql, type ContatoIsa, type MensagemHistorico } from '@/lib/isa/banco'
 import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { enviarTexto } from '@/lib/isa/cloud'
+import { aplicarEstilo } from '@/lib/isa/estilo.regras'
 import { alertarDono, alertarDesconto } from '@/lib/isa/alertas'
 import { reescreverRespostaDoDono } from '@/lib/isa/cerebro'
 import { leadDoCliente, fatosDoLead } from '@/lib/isa/fatos'
@@ -237,7 +238,7 @@ export async function atenderDono(dono: ContatoIsa, novas: MensagemHistorico[]):
 async function falarComCliente(cliente: ContatoIsa, texto: string): Promise<boolean> {
   if (!cliente.janela_ate || new Date(cliente.janela_ate).getTime() < Date.now()) return false
   try {
-    for (const parte of texto.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)) {
+    for (const parte of texto.split(/\n\s*\n/).map((p) => aplicarEstilo(p.trim(), IDENTIDADE.estilo)).filter(Boolean)) {
       const w = await enviarTexto(cliente.telefone, parte)
       await gravarSaida(cliente, w, parte)
     }

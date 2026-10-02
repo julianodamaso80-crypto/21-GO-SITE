@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessaoDoRequest } from '@/lib/isa/painel'
 import { sql, type ContatoIsa } from '@/lib/isa/banco'
-import { TAB } from '@/lib/isa/identidade'
+import { IDENTIDADE, TAB } from '@/lib/isa/identidade'
 import { enviarTexto } from '@/lib/isa/cloud'
 import { transferir } from '@/lib/isa/acoes'
+import { aplicarEstilo } from '@/lib/isa/estilo.regras'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,8 @@ export async function POST(req: NextRequest) {
       c,
       'manual',
       async (partes) => {
-        for (const p of partes) await enviarTexto(telefone, p)
+        // o texto da transferencia e do bot, nao de quem clicou: sai no estilo do bot
+        for (const p of partes) await enviarTexto(telefone, aplicarEstilo(p, IDENTIDADE.estilo))
         return true
       },
       { avisarDono: false, por: s.u },
