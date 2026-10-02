@@ -51,26 +51,7 @@ export function esquecerConsultor(slug: string): void {
   cache.delete(slug)
 }
 
-/**
- * Parceiro com dominio PROPRIO servido pelo nosso site, fora de `sites_consultor`.
- *
- * O 21go.app e do Gabriel Juliano (ordem do dono, 02/10/2026): mesmo fluxo e mesmo PDF do .site,
- * com todo contato no numero dele. Nao e site vendido, entao nao passa por Asaas nem pelo cron de
- * cobranca. O Caddy manda `21go.app/` para `/gabrieljuliano`.
- */
-export const CONSULTORES_DE_PARCEIRO: Record<string, Consultor> = {
-  gabrieljuliano: {
-    slug: 'gabrieljuliano',
-    nome: 'Gabriel Juliano',
-    whatsapp: '5521990954964',
-    powerlinkId: 'XDmAbx6D',
-    status: 'ativo',
-    ocultarAtivacao: false,
-  },
-}
-
 export async function resolverConsultor(slug: string): Promise<Consultor | null> {
-  if (Object.hasOwn(CONSULTORES_DE_PARCEIRO, slug)) return CONSULTORES_DE_PARCEIRO[slug]
   const agora = Date.now()
   const emCache = cache.get(slug)
   if (emCache && emCache.expiraEm > agora) return emCache.valor
