@@ -755,7 +755,10 @@ export default function CotacaoPage() {
         if (d.leadId) setLeadId(d.leadId)
       }).catch(() => {})
     } catch {
-      setApiError('Falha ao consultar a tabela FIPE. Tente novamente ou fale com nosso consultor.')
+      // Aqui so cai erro de rede ou resposta que nao e JSON (ex.: 502 na troca de container do
+      // deploy, 02/10/2026). A FIPE nao tem nada a ver — a mensagem antiga mandava procurar
+      // defeito no lugar errado.
+      setApiError('Não conseguimos concluir a simulação agora. Tente de novo em alguns segundos.')
     } finally {
       setLoading(false)
     }
