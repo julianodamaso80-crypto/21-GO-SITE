@@ -49,7 +49,7 @@ import { DOC_DE_FECHAMENTO, DOCS_CONTRATACAO, tipoDoTextoLido, docsQueFaltam, no
 import { dividirEmPartes, partesComCitacao, citarMensagemRespondida, vistoDoLote, semMarcaDeParte, passaDoLimiteSemResposta, ehFalhaPassageira, pausaEntreSegundos, AUDIO_INAUDIVEL, ehInaudivel, mensagemAudioNaoEntendido, repeteMensagemRecente, type ParteEnvio } from '@/lib/isa/envio.regras'
 import { cumprimento, dentroDoHorario, precisaCumprimentar } from '@/lib/isa/hora.regras'
 import { abertura, falaDeAdesivo, ehPergunta, semCaraDeIa } from '@/lib/isa/prompt.regras'
-import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, fechouComOutra, mensagemFechouComOutra, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, pediuPdfDeNovo, ehByd, sinalDeFechamento } from '@/lib/isa/entrega.regras'
+import { mensagensDaSimulacao, mensagemNaoFazemos, mensagemPlacaNaoAchada, mensagemModeloSemPreco, escolheuPlano, querFechar, fechouComOutra, mensagemFechouComOutra, mensagemPedidoDocumentos, mensagemPerguntaLeilaoApp, lerLeilaoApp, ehPedidoDeSimulacao, jaCotouEssaPlaca, recotarEssaPlaca, pediuPdfDeNovo, ehByd, ehEletricoLeve, mensagemEletricoLeve, sinalDeFechamento } from '@/lib/isa/entrega.regras'
 import { orcarPorPlaca, orcarPorModelo } from '@/lib/isa/orcamento'
 import { acharMarca, filtrarVersoes, escolhaDoCliente, mensagemVersoes, mensagemDetalhe, MAX_OPCOES } from '@/lib/isa/versoes.regras'
 import { placaNoTexto } from '@/lib/isa/placa.regras'
@@ -494,6 +494,13 @@ async function atender(c: ContatoIsa): Promise<boolean> {
     soVeioDeDocumento &&
     !novas.some((m) => m.message_type !== 'text' && tipoDoTextoLido(m.content) === 'crlv' && placaNoTexto(m.content || ''))
   const textoNovas = novas.map((m) => m.content).join('\n')
+  // Scooter, bike ou moto eletrica: a Isa nao cota, passa o contato da Leticya (dono, 02/10/2026).
+  if (ehEletricoLeve(textoNovas) || ehEletricoLeve(lead?.modelo_interesse)) {
+    await registrarEvento(c.telefone, 'eletrico_leve', { texto: textoNovas.slice(0, 80) })
+    const enviou = await enviarComoGente(c, [mensagemEletricoLeve()], ultimaInbound, visto)
+    await liberar(c.telefone, visto, enviou)
+    return enviou
+  }
   const cumprimentarAgora = precisaCumprimentar(ultimaNossa ? new Date(ultimaNossa.criada_em) : null, agora)
   // Placa que o CLIENTE digitou e SEMPRE pedido de cotacao, mesmo sendo a mesma de antes. Aqui
   // havia um `placaDita !== placaDoLead` que pulava a cotacao quando a placa ja estava no lead:

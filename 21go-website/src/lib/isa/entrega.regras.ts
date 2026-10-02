@@ -286,3 +286,25 @@ export function fechouComOutra(texto: string | null | undefined): boolean {
 export function mensagemFechouComOutra(): string {
   return 'imagina, obrigada por avisar 🙏🏼\n\nqualquer coisa que precisar, é só me chamar por aqui'
 }
+
+/**
+ * Scooter, bike e moto elétrica: a Isa não cota, passa o contato da Leticya (dono, 02/10/2026:
+ * "toda vez que falar de scooter ou moto ou bike elétrica encaminhar o telefone da leticya").
+ * O Power não tem essas versões, e ela ficava num "não achei esse modelo aqui" sem saída.
+ */
+const ELETRICO_LEVE =
+  /\b(scooter|patinete|ciclomotor|triciclo)\b|\b(bike|bicicleta|moto|motoca|moped)\b[^.?!\n]{0,12}\b(eletric|elétric)/i
+
+export function ehEletricoLeve(texto: string | null | undefined): boolean {
+  const t = (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  return ELETRICO_LEVE.test(t) || /\b(eletric|elétric)[a-z]*\b[^.?!\n]{0,12}\b(bike|bicicleta|scooter|moto)\b/i.test(t)
+}
+
+/** O contato da supervisora, no texto do dono. O número sai do código, nunca da IA. */
+export function mensagemEletricoLeve(): string {
+  return (
+    'esse tipo de veículo quem cuida é a minha supervisora 🙏🏼\n\n' +
+    'o contato dela é leticya, 21 96945-4824\n\n' +
+    'é só falar que estava falando comigo, a isa, e que eu te passei o contato'
+  )
+}

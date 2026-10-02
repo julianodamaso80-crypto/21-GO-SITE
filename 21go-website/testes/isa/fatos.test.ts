@@ -156,3 +156,15 @@ test('o GABARITO inteiro passa no validador sem simulacao (auditoria de 12/09/20
     assert.ok(validarNumeros(f, NUMEROS_FIXOS).ok, f)
   }
 })
+
+test('"EVO" e "EVOQUE" nao sao eletricos: a cota do Uno e 6% (dono, 02/10/2026)', async () => {
+  const { ehEletricoOuHibrido } = await import('../../src/lib/isa/fatos.regras.ts')
+  const v = (modelo: string, marca = 'Fiat', combustivel: string | null = null) => ({ marca, modelo, combustivel })
+  assert.equal(ehEletricoOuHibrido(v('UNO VIVACE/RUA 1.0 EVO Fire Flex 8V 5p')), false)
+  assert.equal(ehEletricoOuHibrido(v('RANGE ROVER EVOQUE 2.0', 'Land Rover')), false)
+  // eletrico e hibrido de verdade continuam
+  assert.equal(ehEletricoOuHibrido(v('Corolla Cross XRX 1.8 16V Aut. (Híbrido)', 'Toyota')), true)
+  assert.equal(ehEletricoOuHibrido(v('Dolphin Mini EV', 'BYD')), true)
+  assert.equal(ehEletricoOuHibrido(v('Megane E-TECH', 'Renault')), true)
+  assert.equal(ehEletricoOuHibrido(v('Corolla', 'Toyota', 'Híbrido')), true)
+})

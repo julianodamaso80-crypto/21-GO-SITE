@@ -103,7 +103,10 @@ export const NUMEROS_FIXOS: { dinheiro: number[]; pct: number[] } = {
 }
 
 const MARCAS_ELETRIFICADAS = ['BYD', 'TESLA', 'GWM', 'ZEEKR', 'NETA', 'ORA']
-const PALAVRAS_ELETRICO = /\b(ELETRIC|ELÉTRIC|ELECTRIC|EV|BEV|H[IÍ]BRID|HYBRID|HEV|PHEV|MHEV|E-TECH|E:HEV|RECHARGE)/i
+// As siglas curtas (EV, BEV, HEV...) só valem como PALAVRA INTEIRA: sem o fecho, "EV" casava
+// dentro de "UNO VIVACE 1.0 EVO" e de "EVOQUE", e a cota do Uno saiu 10% em vez de 6%
+// (dono, 02/10/2026).
+const PALAVRAS_ELETRICO = /\b(ELETRIC|ELÉTRIC|ELECTRIC|H[IÍ]BRID|HYBRID|RECHARGE|E-TECH|E:HEV)|\b(EV|BEV|HEV|PHEV|MHEV)\b/i
 
 const r2 = (v: number) => Math.round(v * 100) / 100
 

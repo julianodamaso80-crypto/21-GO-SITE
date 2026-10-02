@@ -258,3 +258,18 @@ test('"Fiquei na duvida sobre o rastreador" NAO e desistencia (dono, 01/10/2026 
     'fiquei com a Alamo mesmo',
   ]) assert.ok(fechouComOutra(s), s)
 })
+
+test('scooter, bike e moto eletrica vao pro contato da Leticya (dono, 02/10/2026)', async () => {
+  const { ehEletricoLeve, mensagemEletricoLeve } = await import('../../src/lib/isa/entrega.regras.ts')
+  for (const s of [
+    'SCOOTER ELETRICA CONDUZZA - MONACO 2026',
+    'tenho uma scooter',
+    'é uma bike elétrica',
+    'bicicleta eletrica aro 29',
+    'moto elétrica da shineray',
+    'patinete elétrico',
+  ]) assert.ok(ehEletricoLeve(s), s)
+  for (const s of ['HONDA CG 160 TITAN', 'moto 400cc', 'carro elétrico BYD', 'Corolla Cross Híbrido'])
+    assert.equal(ehEletricoLeve(s), false, s)
+  assert.match(mensagemEletricoLeve(), /96945-4824/)
+})
