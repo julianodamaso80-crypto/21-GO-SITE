@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import Script from 'next/script'
 import { captureClickIds, captureUtms, captureIndicacao } from '@/lib/cookies'
 import { trackPageView } from '@/lib/tracking'
+import { JS_EH_HOST_DE_PARCEIRO } from '@/lib/site-parceiro'
 
 // GTM ID é público (vai pro HTML em texto claro) — fallback hardcoded é seguro.
 // NEXT_PUBLIC_* é inlinada em build time pelo Next; se o EasyPanel não passar
@@ -41,7 +42,7 @@ export function GTMProvider() {
             strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `
-                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                if (!${JS_EH_HOST_DE_PARCEIRO}) (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
                 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
                 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);

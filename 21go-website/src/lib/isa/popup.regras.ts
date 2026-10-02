@@ -43,8 +43,12 @@ export function podeMostrarPopup(p: {
   clicouContratar: boolean
   jaViu: boolean
   temPlanos: boolean
+  /** Dominio de parceiro (site-parceiro.ts): o popup e dele, com o numero dele. */
+  deParceiro?: boolean
 }): boolean {
-  return p.ligado && ehDominioDaCasa(p.hostname) && !p.temConsultor && !p.clicouContratar && !p.jaViu && p.temPlanos
+  // Dominio de parceiro (21go.app): o popup e dele, com o numero dele (ordem do dono, 02/10/2026).
+  const lugar = p.deParceiro ? true : ehDominioDaCasa(p.hostname) && !p.temConsultor
+  return p.ligado && lugar && !p.clicouContratar && !p.jaViu && p.temPlanos
 }
 
 export function mensagemDoPopup(p: {
@@ -66,6 +70,6 @@ export function mensagemDoPopup(p: {
   return linhas.join('\n')
 }
 
-export function linkDoPopup(mensagem: string): string {
-  return `https://wa.me/${NUMERO_ISA}?text=${encodeURIComponent(mensagem)}`
+export function linkDoPopup(mensagem: string, numero: string = NUMERO_ISA): string {
+  return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`
 }

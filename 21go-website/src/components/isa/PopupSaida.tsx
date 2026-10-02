@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Gift, X } from 'lucide-react'
 import { podeMostrarPopup, linkDoPopup } from '@/lib/isa/popup.regras'
+import { parceiroDoHost } from '@/lib/site-parceiro'
 
 /**
  * Popup de saida da tela de planos (Isa, fase 6). Regras em popup.regras.ts.
@@ -70,6 +71,7 @@ export default function PopupSaida({ ativo, chave, temConsultor, nome, jaClicou,
       clicouContratar: jaClicouRef.current(),
       jaViu: jaViu(chave),
       temPlanos: ativo,
+      deParceiro: !!parceiroDoHost(window.location.hostname),
     })
     if (!pode()) return
 
@@ -147,7 +149,7 @@ export default function PopupSaida({ ativo, chave, temConsultor, nome, jaClicou,
             Fale com um dos nossos consultores e <strong className="text-[#293C82]">ganhe um desconto na sua ativação</strong>.
           </p>
           <a
-            href={linkDoPopup(mensagem())}
+            href={linkDoPopup(mensagem(), parceiroDoHost(window.location.hostname)?.whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => { onAbrir(); setAberto(false) }}

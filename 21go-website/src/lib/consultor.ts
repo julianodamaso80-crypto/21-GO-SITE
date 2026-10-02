@@ -1,6 +1,7 @@
 import 'server-only'
 import { supabaseAdmin } from './supabase-admin'
 import { CONSULTORES_FALLBACK } from './consultores-fallback'
+import { SITES_DE_PARCEIRO } from './site-parceiro'
 
 /**
  * O consultor dono do site em `21go.com.br/<slug>`.
@@ -51,7 +52,23 @@ export function esquecerConsultor(slug: string): void {
   cache.delete(slug)
 }
 
+/**
+ * Consultor de dominio de parceiro (site-parceiro.ts), fora de `sites_consultor`: nao e site
+ * vendido, entao nao passa por Asaas nem pelo cron de cobranca. Hoje so o 21go.app do Gabriel.
+ */
+const CONSULTORES_DE_PARCEIRO: Record<string, Consultor> = {
+  [SITES_DE_PARCEIRO['21go.app'].slug]: {
+    slug: SITES_DE_PARCEIRO['21go.app'].slug,
+    nome: 'Gabriel Juliano',
+    whatsapp: SITES_DE_PARCEIRO['21go.app'].whatsapp,
+    powerlinkId: 'XDmAbx6D',
+    status: 'ativo',
+    ocultarAtivacao: false,
+  },
+}
+
 export async function resolverConsultor(slug: string): Promise<Consultor | null> {
+  if (Object.hasOwn(CONSULTORES_DE_PARCEIRO, slug)) return CONSULTORES_DE_PARCEIRO[slug]
   const agora = Date.now()
   const emCache = cache.get(slug)
   if (emCache && emCache.expiraEm > agora) return emCache.valor

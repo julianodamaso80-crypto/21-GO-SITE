@@ -41,6 +41,7 @@ import { isPlacaFormatValid, normalizePlaca, validatePlaca } from '@/lib/placa'
 import PopupSaida from '@/components/isa/PopupSaida'
 import { adesivoPct } from '@/lib/isa/fatos.regras'
 import { mensagemDoPopup } from '@/lib/isa/popup.regras'
+import { parceiroDoHost } from '@/lib/site-parceiro'
 
 /* ─── Types ─── */
 interface FormData {
@@ -449,6 +450,49 @@ export default function CotacaoPage() {
       window.history.replaceState({}, '', url.toString())
     }
   }, [step])
+
+  /**
+   * 21go.app (site-parceiro.ts): a placa, o nome e o WhatsApp foram preenchidos no site do
+   * parceiro, que manda pra ca com `?auto=1`. Aqui so se espera a placa amarrar o veiculo e se
+   * segue direto pros planos, sem mostrar o formulario. Se a placa nao amarrar (versao ambigua,
+   * nao achou), o formulario aparece ja preenchido e o cliente termina na mao.
+   */
+  const autoRef = useRef<'esperando' | 'feito' | null>(null)
+  const [autoCarregando, setAutoCarregando] = useState(false)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    if (q.get('auto') !== '1' || !parceiroDoHost(window.location.hostname)) return
+    const placa = normalizePlaca(q.get('placa') || '')
+    const nome = (q.get('nome') || '').trim()
+    const zap = (q.get('whatsapp') || '').replace(/\D/g, '')
+    // Nome e telefone saem da barra de endereco: ficariam no historico e em print.
+    const url = new URL(window.location.href)
+    ;['auto', 'placa', 'nome', 'whatsapp'].forEach((k) => url.searchParams.delete(k))
+    window.history.replaceState({}, '', url.toString())
+    if (placa.length !== 7 || nome.length < 2 || zap.length < 10) return
+    setForm((prev) => ({ ...prev, condicao: 'usado', placa, nome, whatsapp: maskPhone(zap) }))
+    autoRef.current = 'esperando'
+    setAutoCarregando(true)
+    const desiste = setTimeout(() => {
+      if (autoRef.current === 'esperando') {
+        autoRef.current = 'feito'
+        setAutoCarregando(false)
+      }
+    }, 25000)
+    return () => clearTimeout(desiste)
+  }, [])
+
+  useEffect(() => {
+    if (autoRef.current !== 'esperando') return
+    if (plateId.status === 'idle' || plateId.status === 'checking') return
+    autoRef.current = 'feito'
+    if (veiculoPelaPlaca && fipeModeloCode) {
+      next().finally(() => setAutoCarregando(false))
+    } else {
+      setAutoCarregando(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plateId.status, veiculoPelaPlaca, fipeModeloCode])
 
   // Carrega marcas do PowerCRM (depende só do tipo carro/moto)
   useEffect(() => {
@@ -1072,8 +1116,17 @@ export default function CotacaoPage() {
         {/* Content */}
         <div className="px-6 pb-20">
 
+          {/* 21go.app: enquanto a cotacao automatica roda, nada de formulario na tela. */}
+          {step === 1 && autoCarregando && (
+            <div className="max-w-xl mx-auto py-24 text-center">
+              <div className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-4 border-[#F2911D] border-t-transparent" />
+              <p className="text-lg font-semibold text-[#1A2754]">Calculando sua cotação...</p>
+              <p className="mt-1 text-sm text-[#64748B]">Só um instante.</p>
+            </div>
+          )}
+
           {/* ── STEP 1: Formulário ── */}
-          {step === 1 && (
+          {step === 1 && !autoCarregando && (
             <div className="max-w-xl mx-auto">
               <div className="text-center mb-8">
                 <h1 className="font-[var(--font-display)] text-2xl md:text-3xl font-bold text-[#1A2754] mb-2">

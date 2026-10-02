@@ -72,3 +72,11 @@ test('formulario do Quero Ser Consultor: vai pra Isa so nos dois .site da casa',
   assert.equal(formularioVaiPraIsa(null, '21go.site'), false)
   assert.equal(formularioVaiPraIsa('isa', null), false)
 })
+
+test('21go.app (dominio de parceiro): popup aparece mesmo com consultor, e o link vai pro numero dele', () => {
+  assert.equal(podeMostrarPopup({ ...base, hostname: '21go.app', temConsultor: true, deParceiro: true }), true)
+  assert.equal(podeMostrarPopup({ ...base, hostname: '21go.app', temConsultor: true, deParceiro: true, clicouContratar: true }), false)
+  assert.equal(podeMostrarPopup({ ...base, hostname: '21go.app', temConsultor: true }), false)
+  assert.ok(linkDoPopup('oi', '5521990954964').startsWith('https://wa.me/5521990954964?text='))
+  assert.ok(linkDoPopup('oi').startsWith('https://wa.me/5521980040964?text='))
+})

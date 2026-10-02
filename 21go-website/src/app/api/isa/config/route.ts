@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ehDominioDaCasa } from '@/lib/isa/popup.regras'
+import { parceiroDoHost } from '@/lib/site-parceiro'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,6 +15,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   const host = (req.headers.get('x-forwarded-host') || req.headers.get('host') || '').split(':')[0]
   const doConsultor = Boolean(req.cookies.get('c21go_dono')?.value)
-  const popup = process.env.ISA_POPUP === 'on' && ehDominioDaCasa(host) && !doConsultor
+  // 21go.app tem o popup dele, com o numero dele (site-parceiro.ts).
+  const popup = process.env.ISA_POPUP === 'on' && ((ehDominioDaCasa(host) && !doConsultor) || !!parceiroDoHost(host))
   return NextResponse.json({ popup }, { headers: { 'Cache-Control': 'no-store' } })
 }

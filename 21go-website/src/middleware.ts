@@ -9,6 +9,7 @@ import {
 } from '@/lib/consultores-painel'
 import { painelDoHost, vendedorDoCaminho } from '@/lib/painel/rotas'
 import { hostSemBlog } from '@/lib/dominio-sem-blog'
+import { parceiroDoHost } from '@/lib/site-parceiro'
 
 /**
  * Site por consultor: `21go.com.br/julianodamaso` serve o MESMO site de sempre,
@@ -35,6 +36,16 @@ const FORMATO_SLUG = /^[a-z0-9]{3,40}$/
 
 export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl
+
+  // 21go.app: so chega aqui o que nao e do site dele (Caddy), em geral `/cotacao`. Sem rewrite e
+  // sem slug na URL; o cookie e o que faz /api/wa e /api/vehicle/lead saberem que e do Gabriel.
+  const parceiro = parceiroDoHost(req.headers.get('host'))
+  if (parceiro) {
+    const res = NextResponse.next()
+    res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    marcarDono(res, parceiro.slug)
+    return res
+  }
 
   /**
    * `meusite.21go.com.br` e a porta de entrada da VENDA do site — o endereco que

@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
+import { parceiroDoHost } from '@/lib/site-parceiro'
 import { usePathname } from 'next/navigation'
 import { ROTAS_RESERVADAS } from '@/lib/rotas-reservadas'
 import { ehHostDePainel } from '@/lib/consultores-painel'
@@ -64,6 +65,13 @@ export function ConsultorProvider({ children }: { children: React.ReactNode }) {
   // Roda depois da hidratacao — o HTML prerenderizado e o mesmo pra todo mundo,
   // entao ler a URL no primeiro render quebraria a hidratacao.
   useEffect(() => {
+    // 21go.app: o dominio inteiro e do parceiro, sem slug na URL (site-parceiro.ts).
+    const parceiro = parceiroDoHost(window.location.hostname)
+    if (parceiro) {
+      setSlug(parceiro.slug)
+      setForaDoAr(false)
+      return
+    }
     // O painel tem host proprio (`parceiroanderson.21go.com.br`). La o 1o
     // segmento e `/app` ou `/cadastro`, que nao sao slug de ninguem: sem esta
     // saida, o provider buscava `/api/consultor/app`, tomava 404 e cobria o
@@ -157,6 +165,8 @@ export function useConsultor(): ConsultorAtual | null {
  */
 export function comSlug(href: string, slug: string | undefined): string {
   if (!slug) return href
+  // No dominio de parceiro o slug nao entra na URL: o dono do dominio ja e ele.
+  if (typeof window !== 'undefined' && parceiroDoHost(window.location.hostname)) return href
   if (!href.startsWith('/')) return href
   if (href.startsWith('//')) return href
   return `/${slug}${href === '/' ? '' : href}`

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { sendMetaCapi, sendGa4Mp } from '@/lib/conversion-apis'
+import { parceiroDoHost } from '@/lib/site-parceiro'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -115,6 +116,10 @@ interface TrackPayload {
 }
 
 export async function POST(req: Request) {
+  // 21go.app: o site do parceiro ja manda os eventos pros pixels dele; aqui iria pra conta da casa.
+  if (parceiroDoHost(req.headers.get('x-forwarded-host') || req.headers.get('host'))) {
+    return NextResponse.json({ ok: true, ignorado: 'parceiro' })
+  }
   let body: TrackPayload
   try {
     body = (await req.json()) as TrackPayload
