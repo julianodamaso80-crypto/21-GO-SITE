@@ -271,5 +271,9 @@ test('scooter, bike e moto eletrica vao pro contato da Leticya (dono, 02/10/2026
   ]) assert.ok(ehEletricoLeve(s), s)
   for (const s of ['HONDA CG 160 TITAN', 'moto 400cc', 'carro elétrico BYD', 'Corolla Cross Híbrido'])
     assert.equal(ehEletricoLeve(s), false, s)
-  assert.match(mensagemEletricoLeve(), /96945-4824/)
+  const leticya = { nome: 'Leticya', genero: 'f' as const, telefoneCurto: '21 96945-4824' }
+  assert.match(mensagemEletricoLeve(leticya, 'Isa'), /minha supervisora[\s\S]*leticya, 21 96945-4824/)
+  // na Mariana o contato e o do Gabriel, no masculino
+  const gabriel = { nome: 'Gabriel', genero: 'm' as const, telefoneCurto: '21 99999-0000' }
+  assert.match(mensagemEletricoLeve(gabriel, 'Mariana'), /meu supervisor[\s\S]*gabriel, 21 99999-0000[\s\S]*a mariana/)
 })

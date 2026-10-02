@@ -497,7 +497,7 @@ async function atender(c: ContatoIsa): Promise<boolean> {
   // Scooter, bike ou moto eletrica: a Isa nao cota, passa o contato da Leticya (dono, 02/10/2026).
   if (ehEletricoLeve(textoNovas) || ehEletricoLeve(lead?.modelo_interesse)) {
     await registrarEvento(c.telefone, 'eletrico_leve', { texto: textoNovas.slice(0, 80) })
-    const enviou = await enviarComoGente(c, [mensagemEletricoLeve()], ultimaInbound, visto)
+    const enviou = await enviarComoGente(c, [mensagemEletricoLeve(IDENTIDADE.humano, IDENTIDADE.nome)], ultimaInbound, visto)
     await liberar(c.telefone, visto, enviou)
     return enviou
   }

@@ -301,10 +301,14 @@ export function ehEletricoLeve(texto: string | null | undefined): boolean {
 }
 
 /** O contato da supervisora, no texto do dono. O número sai do código, nunca da IA. */
-export function mensagemEletricoLeve(): string {
+export function mensagemEletricoLeve(
+  humano: { nome: string; genero: 'f' | 'm'; telefoneCurto: string },
+  nomeDoBot = 'Isa',
+): string {
+  const f = humano.genero === 'f'
   return (
-    'esse tipo de veículo quem cuida é a minha supervisora 🙏🏼\n\n' +
-    'o contato dela é leticya, 21 96945-4824\n\n' +
-    'é só falar que estava falando comigo, a isa, e que eu te passei o contato'
+    `esse tipo de veículo quem cuida é ${f ? 'a minha supervisora' : 'o meu supervisor'} 🙏🏼\n\n` +
+    `o contato ${f ? 'dela' : 'dele'} é ${humano.nome.toLowerCase()}, ${humano.telefoneCurto}\n\n` +
+    `é só falar que estava falando comigo, a ${nomeDoBot.toLowerCase()}, e que eu te passei o contato`
   )
 }
