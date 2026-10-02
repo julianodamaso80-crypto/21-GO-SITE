@@ -26,4 +26,4 @@ export function parceiroDoHost(host: string | null | undefined): SiteDeParceiro 
 }
 
 /** Trecho JS pros scripts inline do <head>: true quando a pagina abriu num dominio de parceiro. */
-export const JS_EH_HOST_DE_PARCEIRO = `(${JSON.stringify(Object.keys(SITES_DE_PARCEIRO))}).indexOf((location.hostname||'').toLowerCase().replace(/^www\\./,''))>=0`
+export const JS_EH_HOST_DE_PARCEIRO = `((${JSON.stringify(Object.keys(SITES_DE_PARCEIRO))}).indexOf((location.hostname||'').toLowerCase().replace(/^www\\./,''))>=0)`
