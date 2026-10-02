@@ -29,6 +29,7 @@ const LEAD_LABEL = 'mqEWCIzt5KQcEOLGxtA-'
 // PIXEL_POR_CONSULTOR: o slug so existe no navegador (rewrite do middleware).
 const GADS_POR_CONSULTOR: Record<string, string> = {
   samuel: 'AW-18196858913',
+  gabrieljuliano: 'AW-18276620960',
 }
 
 export function GoogleAdsConversionScripts() {
