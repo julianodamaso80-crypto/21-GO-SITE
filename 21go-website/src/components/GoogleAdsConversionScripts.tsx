@@ -31,7 +31,7 @@ const GADS_POR_CONSULTOR: Record<string, string> = {
   samuel: 'AW-18196858913',
 }
 
-import { JS_EH_HOST_DE_PARCEIRO } from '@/lib/site-parceiro'
+import { JS_EH_HOST_DE_PARCEIRO, JS_RASTREIO_DO_PARCEIRO } from '@/lib/site-parceiro'
 
 export function GoogleAdsConversionScripts() {
   // Preview (GitHub Pages): nao dispara analytics fora do dominio oficial
@@ -48,6 +48,9 @@ gtag('config', 'AW-${CONVERSION_ID}', { allow_enhanced_conversions: true });
 var gadsConsultor = (${JSON.stringify(GADS_POR_CONSULTOR)})[location.pathname.split('/')[1] || ''];
 if (gadsConsultor) gtag('config', gadsConsultor);
 window.__21GO_GADS = { CONVERSION_ID: '${CONVERSION_ID}', LEAD_LABEL: '${LEAD_LABEL}' };
+} else {
+var rg = ${JS_RASTREIO_DO_PARCEIRO};
+if (rg && rg.googleAds) { gtag('js', new Date()); gtag('config', rg.googleAds); window.__21GO_GADS_PARCEIRO = true; }
 }
 `.trim()
 

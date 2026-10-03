@@ -461,8 +461,17 @@ export default function CotacaoPage() {
   const [autoCarregando, setAutoCarregando] = useState(false)
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
-    if (q.get('auto') !== '1' || !parceiroDoHost(window.location.hostname)) return
+    if (!q.get('placa') || !parceiroDoHost(window.location.hostname)) return
     const placa = normalizePlaca(q.get('placa') || '')
+    // Dono, 03/10/2026: o "Quase la" do site dele saiu. A placa chega sozinha e o formulario
+    // daqui (que ja pede nome e WhatsApp) abre com ela preenchida.
+    if (q.get('auto') !== '1') {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('placa')
+      window.history.replaceState({}, '', url.toString())
+      if (placa.length === 7) setForm((prev) => ({ ...prev, condicao: 'usado', placa }))
+      return
+    }
     const nome = (q.get('nome') || '').trim()
     const zap = (q.get('whatsapp') || '').replace(/\D/g, '')
     // Nome e telefone saem da barra de endereco: ficariam no historico e em print.

@@ -21,6 +21,8 @@ declare global {
     fbq?: (...args: unknown[]) => void
     gtag?: (...args: unknown[]) => void
     __21GO_GADS?: { CONVERSION_ID: string; LEAD_LABEL: string }
+    /** Host de parceiro (21go.app): a tag de Google Ads carregada e a DELE. */
+    __21GO_GADS_PARCEIRO?: boolean
   }
 }
 
@@ -215,6 +217,8 @@ export function trackCotacaoInicio(opts?: { form_name?: string }) {
   // Google Ads Conversion (21go-site-lead): dispara JUNTO com Meta Lead.
   // Sinal forte pra otimização da campanha BOFU/CONSULTOR.
   fireGoogleAdsConversion('lead', 50, eventId)
+  // 21go.app: o mesmo evento que o site do parceiro mandava pra tag dele.
+  if (typeof window !== 'undefined' && window.__21GO_GADS_PARCEIRO && window.gtag) window.gtag('event', 'generate_lead')
 
   sendServerSide('cotacao_inicio', eventId, {
     form_name: opts?.form_name,
@@ -338,6 +342,7 @@ export function trackWhatsAppClick(origem: string, data?: {
     }
     window.fbq('track', 'Contact', fbqParams, { eventID: eventId })
   }
+  if (typeof window !== 'undefined' && window.__21GO_GADS_PARCEIRO && window.gtag) window.gtag('event', 'contact')
 
   // Google Ads Conversion (21go-site-lead): clique em WhatsApp = sinal
   // forte de intenção (especialmente nos botões da home e flutuante).
