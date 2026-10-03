@@ -1,4 +1,5 @@
 import { dominioDoHost } from '@/lib/isa/popup.regras'
+import { parceiroDoHost } from '@/lib/site-parceiro'
 import { responsavelNoPower } from '@/lib/power-responsavel'
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
@@ -193,6 +194,11 @@ interface LeadInput {
   // PowerCRM + API Brasil + Parallelum nao retornaram FIPE confiavel.
   requires_human_support?: boolean
   human_support_reason?: 'fipe_indisponivel' | 'consulta_falhou' | 'manual'
+  /**
+   * Codigo do lead sorteado no navegador (16 hex), so no dominio de parceiro: a URL da cotacao
+   * ganha o link unico na hora em que a tela de planos aparece, sem esperar o Power responder.
+   */
+  codigo?: string
   // IDs já mapeados do PowerCRM (vem do fluxo novo "buscar por modelo").
   // Quando presentes, evitamos a busca/adivinhação cb/cmby/cmy no createLeadPowerCRM.
   powercrmBrandId?: number | null
@@ -217,7 +223,18 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const trk = crypto.randomBytes(8).toString('hex')
+  let trk = crypto.randomBytes(8).toString('hex')
+  // Link unico do 21go.app (03/10/2026). O upsert e por `trk` e SOBRESCREVE: codigo que ja existe
+  // nunca e aceito (seria escrever por cima do lead de outra pessoa). Na duvida, sorteio daqui.
+  const codigo = typeof body.codigo === 'string' && /^[a-f0-9]{16}$/.test(body.codigo) ? body.codigo : null
+  if (codigo && parceiroDoHost(req.headers.get('x-forwarded-host') || req.headers.get('host'))) {
+    const { data: existe, error: erroExiste } = await supabaseAdmin()
+      .from('leads')
+      .select('id')
+      .eq('id', `lead_${codigo}`)
+      .maybeSingle()
+    if (!erroExiste && !existe) trk = codigo
+  }
   const leadId = `lead_${trk}`
   const ctx = getRequestContext(req)
 

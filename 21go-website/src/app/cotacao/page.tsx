@@ -748,6 +748,11 @@ export default function CotacaoPage() {
       setPlans(finalPlans)
       const popularIdx = finalPlans.findIndex(p => p.popular)
       setSelectedPlanIdx(popularIdx >= 0 ? popularIdx : 0)
+      // 21go.app: o link unico sai junto com a tela de planos (o servidor confirma o codigo).
+      const codigoDoLink = parceiroDoHost(window.location.hostname)
+        ? Array.from(crypto.getRandomValues(new Uint8Array(8)), (x) => x.toString(16).padStart(2, '0')).join('')
+        : null
+      if (codigoDoLink) setLeadId(`lead_${codigoDoLink}`)
       setStep(2)
 
       const defaultPlan = finalPlans[popularIdx >= 0 ? popularIdx : 0]
@@ -797,6 +802,7 @@ export default function CotacaoPage() {
           motoTerceiros: form.danosTerceiros === 'sim',
           seguroAtual: form.temSeguro === 'sim' ? (form.nomeSeguro.trim() || 'Sim (não informado)') : undefined,
           comoConheceu: form.comoConheceu || undefined,
+          codigo: codigoDoLink ?? undefined,
           // IDs PowerCRM já mapeados — backend usa direto, sem adivinhar
           powercrmBrandId: data.powercrm?.brandId,
           powercrmModelId: data.powercrm?.modelId,
