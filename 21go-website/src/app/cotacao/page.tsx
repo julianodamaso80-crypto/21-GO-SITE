@@ -459,6 +459,53 @@ export default function CotacaoPage() {
    */
   const autoRef = useRef<'esperando' | 'feito' | null>(null)
   const [autoCarregando, setAutoCarregando] = useState(false)
+  // Link unico da cotacao (dono, 03/10/2026): `?id=<codigo>` reabre a tela de planos de uma
+  // cotacao ja feita. So le (/api/cotacao-salva): nao cria lead, nao mexe no Power, nao dispara
+  // evento. Codigo que nao abre cai no formulario vazio.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('id')
+    if (!id || !parceiroDoHost(window.location.hostname)) return
+    setAutoCarregando(true)
+    fetch(`${API_BASE}/api/cotacao-salva/${encodeURIComponent(id)}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d?.plans?.length) {
+          const url = new URL(window.location.href)
+          url.searchParams.delete('id')
+          window.history.replaceState({}, '', url.toString())
+          return
+        }
+        const plans = d.plans as QuotePlan[]
+        setForm((prev) => ({
+          ...prev,
+          condicao: 'usado',
+          placa: d.placa || '',
+          nome: d.nome || '',
+          whatsapp: maskPhone(d.whatsapp || ''),
+          leilao: d.leilao || 'nao',
+          carroApp: d.carroApp ? 'sim' : 'nao',
+        }))
+        setVehicle(d.vehicle as VehicleData)
+        setPlans(plans)
+        const popularIdx = plans.findIndex((p) => p.popular)
+        setSelectedPlanIdx(popularIdx >= 0 ? popularIdx : 0)
+        setLeadId(d.leadId)
+        setStep(2)
+      })
+      .catch(() => {})
+      .finally(() => setAutoCarregando(false))
+  }, [])
+
+  // Cotacao salva no dominio de parceiro: o endereco vira o link unico dela.
+  useEffect(() => {
+    if (step !== 2 || !leadId || !parceiroDoHost(window.location.hostname)) return
+    const url = new URL(window.location.href)
+    const codigo = leadId.replace(/^lead_/, '')
+    if (url.searchParams.get('id') === codigo) return
+    url.searchParams.set('id', codigo)
+    window.history.replaceState({}, '', url.toString())
+  }, [step, leadId])
+
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
     if (!q.get('placa') || !parceiroDoHost(window.location.hostname)) return
